@@ -1,4 +1,3 @@
-#define GLFW_INCLUDE_VULKAN
 #include <GrayEngine.h>
 
 namespace GrEngine {
@@ -27,6 +26,15 @@ namespace GrEngine {
                 {
                     //Logger::Out("CursorMoveEvent", OutputColor::Blue);
                 });
+
+            CustomEvent("MyEvent", [](std::vector<double> para)
+                {
+                    Logger::Out("Custom Event with a parameter %d", (int)para.front(), OutputColor::Blue);
+                });
+
+            std::vector<double> para = { 1 };
+
+            CallEvent("MyEvent", para);
         }
 
         ~Application()

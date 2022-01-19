@@ -1,5 +1,5 @@
 #pragma once
-
+#define GLFW_INCLUDE_VULKAN
 //include only
 
 #include "Engine/Source/pch.h"

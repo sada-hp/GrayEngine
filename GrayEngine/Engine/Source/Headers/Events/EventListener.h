@@ -13,7 +13,7 @@ enum class EventType
 	KeyPress,
 	Scroll,
 	WindowResize,
-	Custom //TODO
+	Custom
 };
 
 typedef void (*EventCallbackFun)(std::vector<double> para);
@@ -23,10 +23,12 @@ class _declspec(dllexport) EventListener //event observer pattern
 protected:
 	static EventListener* _instance;
 	bool bAllowEvents = true;
+	bool bAllowCustomEvents = true;
 
 	struct EventBase
 	{
 		EventType type;
+		const char* name = "";
 		std::vector<double> para;
 	};
 
@@ -42,19 +44,21 @@ public:
 
 	void registerEvent(const EventType& event, EventCallbackFun event_function)
 	{
-		observers_[event].push_back(std::forward<EventCallbackFun>(event_function));
+		observers_engine[event].push_back(std::forward<EventCallbackFun>(event_function));
+	}
+	void registerEvent(const char* event_name, EventCallbackFun event_function)
+	{
+		observers_custom[event_name].push_back(std::forward<EventCallbackFun>(event_function));
 	}
 
-	void blockEvents();
-	void allowEvents();
-
 	void pushEvent(const EventType& event, const std::vector<double>);
+	void pushEvent(const char* event, const std::vector<double> para);
 
+	void blockEvents(bool engineEventsEnabled = false, bool customEventsEnabled = false);
 	bool pollEngineEvents();
-	void notifyCustomEvent(const char* eventName) {}; //TODO
-
 private:
-	std::map<EventType, std::vector<std::function<void(std::vector<double>)>>> observers_;
+	std::map<EventType, std::vector<std::function<void(std::vector<double>)>>> observers_engine;
+	std::map<const char*, std::vector<std::function<void(std::vector<double>)>>> observers_custom;
 	std::queue<EventBase> EventQueue;
 };
 
@@ -67,7 +71,8 @@ namespace GrEngine
 #define WindowResizeEvent(lambda) EventListener::GetListener()->registerEvent(EventType::WindowResize, lambda)
 #define MouseScrollEvent(lambda) EventListener::GetListener()->registerEvent(EventType::Scroll, lambda)
 #define MouseMoveEvent(lambda) EventListener::GetListener()->registerEvent(EventType::MouseMove, lambda)
-#define CustomEvent(lambda) EventListener::GetListener()->registerEvent(EventType::Custom, lambda)
+#define CustomEvent(name, lambda) EventListener::GetListener()->registerEvent(name, lambda)
+#define CallEvent(name, para) EventListener::GetListener()->pushEvent(name, para)
 
 //Event calls shortcut macros
 }

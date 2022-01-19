@@ -12,7 +12,27 @@ EventListener* EventListener::GetListener() //Singleton
 
 void EventListener::notify(const EventBase& event)
 {
-	for (const auto& obs : observers_[event.type]) obs(event.para);
+	switch (event.type)
+	{
+		case EventType::Custom:
+			for (const auto& obs : observers_custom[event.name])
+				obs(event.para);
+			break;
+		default:
+			for (const auto& obs : observers_engine[event.type])
+				obs(event.para);
+			break;
+	}
+}
+
+void EventListener::pushEvent(const char* name, const std::vector<double> para)
+{
+	EventBase event;
+	event.type = EventType::Custom;
+	event.name = name;
+	event.para = para;
+
+	EventQueue.push(event);
 }
 
 void EventListener::pushEvent(const EventType& type, const std::vector<double> para)
@@ -24,23 +44,20 @@ void EventListener::pushEvent(const EventType& type, const std::vector<double> p
 	EventQueue.push(event);
 }
 
-void EventListener::blockEvents()
+void EventListener::blockEvents(bool engineEventsEnabled, bool customEventsEnabled)
 {
-	bAllowEvents = false;
-	EventQueue.empty();
-}
-
-void EventListener::allowEvents()
-{
-	bAllowEvents = true;
+	bAllowEvents = engineEventsEnabled;
+	bAllowCustomEvents = customEventsEnabled;
 }
 
 bool EventListener::pollEngineEvents()
 {
-	while (bAllowEvents && EventQueue.size() > 0)
+	while (EventQueue.size() > 0)
 	{
-		notify(EventQueue.front());
+		if ((bAllowEvents && EventQueue.front().type != EventType::Custom) || (bAllowCustomEvents && EventQueue.front().type == EventType::Custom))
+			notify(EventQueue.front());
 		EventQueue.pop();
 	}
-	return bAllowEvents;
+
+	return true;
 }
