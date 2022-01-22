@@ -1,10 +1,5 @@
 #pragma once
-#include <functional>
-#include <vector>
-#include <map>
-#include <utility>
-#include <any>
-#include <queue>
+#include <pch.h>
 
 enum class EventType
 {
@@ -13,6 +8,7 @@ enum class EventType
 	KeyPress,
 	Scroll,
 	WindowResize,
+	WindowClosed,
 	Custom
 };
 
@@ -36,6 +32,10 @@ protected:
 	{
 	}
 
+	~EventListener()
+	{
+	}
+
 	void notify(const EventBase& event);
 public:
 	void operator=(const EventListener&) = delete;
@@ -51,14 +51,14 @@ public:
 		observers_custom[event_name].push_back(std::forward<EventCallbackFun>(event_function));
 	}
 
-	void pushEvent(const EventType& event, const std::vector<double>);
+	void pushEvent(const EventType& event, const std::vector<double> para);
 	void pushEvent(const char* event, const std::vector<double> para);
 
 	void blockEvents(bool engineEventsEnabled = false, bool customEventsEnabled = false);
 	bool pollEngineEvents();
 private:
-	std::map<EventType, std::vector<std::function<void(std::vector<double>)>>> observers_engine;
-	std::map<const char*, std::vector<std::function<void(std::vector<double>)>>> observers_custom;
+	std::map<EventType, std::vector<EventCallbackFun>> observers_engine;
+	std::map<const char*, std::vector<EventCallbackFun>> observers_custom;
 	std::queue<EventBase> EventQueue;
 };
 
@@ -71,6 +71,7 @@ namespace GrEngine
 #define WindowResizeEvent(lambda) EventListener::GetListener()->registerEvent(EventType::WindowResize, lambda)
 #define MouseScrollEvent(lambda) EventListener::GetListener()->registerEvent(EventType::Scroll, lambda)
 #define MouseMoveEvent(lambda) EventListener::GetListener()->registerEvent(EventType::MouseMove, lambda)
+#define WindowClosedEvent(lambda) EventListener::GetListener()->registerEvent(EventType::WindowClosed, lambda)
 #define CustomEvent(name, lambda) EventListener::GetListener()->registerEvent(name, lambda)
 #define CallEvent(name, para) EventListener::GetListener()->pushEvent(name, para)
 

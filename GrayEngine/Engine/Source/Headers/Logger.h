@@ -1,7 +1,5 @@
 #pragma once
-#include <windows.h>
-#include <time.h>
-#include <string>
+#include <pch.h>
 
 static _declspec(dllexport) enum class OutputColor
 {

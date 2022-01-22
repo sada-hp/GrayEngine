@@ -26,6 +26,10 @@ namespace GrEngine {
                 {
                     //Logger::Out("CursorMoveEvent", OutputColor::Blue);
                 });
+            WindowClosedEvent([](std::vector<double> para)
+                {
+                    Logger::Out("Window is now being closed", OutputColor::Gray);
+                });
 
             CustomEvent("MyEvent", [](std::vector<double> para)
                 {
@@ -39,7 +43,7 @@ namespace GrEngine {
 
         ~Application()
         {
-
+            pWindow.get()->~Window();
         }
     };
 

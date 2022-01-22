@@ -1,8 +1,8 @@
 #define GLM_FORCE_RADIANS
 #define GLM_FORCE_DEPTH_ZERO_TO_ONE
 
-#include "pch.h"
-#include "Headers/WinApp.h"
+#include <pch.h>
+#include "WinApp.h"
 
 namespace GrEngine
 {
@@ -42,12 +42,13 @@ namespace GrEngine
 		{
 			SetVSync(true);
 			SetUpEvents(window);
-			vkAPI.initVulkan();
+			vkAPI.initVulkan(window);
 		}
 	}
 
 	void WinApp::ShutDown()
 	{
+		Logger::Out("Shutting down the engine", OutputColor::Gray);
 		vkAPI.destroy();
 		glfwDestroyWindow(window);
 		glfwTerminate();
@@ -110,15 +111,23 @@ namespace GrEngine
 
 			data.pEventListener->pushEvent(EventType::Scroll, para);
 		});
-		glfwSetCursorPosCallback(window, [](GLFWwindow* win, double xpos, double ypos)
+		glfwSetCursorPosCallback(target, [](GLFWwindow* win, double xpos, double ypos)
 		{
-				AppParameters& data = *(AppParameters*)glfwGetWindowUserPointer(win);
+			AppParameters& data = *(AppParameters*)glfwGetWindowUserPointer(win);
 
-				std::vector<double> para = {
-					xpos, ypos
-				};
+			std::vector<double> para = {
+				xpos, ypos
+			};
 
-				data.pEventListener->pushEvent(EventType::MouseMove, para);
+			data.pEventListener->pushEvent(EventType::MouseMove, para);
+		});
+		glfwSetWindowCloseCallback(target, [](GLFWwindow* win)
+		{
+			AppParameters& data = *(AppParameters*)glfwGetWindowUserPointer(win);
+
+			std::vector<double> para = {};
+
+			data.pEventListener->pushEvent(EventType::WindowClosed, para);
 		});
 	}
 }

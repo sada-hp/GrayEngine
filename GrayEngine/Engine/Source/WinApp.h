@@ -1,16 +1,11 @@
 #pragma once
 #define GLFW_INCLUDE_VULKAN
 
-#include <vector>
-#include <functional>
-#include <glfw/glfw3.h>
-#include <glm/vec4.hpp>
-#include <glm/mat4x4.hpp> 
-#include "AppWindow.h"
-#include "Logger.h"
-#include "Events/EventListener.h"
-#include "VulkanAPI.h"
-
+#include <pch.h>
+#include "Headers/AppWindow.h"
+#include "Headers/Logger.h"
+#include "Headers/Events/EventListener.h"
+#include "Headers/Vulkan/VulkanAPI.h"
 
 namespace GrEngine
 {
@@ -24,7 +19,6 @@ namespace GrEngine
 	class WinApp : public Window
 	{
 	public:
-		std::vector<std::function<bool(MouseButtons button, int action, int mods)>> MouseEvents;
 
 		WinApp(const AppParameters& Properties);
 		~WinApp();

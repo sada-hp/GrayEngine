@@ -60,6 +60,7 @@
       <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions);TP_Windows;TP_Windows;TP_Windows</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <AdditionalIncludeDirectories>$(SolutionDir)\GrayEngine;$(SolutionDir)GrayEngine\Engine\Source\Libs\IncludeVK;$(SolutionDir)GrayEngine\Engine\Source\Libs\includeGL;$(SolutionDir)GrayEngine\Engine\Source\Libs\glm;</AdditionalIncludeDirectories>
+      <LanguageStandard>stdcpp20</LanguageStandard>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -75,6 +76,7 @@
       <PreprocessorDefinitions>NDEBUG;_CONSOLE;%(PreprocessorDefinitions);TP_Windows;TP_Windows;TP_Windows</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <AdditionalIncludeDirectories>$(SolutionDir)\GrayEngine;$(SolutionDir)GrayEngine\Engine\Source\Libs\IncludeVK;$(SolutionDir)GrayEngine\Engine\Source\Libs\includeGL;$(SolutionDir)GrayEngine\Engine\Source\Libs\glm;</AdditionalIncludeDirectories>
+      <LanguageStandard>stdcpp20</LanguageStandard>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>

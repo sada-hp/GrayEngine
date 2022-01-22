@@ -12,24 +12,24 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="Engine\Source\Headers\Engine.h" />
+    <ClInclude Include="Engine\Source\Engine.h" />
     <ClInclude Include="GrayEngine.h" />
     <ClInclude Include="Engine\Source\Headers\Main.h" />
     <ClInclude Include="Engine\Source\Headers\Logger.h" />
     <ClInclude Include="Engine\Source\Headers\AppWindow.h" />
-    <ClInclude Include="Engine\Source\Headers\WinApp.h" />
-    <ClInclude Include="Engine\Source\pch.h" />
+    <ClInclude Include="Engine\Source\WinApp.h" />
+    <ClInclude Include="pch.h" />
     <ClInclude Include="Engine\Source\Libs\includeGL\glfw\glfw3.h" />
     <ClInclude Include="Engine\Source\Libs\includeGL\glfw\glfw3native.h" />
     <ClInclude Include="Engine\Source\Headers\Events\EventListener.h" />
-    <ClInclude Include="Engine\Source\Headers\VulkanAPI.h" />
+    <ClInclude Include="Engine\Source\Headers\Vulkan\VulkanAPI.h" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="Engine\Source\Engine.cpp" />
     <ClCompile Include="Engine\Source\WinApp.cpp" />
-    <ClCompile Include="Engine\Source\pch.cpp" />
-    <ClCompile Include="Engine\Source\EventListener.cpp" />
-    <ClCompile Include="Engine\Source\VulkanAPI.cpp" />
+    <ClCompile Include="pch.cpp" />
+    <ClCompile Include="Engine\Source\Headers\Events\EventListener.cpp" />
+    <ClCompile Include="Engine\Source\Headers\Vulkan\VulkanAPI.cpp" />
+    <ClCompile Include="Engine\Source\Engine.cpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Engine\Source\Libs\lib-vc2019\glfw3.dll" />

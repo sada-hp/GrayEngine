@@ -1,7 +1,7 @@
 #pragma once
-#include <glfw/glfw3.h>
-#include "Logger.h"
-#include "AppWindow.h"
+#include <pch.h>
+#include "Headers/Logger.h"
+#include "Headers/AppWindow.h"
 
 namespace GrEngine
 {
@@ -13,8 +13,9 @@ namespace GrEngine
 		virtual ~Engine();
 
 		void Run();
+
 		void PokeIt();
-	private:
+	protected:
 		std::unique_ptr<Window> pWindow;
 	};
 
