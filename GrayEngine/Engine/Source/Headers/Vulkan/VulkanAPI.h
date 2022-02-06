@@ -1,6 +1,7 @@
 #pragma once
 #define VK_KHR_swapchain
 #include <pch.h>
+#include "Engine/Source/Engine.h"
 
 struct QueueFamilyIndices {
 	std::optional<uint32_t> graphicsFamily;
@@ -22,6 +23,8 @@ class VulkanAPI
 public:
 	void initVulkan(GLFWwindow* window);
 	void destroy();
+	void drawFrame();
+
 private:
 	GLFWwindow* m_parentWindow;
 	VkInstance _vulkan;
@@ -35,6 +38,15 @@ private:
 	VkFormat swapChainImageFormat;
 	VkExtent2D swapChainExtent;
 	std::vector<VkImageView> swapChainImageViews;
+	VkPipelineLayout pipelineLayout;
+	VkRenderPass renderPass;
+	VkPipeline graphicsPipeline;
+	std::vector<VkFramebuffer> swapChainFramebuffers;
+	VkCommandPool commandPool;
+	std::vector<VkCommandBuffer> commandBuffers;
+	VkSemaphore imageAvailableSemaphore;
+	VkSemaphore renderFinishedSemaphore;
+	VkQueue graphicsQueue;
 
 	bool getVKInstance();
 	bool createLogicalDevice();
@@ -48,5 +60,11 @@ private:
 	bool createSwapChain();
 	bool createImageViews();
 	bool createGraphicsPipeline();
+	VkShaderModule createShaderModule(const std::vector<char>& code);
+	bool createRenderPass();
+	bool createFramebuffers();
+	bool createCommandPool();
+	bool createCommandBuffers();
+	bool createSemaphores();
 };
 

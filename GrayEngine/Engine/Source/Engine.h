@@ -13,6 +13,7 @@ namespace GrEngine
 		virtual ~Engine();
 
 		void Run();
+		static std::vector<char> readFile(const std::string& filename);
 
 		void PokeIt();
 	protected:

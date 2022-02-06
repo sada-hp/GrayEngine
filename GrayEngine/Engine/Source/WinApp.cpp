@@ -57,6 +57,7 @@ namespace GrEngine
 	void WinApp::OnStep()
 	{
 		glfwPollEvents();
+		vkAPI.drawFrame();
 		EventListener::GetListener()->pollEngineEvents();
 		glfwSwapBuffers(window);
 	}
