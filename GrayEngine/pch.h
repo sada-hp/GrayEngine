@@ -21,3 +21,7 @@
 #include <cstdint>
 #include <algorithm>
 #include <fstream>
+#include <array>
+#include <filesystem>
+#include <format>
+#include <string_view>

@@ -1,6 +1,6 @@
 #pragma once
 #define GLFW_INCLUDE_VULKAN
-
+#define VMA_IMPLEMENTATION
 #include <pch.h>
 #include "Headers/AppWindow.h"
 #include "Headers/Logger.h"
@@ -27,11 +27,15 @@ namespace GrEngine
 		void SetVSync(bool state) override;
 
 		inline AppParameters* WindowProperties() override { return &props; };
+		inline VulkanAPI getVk() { return vkAPI; };
 	private:
 		VulkanAPI vkAPI;
 		void StartUp(const AppParameters& Properties);
 		void ShutDown();
 		void SetUpEvents(GLFWwindow* target);
 		AppParameters props;
+
+		unsigned long frames = 0;
+		double time;
 	};
 }

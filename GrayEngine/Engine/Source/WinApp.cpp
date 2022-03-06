@@ -42,8 +42,15 @@ namespace GrEngine
 		{
 			SetVSync(true);
 			SetUpEvents(window);
-			vkAPI.initVulkan(window);
+
+			if (!vkAPI.initVulkan(window, &vkAPI))
+			{
+				Logger::Out("Failed to initialize Vulkan!", OutputColor::Red);
+				ShutDown();
+			}
 		}
+
+		time = glfwGetTime();
 	}
 
 	void WinApp::ShutDown()
@@ -56,16 +63,28 @@ namespace GrEngine
 
 	void WinApp::OnStep()
 	{
+		double currentTime = glfwGetTime();
+		
 		glfwPollEvents();
 		vkAPI.drawFrame();
 		EventListener::GetListener()->pollEngineEvents();
 		glfwSwapBuffers(window);
+		frames++;
+
+		if (currentTime - time >= 1.0) {
+			std::string new_title = props.Title;
+			new_title += " [" + std::to_string(frames) + " fps, " + std::to_string(1000.0 / double(frames)) + " ms/frame]";
+
+			glfwSetWindowTitle(window, new_title.c_str());
+			frames = 0;
+			time += 1.0;
+		}
 	}
 
 	void WinApp::SetVSync(bool state)
 	{
 		glfwSwapInterval((int)state);
-		Logger::Out("VSync is now set to %d", state, OutputColor::Green);
+		Logger::Out("VSync is now set to %d", OutputColor::Green, state);
 	}
 
 	void WinApp::SetUpEvents(GLFWwindow* target)
@@ -78,7 +97,7 @@ namespace GrEngine
 				(double)width, (double)height
 			};
 
-			data.pEventListener->pushEvent(EventType::WindowResize, para);
+			data.pEventListener->registerEvent(EventType::WindowResize, para);
 		});
 		glfwSetMouseButtonCallback(target, [](GLFWwindow* win, int button, int action, int mods)
 		{
@@ -90,7 +109,7 @@ namespace GrEngine
 				xpos, ypos, (double)button, (double)action, (double)mods
 			};
 
-			data.pEventListener->pushEvent(EventType::MouseClick, para);
+			data.pEventListener->registerEvent(EventType::MouseClick, para);
 		});
 		glfwSetKeyCallback(target, [](GLFWwindow* win, int key, int scancode, int action, int mods)
 		{
@@ -100,7 +119,7 @@ namespace GrEngine
 				(double)key, (double)scancode, (double)action, (double)mods
 			};
 
-			data.pEventListener->pushEvent(EventType::KeyPress, para);
+			data.pEventListener->registerEvent(EventType::KeyPress, para);
 		});
 		glfwSetScrollCallback(target, [](GLFWwindow* win, double xoffset, double yoffset)
 		{
@@ -110,7 +129,7 @@ namespace GrEngine
 				xoffset, yoffset
 			};
 
-			data.pEventListener->pushEvent(EventType::Scroll, para);
+			data.pEventListener->registerEvent(EventType::Scroll, para);
 		});
 		glfwSetCursorPosCallback(target, [](GLFWwindow* win, double xpos, double ypos)
 		{
@@ -120,7 +139,7 @@ namespace GrEngine
 				xpos, ypos
 			};
 
-			data.pEventListener->pushEvent(EventType::MouseMove, para);
+			data.pEventListener->registerEvent(EventType::MouseMove, para);
 		});
 		glfwSetWindowCloseCallback(target, [](GLFWwindow* win)
 		{
@@ -128,7 +147,7 @@ namespace GrEngine
 
 			std::vector<double> para = {};
 
-			data.pEventListener->pushEvent(EventType::WindowClosed, para);
+			data.pEventListener->registerEvent(EventType::WindowClosed, para);
 		});
 	}
 }

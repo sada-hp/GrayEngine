@@ -33,7 +33,7 @@ namespace GrEngine {
 
             CustomEvent("MyEvent", [](std::vector<double> para)
                 {
-                    Logger::Out("Custom Event with a parameter %d", (int)para.front(), OutputColor::Blue);
+                    Logger::Out("Custom Event with a parameter %d", OutputColor::Blue, (int)para.front());
                 });
 
             std::vector<double> para = { 1 };
