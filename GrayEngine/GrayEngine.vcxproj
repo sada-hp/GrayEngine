@@ -11,6 +11,7 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="Engine\Source\Headers\Vulkan\DrawableObj.h" />
     <ClInclude Include="Engine\Source\Headers\AppWindow.h" />
     <ClInclude Include="Engine\Source\Headers\Main.h" />
     <ClInclude Include="GrayEngine.h" />
@@ -24,6 +25,7 @@
     <ClInclude Include="Engine\Source\Headers\Vulkan\VulkanAPI.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="Engine\Source\Headers\Vulkan\DrawableObj.cpp" />
     <ClCompile Include="Engine\Source\Engine.cpp" />
     <ClCompile Include="Engine\Source\Headers\Events\EventListener.cpp" />
     <ClCompile Include="Engine\Source\WinApp.cpp" />

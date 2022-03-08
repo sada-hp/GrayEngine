@@ -7,12 +7,13 @@ void VulkanAPI::destroy()
 {
 	vkDeviceWaitIdle(logicalDevice);
 
+	clearDrawables();
 	cleanupSwapChain();
 	vmaDestroyAllocator(memAllocator);
 	vkDestroyBuffer(logicalDevice, vertexBuffer, nullptr);
 	vkFreeMemory(logicalDevice, vertexBufferMemory, nullptr);
 	vkDestroyPipeline(logicalDevice, graphicsPipeline, nullptr);
-	vkDestroyPipelineLayout(logicalDevice, pipelineLayout, nullptr);
+	//vkDestroyPipelineLayout(logicalDevice, pipelineLayout, nullptr);
 	vkDestroySemaphore(logicalDevice, renderFinishedSemaphore, nullptr);
 	vkDestroySemaphore(logicalDevice, imageAvailableSemaphore, nullptr);
 	vkDestroyCommandPool(logicalDevice, commandPool, nullptr);
@@ -58,6 +59,13 @@ bool VulkanAPI::initVulkan(GLFWwindow* window, VulkanAPI* apiInstance) //Vulkan 
 	if ((res = createLogicalDevice() & res) == false)
 		Logger::Out("[Vk] Failed to create logical device", OutputColor::Red);
 
+
+	DrawableObj object;
+	object.object_mesh = { { {{-0.5f, -0.5f}, {1.0f, 0.0f, 0.0f}}, {{0.5f, -0.5f}, {0.0f, 1.0f, 0.0f}}, {{0.5f, 0.5f}, {0.0f, 0.0f, 1.0f}}, {{-0.5f, 0.5f}, {1.0f, 1.0f, 1.0f}} },
+	{ 0, 1, 2, 2, 3, 0 } };
+	object.initObject(logicalDevice);
+	drawables.push_back(object);
+
 	if ((res = createMemoryAllocator() & res) == false)
 		Logger::Out("[Vk] Failed to create memory allocator", OutputColor::Red);
 
@@ -76,10 +84,10 @@ bool VulkanAPI::initVulkan(GLFWwindow* window, VulkanAPI* apiInstance) //Vulkan 
 	if ((res = createCommandPool() & res) == false)
 		Logger::Out("[Vk] Failed to create command pool", OutputColor::Red);
 
-	if ((res = createVkBuffer(vertices.data(), sizeof(vertices[0]) * vertices.size(), vertexBuffer, vertexBufferMemory, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, 0, 0) & res) == false)
+	if ((res = createVkBuffer(drawables[0].object_mesh.vertices.data(), sizeof(drawables[0].object_mesh.vertices[0]) * drawables[0].object_mesh.vertices.size(), vertexBuffer, vertexBufferMemory, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, 0, 0) & res) == false)
 		Logger::Out("[Vk] Failed to create vertex buffer", OutputColor::Red);
 
-	if ((res = createVkBuffer(indices.data(), sizeof(indices[0]) * indices.size(), indexBuffer, indexBufferMemory, VK_BUFFER_USAGE_INDEX_BUFFER_BIT, 0, 0) & res) == false)
+	if ((res = createVkBuffer(drawables[0].object_mesh.indices.data(), sizeof(drawables[0].object_mesh.indices[0]) * drawables[0].object_mesh.indices.size(), indexBuffer, indexBufferMemory, VK_BUFFER_USAGE_INDEX_BUFFER_BIT, 0, 0) & res) == false)
 		Logger::Out("[Vk] Failed to create index buffer", OutputColor::Red);
 	
 	if ((res = createCommandBuffers() & res) == false)
@@ -407,8 +415,8 @@ bool VulkanAPI::createGraphicsPipeline()
 	VkPipelineVertexInputStateCreateInfo vertexInputInfo{};
 	vertexInputInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
 
-	auto bindingDescription = Vertex::getBindingDescription();
-	auto attributeDescriptions = Vertex::getAttributeDescriptions();
+	auto bindingDescription = DrawableObj::getBindingDescription();
+	auto attributeDescriptions = DrawableObj::getAttributeDescriptions();
 
 	vertexInputInfo.vertexBindingDescriptionCount = 1;
 	vertexInputInfo.vertexAttributeDescriptionCount = static_cast<uint32_t>(attributeDescriptions.size());
@@ -478,16 +486,6 @@ bool VulkanAPI::createGraphicsPipeline()
 	dynamicCreateInfo.dynamicStateCount = (uint32_t)dynamicStates.size();
 	dynamicCreateInfo.pDynamicStates = dynamicStates.data();
 
-	VkPipelineLayoutCreateInfo pipelineLayoutInfo{};
-	pipelineLayoutInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
-	pipelineLayoutInfo.setLayoutCount = 0; // Optional
-	pipelineLayoutInfo.pSetLayouts = nullptr; // Optional
-	pipelineLayoutInfo.pushConstantRangeCount = 0; // Optional
-	pipelineLayoutInfo.pPushConstantRanges = nullptr; // Optional
-
-	if (vkCreatePipelineLayout(logicalDevice, &pipelineLayoutInfo, nullptr, &pipelineLayout) != VK_SUCCESS)
-		return false;
-
 	if (!createRenderPass())
 		return false;
 
@@ -503,7 +501,7 @@ bool VulkanAPI::createGraphicsPipeline()
 	pipelineInfo.pDepthStencilState = nullptr;
 	pipelineInfo.pColorBlendState = &colorBlending;
 	pipelineInfo.pDynamicState = &dynamicCreateInfo;
-	pipelineInfo.layout = pipelineLayout;
+	pipelineInfo.layout = drawables[0].pipelineLayout;
 	pipelineInfo.renderPass = renderPass;
 	pipelineInfo.subpass = 0;
 	pipelineInfo.basePipelineHandle = VK_NULL_HANDLE; // Optional
@@ -668,8 +666,8 @@ bool VulkanAPI::createCommandBuffers()
 		vkCmdBindVertexBuffers(commandBuffers[i], 0, 1, vertexBuffers, offsets);
 		vkCmdBindIndexBuffer(commandBuffers[i], indexBuffer, 0, VK_INDEX_TYPE_UINT16);
 
-		//vkCmdDraw(commandBuffers[i], static_cast<uint32_t>(vertices.size()), 1, 0, 0);
-		vkCmdDrawIndexed(commandBuffers[i], static_cast<uint32_t>(indices.size()), 1, 0, 0, 0);
+		//vkCmdDraw(commandBuffers[i], static_cast<uint32_t>(rectangle.vertices.size()), 1, 0, 0);
+		vkCmdDrawIndexed(commandBuffers[i], static_cast<uint32_t>(drawables[0].object_mesh.indices.size()), 1, 0, 0, 0);
 
 		vkCmdEndRenderPass(commandBuffers[i]);
 
@@ -802,4 +800,12 @@ bool VulkanAPI::createVkBuffer(const void* bufData, uint32_t dataSize, VkBuffer&
 	vkUnmapMemory(logicalDevice, bufferMemory);
 
 	return true;
+}
+
+void VulkanAPI::clearDrawables()
+{
+	for (auto obj : drawables)
+	{
+		obj.destroyObject();
+	}
 }
