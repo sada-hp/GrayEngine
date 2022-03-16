@@ -24,7 +24,7 @@ namespace GrEngine {
                 });
             MouseMoveEvent([](std::vector<double> para)
                 {
-                    //Logger::Out("CursorMoveEvent", OutputColor::Blue);
+                    //WLogger::Out("CursorMoveEvent %f", OutputColor::Blue, para.back());
                 });
             WindowClosedEvent([](std::vector<double> para)
                 {

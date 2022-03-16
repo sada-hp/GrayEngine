@@ -66,7 +66,8 @@ namespace GrEngine
 		double currentTime = glfwGetTime();
 		
 		glfwPollEvents();
-		vkAPI.drawFrame();
+		if (vkAPI.Initialized)
+			vkAPI.drawFrame();
 		EventListener::GetListener()->pollEngineEvents();
 		glfwSwapBuffers(window);
 		frames++;

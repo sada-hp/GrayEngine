@@ -1,6 +1,6 @@
 #pragma once
 #define VK_KHR_swapchain
-
+#define GLM_FORCE_DEPTH_ZERO_TO_ONE
 #include <pch.h>
 #include <glm/glm.hpp>
 #include "Engine/Source/Engine.h"
@@ -22,19 +22,32 @@ struct SwapChainSupportDetails {
 	std::vector<VkPresentModeKHR> presentModes;
 };
 
+struct AllocatedImage {
+	VkImage allocatedImage;
+	VmaAllocation allocation;
+};
+
 class VulkanAPI
 {
 public:
 	bool initVulkan(GLFWwindow* window, VulkanAPI* apiInstance);
 	void destroy();
 	void drawFrame();
+	VkDevice logicalDevice;
+
+	inline VkExtent2D getExtent() { return swapChainExtent; };
+	inline static VulkanAPI* m_getRenderer() { return pInstance; };
+	inline VmaAllocator getMemAllocator() { return memAllocator; };
+	inline VkRenderPass getRenderPass() { return renderPass; };
+	bool updateDrawables(uint32_t index);
+	static VkShaderModule createShaderModule(VkDevice device, const std::vector<char>& code);
+	bool Initialized = false;
 private:
-	GLFWwindow* m_parentWindow;
-	static VulkanAPI* _instance;
+	GLFWwindow* pParentWindow;
+	static VulkanAPI* pInstance;
+	VmaAllocator memAllocator;
 
 	VkInstance _vulkan;
-	VkDevice logicalDevice;
-	VmaAllocator memAllocator;
 	VkPhysicalDeviceProperties deviceProps;
 	VkQueue presentQueue;
 	VkSurfaceKHR surface;
@@ -45,21 +58,13 @@ private:
 	VkFormat swapChainImageFormat;
 	VkExtent2D swapChainExtent;
 	std::vector<VkImageView> swapChainImageViews;
-	VkPipelineLayout pipelineLayout;
 	VkRenderPass renderPass;
-	VkPipeline graphicsPipeline;
 	std::vector<VkFramebuffer> swapChainFramebuffers;
 	VkCommandPool commandPool;
 	std::vector<VkCommandBuffer> commandBuffers;
 	VkSemaphore imageAvailableSemaphore;
 	VkSemaphore renderFinishedSemaphore;
 	VkQueue graphicsQueue;
-
-	VkBuffer vertexBuffer;
-	VkDeviceMemory vertexBufferMemory;
-
-	VkBuffer indexBuffer;
-	VkDeviceMemory indexBufferMemory;
 
 	VkMemoryRequirements memRequirements;
 
@@ -80,7 +85,6 @@ private:
 	bool createSwapChain();
 	bool createImageViews();
 	bool createGraphicsPipeline();
-	VkShaderModule createShaderModule(const std::vector<char>& code);
 
 	bool createRenderPass();
 	bool createFramebuffers();
@@ -94,5 +98,7 @@ private:
 
 	void clearDrawables();
 
-	bool createVkBuffer(const void* bufData, uint32_t dataSize, VkBuffer& buffer, VkDeviceMemory& bufferMemory, VkBufferUsageFlags usage, uint32_t dataStride, bool useTexture);
+	VkImageView depthImageView;
+	AllocatedImage depthImage;
+	VkFormat depthFormat;
 };
