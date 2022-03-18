@@ -51,6 +51,7 @@ namespace GrEngine
 		}
 
 		time = glfwGetTime();
+		//SetParent(glfwGetWin32Window(window), );
 	}
 
 	void WinApp::ShutDown()

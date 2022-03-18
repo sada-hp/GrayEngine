@@ -6,6 +6,7 @@ VulkanAPI* VulkanAPI::pInstance = nullptr;
 void VulkanAPI::destroy()
 {
 	vkDeviceWaitIdle(logicalDevice);
+	vkQueueWaitIdle(graphicsQueue);
 
 	clearDrawables();
 	cleanupSwapChain();

@@ -4,7 +4,6 @@
 //include only
 
 #include "pch.h"
-#include "Engine/Source/Headers/Main.h" //Entry point for an application
 #include "Engine/Source/Engine.h" //Header for the engine itself
 #include "Engine/Source/Headers/Logger.h" //Header for the logger class
 #include "Engine/Source/Headers/AppWindow.h"

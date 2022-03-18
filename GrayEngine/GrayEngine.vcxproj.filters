@@ -14,7 +14,6 @@
   <ItemGroup>
     <ClInclude Include="Engine\Source\Engine.h" />
     <ClInclude Include="GrayEngine.h" />
-    <ClInclude Include="Engine\Source\Headers\Main.h" />
     <ClInclude Include="Engine\Source\Headers\Logger.h" />
     <ClInclude Include="Engine\Source\Headers\AppWindow.h" />
     <ClInclude Include="Engine\Source\WinApp.h" />

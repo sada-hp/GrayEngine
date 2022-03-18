@@ -9,21 +9,27 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "GrayEngine", "GrayEngine\Gr
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
 		Debug|x64 = Debug|x64
 		Debug|x86 = Debug|x86
+		Release|Any CPU = Release|Any CPU
 		Release|x64 = Release|x64
 		Release|x86 = Release|x86
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{ED06629F-E0A1-4B5B-9149-41EB9685D61A}.Debug|Any CPU.ActiveCfg = Debug|x64
 		{ED06629F-E0A1-4B5B-9149-41EB9685D61A}.Debug|x64.ActiveCfg = Debug|x64
 		{ED06629F-E0A1-4B5B-9149-41EB9685D61A}.Debug|x64.Build.0 = Debug|x64
 		{ED06629F-E0A1-4B5B-9149-41EB9685D61A}.Debug|x86.ActiveCfg = Debug|x64
+		{ED06629F-E0A1-4B5B-9149-41EB9685D61A}.Release|Any CPU.ActiveCfg = Release|x64
 		{ED06629F-E0A1-4B5B-9149-41EB9685D61A}.Release|x64.ActiveCfg = Release|x64
 		{ED06629F-E0A1-4B5B-9149-41EB9685D61A}.Release|x64.Build.0 = Release|x64
 		{ED06629F-E0A1-4B5B-9149-41EB9685D61A}.Release|x86.ActiveCfg = Release|x64
+		{09B090DB-489D-407C-BECC-F8DC49C6FCC1}.Debug|Any CPU.ActiveCfg = Debug|x64
 		{09B090DB-489D-407C-BECC-F8DC49C6FCC1}.Debug|x64.ActiveCfg = Debug|x64
 		{09B090DB-489D-407C-BECC-F8DC49C6FCC1}.Debug|x64.Build.0 = Debug|x64
 		{09B090DB-489D-407C-BECC-F8DC49C6FCC1}.Debug|x86.ActiveCfg = Debug|x64
+		{09B090DB-489D-407C-BECC-F8DC49C6FCC1}.Release|Any CPU.ActiveCfg = Release|x64
 		{09B090DB-489D-407C-BECC-F8DC49C6FCC1}.Release|x64.ActiveCfg = Release|x64
 		{09B090DB-489D-407C-BECC-F8DC49C6FCC1}.Release|x64.Build.0 = Release|x64
 		{09B090DB-489D-407C-BECC-F8DC49C6FCC1}.Release|x86.ActiveCfg = Release|x64
