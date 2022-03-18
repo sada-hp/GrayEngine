@@ -1,6 +1,10 @@
 #pragma once
 
 #define GLFW_INCLUDE_VULKAN
+#define VK_KHR_swapchain
+#define GLM_FORCE_DEPTH_ZERO_TO_ONE
+#define GLM_FORCE_RADIANS
+
 #include <string>
 #include <memory>
 #include <windows.h>

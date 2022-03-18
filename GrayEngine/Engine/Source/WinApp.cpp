@@ -1,6 +1,3 @@
-#define GLM_FORCE_RADIANS
-#define GLM_FORCE_DEPTH_ZERO_TO_ONE
-
 #include <pch.h>
 #include "WinApp.h"
 
@@ -42,6 +39,9 @@ namespace GrEngine
 		{
 			SetVSync(true);
 			SetUpEvents(window);
+			RECT desktop;
+			GetWindowRect(GetDesktopWindow(), &desktop);
+			glfwSetWindowPos(window, desktop.right/2 - Properties.Width/2, desktop.bottom/2 - Properties.Height/2);
 
 			if (!vkAPI.initVulkan(window, &vkAPI))
 			{
@@ -66,8 +66,7 @@ namespace GrEngine
 		double currentTime = glfwGetTime();
 		
 		glfwPollEvents();
-		if (vkAPI.Initialized)
-			vkAPI.drawFrame();
+		vkAPI.drawFrame();
 		EventListener::GetListener()->pollEngineEvents();
 		glfwSwapBuffers(window);
 		frames++;

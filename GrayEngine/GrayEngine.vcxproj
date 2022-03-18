@@ -106,7 +106,7 @@
       <ConformanceMode>true</ConformanceMode>
       <PrecompiledHeader>Use</PrecompiledHeader>
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
-      <AdditionalIncludeDirectories>$(SolutionDir)GrayEngine\Engine\Source\Libs\IncludeVK;$(SolutionDir)GrayEngine\Engine\Source\Libs\includeGL;$(SolutionDir)GrayEngine\Engine\Source\Libs\glm;%(AdditionalIncludeDirectories);$(SolutionDir)GrayEngine\Engine\Source\Libs\IncludeVK;$(SolutionDir)GrayEngine\Engine\Source\Libs\includeGL;$(SolutionDir)GrayEngine</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)GrayEngine\Engine\Source\Libs\IncludeVK;$(SolutionDir)GrayEngine\Engine\Source\Libs\includeGL;$(SolutionDir)GrayEngine\Engine\Source\Libs\ObjLoader;$(SolutionDir)GrayEngine\Engine\Source\Libs\glm;$(SolutionDir)GrayEngine\Engine\Source\Libs\VkMemAlloc;%(AdditionalIncludeDirectories);$(SolutionDir)GrayEngine</AdditionalIncludeDirectories>
       <LanguageStandard>stdcpp20</LanguageStandard>
       <TreatAngleIncludeAsExternal>false</TreatAngleIncludeAsExternal>
     </ClCompile>
@@ -130,7 +130,7 @@
       <ConformanceMode>true</ConformanceMode>
       <PrecompiledHeader>Use</PrecompiledHeader>
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
-      <AdditionalIncludeDirectories>$(SolutionDir)GrayEngine\Engine\Source\Libs\IncludeVK;$(SolutionDir)GrayEngine\Engine\Source\Libs\includeGL;$(SolutionDir)GrayEngine\Engine\Source\Libs\glm;%(AdditionalIncludeDirectories);$(SolutionDir)GrayEngine\Engine\Source\Libs\IncludeVK;$(SolutionDir)GrayEngine\Engine\Source\Libs\includeGL;$(SolutionDir)GrayEngine</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)GrayEngine\Engine\Source\Libs\IncludeVK;$(SolutionDir)GrayEngine\Engine\Source\Libs\includeGL;$(SolutionDir)GrayEngine\Engine\Source\Libs\ObjLoader;$(SolutionDir)GrayEngine\Engine\Source\Libs\glm;$(SolutionDir)GrayEngine\Engine\Source\Libs\VkMemAlloc;%(AdditionalIncludeDirectories);$(SolutionDir)GrayEngine</AdditionalIncludeDirectories>
       <LanguageStandard>stdcpp20</LanguageStandard>
       <TreatAngleIncludeAsExternal>false</TreatAngleIncludeAsExternal>
     </ClCompile>

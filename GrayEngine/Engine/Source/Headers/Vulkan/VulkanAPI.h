@@ -1,10 +1,9 @@
 #pragma once
-#define VK_KHR_swapchain
-#define GLM_FORCE_DEPTH_ZERO_TO_ONE
 #include <pch.h>
 #include <glm/glm.hpp>
+#include <tiny_obj_loader.h>
+#include <vk_mem_alloc.h>
 #include "Engine/Source/Engine.h"
-#include "Engine/Source/Libs/VkMemAlloc/vk_mem_alloc.h"
 #include "DrawableObj.h"
 
 struct QueueFamilyIndices {
@@ -65,6 +64,7 @@ private:
 	VkSemaphore imageAvailableSemaphore;
 	VkSemaphore renderFinishedSemaphore;
 	VkQueue graphicsQueue;
+	VkFence drawFence;
 
 	VkMemoryRequirements memRequirements;
 
@@ -95,6 +95,7 @@ private:
 	static void callSwapChainUpdate(std::vector<double> para);
 	void recreateSwapChain();
 	void cleanupSwapChain();
+	bool loadModel(const char* model_path);
 
 	void clearDrawables();
 

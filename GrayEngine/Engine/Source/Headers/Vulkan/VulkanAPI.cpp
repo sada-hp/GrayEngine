@@ -9,12 +9,13 @@ void VulkanAPI::destroy()
 
 	clearDrawables();
 	cleanupSwapChain();
-	vkDestroyImageView(logicalDevice, depthImageView, nullptr);
-	vmaDestroyImage(memAllocator, depthImage.allocatedImage, depthImage.allocation);
-	vmaDestroyAllocator(memAllocator);
+	vkDestroyFence(logicalDevice, drawFence, nullptr);
 	vkDestroySemaphore(logicalDevice, renderFinishedSemaphore, nullptr);
 	vkDestroySemaphore(logicalDevice, imageAvailableSemaphore, nullptr);
 	vkDestroyCommandPool(logicalDevice, commandPool, nullptr);
+	vkDestroyImageView(logicalDevice, depthImageView, nullptr);
+	vmaDestroyImage(memAllocator, depthImage.allocatedImage, depthImage.allocation);
+	vmaDestroyAllocator(memAllocator);
 	vkDestroyDevice(logicalDevice, nullptr);
 	vkDestroySurfaceKHR(_vulkan, surface, nullptr);
 	vkDestroyInstance(_vulkan, nullptr);
@@ -69,25 +70,27 @@ bool VulkanAPI::initVulkan(GLFWwindow* window, VulkanAPI* apiInstance) //Vulkan 
 	if ((res = createRenderPass() & res) == false)
 		Logger::Out("[Vk] Failed to create render pass", OutputColor::Red);
 
-	DrawableObj object;
-	object.object_mesh = { { {{-0.5f, -0.5f, -0.1f, 1.0f}, {1.0f, 0.0f, 0.0f, 1.0f}},
-		{{0.5f, -0.5f, -0.1f, 1.0f}, {0.0f, 1.0f, 0.0f, 1.0f}},
-		{{0.5f, 0.5f, -0.1f, 1.0f}, {0.0f, 0.0f, 1.0f, 1.0f}},
-		{{-0.5f, 0.5f, -0.1f, 1.0f}, {1.0f, 1.0f, 1.0f, 1.0f}} },
+	//DrawableObj object;
+	//object.object_mesh = { { {{-0.5f, -0.5f, -0.1f, 1.0f}, {1.0f, 0.0f, 0.0f, 1.0f}},
+	//	{{0.5f, -0.5f, -0.1f, 1.0f}, {0.0f, 1.0f, 0.0f, 1.0f}},
+	//	{{0.5f, 0.5f, -0.1f, 1.0f}, {0.0f, 0.0f, 1.0f, 1.0f}},
+	//	{{-0.5f, 0.5f, -0.1f, 1.0f}, {1.0f, 1.0f, 1.0f, 1.0f}} },
 
-		{ 0, 1, 2, 2, 3, 0} };
-	object.initObject(logicalDevice);
-	drawables.push_back(object);
+	//	{ 0, 1, 2, 2, 3, 0} };
+	//object.initObject(logicalDevice);
+	//drawables.push_back(object);
 
-	DrawableObj object2;
-	object2.object_mesh = { { {{-0.5f, -0.5f, 0.1f, 1.0f}, {1.0f, 0.0f, 0.0f, 1.0f}},
-		{{0.5f, -0.5f, 0.1f, 1.0f}, {0.0f, 1.0f, 0.0f, 1.0f}},
-		{{0.5f, 0.5f, 0.1f, 1.0f}, {0.0f, 0.0f, 1.0f, 1.0f}},
-		{{-0.5f, 0.5f, 0.1f, 1.0f}, {1.0f, 1.0f, 1.0f, 1.0f}} },
+	//DrawableObj object2;
+	//object2.object_mesh = { { {{-0.5f, -0.5f, 0.1f, 1.0f}, {1.0f, 0.0f, 0.0f, 1.0f}},
+	//	{{0.5f, -0.5f, 0.1f, 1.0f}, {0.0f, 1.0f, 0.0f, 1.0f}},
+	//	{{0.5f, 0.5f, 0.1f, 1.0f}, {0.0f, 0.0f, 1.0f, 1.0f}},
+	//	{{-0.5f, 0.5f, 0.1f, 1.0f}, {1.0f, 1.0f, 1.0f, 1.0f}} },
 
-		{ 0, 1, 2, 2, 3, 0} };
-	object2.initObject(logicalDevice);
-	drawables.push_back(object2);
+	//	{ 0, 1, 2, 2, 3, 0} };
+	//object2.initObject(logicalDevice);
+	//drawables.push_back(object2);
+
+	loadModel("D:/toy.obj");
 
 	if ((res = createFramebuffers() & res) == false)
 		Logger::Out("[Vk] Failed to create framebuffer", OutputColor::Red);
@@ -103,14 +106,20 @@ bool VulkanAPI::initVulkan(GLFWwindow* window, VulkanAPI* apiInstance) //Vulkan 
 
 	EventListener::GetListener()->pushEvent(EventType::WindowResize, static_cast<EventCallbackFun>(callSwapChainUpdate));
 
+	vkQueueWaitIdle(graphicsQueue); //Fixes VK_ERROR_DEVICE_LOST at startup, probbly due to me having another engine open in the background. Better safe than sorry.
+	vkDeviceWaitIdle(logicalDevice);
+
 	return Initialized = res;
 }
 
 void VulkanAPI::drawFrame()
 {
+	vkResetFences(logicalDevice, 1, &drawFence);
+
+	if (!Initialized) return;
+
 	uint32_t imageIndex;
 	vkAcquireNextImageKHR(logicalDevice, swapChain, UINT64_MAX, imageAvailableSemaphore, VK_NULL_HANDLE, &imageIndex);
-
 	updateDrawables(imageIndex);
 
 	VkSubmitInfo submitInfo{};
@@ -127,7 +136,10 @@ void VulkanAPI::drawFrame()
 	submitInfo.signalSemaphoreCount = 1;
 	submitInfo.pSignalSemaphores = signalSemaphores;
 
-	if (vkQueueSubmit(graphicsQueue, 1, &submitInfo, VK_NULL_HANDLE) != VK_SUCCESS)
+	VkResult res;
+	res = vkQueueSubmit(graphicsQueue, 1, &submitInfo, drawFence);
+
+	if (res != VK_SUCCESS)
 		throw std::runtime_error("failed to submit draw command buffer!");
 
 	VkPresentInfoKHR presentInfo{};
@@ -143,6 +155,8 @@ void VulkanAPI::drawFrame()
 	presentInfo.pResults = nullptr; // Optional
 
 	vkQueuePresentKHR(presentQueue, &presentInfo);
+
+	vkWaitForFences(logicalDevice, 1, &drawFence, true, 1000);
 }
 
 bool VulkanAPI::updateDrawables(uint32_t index)
@@ -471,10 +485,14 @@ bool VulkanAPI::createSwapChain() {
 	depthImageCreateInfo.usage = VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT;
 
 	VmaAllocationCreateInfo imageAllocationCreateInfo{};
-	imageAllocationCreateInfo.usage = VMA_MEMORY_USAGE_GPU_ONLY;
-	imageAllocationCreateInfo.requiredFlags = VkMemoryPropertyFlags(VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+	imageAllocationCreateInfo.usage = VMA_MEMORY_USAGE_AUTO_PREFER_DEVICE;
+	imageAllocationCreateInfo.preferredFlags = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT;
+	imageAllocationCreateInfo.requiredFlags = 0; //CHECK THIS LATER
 
-	vmaCreateImage(memAllocator, &depthImageCreateInfo, &imageAllocationCreateInfo, &depthImage.allocatedImage, &depthImage.allocation, nullptr);
+	VkResult res;
+	res = vmaCreateImage(memAllocator, &depthImageCreateInfo, &imageAllocationCreateInfo, &depthImage.allocatedImage, &depthImage.allocation, nullptr);
+	if (res != VK_SUCCESS)
+		return false;
 
 	VkImageViewCreateInfo depthImageViewCreateInfo{};
 	depthImageViewCreateInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
@@ -663,12 +681,15 @@ bool VulkanAPI::createSemaphores()
 {
 	VkSemaphoreCreateInfo semaphoreInfo{};
 	semaphoreInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
+	VkFenceCreateInfo fenceInfo{};
+	fenceInfo.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
+	fenceInfo.flags = VK_FENCE_CREATE_SIGNALED_BIT;
 
 	if (vkCreateSemaphore(logicalDevice, &semaphoreInfo, nullptr, &imageAvailableSemaphore) != VK_SUCCESS ||
 		vkCreateSemaphore(logicalDevice, &semaphoreInfo, nullptr, &renderFinishedSemaphore) != VK_SUCCESS)
 		return false;
 
-	return true;
+	return vkCreateFence(logicalDevice, &fenceInfo, nullptr, &drawFence) == VK_SUCCESS;
 }
 
 void VulkanAPI::callSwapChainUpdate(std::vector<double> para)
@@ -710,4 +731,35 @@ void VulkanAPI::clearDrawables()
 	{
 		obj.destroyObject(logicalDevice);
 	}
+}
+
+bool VulkanAPI::loadModel(const char* model_path)
+{
+	DrawableObj object;
+	tinyobj::attrib_t attrib;
+	std::vector<tinyobj::shape_t> shapes;
+	std::vector<tinyobj::material_t> materials;
+	std::string warn, err;
+
+	if (!tinyobj::LoadObj(&attrib, &shapes, &materials, &warn, &err, model_path)) 
+	{
+		throw std::runtime_error(warn + err);
+	}
+
+	for (const auto& shape : shapes) {
+		for (const auto& index : shape.mesh.indices) {
+			object.object_mesh.vertices.push_back(
+				{ {attrib.vertices[3 * index.vertex_index + 0],
+				attrib.vertices[3 * index.vertex_index + 1],
+				attrib.vertices[3 * index.vertex_index + 2],
+				1.0f}, {(float)rand() / RAND_MAX, (float)rand() / RAND_MAX, (float)rand() / RAND_MAX, 1.0f} }
+			);
+			object.object_mesh.indices.push_back(object.object_mesh.indices.size());
+		}
+	}
+
+	object.initObject(logicalDevice);
+	drawables.push_back(object);
+
+	return true;
 }

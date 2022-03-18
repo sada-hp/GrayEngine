@@ -1,8 +1,7 @@
 #pragma once
-#define GLM_FORCE_RADIANS
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
-#include "Engine/Source/Libs/VkMemAlloc/vk_mem_alloc.h"
+#include <vk_mem_alloc.h>
 
 class DrawableObj
 {
@@ -66,7 +65,6 @@ public:
 
 	void initObject(VkDevice device);
 	void destroyObject(VkDevice device);
-	void updateUniformBuffer(VkDevice device, uint32_t imageIndex);
 	bool pushConstants(VkDevice devicce, VkCommandBuffer cmd, VkExtent2D extent);
 	bool recordCommandBuffer(VkDevice device, VkCommandBuffer commandBuffer, VkExtent2D extent);
 private:

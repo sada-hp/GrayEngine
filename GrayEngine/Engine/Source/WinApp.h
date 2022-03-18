@@ -1,5 +1,4 @@
 #pragma once
-#define GLFW_INCLUDE_VULKAN
 #define VMA_IMPLEMENTATION
 #include <pch.h>
 #include "Headers/AppWindow.h"
