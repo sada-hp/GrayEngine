@@ -5,7 +5,7 @@ namespace GrEngine
 {
 	Engine::Engine()
 	{
-		pWindow = std::unique_ptr<Window>(Window::Init());
+		pWindow = std::unique_ptr<AppWindow>(AppWindow::Init());
 	}
 
 	Engine::~Engine()
@@ -20,7 +20,12 @@ namespace GrEngine
 			pWindow.get()->OnStep();
 		}
 
-		pWindow.get()->~Window();
+		pWindow.get()->~AppWindow();
+	}
+
+	void Engine::loadModelFromPath(const char* path)
+	{
+
 	}
 
 	void Engine::PokeIt()

@@ -3,7 +3,7 @@
 
 namespace GrEngine
 {
-	Window* Window::Init(const AppParameters& Properties)
+	AppWindow* AppWindow::Init(const AppParameters& Properties)
 	{
 		return new WinApp(Properties);
 	}

@@ -21,10 +21,10 @@ namespace GrEngine
 		}
 	};
 
-	class _declspec(dllexport) Window
+	class _declspec(dllexport) AppWindow
 	{
 	public:
-		virtual ~Window() {};
+		virtual ~AppWindow() {};
 
 		virtual void OnStep() = 0;
 
@@ -32,7 +32,7 @@ namespace GrEngine
 
 		virtual AppParameters* WindowProperties() = 0;
 
-		static Window* Init(const AppParameters& Properties = AppParameters());
+		static AppWindow* Init(const AppParameters& Properties = AppParameters());
 
 		inline GLFWwindow* getWindow() { return window; };
 

@@ -91,7 +91,7 @@ bool VulkanAPI::initVulkan(GLFWwindow* window, VulkanAPI* apiInstance) //Vulkan 
 	//object2.initObject(logicalDevice);
 	//drawables.push_back(object2);
 
-	loadModel("D:/toy.obj");
+	//loadModel("D:/toy.obj");
 
 	if ((res = createFramebuffers() & res) == false)
 		Logger::Out("[Vk] Failed to create framebuffer", OutputColor::Red);

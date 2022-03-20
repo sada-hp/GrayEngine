@@ -16,9 +16,9 @@ namespace GrEngine
 		static std::vector<char> readFile(const std::string& filename);
 
 		void PokeIt();
+		void loadModelFromPath(const char* path);
 	protected:
-		std::unique_ptr<Window> pWindow;
+		std::unique_ptr<AppWindow> pWindow;
 	};
 
-	Engine* Init();
 }

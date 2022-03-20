@@ -7,6 +7,8 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "SampleProject", "Sample\Sam
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "GrayEngine", "GrayEngine\GrayEngine.vcxproj", "{09B090DB-489D-407C-BECC-F8DC49C6FCC1}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EditorUI", "EditorUI\EditorUI.csproj", "{31145D40-8CB7-4BF9-A539-50EEA241D873}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -33,6 +35,18 @@ Global
 		{09B090DB-489D-407C-BECC-F8DC49C6FCC1}.Release|x64.ActiveCfg = Release|x64
 		{09B090DB-489D-407C-BECC-F8DC49C6FCC1}.Release|x64.Build.0 = Release|x64
 		{09B090DB-489D-407C-BECC-F8DC49C6FCC1}.Release|x86.ActiveCfg = Release|x64
+		{31145D40-8CB7-4BF9-A539-50EEA241D873}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{31145D40-8CB7-4BF9-A539-50EEA241D873}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{31145D40-8CB7-4BF9-A539-50EEA241D873}.Debug|x64.ActiveCfg = Debug|x64
+		{31145D40-8CB7-4BF9-A539-50EEA241D873}.Debug|x64.Build.0 = Debug|x64
+		{31145D40-8CB7-4BF9-A539-50EEA241D873}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{31145D40-8CB7-4BF9-A539-50EEA241D873}.Debug|x86.Build.0 = Debug|Any CPU
+		{31145D40-8CB7-4BF9-A539-50EEA241D873}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{31145D40-8CB7-4BF9-A539-50EEA241D873}.Release|Any CPU.Build.0 = Release|Any CPU
+		{31145D40-8CB7-4BF9-A539-50EEA241D873}.Release|x64.ActiveCfg = Release|x64
+		{31145D40-8CB7-4BF9-A539-50EEA241D873}.Release|x64.Build.0 = Release|x64
+		{31145D40-8CB7-4BF9-A539-50EEA241D873}.Release|x86.ActiveCfg = Release|Any CPU
+		{31145D40-8CB7-4BF9-A539-50EEA241D873}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

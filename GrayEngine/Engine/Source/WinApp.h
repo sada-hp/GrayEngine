@@ -21,7 +21,7 @@ namespace GrEngine
 		Middle = 2
 	};
 
-	class WinApp : public Window
+	class WinApp : public AppWindow
 	{
 	public:
 
