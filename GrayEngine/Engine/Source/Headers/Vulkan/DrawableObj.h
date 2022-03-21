@@ -88,6 +88,6 @@ private:
 	bool createGraphicsPipeline(VkDevice device);
 
 	bool createVkBuffer(VmaAllocator allocator, const void* bufData, uint32_t dataSize, VkBufferUsageFlags usage, ShaderBuffer* shader);
-	void destroyShaderBuffer(VkDevice device, ShaderBuffer shader);
+	void destroyShaderBuffer(VkDevice device, ShaderBuffer* shader);
 };
 

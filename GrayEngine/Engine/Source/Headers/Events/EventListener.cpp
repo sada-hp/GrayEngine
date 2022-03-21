@@ -1,13 +1,13 @@
 #include <pch.h>
 #include "EventListener.h"
 
-EventListener* EventListener::_instance = nullptr;
+std::unique_ptr<EventListener> EventListener::_instance = nullptr;
 
 EventListener* EventListener::GetListener() //Singleton
 {
 	if (_instance == nullptr)
-		_instance = new EventListener();
-	return EventListener::_instance;
+		_instance = std::make_unique<EventListener>();
+	return EventListener::_instance.get();
 }
 
 void EventListener::notify(const EventBase& event, bool enabled)

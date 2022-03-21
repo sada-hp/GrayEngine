@@ -1,10 +1,12 @@
 #include "pch.h"
 #include "VulkanAPI.h"
+#include "Engine/Source/Headers/Logger.h"
 
 VulkanAPI* VulkanAPI::pInstance = nullptr;
 
 void VulkanAPI::destroy()
 {
+	Initialized = false;
 	vkDeviceWaitIdle(logicalDevice);
 	vkQueueWaitIdle(graphicsQueue);
 
@@ -14,8 +16,6 @@ void VulkanAPI::destroy()
 	vkDestroySemaphore(logicalDevice, renderFinishedSemaphore, nullptr);
 	vkDestroySemaphore(logicalDevice, imageAvailableSemaphore, nullptr);
 	vkDestroyCommandPool(logicalDevice, commandPool, nullptr);
-	vkDestroyImageView(logicalDevice, depthImageView, nullptr);
-	vmaDestroyImage(memAllocator, depthImage.allocatedImage, depthImage.allocation);
 	vmaDestroyAllocator(memAllocator);
 	vkDestroyDevice(logicalDevice, nullptr);
 	vkDestroySurfaceKHR(_vulkan, surface, nullptr);
@@ -41,7 +41,7 @@ bool VulkanAPI::initVulkan(GLFWwindow* window, VulkanAPI* apiInstance) //Vulkan 
 		throw std::runtime_error("Failed to find GPUs with Vulkan support!");
 
 	if (!glfwCreateWindowSurface(_vulkan, pParentWindow, nullptr, &surface) == VK_SUCCESS)
-		Logger::Out("[Vk] Failed to create presentation surface", OutputColor::Red);
+		Logger::Out("[Vk] Failed to create presentation surface", OutputColor::Red, OutputType::Error);
 
 	for (const auto& device : devices) {
 		if (isDeviceSuitable(device)) {
@@ -54,22 +54,22 @@ bool VulkanAPI::initVulkan(GLFWwindow* window, VulkanAPI* apiInstance) //Vulkan 
 	if (physicalDevice == VK_NULL_HANDLE)
 		throw std::exception("Failed to find suitable Vulkan device");
 	else
-		Logger::Out(deviceProps.deviceName, OutputColor::Green);
+		Logger::Out("Presentation device: %s", OutputColor::Green, OutputType::Log, deviceProps.deviceName);
 
 	if ((res = createLogicalDevice() & res) == false)
-		Logger::Out("[Vk] Failed to create logical device", OutputColor::Red);
+		Logger::Out("[Vk] Failed to create logical device", OutputColor::Red, OutputType::Error);
 
 	if ((res = createMemoryAllocator() & res) == false)
-		Logger::Out("[Vk] Failed to create memory allocator", OutputColor::Red);
+		Logger::Out("[Vk] Failed to create memory allocator", OutputColor::Red, OutputType::Error);
 
 	if ((res = createSwapChain() & res) == false)
-		Logger::Out("[Vk] Failed to create swap chain", OutputColor::Red);
+		Logger::Out("[Vk] Failed to create swap chain", OutputColor::Red, OutputType::Error);
 
 	if ((res = createImageViews() & res) == false)
-		Logger::Out("[Vk] Failed to create image views", OutputColor::Red);
+		Logger::Out("[Vk] Failed to create image views", OutputColor::Red, OutputType::Error);
 
 	if ((res = createRenderPass() & res) == false)
-		Logger::Out("[Vk] Failed to create render pass", OutputColor::Red);
+		Logger::Out("[Vk] Failed to create render pass", OutputColor::Red, OutputType::Error);
 
 	//DrawableObj object;
 	//object.object_mesh = { { {{-0.5f, -0.5f, -0.1f, 1.0f}, {1.0f, 0.0f, 0.0f, 1.0f}},
@@ -94,16 +94,16 @@ bool VulkanAPI::initVulkan(GLFWwindow* window, VulkanAPI* apiInstance) //Vulkan 
 	//loadModel("D:/toy.obj");
 
 	if ((res = createFramebuffers() & res) == false)
-		Logger::Out("[Vk] Failed to create framebuffer", OutputColor::Red);
+		Logger::Out("[Vk] Failed to create framebuffer", OutputColor::Red, OutputType::Error);
 
 	if ((res = createCommandPool() & res) == false)
-		Logger::Out("[Vk] Failed to create command pool", OutputColor::Red);
+		Logger::Out("[Vk] Failed to create command pool", OutputColor::Red, OutputType::Error);
 	
 	if ((res = createCommandBuffers() & res) == false)
-		Logger::Out("[Vk] Failed to create command buffer", OutputColor::Red);
+		Logger::Out("[Vk] Failed to create command buffer", OutputColor::Red, OutputType::Error);
 
 	if ((res = createSemaphores() & res) == false)
-		Logger::Out("[Vk] Failed to create semaphores", OutputColor::Red);
+		Logger::Out("[Vk] Failed to create semaphores", OutputColor::Red, OutputType::Error);
 
 	EventListener::GetListener()->pushEvent(EventType::WindowResize, static_cast<EventCallbackFun>(callSwapChainUpdate));
 
@@ -115,9 +115,9 @@ bool VulkanAPI::initVulkan(GLFWwindow* window, VulkanAPI* apiInstance) //Vulkan 
 
 void VulkanAPI::drawFrame()
 {
-	vkResetFences(logicalDevice, 1, &drawFence);
-
 	if (!Initialized) return;
+
+	vkResetFences(logicalDevice, 1, &drawFence);
 
 	uint32_t imageIndex;
 	vkAcquireNextImageKHR(logicalDevice, swapChain, UINT64_MAX, imageAvailableSemaphore, VK_NULL_HANDLE, &imageIndex);
@@ -722,16 +722,20 @@ void VulkanAPI::cleanupSwapChain() {
 	for (size_t i = 0; i < swapChainImageViews.size(); i++) {
 		vkDestroyImageView(logicalDevice, swapChainImageViews[i], nullptr);
 	}
-
+	vkDestroyImageView(logicalDevice, depthImageView, nullptr);
+	vmaDestroyImage(memAllocator, depthImage.allocatedImage, depthImage.allocation);
 	vkDestroySwapchainKHR(logicalDevice, swapChain, nullptr);
 }
 
 void VulkanAPI::clearDrawables()
 {
-	for (auto obj : drawables)
+	for (int ind = 0; ind < drawables.size(); ind++)
 	{
-		obj.destroyObject(logicalDevice);
+		drawables[ind].destroyObject(logicalDevice);
 	}
+
+	drawables.clear();
+	Logger::Out("The scene was cleared", OutputColor::Green, OutputType::Log);
 }
 
 bool VulkanAPI::loadModel(const char* model_path)
@@ -744,7 +748,8 @@ bool VulkanAPI::loadModel(const char* model_path)
 
 	if (!tinyobj::LoadObj(&attrib, &shapes, &materials, &warn, &err, model_path)) 
 	{
-		throw std::runtime_error(warn + err);
+		Logger::Out("An error occurred while loading the mesh: %s", OutputColor::Green, OutputType::Error, warn + err);
+		return false;
 	}
 
 	for (const auto& shape : shapes) {
@@ -762,5 +767,6 @@ bool VulkanAPI::loadModel(const char* model_path)
 	object.initObject(logicalDevice);
 	drawables.push_back(object);
 
+	Logger::Out("Mesh %c%s%c was loaded succesfully", OutputColor::Green, OutputType::Log, '"', model_path, '"');
 	return true;
 }

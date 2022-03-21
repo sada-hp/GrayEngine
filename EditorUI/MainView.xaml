@@ -5,11 +5,25 @@
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
              xmlns:local="clr-namespace:EditorUI"
              mc:Ignorable="d" 
-             d:DesignHeight="450" d:DesignWidth="800" ShowInTaskbar="False" ResizeMode="NoResize" WindowStartupLocation="CenterScreen" Background="#FF15161F">
-    <Grid>
-        
-        <TextBlock x:Name="TextBlockk" HorizontalAlignment="Left" Margin="245,229,0,0" TextWrapping="Wrap" Text="TextBlock" VerticalAlignment="Top" Width="347" Height="85" Foreground="White"/>
-        <Button Content="Button" HorizontalAlignment="Left" Margin="311,124,0,0" VerticalAlignment="Top" Width="155" Height="56" Click="Button_Click"/>
-    </Grid>
-   
+             d:DesignHeight="450" d:DesignWidth="800" ShowInTaskbar="False" ResizeMode="NoResize" WindowStartupLocation="CenterScreen" Background="#FF15161F" Title="Gray Engine: World Editor (WPF)" WindowStyle="ToolWindow">
+
+    <DockPanel Background="#FF6D88FF" LastChildFill="True">
+        <Menu Height="25" Background="#FF353538" Padding="0,2,0,0" DockPanel.Dock="Top">
+            <MenuItem Header="File" Foreground="WhiteSmoke" Margin="0"/>
+            <MenuItem Header="Edit" Foreground="WhiteSmoke" Margin="0"/>
+            <MenuItem Header="Help" Foreground="WhiteSmoke" Margin="0"/>
+        </Menu>
+        <DockPanel Background="#FF292A30" LastChildFill="True">
+
+            <StackPanel Width="132" Background="#FF353538" Margin="0">
+                <Button x:Name="LoadObjButton" Content="Load .obj file" Background="#FF5D5D5D" BorderBrush="#FFC8C8C8" BorderThickness="1" Margin="5" Foreground="White" FontFamily="Lucida Sans Unicode" TextOptions.TextHintingMode="Fixed" Padding="2" Click="Button_Click" Cursor="Hand"/>
+                <Button x:Name="ClearButton" Content="Clear scene" Background="#FF5D5D5D" BorderBrush="#FFC8C8C8" BorderThickness="1" Margin="5" Foreground="White" FontFamily="Lucida Sans Unicode" TextOptions.TextHintingMode="Fixed" Padding="2" Cursor="Hand" Click="ClearButton_Click"/>
+            </StackPanel>
+            <DockPanel Height="120" VerticalAlignment="Top" DockPanel.Dock="Bottom" LastChildFill="True" Background="#FF353538" Margin="0">
+                <TextBox x:Name="OutputConsole" TextWrapping="Wrap" Foreground="#FFB9B9B9" Background="#FF262629" SelectionBrush="#FF8A9299" Padding="5" Margin="2" VerticalScrollBarVisibility="Auto" BorderThickness="0" IsReadOnly="True" HorizontalScrollBarVisibility="Auto" DockPanel.Dock="Top"/>
+            </DockPanel>
+            <WindowsFormsHost x:Name="FormHost" Background="Black" SizeChanged="FormHost_SizeChanged" DockPanel.Dock="Top" Margin="5"/>
+        </DockPanel>
+    </DockPanel>
+
 </Window>

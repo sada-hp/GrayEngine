@@ -1,5 +1,6 @@
 #include <pch.h>
 #include "WinApp.h"
+#include "Headers/Logger.h"
 
 namespace GrEngine
 {
@@ -27,12 +28,20 @@ namespace GrEngine
 
 		glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
 		glfwWindowHint(GLFW_DOUBLEBUFFER, 1);
+
+		glfwWindowHint(GLFW_RESIZABLE, false);
+		glfwWindowHint(GLFW_VISIBLE, false);
+
 		window = glfwCreateWindow(props.Width, props.Height, props.Title, nullptr, nullptr);
 		glfwSetWindowUserPointer(window, &props);
 
+		nativeWin32 = glfwGetWin32Window(window);
+
+
+
 		if (!window)
 		{
-			Logger::Out("Could not set up a window. Terminating the program", OutputColor::Red);
+			Logger::Out("Could not set up a window. Terminating the program", OutputColor::Red, OutputType::Error);
 			ShutDown();
 		}
 		else
@@ -45,21 +54,26 @@ namespace GrEngine
 
 			if (!vkAPI.initVulkan(window, &vkAPI))
 			{
-				Logger::Out("Failed to initialize Vulkan!", OutputColor::Red);
+				Logger::Out("Failed to initialize Vulkan!", OutputColor::Red, OutputType::Error);
 				ShutDown();
 			}
 		}
 
 		time = glfwGetTime();
-		//SetParent(glfwGetWin32Window(window), );
 	}
 
 	void WinApp::ShutDown()
 	{
-		Logger::Out("Shutting down the engine", OutputColor::Gray);
+		Logger::Out("Shutting down the engine", OutputColor::Gray, OutputType::Log);
 		vkAPI.destroy();
 		glfwDestroyWindow(window);
 		glfwTerminate();
+	}
+
+	void WinApp::MaximizeGLFW(bool state)
+	{
+		glfwRestoreWindow(window);
+		glfwMaximizeWindow(window);
 	}
 
 	void WinApp::OnStep()
@@ -85,7 +99,7 @@ namespace GrEngine
 	void WinApp::SetVSync(bool state)
 	{
 		glfwSwapInterval((int)state);
-		Logger::Out("VSync is now set to %d", OutputColor::Green, state);
+		Logger::Out("VSync is now set to %d", OutputColor::Green, OutputType::Log, state);
 	}
 
 	void WinApp::SetUpEvents(GLFWwindow* target)
@@ -109,6 +123,8 @@ namespace GrEngine
 			std::vector<double> para = {
 				xpos, ypos, (double)button, (double)action, (double)mods
 			};
+
+			glfwFocusWindow(win);
 
 			data.pEventListener->registerEvent(EventType::MouseClick, para);
 		});

@@ -33,9 +33,9 @@ void DrawableObj::destroyObject(VkDevice device)
 	//vkDestroyDescriptorPool(device, descriptorPool, NULL);
 	//vkDestroyDescriptorSetLayout(device, descriptorSetLayout, NULL);
 
-	destroyShaderBuffer(device, indexBuffer);
-	destroyShaderBuffer(device, vertexBuffer);
-	destroyShaderBuffer(device, uniformBuffer);
+	destroyShaderBuffer(device, &indexBuffer);
+	destroyShaderBuffer(device, &vertexBuffer);
+	//destroyShaderBuffer(device, &uniformBuffer);
 
 	this->~DrawableObj();
 }
@@ -155,10 +155,11 @@ bool DrawableObj::pushConstants(VkDevice devicce, VkCommandBuffer cmd, VkExtent2
 	return true;
 }
 
-void DrawableObj::destroyShaderBuffer(VkDevice device, ShaderBuffer shader)
+void DrawableObj::destroyShaderBuffer(VkDevice device, ShaderBuffer* shader)
 {
-	vkDestroyBuffer(device, shader.Buffer, NULL);
-	vmaFreeMemory(VulkanAPI::m_getRenderer()->getMemAllocator(), shader.Allocation);
+	vkFlushMappedMemoryRanges(device, 1, &(shader->MappedMemoryRange));
+	vkDestroyBuffer(device, shader->Buffer, NULL);
+	vmaFreeMemory(VulkanAPI::m_getRenderer()->getMemAllocator(), shader->Allocation);
 }
 
 bool DrawableObj::createGraphicsPipeline(VkDevice device)

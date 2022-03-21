@@ -9,15 +9,19 @@ enum class EventType
 	Scroll,
 	WindowResize,
 	WindowClosed,
+	Step,
+	Log,
 	Custom
 };
 
-typedef void (*EventCallbackFun)(std::vector<double> para);
+typedef void (*EventCallbackFun)(std::vector<double>);
+
 
 class _declspec(dllexport) EventListener //event observer pattern
 {
+
 protected:
-	static EventListener* _instance;
+	static std::unique_ptr<EventListener> _instance;
 	bool bAllowEvents = true;
 	bool bAllowCustomEvents = true;
 
@@ -28,6 +32,8 @@ protected:
 		std::vector<double> para;
 	};
 
+	void notify(const EventBase& event, bool enabled = true);
+public:
 	EventListener()
 	{
 	}
@@ -36,8 +42,6 @@ protected:
 	{
 	}
 
-	void notify(const EventBase& event, bool enabled = true);
-public:
 	void operator=(const EventListener&) = delete;
 
 	static EventListener* GetListener();
@@ -73,6 +77,7 @@ namespace GrEngine
 #define MouseScrollEvent(lambda) EventListener::GetListener()->pushEvent(EventType::Scroll, lambda)
 #define MouseMoveEvent(lambda) EventListener::GetListener()->pushEvent(EventType::MouseMove, lambda)
 #define WindowClosedEvent(lambda) EventListener::GetListener()->pushEvent(EventType::WindowClosed, lambda)
+#define LogEvent(lambda) EventListener::GetListener()->pushEvent(EventType::Log, lambda)
 #define CustomEvent(name, lambda) EventListener::GetListener()->pushEvent(name, lambda)
 #define CallEvent(name, para) EventListener::GetListener()->registerEvent(name, para)
 

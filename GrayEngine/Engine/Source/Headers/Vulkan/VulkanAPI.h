@@ -40,6 +40,9 @@ public:
 	inline VkRenderPass getRenderPass() { return renderPass; };
 	bool updateDrawables(uint32_t index);
 	static VkShaderModule createShaderModule(VkDevice device, const std::vector<char>& code);
+	bool loadModel(const char* model_path);
+	void clearDrawables();
+
 	bool Initialized = false;
 private:
 	GLFWwindow* pParentWindow;
@@ -95,9 +98,6 @@ private:
 	static void callSwapChainUpdate(std::vector<double> para);
 	void recreateSwapChain();
 	void cleanupSwapChain();
-	bool loadModel(const char* model_path);
-
-	void clearDrawables();
 
 	VkImageView depthImageView;
 	AllocatedImage depthImage;
