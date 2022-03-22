@@ -59,10 +59,10 @@
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions);TP_Windows;TP_Windows;TP_Windows</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <AdditionalIncludeDirectories>$(SolutionDir)\GrayEngine;$(SolutionDir)GrayEngine\Engine\Source\Libs\IncludeVK;$(SolutionDir)GrayEngine\Engine\Source\Libs\includeGL;$(SolutionDir)GrayEngine\Engine\Source\Libs\glm;$(SolutionDir)GrayEngine\Engine\Source\Libs\ObjLoader;$(SolutionDir)GrayEngine\Engine\Source\Libs\VkMemAlloc</AdditionalIncludeDirectories>
       <LanguageStandard>stdcpp20</LanguageStandard>
+      <PreprocessorDefinitions>SOLUTION_DIR=R"($(SolutionDir))";%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -75,10 +75,10 @@
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>NDEBUG;_CONSOLE;%(PreprocessorDefinitions);TP_Windows;TP_Windows;TP_Windows</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <AdditionalIncludeDirectories>$(SolutionDir)\GrayEngine;$(SolutionDir)GrayEngine\Engine\Source\Libs\IncludeVK;$(SolutionDir)GrayEngine\Engine\Source\Libs\includeGL;$(SolutionDir)GrayEngine\Engine\Source\Libs\glm;$(SolutionDir)GrayEngine\Engine\Source\Libs\ObjLoader;$(SolutionDir)GrayEngine\Engine\Source\Libs\VkMemAlloc</AdditionalIncludeDirectories>
       <LanguageStandard>stdcpp20</LanguageStandard>
+      <PreprocessorDefinitions>SOLUTION_DIR=R"($(SolutionDir))";%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -94,6 +94,10 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="source\ProgramMain.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="source\Application.h" />
+    <ClInclude Include="source\EditorUI.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

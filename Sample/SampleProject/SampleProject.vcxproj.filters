@@ -3,4 +3,8 @@
   <ItemGroup>
     <ClCompile Include="source\ProgramMain.cpp" />
   </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="source\EditorUI.h" />
+    <ClInclude Include="source\Application.h" />
+  </ItemGroup>
 </Project>
