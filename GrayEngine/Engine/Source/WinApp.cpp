@@ -22,7 +22,6 @@ namespace GrEngine
 	void WinApp::StartUp(const AppParameters& Properties)
 	{
 		props = Properties;
-		props.pEventListener = EventListener::GetListener();
 
 		glfwInit();
 
@@ -90,7 +89,7 @@ namespace GrEngine
 		
 		glfwPollEvents();
 		vkAPI.drawFrame();
-		EventListener::GetListener()->pollEngineEvents();
+		EventListener::pollEngineEvents();
 		glfwSwapBuffers(window);
 		frames++;
 
@@ -120,7 +119,7 @@ namespace GrEngine
 				(double)width, (double)height
 			};
 
-			data.pEventListener->registerEvent(EventType::WindowResize, para);
+			EventListener::registerEvent(EventType::WindowResize, para);
 		});
 		glfwSetMouseButtonCallback(target, [](GLFWwindow* win, int button, int action, int mods)
 		{
@@ -134,7 +133,7 @@ namespace GrEngine
 
 			glfwFocusWindow(win);
 
-			data.pEventListener->registerEvent(EventType::MouseClick, para);
+			EventListener::registerEvent(EventType::MouseClick, para);
 		});
 		glfwSetKeyCallback(target, [](GLFWwindow* win, int key, int scancode, int action, int mods)
 		{
@@ -144,7 +143,7 @@ namespace GrEngine
 				(double)key, (double)scancode, (double)action, (double)mods
 			};
 
-			data.pEventListener->registerEvent(EventType::KeyPress, para);
+			EventListener::registerEvent(EventType::KeyPress, para);
 		});
 		glfwSetScrollCallback(target, [](GLFWwindow* win, double xoffset, double yoffset)
 		{
@@ -154,7 +153,7 @@ namespace GrEngine
 				xoffset, yoffset
 			};
 
-			data.pEventListener->registerEvent(EventType::Scroll, para);
+			EventListener::registerEvent(EventType::Scroll, para);
 		});
 		glfwSetCursorPosCallback(target, [](GLFWwindow* win, double xpos, double ypos)
 		{
@@ -164,7 +163,7 @@ namespace GrEngine
 				xpos, ypos
 			};
 
-			data.pEventListener->registerEvent(EventType::MouseMove, para);
+			EventListener::registerEvent(EventType::MouseMove, para);
 		});
 		glfwSetWindowCloseCallback(target, [](GLFWwindow* win)
 		{
@@ -172,7 +171,7 @@ namespace GrEngine
 
 			std::vector<double> para = {};
 
-			data.pEventListener->registerEvent(EventType::WindowClosed, para);
+			EventListener::registerEvent(EventType::WindowClosed, para);
 		});
 	}
 }

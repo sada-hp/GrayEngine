@@ -24,7 +24,7 @@ namespace GrEngine
 
 			std::vector<double> para{};
 
-			EventListener::GetListener()->registerEvent(EventType::Step, para);
+			EventListener::registerEvent(EventType::Step, para);
 		}
 
 		pWindow.get()->~AppWindow();

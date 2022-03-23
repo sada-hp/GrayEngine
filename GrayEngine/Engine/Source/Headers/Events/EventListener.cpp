@@ -12,21 +12,21 @@ EventListener* EventListener::GetListener() //Singleton
 
 void EventListener::notify(const EventBase& event, bool enabled)
 {
-	if (!enabled || (event.type == EventType::WindowResize && resizeEventsCount > 1 && resizeEventsCount--)) return; //Resize event should be notified only about it's latest state
+	if (!enabled || (event.type == EventType::WindowResize && GetListener()->resizeEventsCount > 1 && GetListener()->resizeEventsCount--)) return; //Resize event should be notified only about it's latest state
 
 	switch (event.type)
 	{
 		case EventType::Custom:
-			for (const auto& callback : observers_custom[event.name])
+			for (const auto& callback : GetListener()->observers_custom[event.name])
 				callback(event.para);
 			break;
 		case EventType::WindowResize:
-			for (const auto& callback : observers_engine[event.type])
+			for (const auto& callback : GetListener()->observers_engine[event.type])
 				callback(event.para);
-			resizeEventsCount = 0;
+			GetListener()->resizeEventsCount = 0;
 			break;
 		default:
-			for (const auto& callback : observers_engine[event.type])
+			for (const auto& callback : GetListener()->observers_engine[event.type])
 				callback(event.para);
 			break;
 	}
@@ -39,7 +39,7 @@ void EventListener::registerEvent(const char* name, const std::vector<double> pa
 	event.name = name;
 	event.para = para;
 
-	EventQueue.push(event);
+	GetListener()->EventQueue.push(event);
 }
 
 void EventListener::registerEvent(const EventType& type, const std::vector<double> para)
@@ -47,33 +47,33 @@ void EventListener::registerEvent(const EventType& type, const std::vector<doubl
 	if (type == EventType::Custom)
 		throw std::runtime_error("Use const char* to define custom event!");
 	else
-		resizeEventsCount += (type == EventType::WindowResize);
+		GetListener()->resizeEventsCount += (type == EventType::WindowResize);
 
 	EventBase event;
 	event.type = type;
 	event.para = para;
 
-	EventQueue.push(event);
+	GetListener()->EventQueue.push(event);
 }
 
 void EventListener::blockEvents(bool engineEventsEnabled, bool customEventsEnabled)
 {
-	bAllowEvents = engineEventsEnabled;
-	bAllowCustomEvents = customEventsEnabled;
+	GetListener()->bAllowEvents = engineEventsEnabled;
+	GetListener()->bAllowCustomEvents = customEventsEnabled;
 }
 
 bool EventListener::pollEngineEvents()
 {
-	if (!bAllowEvents && !bAllowCustomEvents) return false;
+	if (!GetListener()->bAllowEvents && !GetListener()->bAllowCustomEvents) return false;
 
-	while (EventQueue.size() > 0)
+	while (GetListener()->EventQueue.size() > 0)
 	{
-		if ((bAllowEvents && EventQueue.front().type != EventType::Custom) || (bAllowCustomEvents && EventQueue.front().type == EventType::Custom))
+		if ((GetListener()->bAllowEvents && GetListener()->EventQueue.front().type != EventType::Custom) || (GetListener()->bAllowCustomEvents && GetListener()->EventQueue.front().type == EventType::Custom))
 		{
-			notify(EventQueue.front());
+			notify(GetListener()->EventQueue.front());
 		}
 
-		EventQueue.pop();
+		GetListener()->EventQueue.pop();
 	}
 
 	return true;

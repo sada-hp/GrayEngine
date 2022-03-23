@@ -45,7 +45,7 @@ public:
 		{
 			para.push_back(letter);
 		}
-		EventListener::GetListener()->registerEvent(EventType::Log, para);
+		EventListener::registerEvent(EventType::Log, para);
 	}
 
 	static void ShowConsole(bool show)

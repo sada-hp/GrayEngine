@@ -83,7 +83,7 @@ bool VulkanAPI::initVulkan(GLFWwindow* window, VulkanAPI* apiInstance) //Vulkan 
 	if ((res = createSemaphores() & res) == false)
 		Logger::Out("[Vk] Failed to create semaphores", OutputColor::Red, OutputType::Error);
 
-	EventListener::GetListener()->pushEvent(EventType::WindowResize, static_cast<EventCallbackFun>(callSwapChainUpdate));
+	EventListener::pushEvent(EventType::WindowResize, static_cast<EventCallbackFun>(callSwapChainUpdate));
 
 	vkQueueWaitIdle(graphicsQueue);
 	vkDeviceWaitIdle(logicalDevice);

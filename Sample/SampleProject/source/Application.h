@@ -17,39 +17,39 @@ namespace GrEngine
 
             _instance = this;
 
-            MouseClickEvent([](std::vector<double> para)
+            EventListener::pushEvent(EventType::MouseClick,[](std::vector<double> para)
                 {
                     Logger::Out("MouseClickEvent", OutputColor::Blue, OutputType::Log);
                 });
-            WindowResizeEvent([](std::vector<double> para)
+            EventListener::pushEvent(EventType::WindowResize, [](std::vector<double> para)
                 {
                     Logger::Out("ResizeEvent", OutputColor::Blue, OutputType::Log);
                 });
-            KeyPressEvent([](std::vector<double> para)
+            EventListener::pushEvent(EventType::KeyPress, [](std::vector<double> para)
                 {
                     Logger::Out("KeyEvent", OutputColor::Blue, OutputType::Log);
                 });
-            MouseScrollEvent([](std::vector<double> para)
+            EventListener::pushEvent(EventType::Scroll, [](std::vector<double> para)
                 {
                     Logger::Out("ScrollEvent", OutputColor::Blue, OutputType::Log);
                 });
-            MouseMoveEvent([](std::vector<double> para)
+            EventListener::pushEvent(EventType::MouseMove, [](std::vector<double> para)
                 {
                     //WLogger::Out("CursorMoveEvent %f", OutputColor::Blue, para.back());
                 });
-            WindowClosedEvent([](std::vector<double> para)
+            EventListener::pushEvent(EventType::WindowClosed, [](std::vector<double> para)
                 {
                     Logger::Out("Window is now being closed", OutputColor::Gray, OutputType::Log);
                 });
 
-            CustomEvent("MyEvent", [](std::vector<double> para)
+            EventListener::pushEvent("MyEvent", [](std::vector<double> para)
                 {
                     Logger::Out("Custom Event with a parameter %d", OutputColor::Blue, OutputType::Log, (int)para.front());
                 });
 
             std::vector<double> para = { 1 };
 
-            CallEvent("MyEvent", para);
+            EventListener::registerEvent("MyEvent", para);
         }
 
         ~Application()
@@ -59,8 +59,7 @@ namespace GrEngine
 
         static void InitializeInAppLogger()
         {
-            LogEvent
-            ([](std::vector<double> para)
+            EventListener::pushEvent(EventType::Log, [](std::vector<double> para)
                 {
                     Application::UpdateAppLogger(para);
                 }

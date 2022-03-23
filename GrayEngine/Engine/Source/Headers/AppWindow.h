@@ -16,7 +16,6 @@ namespace GrEngine
 
 		uint32_t Width;
 		uint32_t Height;
-		EventListener* pEventListener = nullptr;
 
 		AppParameters(const char* _Title = "Application", uint32_t _Width = 1280, uint32_t _Height = 720)
 		{
