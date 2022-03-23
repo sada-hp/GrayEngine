@@ -1,6 +1,6 @@
 #pragma once
 #include <glfw/glfw3.h>
-#include "Events/EventListener.h"
+#include "EventListener.h"
 
 namespace GrEngine
 {

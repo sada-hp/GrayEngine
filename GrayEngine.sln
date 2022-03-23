@@ -9,8 +9,6 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "GrayEngine", "GrayEngine\Gr
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EditorUI", "EditorUI\EditorUI.csproj", "{31145D40-8CB7-4BF9-A539-50EEA241D873}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "GEngine_Vulkan", "GEngine_Vulkan\GEngine_Vulkan.vcxproj", "{A4DE78EA-BD18-4E8C-BDFA-1A502E1E21B4}"
-EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -49,16 +47,6 @@ Global
 		{31145D40-8CB7-4BF9-A539-50EEA241D873}.Release|x64.Build.0 = Release|x64
 		{31145D40-8CB7-4BF9-A539-50EEA241D873}.Release|x86.ActiveCfg = Release|Any CPU
 		{31145D40-8CB7-4BF9-A539-50EEA241D873}.Release|x86.Build.0 = Release|Any CPU
-		{A4DE78EA-BD18-4E8C-BDFA-1A502E1E21B4}.Debug|Any CPU.ActiveCfg = Debug|Win32
-		{A4DE78EA-BD18-4E8C-BDFA-1A502E1E21B4}.Debug|x64.ActiveCfg = Debug|x64
-		{A4DE78EA-BD18-4E8C-BDFA-1A502E1E21B4}.Debug|x64.Build.0 = Debug|x64
-		{A4DE78EA-BD18-4E8C-BDFA-1A502E1E21B4}.Debug|x86.ActiveCfg = Debug|Win32
-		{A4DE78EA-BD18-4E8C-BDFA-1A502E1E21B4}.Debug|x86.Build.0 = Debug|Win32
-		{A4DE78EA-BD18-4E8C-BDFA-1A502E1E21B4}.Release|Any CPU.ActiveCfg = Release|Win32
-		{A4DE78EA-BD18-4E8C-BDFA-1A502E1E21B4}.Release|x64.ActiveCfg = Release|x64
-		{A4DE78EA-BD18-4E8C-BDFA-1A502E1E21B4}.Release|x64.Build.0 = Release|x64
-		{A4DE78EA-BD18-4E8C-BDFA-1A502E1E21B4}.Release|x86.ActiveCfg = Release|Win32
-		{A4DE78EA-BD18-4E8C-BDFA-1A502E1E21B4}.Release|x86.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

@@ -166,8 +166,8 @@ namespace GrEngine_Vulkan
 	bool DrawableObj::createGraphicsPipeline(VkDevice device)
 	{
 		std::string solution_path = SOLUTION_DIR;
-		std::vector<char> vertShaderCode = VulkanAPI::readFile(solution_path + "GrayEngine//Engine//Source//Headers//Vulkan//Shaders//vert.spv");
-		std::vector<char> fragShaderCode = VulkanAPI::readFile(solution_path + "GrayEngine//Engine//Source//Headers//Vulkan//Shaders//frag.spv");
+		std::vector<char> vertShaderCode = VulkanAPI::readFile(solution_path + "GrayEngine//Engine//Source//Vulkan//Shaders//vert.spv");
+		std::vector<char> fragShaderCode = VulkanAPI::readFile(solution_path + "GrayEngine//Engine//Source//Vulkan//Shaders//frag.spv");
 
 		VkShaderModule shaders[2] = { VulkanAPI::createShaderModule(device, vertShaderCode) , VulkanAPI::createShaderModule(device, fragShaderCode) };
 

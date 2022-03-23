@@ -13,30 +13,30 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Engine\Source\Engine.h" />
-    <ClInclude Include="GrayEngine.h" />
+    <ClInclude Include="Engine\Source\Headers\GrayEngine.h" />
     <ClInclude Include="Engine\Source\Headers\Logger.h" />
     <ClInclude Include="Engine\Source\Headers\AppWindow.h" />
     <ClInclude Include="Engine\Source\WinApp.h" />
     <ClInclude Include="pch.h" />
-    <ClInclude Include="Engine\Source\Headers\Events\EventListener.h" />
-    <ClInclude Include="Engine\Source\Headers\Vulkan\DrawableObj.h" />
-    <ClInclude Include="Engine\Source\Headers\Vulkan\VulkanAPI.h" />
+    <ClInclude Include="Engine\Source\Headers\EventListener.h" />
+    <ClInclude Include="Engine\Source\Vulkan\DrawableObj.h" />
+    <ClInclude Include="Engine\Source\Vulkan\VulkanAPI.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Engine\Source\WinApp.cpp" />
     <ClCompile Include="pch.cpp" />
-    <ClCompile Include="Engine\Source\Headers\Events\EventListener.cpp" />
     <ClCompile Include="Engine\Source\Engine.cpp" />
-    <ClCompile Include="Engine\Source\Headers\Vulkan\DrawableObj.cpp" />
-    <ClCompile Include="Engine\Source\Headers\Vulkan\VulkanAPI.cpp" />
+    <ClCompile Include="Engine\Source\Vulkan\DrawableObj.cpp" />
+    <ClCompile Include="Engine\Source\Vulkan\VulkanAPI.cpp" />
+    <ClCompile Include="Engine\Source\Headers\Singletons.cpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Engine\Source\Libs\lib-vc2019\glfw3.dll" />
-    <None Include="Engine\Source\Headers\Vulkan\Shaders\Compiler.bat" />
-    <None Include="Engine\Source\Headers\Vulkan\Shaders\frag.spv" />
-    <None Include="Engine\Source\Headers\Vulkan\Shaders\shader.frag" />
-    <None Include="Engine\Source\Headers\Vulkan\Shaders\shader.vert" />
-    <None Include="Engine\Source\Headers\Vulkan\Shaders\vert.spv" />
+    <None Include="Engine\Source\Vulkan\Shaders\Compiler.bat" />
+    <None Include="Engine\Source\Vulkan\Shaders\frag.spv" />
+    <None Include="Engine\Source\Vulkan\Shaders\shader.frag" />
+    <None Include="Engine\Source\Vulkan\Shaders\shader.vert" />
+    <None Include="Engine\Source\Vulkan\Shaders\vert.spv" />
   </ItemGroup>
   <ItemGroup>
     <Library Include="Engine\Source\Libs\lib-vc2019\glfw3.lib" />
