@@ -12,6 +12,9 @@ namespace GrEngine
     public:
         Application()
         {
+            if (_instance != nullptr)
+                delete _instance;
+
             _instance = this;
 
             MouseClickEvent([](std::vector<double> para)

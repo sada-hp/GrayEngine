@@ -18,11 +18,11 @@
     <ClInclude Include="Engine\Source\Headers\AppWindow.h" />
     <ClInclude Include="Engine\Source\WinApp.h" />
     <ClInclude Include="pch.h" />
-    <ClInclude Include="Engine\Source\Libs\includeGL\glfw\glfw3.h" />
-    <ClInclude Include="Engine\Source\Libs\includeGL\glfw\glfw3native.h" />
     <ClInclude Include="Engine\Source\Headers\Events\EventListener.h" />
     <ClInclude Include="Engine\Source\Headers\Vulkan\VulkanAPI.h" />
     <ClInclude Include="Engine\Source\Headers\Vulkan\DrawableObj.h" />
+    <ClInclude Include="Engine\Source\Libs\includeGL\glfw\glfw3.h" />
+    <ClInclude Include="Engine\Source\Libs\includeGL\glfw\glfw3native.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Engine\Source\WinApp.cpp" />

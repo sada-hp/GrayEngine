@@ -618,3 +618,11 @@
 [23-03-2022][08:56:33] LOG: ResizeEvent
 [23-03-2022][08:56:33] LOG: ResizeEvent
 [23-03-2022][08:56:35] LOG: ResizeEvent
+[23-03-2022][15:22:02] LOG: VSync is now set to 1
+[23-03-2022][15:22:03] LOG: Presentation device: NVIDIA GeForce RTX 2060
+[23-03-2022][15:22:03] LOG: Starting the engine
+[23-03-2022][15:22:03] LOG: Custom Event with a parameter 1
+[23-03-2022][15:22:03] LOG: ResizeEvent
+[23-03-2022][15:22:08] LOG: Mesh "D:\shrek.obj" was loaded succesfully
+[23-03-2022][15:22:09] LOG: ResizeEvent
+[23-03-2022][15:22:14] LOG: ResizeEvent
