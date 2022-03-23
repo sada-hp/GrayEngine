@@ -71,28 +71,6 @@ bool VulkanAPI::initVulkan(GLFWwindow* window, VulkanAPI* apiInstance) //Vulkan 
 	if ((res = createRenderPass() & res) == false)
 		Logger::Out("[Vk] Failed to create render pass", OutputColor::Red, OutputType::Error);
 
-	//DrawableObj object;
-	//object.object_mesh = { { {{-0.5f, -0.5f, -0.1f, 1.0f}, {1.0f, 0.0f, 0.0f, 1.0f}},
-	//	{{0.5f, -0.5f, -0.1f, 1.0f}, {0.0f, 1.0f, 0.0f, 1.0f}},
-	//	{{0.5f, 0.5f, -0.1f, 1.0f}, {0.0f, 0.0f, 1.0f, 1.0f}},
-	//	{{-0.5f, 0.5f, -0.1f, 1.0f}, {1.0f, 1.0f, 1.0f, 1.0f}} },
-
-	//	{ 0, 1, 2, 2, 3, 0} };
-	//object.initObject(logicalDevice);
-	//drawables.push_back(object);
-
-	//DrawableObj object2;
-	//object2.object_mesh = { { {{-0.5f, -0.5f, 0.1f, 1.0f}, {1.0f, 0.0f, 0.0f, 1.0f}},
-	//	{{0.5f, -0.5f, 0.1f, 1.0f}, {0.0f, 1.0f, 0.0f, 1.0f}},
-	//	{{0.5f, 0.5f, 0.1f, 1.0f}, {0.0f, 0.0f, 1.0f, 1.0f}},
-	//	{{-0.5f, 0.5f, 0.1f, 1.0f}, {1.0f, 1.0f, 1.0f, 1.0f}} },
-
-	//	{ 0, 1, 2, 2, 3, 0} };
-	//object2.initObject(logicalDevice);
-	//drawables.push_back(object2);
-
-	//loadModel("D:/toy.obj");
-
 	if ((res = createFramebuffers() & res) == false)
 		Logger::Out("[Vk] Failed to create framebuffer", OutputColor::Red, OutputType::Error);
 
@@ -107,7 +85,7 @@ bool VulkanAPI::initVulkan(GLFWwindow* window, VulkanAPI* apiInstance) //Vulkan 
 
 	EventListener::GetListener()->pushEvent(EventType::WindowResize, static_cast<EventCallbackFun>(callSwapChainUpdate));
 
-	vkQueueWaitIdle(graphicsQueue); //Fixes VK_ERROR_DEVICE_LOST at startup, probbly due to me having another engine open in the background. Better safe than sorry.
+	vkQueueWaitIdle(graphicsQueue);
 	vkDeviceWaitIdle(logicalDevice);
 
 	return Initialized = res;
@@ -418,7 +396,8 @@ VkSurfaceFormatKHR VulkanAPI::chooseSwapSurfaceFormat(const std::vector<VkSurfac
 	return availableFormats[0];
 }
 
-bool VulkanAPI::createSwapChain() {
+bool VulkanAPI::createSwapChain() 
+{
 	SwapChainSupportDetails swapChainSupport = querySwapChainSupport(physicalDevice);
 
 	VkSurfaceFormatKHR surfaceFormat = chooseSwapSurfaceFormat(swapChainSupport.formats);
@@ -623,7 +602,8 @@ bool VulkanAPI::createRenderPass()
 	return true;
 }
 
-bool VulkanAPI::createFramebuffers() {
+bool VulkanAPI::createFramebuffers() 
+{
 	swapChainFramebuffers.resize(swapChainImageViews.size());
 
 	for (size_t i = 0; i < swapChainImageViews.size(); i++) {
@@ -700,6 +680,8 @@ void VulkanAPI::callSwapChainUpdate(std::vector<double> para)
 
 void VulkanAPI::recreateSwapChain()
 {
+	Initialized == false; //Block rendering for a time it takes to recreate swapchain
+
 	vkDeviceWaitIdle(logicalDevice);
 
 	cleanupSwapChain();
@@ -708,10 +690,14 @@ void VulkanAPI::recreateSwapChain()
 	createRenderPass();
 	createFramebuffers();
 	createCommandBuffers();
+
+	Initialized = swapChainExtent.height != 0;
 }
 
-void VulkanAPI::cleanupSwapChain() {
-	for (size_t i = 0; i < swapChainFramebuffers.size(); i++) {
+void VulkanAPI::cleanupSwapChain() 
+{
+	for (size_t i = 0; i < swapChainFramebuffers.size(); i++) 
+	{
 		vkDestroyFramebuffer(logicalDevice, swapChainFramebuffers[i], nullptr);
 	}
 
@@ -719,12 +705,23 @@ void VulkanAPI::cleanupSwapChain() {
 
 	vkDestroyRenderPass(logicalDevice, renderPass, nullptr);
 
-	for (size_t i = 0; i < swapChainImageViews.size(); i++) {
+	for (size_t i = 0; i < swapChainImageViews.size(); i++) 
+	{
 		vkDestroyImageView(logicalDevice, swapChainImageViews[i], nullptr);
 	}
-	vkDestroyImageView(logicalDevice, depthImageView, nullptr);
-	vmaDestroyImage(memAllocator, depthImage.allocatedImage, depthImage.allocation);
+
+	/*Fixes a crash when glfw window is minimized*/
+	if (depthImageView != nullptr) 
+	{
+		vkDestroyImageView(logicalDevice, depthImageView, nullptr);
+		vmaDestroyImage(memAllocator, depthImage.allocatedImage, depthImage.allocation);
+	}
 	vkDestroySwapchainKHR(logicalDevice, swapChain, nullptr);
+
+	depthImageView = nullptr;
+	swapChain = nullptr;
+	swapChainImageViews.clear();
+	commandBuffers.clear();
 }
 
 void VulkanAPI::clearDrawables()
@@ -752,8 +749,10 @@ bool VulkanAPI::loadModel(const char* model_path)
 		return false;
 	}
 
-	for (const auto& shape : shapes) {
-		for (const auto& index : shape.mesh.indices) {
+	for (const auto& shape : shapes) 
+	{
+		for (const auto& index : shape.mesh.indices) 
+		{
 			object.object_mesh.vertices.push_back(
 				{ {attrib.vertices[3 * index.vertex_index + 0],
 				attrib.vertices[3 * index.vertex_index + 1],

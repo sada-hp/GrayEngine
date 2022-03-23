@@ -35,9 +35,7 @@ namespace GrEngine
 		window = glfwCreateWindow(props.Width, props.Height, props.Title, nullptr, nullptr);
 		glfwSetWindowUserPointer(window, &props);
 
-		nativeWin32 = glfwGetWin32Window(window);
-
-
+		nativeWindow = glfwGetWin32Window(window);
 
 		if (!window)
 		{
@@ -72,8 +70,18 @@ namespace GrEngine
 
 	void WinApp::MaximizeGLFW(bool state)
 	{
-		glfwRestoreWindow(window);
-		glfwMaximizeWindow(window);
+		if (state)
+			glfwMaximizeWindow(window);
+		else
+			glfwRestoreWindow(window);
+	}
+
+	void WinApp::MinimizeGLFW(bool state)
+	{
+		if (state)
+			glfwIconifyWindow(window);
+		else
+			glfwRestoreWindow(window);
 	}
 
 	void WinApp::OnStep()

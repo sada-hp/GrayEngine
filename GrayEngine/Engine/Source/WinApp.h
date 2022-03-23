@@ -25,6 +25,7 @@ namespace GrEngine
 		void OnStep() override;
 		void SetVSync(bool state) override;
 		void MaximizeGLFW(bool state) override;
+		void MinimizeGLFW(bool state) override;
 
 		inline AppParameters* WindowProperties() override { return &props; };
 		inline VulkanAPI getVk() { return vkAPI; };

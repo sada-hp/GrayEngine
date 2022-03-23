@@ -4,7 +4,7 @@
 
 GrEngine::Application* GrEngine::Application::_instance = nullptr;
 
-LRESULT CALLBACK HostWindowProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) //Background Win32 HWND is used to receive messages from WPF front-end window
+LRESULT CALLBACK HostWindowProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) //Background Win32 is used to receive messages from WPF front-end window
 {
     switch (msg)
     {
@@ -24,14 +24,15 @@ LRESULT CALLBACK HostWindowProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lPara
             GrEngine::Application::getEditorUI()->SetViewportPosition();
         }
         break;
-	case 0x1200:
+    /*Messages received from the C# WPF front-end part of the editor*/
+	case 0x1200: //Load obj file callback
         GrEngine::Application::loadModel((const char*)lParam);
 		break;
-	case 0x1201:
+	case 0x1201: //Clear viewport callback
         GrEngine::Application::clearViewport();
 		break;
     default:
-        return DefWindowProc(hwnd, msg, wParam, lParam);
+        return DefWindowProcA(hwnd, msg, wParam, lParam);
     }
     return 0;
 }
@@ -43,12 +44,11 @@ int main(int argc, char** argv)
 	Logger::ShowConsole(false);
     Logger::Out("Starting the engine", OutputColor::Gray, OutputType::Log);
 
-    GrEngine::Application::getEditorUI()->InitUI(HostWindowProc);
-    GrEngine::Application::getEditorUI()->SetViewportHWND(reinterpret_cast<HWND>(app->getWndNative()));
+    app->getEditorUI()->InitUI(HostWindowProc);
+    app->getEditorUI()->SetViewportHWND(app->getGLFW_HWND());
 	
 	app->InitializeInAppLogger();
-    app->Run();
-
+    app->StartEngine();
     delete app;
 
     return 0;

@@ -54,7 +54,7 @@ namespace GrEngine
 
         }
 
-        void InitializeInAppLogger()
+        static void InitializeInAppLogger()
         {
             LogEvent
             ([](std::vector<double> para)
@@ -62,6 +62,11 @@ namespace GrEngine
                     Application::UpdateAppLogger(para);
                 }
             );
+        }
+
+        static void StartEngine()
+        {
+            _instance->Run();
         }
 
         static void KillEngine()
@@ -82,6 +87,11 @@ namespace GrEngine
         static void clearViewport()
         {
             _instance->clearScene();
+        }
+
+        static HWND getGLFW_HWND()
+        {
+            return reinterpret_cast<HWND>(_instance->getWndNative());
         }
 
         static void UpdateAppLogger(std::vector<double> para)

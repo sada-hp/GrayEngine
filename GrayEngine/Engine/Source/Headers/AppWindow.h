@@ -41,12 +41,14 @@ namespace GrEngine
 
 		inline GLFWwindow* getWindow() { return window; };
 
-		inline void* getNativePlatformWND() { return nativeWin32; };
+		inline void* getNativePlatformWND() { return nativeWindow; };
 
 		virtual void MaximizeGLFW(bool state) = 0;
 
+		virtual void MinimizeGLFW(bool state) = 0;
+
 	protected:
 		GLFWwindow* window;
-		void* nativeWin32;
+		void* nativeWindow;
 	};
 }
