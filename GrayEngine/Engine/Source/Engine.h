@@ -1,5 +1,5 @@
 #pragma once
-#include <pch.h>
+#include "Headers/Vulkan/VulkanAPI.h"
 #include "Headers/AppWindow.h"
 
 namespace GrEngine
@@ -9,7 +9,6 @@ namespace GrEngine
 	public:
 		Engine();
 		virtual ~Engine();
-		static std::vector<char> readFile(const std::string& filename);
 		static void PokeIt();
 		inline AppWindow* getAppWindow() { return pWindow.get(); };
 

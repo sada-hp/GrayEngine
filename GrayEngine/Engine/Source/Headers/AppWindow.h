@@ -1,12 +1,6 @@
 #pragma once
-#define GLFW_EXPOSE_NATIVE_WGL
-#define GLFW_EXPOSE_NATIVE_WIN32
-#include <glfw/glfw3native.h>
 #include <glfw/glfw3.h>
-#include <pch.h>
-#include <glfw/glfw3native.h>
 #include "Events/EventListener.h"
-
 
 namespace GrEngine
 {

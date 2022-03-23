@@ -1,6 +1,8 @@
 #include <pch.h>
 #include "WinApp.h"
-#include "Headers/Logger.h"
+#define GLFW_EXPOSE_NATIVE_WIN32
+#include <glfw/glfw3native.h>
+
 
 namespace GrEngine
 {
@@ -28,8 +30,8 @@ namespace GrEngine
 		glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
 		glfwWindowHint(GLFW_DOUBLEBUFFER, 1);
 
-		glfwWindowHint(GLFW_RESIZABLE, false);
-		glfwWindowHint(GLFW_VISIBLE, false);
+		glfwWindowHint(GLFW_RESIZABLE, false); //TBD
+		glfwWindowHint(GLFW_VISIBLE, false); //TBD
 
 		window = glfwCreateWindow(props.Width, props.Height, props.Title, nullptr, nullptr);
 		glfwSetWindowUserPointer(window, &props);

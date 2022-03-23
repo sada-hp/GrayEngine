@@ -19,18 +19,16 @@
     <ClInclude Include="Engine\Source\WinApp.h" />
     <ClInclude Include="pch.h" />
     <ClInclude Include="Engine\Source\Headers\Events\EventListener.h" />
-    <ClInclude Include="Engine\Source\Headers\Vulkan\VulkanAPI.h" />
     <ClInclude Include="Engine\Source\Headers\Vulkan\DrawableObj.h" />
-    <ClInclude Include="Engine\Source\Libs\includeGL\glfw\glfw3.h" />
-    <ClInclude Include="Engine\Source\Libs\includeGL\glfw\glfw3native.h" />
+    <ClInclude Include="Engine\Source\Headers\Vulkan\VulkanAPI.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Engine\Source\WinApp.cpp" />
     <ClCompile Include="pch.cpp" />
     <ClCompile Include="Engine\Source\Headers\Events\EventListener.cpp" />
-    <ClCompile Include="Engine\Source\Headers\Vulkan\VulkanAPI.cpp" />
     <ClCompile Include="Engine\Source\Engine.cpp" />
     <ClCompile Include="Engine\Source\Headers\Vulkan\DrawableObj.cpp" />
+    <ClCompile Include="Engine\Source\Headers\Vulkan\VulkanAPI.cpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Engine\Source\Libs\lib-vc2019\glfw3.dll" />

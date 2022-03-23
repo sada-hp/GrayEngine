@@ -1,7 +1,4 @@
 #pragma once
-#define VMA_IMPLEMENTATION
-#define GLFW_INCLUDE_GLU
-#include <pch.h>
 #include "Headers/AppWindow.h"
 #include "Headers/Events/EventListener.h"
 #include "Headers/Vulkan/VulkanAPI.h"
@@ -28,9 +25,9 @@ namespace GrEngine
 		void MinimizeGLFW(bool state) override;
 
 		inline AppParameters* WindowProperties() override { return &props; };
-		inline VulkanAPI getVk() { return vkAPI; };
+		inline GrEngine_Vulkan::VulkanAPI getVk() { return vkAPI; };
 	private:
-		VulkanAPI vkAPI;
+		GrEngine_Vulkan::VulkanAPI vkAPI;
 		void StartUp(const AppParameters& Properties);
 		void ShutDown();
 		void SetUpEvents(GLFWwindow* target);

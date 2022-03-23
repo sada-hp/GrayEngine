@@ -1,5 +1,4 @@
 #pragma once
-#define GLFW_INCLUDE_VULKAN
 
 //include only
 
@@ -9,12 +8,6 @@
 #include "Engine/Source/Headers/AppWindow.h"
 #include "Engine/Source/Headers/Vulkan/VulkanAPI.h"
 #include "Engine/Source/WinApp.h"
-
-
-//include only
-
-// EVENT LIST
-
 #include "Engine/Source/Headers/Events/EventListener.h"
 
-//EVENT LIST
+//include only

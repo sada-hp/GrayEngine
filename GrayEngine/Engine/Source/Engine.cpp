@@ -1,8 +1,6 @@
 #pragma once
 #include <pch.h>
 #include "Engine.h"
-#include "Headers/Vulkan/VulkanAPI.h"
-#include "Headers/Logger.h"
 
 namespace GrEngine
 {
@@ -37,32 +35,16 @@ namespace GrEngine
 
 	void Engine::loadModelFromPath(const char* path)
 	{
-		VulkanAPI::m_getRenderer()->loadModel(path);
+		GrEngine_Vulkan::VulkanAPI::m_getRenderer()->loadModel(path);
 	}
 
 	void Engine::clearScene()
 	{
-		VulkanAPI::m_getRenderer()->clearDrawables();
+		GrEngine_Vulkan::VulkanAPI::m_getRenderer()->clearDrawables();
 	}
 
 	void Engine::PokeIt()
 	{
 		Logger::Out("You've just poked an engine", OutputColor::Gray, OutputType::Log);
-	}
-
-	std::vector<char> Engine::readFile(const std::string& filename)
-	{
-		std::ifstream file(filename, std::ios::ate | std::ios::binary);
-
-		if (!file.is_open())
-			throw std::runtime_error("Failed to open file!");
-
-		size_t fileSize = (size_t)file.tellg();
-		std::vector<char> buffer(fileSize);
-		file.seekg(0);
-		file.read(buffer.data(), fileSize);
-		file.close();
-
-		return buffer;
 	}
 }
