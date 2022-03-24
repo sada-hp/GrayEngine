@@ -23,7 +23,10 @@ namespace GrEngine
 
 	void WinApp::StartUp(const AppParameters& Properties)
 	{
+		p_AppRenderer = new GrEngine_Vulkan::VulkanAPI();
+
 		props = Properties;
+		props.p_Renderer = p_AppRenderer;
 
 		glfwInit();
 
@@ -51,7 +54,7 @@ namespace GrEngine
 			GetWindowRect(GetDesktopWindow(), &desktop);
 			glfwSetWindowPos(window, desktop.right/2 - Properties.Width/2, desktop.bottom/2 - Properties.Height/2);
 
-			if (!vkAPI.initVulkan(window, &vkAPI))
+			if (!p_AppRenderer->init(window, p_AppRenderer))
 			{
 				Logger::Out("Failed to initialize Vulkan!", OutputColor::Red, OutputType::Error);
 				ShutDown();
@@ -64,9 +67,11 @@ namespace GrEngine
 	void WinApp::ShutDown()
 	{
 		Logger::Out("Shutting down the engine", OutputColor::Gray, OutputType::Log);
-		vkAPI.destroy();
+		p_AppRenderer->destroy();
 		glfwDestroyWindow(window);
 		glfwTerminate();
+
+		delete p_AppRenderer;
 	}
 
 	void WinApp::MaximizeGLFW(bool state)
@@ -90,7 +95,7 @@ namespace GrEngine
 		double currentTime = glfwGetTime();
 		
 		glfwPollEvents();
-		vkAPI.drawFrame();
+		p_AppRenderer->drawFrame();
 		EventListener::pollEngineEvents();
 		glfwSwapBuffers(window);
 		frames++;
@@ -122,6 +127,15 @@ namespace GrEngine
 			};
 
 			EventListener::registerEvent(EventType::WindowResize, para);
+
+			if (data.p_Renderer != nullptr)
+			{
+				data.p_Renderer->Update();
+			}
+			else
+			{
+				Logger::Out("Renderer is not specified!", OutputColor::Red, OutputType::Error);
+			}
 		});
 		glfwSetMouseButtonCallback(target, [](GLFWwindow* win, int button, int action, int mods)
 		{

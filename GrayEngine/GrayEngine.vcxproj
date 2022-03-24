@@ -12,6 +12,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Engine\Source\Headers\AppWindow.h" />
+    <ClInclude Include="Engine\Source\Headers\Renderer.h" />
     <ClInclude Include="Engine\Source\Vulkan\DrawableObj.h" />
     <ClInclude Include="Engine\Source\Vulkan\VulkanAPI.h" />
     <ClInclude Include="Engine\Source\Headers\GrayEngine.h" />

@@ -1,7 +1,7 @@
 #pragma once
 #include <pch.h>
 
-enum class EventType
+_declspec(dllexport) enum class EventType
 {
 	MouseClick,
 	MouseMove,

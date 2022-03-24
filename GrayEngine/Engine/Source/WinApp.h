@@ -25,9 +25,8 @@ namespace GrEngine
 		void MinimizeGLFW(bool state) override;
 
 		inline AppParameters* WindowProperties() override { return &props; };
-		inline GrEngine_Vulkan::VulkanAPI getVk() { return vkAPI; };
 	private:
-		GrEngine_Vulkan::VulkanAPI vkAPI;
+		Renderer* p_AppRenderer;
 		void StartUp(const AppParameters& Properties);
 		void ShutDown();
 		void SetUpEvents(GLFWwindow* target);

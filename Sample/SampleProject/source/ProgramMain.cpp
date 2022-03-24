@@ -39,10 +39,10 @@ LRESULT CALLBACK HostWindowProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lPara
 
 int main(int argc, char** argv)
 {
-    GrEngine::Application* app = new GrEngine::Application();
+    Logger::ShowConsole(false);
+    Logger::Out("--------------- Starting the engine ---------------", OutputColor::Gray, OutputType::Log);
 
-	Logger::ShowConsole(false);
-    Logger::Out("Starting the engine", OutputColor::Gray, OutputType::Log);
+    GrEngine::Application* app = new GrEngine::Application();
 
     app->getEditorUI()->InitUI(HostWindowProc);
     app->getEditorUI()->SetViewportHWND(app->getGLFW_HWND());

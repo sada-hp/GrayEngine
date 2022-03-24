@@ -1,6 +1,7 @@
 #pragma once
 #include <glfw/glfw3.h>
 #include "EventListener.h"
+#include "Headers/Renderer.h"
 
 namespace GrEngine
 {
@@ -10,6 +11,7 @@ namespace GrEngine
 
 		uint32_t Width;
 		uint32_t Height;
+		Renderer* p_Renderer;
 
 		AppParameters(const char* _Title = "Application", uint32_t _Width = 1280, uint32_t _Height = 720)
 		{
@@ -19,7 +21,7 @@ namespace GrEngine
 		}
 	};
 
-	class _declspec(dllexport) AppWindow
+	class AppWindow
 	{
 	public:
 		virtual ~AppWindow() {};

@@ -65,11 +65,12 @@ namespace GrEngine_Vulkan
 			return attributeDescriptions;
 		}
 
-		void initObject(VkDevice device);
+		void initObject(VkDevice device, void* owner);
 		void destroyObject(VkDevice device);
 		bool pushConstants(VkDevice devicce, VkCommandBuffer cmd, VkExtent2D extent);
 		bool recordCommandBuffer(VkDevice device, VkCommandBuffer commandBuffer, VkExtent2D extent);
 	private:
+		void* p_Owner;
 		VkDescriptorSetLayout descriptorSetLayout;
 		std::vector<VkDescriptorSet> descriptorSets;
 

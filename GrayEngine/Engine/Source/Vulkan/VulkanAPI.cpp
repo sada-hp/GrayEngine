@@ -7,10 +7,10 @@
 #define GLM_FORCE_RADIANS
 #include "VulkanAPI.h"
 
+GrEngine_Vulkan::VulkanAPI* GrEngine_Vulkan::VulkanAPI::pInstance = nullptr;
+
 namespace GrEngine_Vulkan
 {
-	VulkanAPI* VulkanAPI::pInstance = nullptr;
-
 	void VulkanAPI::destroy()
 	{
 		Initialized = false;
@@ -29,11 +29,11 @@ namespace GrEngine_Vulkan
 		vkDestroyInstance(_vulkan, nullptr);
 	}
 
-	bool VulkanAPI::initVulkan(GLFWwindow* window, VulkanAPI* apiInstance) //Vulkan integration done with a help of vulkan-tutorial.com
+	bool VulkanAPI::init(GLFWwindow* window, Renderer* apiInstance) //Vulkan integration done with a help of vulkan-tutorial.com
 	{
 		bool res = true;
 		pParentWindow = window;
-		pInstance = apiInstance;
+		pInstance = reinterpret_cast<VulkanAPI*>(apiInstance);
 
 		if (!createVKInstance())
 			throw std::runtime_error("Failed to create vulkan instance!");
@@ -89,8 +89,6 @@ namespace GrEngine_Vulkan
 
 		if ((res = createSemaphores() & res) == false)
 			Logger::Out("[Vk] Failed to create semaphores", OutputColor::Red, OutputType::Error);
-
-		EventListener::pushEvent(EventType::WindowResize, static_cast<EventCallbackFun>(callSwapChainUpdate));
 
 		vkQueueWaitIdle(graphicsQueue);
 		vkDeviceWaitIdle(logicalDevice);
@@ -680,9 +678,12 @@ namespace GrEngine_Vulkan
 		return vkCreateFence(logicalDevice, &fenceInfo, nullptr, &drawFence) == VK_SUCCESS;
 	}
 
-	void VulkanAPI::callSwapChainUpdate(std::vector<double> para)
+	void VulkanAPI::Update()
 	{
-		pInstance->recreateSwapChain();
+		if (pInstance->Initialized)
+		{
+			pInstance->recreateSwapChain();
+		}
 	}
 
 	void VulkanAPI::recreateSwapChain()
@@ -770,7 +771,7 @@ namespace GrEngine_Vulkan
 			}
 		}
 
-		object.initObject(logicalDevice);
+		object.initObject(logicalDevice, this);
 		drawables.push_back(object);
 
 		Logger::Out("Mesh %c%s%c was loaded succesfully", OutputColor::Green, OutputType::Log, '"', model_path, '"');

@@ -18,7 +18,7 @@ static _declspec(dllexport) enum class OutputType
 	Warning
 };
 
-static _declspec(dllexport) class Logger
+_declspec(dllexport) class Logger
 {
 public:
 

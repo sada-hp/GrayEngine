@@ -5,10 +5,11 @@
 #include <vk_mem_alloc.h>
 #include "DrawableObj.h"
 #include "Engine/Source/Headers/Logger.h"
+#include "Engine/Source/Headers/Renderer.h"
 
 namespace GrEngine_Vulkan
 {
-	_declspec(dllexport) struct QueueFamilyIndices
+	struct QueueFamilyIndices
 	{
 		std::optional<uint32_t> graphicsFamily;
 		std::optional<uint32_t> presentFamily;
@@ -19,36 +20,36 @@ namespace GrEngine_Vulkan
 		}
 	};
 
-	_declspec(dllexport) struct SwapChainSupportDetails {
+	struct SwapChainSupportDetails {
 		VkSurfaceCapabilitiesKHR capabilities;
 		std::vector<VkSurfaceFormatKHR> formats;
 		std::vector<VkPresentModeKHR> presentModes;
 	};
 
-	_declspec(dllexport) struct AllocatedImage {
+	struct AllocatedImage {
 		VkImage allocatedImage;
 		VmaAllocation allocation;
 	};
 
-	_declspec(dllexport) class VulkanAPI
+	class VulkanAPI : public GrEngine::Renderer
 	{
 	public:
-		bool initVulkan(GLFWwindow* window, VulkanAPI* apiInstance);
-		void destroy();
-		void drawFrame();
+		bool init(GLFWwindow* window, Renderer* apiInstance) override;
+		void destroy() override;
+		void drawFrame() override;
 		VkDevice logicalDevice;
 
 		inline VkExtent2D getExtent() { return swapChainExtent; };
-		inline static VulkanAPI* m_getRenderer() { return pInstance; };
+		inline static Renderer* m_getRenderer() { return pInstance; };
 		inline VmaAllocator getMemAllocator() { return memAllocator; };
 		inline VkRenderPass getRenderPass() { return renderPass; };
 		bool updateDrawables(uint32_t index);
 		static VkShaderModule createShaderModule(VkDevice device, const std::vector<char>& code);
-		bool loadModel(const char* model_path);
-		void clearDrawables();
+		bool loadModel(const char* model_path) override;
+		void clearDrawables() override;
 		static std::vector<char> readFile(const std::string& filename);
+		void Update() override;
 
-		bool Initialized = false;
 	private:
 		GLFWwindow* pParentWindow;
 		static VulkanAPI* pInstance;
@@ -100,7 +101,6 @@ namespace GrEngine_Vulkan
 		bool createCommandBuffers();
 		bool createSemaphores();
 
-		static void callSwapChainUpdate(std::vector<double> para);
 		void recreateSwapChain();
 		void cleanupSwapChain();
 

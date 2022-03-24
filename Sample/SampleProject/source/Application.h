@@ -10,7 +10,7 @@ namespace GrEngine
         static Application* _instance;
         EditorUI wpfUI;
     public:
-        Application()
+        Application(const AppParameters& Properties = AppParameters())
         {
             if (_instance != nullptr)
                 delete _instance;

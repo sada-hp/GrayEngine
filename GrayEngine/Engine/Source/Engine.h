@@ -7,7 +7,7 @@ namespace GrEngine
 	class _declspec(dllexport) Engine
 	{
 	public:
-		Engine();
+		Engine(const AppParameters& Properties = AppParameters());
 		virtual ~Engine();
 		static void PokeIt();
 		inline AppWindow* getAppWindow() { return pWindow.get(); };

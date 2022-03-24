@@ -4,9 +4,9 @@
 
 namespace GrEngine
 {
-	Engine::Engine()
+	Engine::Engine(const AppParameters& Properties)
 	{
-		pWindow = std::unique_ptr<AppWindow>(AppWindow::Init());
+		pWindow = std::unique_ptr<AppWindow>(AppWindow::Init(Properties));
 	}
 
 	Engine::~Engine()

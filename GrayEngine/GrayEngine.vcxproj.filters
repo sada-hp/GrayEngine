@@ -21,6 +21,7 @@
     <ClInclude Include="Engine\Source\Headers\EventListener.h" />
     <ClInclude Include="Engine\Source\Vulkan\DrawableObj.h" />
     <ClInclude Include="Engine\Source\Vulkan\VulkanAPI.h" />
+    <ClInclude Include="Engine\Source\Headers\Renderer.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Engine\Source\WinApp.cpp" />

@@ -14,10 +14,11 @@ namespace GrEngine_Vulkan
 
 	}
 
-	void DrawableObj::initObject(VkDevice device)
+	void DrawableObj::initObject(VkDevice device, void* owner)
 	{
-		createVkBuffer(VulkanAPI::m_getRenderer()->getMemAllocator(), object_mesh.vertices.data(), sizeof(object_mesh.vertices[0]) * object_mesh.vertices.size(), VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, &vertexBuffer);
-		createVkBuffer(VulkanAPI::m_getRenderer()->getMemAllocator(), object_mesh.indices.data(), sizeof(object_mesh.indices[0]) * object_mesh.indices.size(), VK_BUFFER_USAGE_INDEX_BUFFER_BIT, &indexBuffer);
+		p_Owner = owner;
+		createVkBuffer(reinterpret_cast<VulkanAPI*>(p_Owner)->getMemAllocator(), object_mesh.vertices.data(), sizeof(object_mesh.vertices[0]) * object_mesh.vertices.size(), VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, &vertexBuffer);
+		createVkBuffer(reinterpret_cast<VulkanAPI*>(p_Owner)->getMemAllocator(), object_mesh.indices.data(), sizeof(object_mesh.indices[0]) * object_mesh.indices.size(), VK_BUFFER_USAGE_INDEX_BUFFER_BIT, &indexBuffer);
 
 		//createDescriptorLayout(device);
 		//createDescriptorPool(device);
@@ -121,7 +122,7 @@ namespace GrEngine_Vulkan
 		vmaallocInfo.usage = VMA_MEMORY_USAGE_CPU_TO_GPU;
 
 		vmaCreateBuffer(allocator, &bufferCreateInfo, &vmaallocInfo, &shaderBuffer->Buffer, &shaderBuffer->Allocation, nullptr);
-		vkGetBufferMemoryRequirements(VulkanAPI::m_getRenderer()->logicalDevice, shaderBuffer->Buffer, &shaderBuffer->MemoryRequirements);
+		vkGetBufferMemoryRequirements(reinterpret_cast<VulkanAPI*>(p_Owner)->logicalDevice, shaderBuffer->Buffer, &shaderBuffer->MemoryRequirements);
 
 		vmaMapMemory(allocator, shaderBuffer->Allocation, (void**)&shaderBuffer->pData);
 		memcpy(shaderBuffer->pData, bufData, dataSize);
@@ -160,7 +161,7 @@ namespace GrEngine_Vulkan
 	{
 		vkFlushMappedMemoryRanges(device, 1, &(shader->MappedMemoryRange));
 		vkDestroyBuffer(device, shader->Buffer, NULL);
-		vmaFreeMemory(VulkanAPI::m_getRenderer()->getMemAllocator(), shader->Allocation);
+		vmaFreeMemory(reinterpret_cast<VulkanAPI*>(p_Owner)->getMemAllocator(), shader->Allocation);
 	}
 
 	bool DrawableObj::createGraphicsPipeline(VkDevice device)
@@ -282,7 +283,7 @@ namespace GrEngine_Vulkan
 		pipelineInfo.pColorBlendState = &colorBlending;
 		pipelineInfo.pDynamicState = &dynamicCreateInfo;
 		pipelineInfo.layout = pipelineLayout;
-		pipelineInfo.renderPass = VulkanAPI::m_getRenderer()->getRenderPass();
+		pipelineInfo.renderPass = reinterpret_cast<VulkanAPI*>(p_Owner)->getRenderPass();
 		pipelineInfo.subpass = 0;
 		pipelineInfo.pDepthStencilState = &_depthStencil;
 		pipelineInfo.basePipelineHandle = VK_NULL_HANDLE; // Optional
