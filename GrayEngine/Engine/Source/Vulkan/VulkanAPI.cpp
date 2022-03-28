@@ -19,7 +19,6 @@ namespace GrEngine_Vulkan
 
 		clearDrawables();
 		cleanupSwapChain();
-		vkDestroyFence(logicalDevice, drawFence, nullptr);
 		vkDestroySemaphore(logicalDevice, renderFinishedSemaphore, nullptr);
 		vkDestroySemaphore(logicalDevice, imageAvailableSemaphore, nullptr);
 		vkDestroyCommandPool(logicalDevice, commandPool, nullptr);
@@ -100,8 +99,6 @@ namespace GrEngine_Vulkan
 	{
 		if (!Initialized) return;
 
-		vkResetFences(logicalDevice, 1, &drawFence);
-
 		uint32_t imageIndex;
 		vkAcquireNextImageKHR(logicalDevice, swapChain, UINT64_MAX, imageAvailableSemaphore, VK_NULL_HANDLE, &imageIndex);
 		updateDrawables(imageIndex);
@@ -121,7 +118,7 @@ namespace GrEngine_Vulkan
 		submitInfo.pSignalSemaphores = signalSemaphores;
 
 		VkResult res;
-		res = vkQueueSubmit(graphicsQueue, 1, &submitInfo, drawFence);
+		res = vkQueueSubmit(graphicsQueue, 1, &submitInfo, NULL);
 
 		if (res != VK_SUCCESS)
 			throw std::runtime_error("failed to submit draw command buffer!");
@@ -139,8 +136,6 @@ namespace GrEngine_Vulkan
 		presentInfo.pResults = nullptr; // Optional
 
 		vkQueuePresentKHR(presentQueue, &presentInfo);
-
-		vkWaitForFences(logicalDevice, 1, &drawFence, true, 1000);
 	}
 
 	bool VulkanAPI::updateDrawables(uint32_t index)
@@ -675,7 +670,7 @@ namespace GrEngine_Vulkan
 			vkCreateSemaphore(logicalDevice, &semaphoreInfo, nullptr, &renderFinishedSemaphore) != VK_SUCCESS)
 			return false;
 
-		return vkCreateFence(logicalDevice, &fenceInfo, nullptr, &drawFence) == VK_SUCCESS;
+		return true;
 	}
 
 	void VulkanAPI::Update()
@@ -749,6 +744,7 @@ namespace GrEngine_Vulkan
 		tinyobj::attrib_t attrib;
 		std::vector<tinyobj::shape_t> shapes;
 		std::vector<tinyobj::material_t> materials;
+		std::unordered_map<Vertex, uint32_t> uniqueVertices{};
 		std::string warn, err;
 
 		if (!tinyobj::LoadObj(&attrib, &shapes, &materials, &warn, &err, model_path))
@@ -761,13 +757,15 @@ namespace GrEngine_Vulkan
 		{
 			for (const auto& index : shape.mesh.indices)
 			{
-				object.object_mesh.vertices.push_back(
-					{ {attrib.vertices[3 * index.vertex_index + 0],
-					attrib.vertices[3 * index.vertex_index + 1],
-					attrib.vertices[3 * index.vertex_index + 2],
-					1.0f}, {(float)rand() / RAND_MAX, (float)rand() / RAND_MAX, (float)rand() / RAND_MAX, 1.0f} }
-				);
-				object.object_mesh.indices.push_back(object.object_mesh.indices.size());
+				Vertex vertex = { {attrib.vertices[3 * index.vertex_index + 0], attrib.vertices[3 * index.vertex_index + 1], attrib.vertices[3 * index.vertex_index + 2], 1.0f},
+				{(float)rand() / RAND_MAX, (float)rand() / RAND_MAX, (float)rand() / RAND_MAX, 1.0f} };
+
+				if (uniqueVertices.count(vertex) == 0) {
+					uniqueVertices[vertex] = static_cast<uint32_t>(object.object_mesh.vertices.size());
+					object.object_mesh.vertices.push_back(vertex);
+				}
+
+				object.object_mesh.indices.push_back(uniqueVertices[vertex]);
 			}
 		}
 
@@ -792,5 +790,44 @@ namespace GrEngine_Vulkan
 		file.close();
 
 		return buffer;
+	}
+
+	bool VulkanAPI::createVkBuffer(VkDevice device, VmaAllocator allocator, const void* bufData, uint32_t dataSize, VkBufferUsageFlags usage, ShaderBuffer* shaderBuffer)
+	{
+		VkBufferCreateInfo bufferCreateInfo{};
+		bufferCreateInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
+		bufferCreateInfo.size = dataSize;
+		bufferCreateInfo.usage = usage;
+		bufferCreateInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+		bufferCreateInfo.queueFamilyIndexCount = 0;
+		bufferCreateInfo.pQueueFamilyIndices = NULL;
+
+		VmaAllocationCreateInfo vmaallocInfo = {};
+		vmaallocInfo.usage = VMA_MEMORY_USAGE_CPU_TO_GPU;
+
+		vmaCreateBuffer(allocator, &bufferCreateInfo, &vmaallocInfo, &shaderBuffer->Buffer, &shaderBuffer->Allocation, nullptr);
+		vkGetBufferMemoryRequirements(device, shaderBuffer->Buffer, &shaderBuffer->MemoryRequirements);
+
+		vmaMapMemory(allocator, shaderBuffer->Allocation, (void**)&shaderBuffer->pData);
+		memcpy(shaderBuffer->pData, bufData, dataSize);
+		vmaUnmapMemory(allocator, shaderBuffer->Allocation);
+
+		shaderBuffer->BufferInfo.buffer = shaderBuffer->Buffer;
+		shaderBuffer->BufferInfo.offset = 0;
+		shaderBuffer->BufferInfo.range = dataSize;
+
+		shaderBuffer->MappedMemoryRange.sType = VK_STRUCTURE_TYPE_MAPPED_MEMORY_RANGE;
+		shaderBuffer->MappedMemoryRange.memory = reinterpret_cast<VkDeviceMemory>(shaderBuffer->Allocation);
+		shaderBuffer->MappedMemoryRange.offset = 0;
+		shaderBuffer->MappedMemoryRange.size = dataSize;
+
+		return true;
+	}
+
+	void VulkanAPI::destroyShaderBuffer(VkDevice device, VmaAllocator allocator, ShaderBuffer* shader)
+	{
+		vkFlushMappedMemoryRanges(device, 1, &(shader->MappedMemoryRange));
+		vkDestroyBuffer(device, shader->Buffer, NULL);
+		vmaFreeMemory(allocator, shader->Allocation);
 	}
 }

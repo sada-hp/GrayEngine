@@ -1,10 +1,11 @@
 #pragma once
+#include "Engine/Source/Headers/Core.h"
 #include "Vulkan/VulkanAPI.h"
 #include "Headers/AppWindow.h"
 
 namespace GrEngine
 {
-	class _declspec(dllexport) Engine
+	class DllExport Engine
 	{
 	public:
 		Engine(const AppParameters& Properties = AppParameters());

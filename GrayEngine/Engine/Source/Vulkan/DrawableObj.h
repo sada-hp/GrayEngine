@@ -1,39 +1,64 @@
 #pragma once
+#define GLM_ENABLE_EXPERIMENTAL
+#include <glm/gtx/hash.hpp>
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <vk_mem_alloc.h>
 
 namespace GrEngine_Vulkan
 {
+	struct Vertex
+	{
+		bool operator==(const Vertex& other) const
+		{
+			return pos == other.pos;
+		}
+
+		glm::vec4 pos;
+		glm::vec4 color;
+	};
+
+	struct Mesh
+	{
+		std::vector<Vertex> vertices;
+		std::vector<uint16_t> indices;
+	};
+
+	struct ShaderBuffer
+	{
+		VkBuffer Buffer;
+		VkDescriptorBufferInfo BufferInfo;
+		VkMemoryRequirements MemoryRequirements;
+		VkMappedMemoryRange MappedMemoryRange;
+		uint8_t* pData;
+		VmaAllocation Allocation;
+	};
+
+	struct UniformBufferObject {
+		glm::mat4 model;
+		glm::mat4 view;
+		glm::mat4 proj;
+	};
+
+	struct AllocatedImage {
+		VkImage allocatedImage;
+		VmaAllocation allocation;
+	};
+}
+
+namespace std {
+	template<> struct hash<GrEngine_Vulkan::Vertex> {
+		size_t operator()(GrEngine_Vulkan::Vertex const& vertex) const {
+			return ((hash<glm::vec3>()(vertex.pos)) >> 1);
+		}
+	};
+}
+
+namespace GrEngine_Vulkan
+{
+
 	class DrawableObj
 	{
-		struct Vertex {
-			glm::vec4 pos;
-			glm::vec4 color;
-		};
-
-		struct Mesh
-		{
-			std::vector<Vertex> vertices;
-			std::vector<uint16_t> indices;
-		};
-
-		struct ShaderBuffer
-		{
-			VkBuffer Buffer;
-			VkDescriptorBufferInfo BufferInfo;
-			VkMemoryRequirements MemoryRequirements;
-			VkMappedMemoryRange MappedMemoryRange;
-			uint8_t* pData;
-			VmaAllocation Allocation;
-		};
-
-		struct UniformBufferObject {
-			glm::mat4 model;
-			glm::mat4 view;
-			glm::mat4 proj;
-		};
-
 	public:
 		DrawableObj();
 		~DrawableObj();
@@ -80,7 +105,6 @@ namespace GrEngine_Vulkan
 
 		ShaderBuffer vertexBuffer;
 		ShaderBuffer indexBuffer;
-		ShaderBuffer uniformBuffer;
 
 		UniformBufferObject ubo{};
 
@@ -89,8 +113,5 @@ namespace GrEngine_Vulkan
 		bool createPipelineLayout(VkDevice device);
 		bool createDescriptorSet(VkDevice device);
 		bool createGraphicsPipeline(VkDevice device);
-
-		bool createVkBuffer(VmaAllocator allocator, const void* bufData, uint32_t dataSize, VkBufferUsageFlags usage, ShaderBuffer* shader);
-		void destroyShaderBuffer(VkDevice device, ShaderBuffer* shader);
 	};
 }

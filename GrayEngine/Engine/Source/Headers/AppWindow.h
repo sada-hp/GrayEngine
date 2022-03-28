@@ -1,11 +1,12 @@
 #pragma once
 #include <glfw/glfw3.h>
+#include "Engine/Source/Headers/Core.h"
 #include "EventListener.h"
 #include "Headers/Renderer.h"
 
 namespace GrEngine
 {
-	struct _declspec(dllexport) AppParameters
+	struct DllExport AppParameters
 	{
 		const char* Title;
 
@@ -21,7 +22,7 @@ namespace GrEngine
 		}
 	};
 
-	class AppWindow
+	class DllExport AppWindow
 	{
 	public:
 		virtual ~AppWindow() {};

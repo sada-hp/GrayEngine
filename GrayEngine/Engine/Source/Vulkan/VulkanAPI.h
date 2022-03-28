@@ -26,11 +26,6 @@ namespace GrEngine_Vulkan
 		std::vector<VkPresentModeKHR> presentModes;
 	};
 
-	struct AllocatedImage {
-		VkImage allocatedImage;
-		VmaAllocation allocation;
-	};
-
 	class VulkanAPI : public GrEngine::Renderer
 	{
 	public:
@@ -48,6 +43,9 @@ namespace GrEngine_Vulkan
 		bool loadModel(const char* model_path) override;
 		void clearDrawables() override;
 		static std::vector<char> readFile(const std::string& filename);
+		static bool createVkBuffer(VkDevice device, VmaAllocator allocator, const void* bufData, uint32_t dataSize, VkBufferUsageFlags usage, ShaderBuffer* shader);
+		static void destroyShaderBuffer(VkDevice device, VmaAllocator allocator, ShaderBuffer* shader);
+
 		void Update() override;
 
 	private:
@@ -73,7 +71,6 @@ namespace GrEngine_Vulkan
 		VkSemaphore imageAvailableSemaphore;
 		VkSemaphore renderFinishedSemaphore;
 		VkQueue graphicsQueue;
-		VkFence drawFence;
 
 		VkMemoryRequirements memRequirements;
 
@@ -93,7 +90,6 @@ namespace GrEngine_Vulkan
 
 		bool createSwapChain();
 		bool createImageViews();
-		bool createGraphicsPipeline();
 
 		bool createRenderPass();
 		bool createFramebuffers();

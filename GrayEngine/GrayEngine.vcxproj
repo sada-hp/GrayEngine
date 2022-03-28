@@ -12,6 +12,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Engine\Source\Headers\AppWindow.h" />
+    <ClInclude Include="Engine\Source\Headers\Core.h" />
     <ClInclude Include="Engine\Source\Headers\Renderer.h" />
     <ClInclude Include="Engine\Source\Vulkan\DrawableObj.h" />
     <ClInclude Include="Engine\Source\Vulkan\VulkanAPI.h" />
@@ -100,11 +101,11 @@
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>SOLUTION_DIR=R"($(SolutionDir))";_DEBUG;_CONSOLE;%(PreprocessorDefinitions);TP_Windows;TP_Windows;BD_DllSOLUTION_DIR=R"($(SolutionDir))"</PreprocessorDefinitions>
+      <PreprocessorDefinitions>DllExport;SOLUTION_DIR=R"($(SolutionDir))";_DEBUG;_CONSOLE;%(PreprocessorDefinitions);TP_Windows;TP_Windows;BD_DllSOLUTION_DIR=R"($(SolutionDir))"</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <PrecompiledHeader>Use</PrecompiledHeader>
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
-      <AdditionalIncludeDirectories>$(SolutionDir)GrayEngine\Engine\Source\Libs\IncludeVK;$(SolutionDir)GrayEngine\Engine\Source\Libs\includeGL;$(SolutionDir)GrayEngine\Engine\Source\Libs\ObjLoader;$(SolutionDir)GrayEngine\Engine\Source\Libs\glm;$(SolutionDir)GrayEngine\Engine\Source\Libs\VkMemAlloc;%(AdditionalIncludeDirectories);$(SolutionDir)GrayEngine</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)GrayEngine\Engine\Source\Libs\IncludeVK;$(SolutionDir)GrayEngine\Engine\Source\Libs\includeGL;$(SolutionDir)GrayEngine\Engine\Source\Libs\ObjLoader;$(SolutionDir)GrayEngine\Engine\Source\Libs\glm;$(SolutionDir)GrayEngine\Engine\Source\Libs\VkMemAlloc;$(SolutionDir)GrayEngine\Engine\Source\Libs\TexLoader;%(AdditionalIncludeDirectories);$(SolutionDir)GrayEngine</AdditionalIncludeDirectories>
       <LanguageStandard>stdcpp20</LanguageStandard>
       <TreatAngleIncludeAsExternal>false</TreatAngleIncludeAsExternal>
     </ClCompile>
@@ -124,11 +125,11 @@
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>SOLUTION_DIR=R"($(SolutionDir))";NDEBUG;_CONSOLE;%(PreprocessorDefinitions);TP_Windows;TP_Windows;BD_DllSOLUTION_DIR=R"($(SolutionDir))"</PreprocessorDefinitions>
+      <PreprocessorDefinitions>DllExport;SOLUTION_DIR=R"($(SolutionDir))";NDEBUG;_CONSOLE;%(PreprocessorDefinitions);TP_Windows;TP_Windows;BD_DllSOLUTION_DIR=R"($(SolutionDir))"</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <PrecompiledHeader>Use</PrecompiledHeader>
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
-      <AdditionalIncludeDirectories>$(SolutionDir)GrayEngine\Engine\Source\Libs\IncludeVK;$(SolutionDir)GrayEngine\Engine\Source\Libs\includeGL;$(SolutionDir)GrayEngine\Engine\Source\Libs\ObjLoader;$(SolutionDir)GrayEngine\Engine\Source\Libs\glm;$(SolutionDir)GrayEngine\Engine\Source\Libs\VkMemAlloc;%(AdditionalIncludeDirectories);$(SolutionDir)GrayEngine</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)GrayEngine\Engine\Source\Libs\IncludeVK;$(SolutionDir)GrayEngine\Engine\Source\Libs\includeGL;$(SolutionDir)GrayEngine\Engine\Source\Libs\ObjLoader;$(SolutionDir)GrayEngine\Engine\Source\Libs\glm;$(SolutionDir)GrayEngine\Engine\Source\Libs\VkMemAlloc;$(SolutionDir)GrayEngine\Engine\Source\Libs\TexLoader;%(AdditionalIncludeDirectories);$(SolutionDir)GrayEngine</AdditionalIncludeDirectories>
       <LanguageStandard>stdcpp20</LanguageStandard>
       <TreatAngleIncludeAsExternal>false</TreatAngleIncludeAsExternal>
     </ClCompile>

@@ -1,8 +1,9 @@
 #pragma once
 #include <pch.h>
+#include "Engine/Source/Headers/Core.h"
 #include "EventListener.h"
 
-static _declspec(dllexport) enum class OutputColor
+static enum class OutputColor
 {
 	Gray = 7,
 	Blue = 3,
@@ -11,14 +12,14 @@ static _declspec(dllexport) enum class OutputColor
 	Yellow = 6
 };
 
-static _declspec(dllexport) enum class OutputType
+static enum class OutputType
 {
 	Log,
 	Error,
 	Warning
 };
 
-_declspec(dllexport) class Logger
+class DllExport Logger
 {
 public:
 

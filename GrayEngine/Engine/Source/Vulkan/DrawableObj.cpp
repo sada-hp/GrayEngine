@@ -17,8 +17,8 @@ namespace GrEngine_Vulkan
 	void DrawableObj::initObject(VkDevice device, void* owner)
 	{
 		p_Owner = owner;
-		createVkBuffer(reinterpret_cast<VulkanAPI*>(p_Owner)->getMemAllocator(), object_mesh.vertices.data(), sizeof(object_mesh.vertices[0]) * object_mesh.vertices.size(), VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, &vertexBuffer);
-		createVkBuffer(reinterpret_cast<VulkanAPI*>(p_Owner)->getMemAllocator(), object_mesh.indices.data(), sizeof(object_mesh.indices[0]) * object_mesh.indices.size(), VK_BUFFER_USAGE_INDEX_BUFFER_BIT, &indexBuffer);
+		VulkanAPI::createVkBuffer(reinterpret_cast<VulkanAPI*>(p_Owner)->logicalDevice, reinterpret_cast<VulkanAPI*>(p_Owner)->getMemAllocator(), object_mesh.vertices.data(), sizeof(object_mesh.vertices[0]) * object_mesh.vertices.size(), VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, &vertexBuffer);
+		VulkanAPI::createVkBuffer(reinterpret_cast<VulkanAPI*>(p_Owner)->logicalDevice, reinterpret_cast<VulkanAPI*>(p_Owner)->getMemAllocator(), object_mesh.indices.data(), sizeof(object_mesh.indices[0]) * object_mesh.indices.size(), VK_BUFFER_USAGE_INDEX_BUFFER_BIT, &indexBuffer);
 
 		//createDescriptorLayout(device);
 		//createDescriptorPool(device);
@@ -35,8 +35,8 @@ namespace GrEngine_Vulkan
 		//vkDestroyDescriptorPool(device, descriptorPool, NULL);
 		//vkDestroyDescriptorSetLayout(device, descriptorSetLayout, NULL);
 
-		destroyShaderBuffer(device, &indexBuffer);
-		destroyShaderBuffer(device, &vertexBuffer);
+		VulkanAPI::destroyShaderBuffer(device, reinterpret_cast<VulkanAPI*>(p_Owner)->getMemAllocator(), &indexBuffer);
+		VulkanAPI::destroyShaderBuffer(device, reinterpret_cast<VulkanAPI*>(p_Owner)->getMemAllocator(), &vertexBuffer);
 		//destroyShaderBuffer(device, &uniformBuffer);
 
 		this->~DrawableObj();
@@ -78,68 +78,6 @@ namespace GrEngine_Vulkan
 		return true;
 	}
 
-	bool DrawableObj::createVkBuffer(VmaAllocator allocator, const void* bufData, uint32_t dataSize, VkBufferUsageFlags usage, ShaderBuffer* shaderBuffer)
-	{
-		VkBufferCreateInfo bufferCreateInfo{};
-		bufferCreateInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
-		bufferCreateInfo.size = dataSize;
-		bufferCreateInfo.usage = usage;
-		bufferCreateInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
-		bufferCreateInfo.queueFamilyIndexCount = 0;
-		bufferCreateInfo.pQueueFamilyIndices = NULL;
-
-#pragma region No_vma_code_backup
-
-		//if (vkCreateBuffer(VulkanAPI::getRenderer()->logicalDevice, &bufferCreateInfo, nullptr, &shaderBuffer->Buffer) != VK_SUCCESS)
-			//	return false;
-		//VkMemoryAllocateInfo allocInfo{};
-		//allocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
-		//allocInfo.allocationSize = shaderBuffer->MemoryRequirements.size;
-
-		//VmaAllocationCreateInfo allocationInfo{};
-		//allocationInfo.flags = VMA_ALLOCATION_CREATE_WITHIN_BUDGET_BIT;
-		//allocationInfo.memoryTypeBits = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
-		//allocationInfo.pool = VK_NULL_HANDLE;
-		//allocationInfo.preferredFlags = NULL;
-		//allocationInfo.priority = 1.0f;
-		//allocationInfo.pUserData = VK_NULL_HANDLE;
-		//allocationInfo.requiredFlags = 0;
-		//allocationInfo.usage = VMA_MEMORY_USAGE_AUTO_PREFER_HOST;
-		//vmaFindMemoryTypeIndexForBufferInfo(VulkanAPI::getRenderer()->memAllocator, &bufferCreateInfo, &allocationInfo, &allocInfo.memoryTypeIndex);
-
-		//if (vkAllocateMemory(VulkanAPI::getRenderer()->logicalDevice, &allocInfo, nullptr, &shaderBuffer->BufferMemory) != VK_SUCCESS)
-		//	return false;
-
-		//vkBindBufferMemory(VulkanAPI::getRenderer()->logicalDevice, shaderBuffer->Buffer, shaderBuffer->BufferMemory, 0);
-
-		//vkMapMemory(VulkanAPI::getRenderer()->logicalDevice, shaderBuffer->Allocation, 0, shaderBuffer->MemoryRequirements.size, 0, (void**)&shaderBuffer->pData);
-		//memcpy(shaderBuffer->pData, bufData, dataSize);
-		//vkUnmapMemory(VulkanAPI::getRenderer()->logicalDevice, shaderBuffer->Allocation);
-
-#pragma endregion
-
-		VmaAllocationCreateInfo vmaallocInfo = {};
-		vmaallocInfo.usage = VMA_MEMORY_USAGE_CPU_TO_GPU;
-
-		vmaCreateBuffer(allocator, &bufferCreateInfo, &vmaallocInfo, &shaderBuffer->Buffer, &shaderBuffer->Allocation, nullptr);
-		vkGetBufferMemoryRequirements(reinterpret_cast<VulkanAPI*>(p_Owner)->logicalDevice, shaderBuffer->Buffer, &shaderBuffer->MemoryRequirements);
-
-		vmaMapMemory(allocator, shaderBuffer->Allocation, (void**)&shaderBuffer->pData);
-		memcpy(shaderBuffer->pData, bufData, dataSize);
-		vmaUnmapMemory(allocator, shaderBuffer->Allocation);
-
-		shaderBuffer->BufferInfo.buffer = shaderBuffer->Buffer;
-		shaderBuffer->BufferInfo.offset = 0;
-		shaderBuffer->BufferInfo.range = dataSize;
-
-		shaderBuffer->MappedMemoryRange.sType = VK_STRUCTURE_TYPE_MAPPED_MEMORY_RANGE;
-		shaderBuffer->MappedMemoryRange.memory = reinterpret_cast<VkDeviceMemory>(shaderBuffer->Allocation);
-		shaderBuffer->MappedMemoryRange.offset = 0;
-		shaderBuffer->MappedMemoryRange.size = dataSize;
-
-		return true;
-	}
-
 	bool DrawableObj::pushConstants(VkDevice devicce, VkCommandBuffer cmd, VkExtent2D extent)
 	{
 		static auto startTime = std::chrono::high_resolution_clock::now();
@@ -155,13 +93,6 @@ namespace GrEngine_Vulkan
 		vkCmdPushConstants(cmd, pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(UniformBufferObject), &ubo);
 
 		return true;
-	}
-
-	void DrawableObj::destroyShaderBuffer(VkDevice device, ShaderBuffer* shader)
-	{
-		vkFlushMappedMemoryRanges(device, 1, &(shader->MappedMemoryRange));
-		vkDestroyBuffer(device, shader->Buffer, NULL);
-		vmaFreeMemory(reinterpret_cast<VulkanAPI*>(p_Owner)->getMemAllocator(), shader->Allocation);
 	}
 
 	bool DrawableObj::createGraphicsPipeline(VkDevice device)
@@ -361,7 +292,7 @@ namespace GrEngine_Vulkan
 		writes.dstSet = descriptorSets[0];
 		writes.descriptorCount = 1;
 		writes.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-		writes.pBufferInfo = &uniformBuffer.BufferInfo;
+		//writes.pBufferInfo = &uniformBuffer.BufferInfo;
 		writes.dstArrayElement = 0;
 		writes.dstBinding = 0;
 

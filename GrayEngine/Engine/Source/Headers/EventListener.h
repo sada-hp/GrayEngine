@@ -1,7 +1,8 @@
 #pragma once
 #include <pch.h>
+#include "Engine/Source/Headers/Core.h"
 
-_declspec(dllexport) enum class EventType
+enum class EventType
 {
 	MouseClick,
 	MouseMove,
@@ -17,7 +18,7 @@ _declspec(dllexport) enum class EventType
 typedef void (*EventCallbackFun)(std::vector<double>);
 
 
-class _declspec(dllexport) EventListener //event observer pattern
+class DllExport EventListener //event observer pattern
 {
 protected:
 	static std::unique_ptr<EventListener> _instance;
