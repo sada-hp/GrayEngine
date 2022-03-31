@@ -76,6 +76,20 @@ namespace EditorUI
             }
         }
 
+        private void TextureButton_Click(object sender, RoutedEventArgs e)
+        {
+            OpenFileDialog openFileDialog = new OpenFileDialog();
+            openFileDialog.Filter = "png files (*.png)|*.png";
+            openFileDialog.FilterIndex = 1;
+            openFileDialog.RestoreDirectory = true;
+            if (openFileDialog.ShowDialog() == System.Windows.Forms.DialogResult.OK)
+            {
+                SendMessage(p_Parent, 0x1202, IntPtr.Zero, Marshal.StringToHGlobalAnsi(openFileDialog.FileName));
+            }
+
+            GC.Collect();
+        }
+
         internal void PushIntoLogger(string input)
         {
             OutputConsole.Text += input;

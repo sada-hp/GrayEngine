@@ -1434,3 +1434,1588 @@
 [28-03-2022][18:23:20] LOG: Mesh "D:\test.obj" was loaded succesfully
 [28-03-2022][18:23:20] LOG: MouseClickEvent
 [28-03-2022][18:23:23] LOG: The scene was cleared
+[28-03-2022][20:08:52] LOG: --------------- Starting the engine ---------------
+[28-03-2022][20:08:53] LOG: VSync is now set to 1
+[28-03-2022][20:08:53] LOG: Presentation device: NVIDIA GeForce RTX 2060
+[28-03-2022][20:08:53] LOG: Custom Event with a parameter 1
+[28-03-2022][20:08:53] LOG: ResizeEvent
+[28-03-2022][20:08:57] LOG: Mesh "D:\cube.obj" was loaded succesfully
+[28-03-2022][20:08:59] LOG: The scene was cleared
+[28-03-2022][20:09:01] LOG: Mesh "D:\cube.obj" was loaded succesfully
+[28-03-2022][20:09:07] LOG: The scene was cleared
+[28-03-2022][21:44:30] LOG: --------------- Starting the engine ---------------
+[28-03-2022][21:44:30] LOG: VSync is now set to 1
+[28-03-2022][21:44:30] LOG: Presentation device: NVIDIA GeForce RTX 2060
+[28-03-2022][21:44:31] LOG: Custom Event with a parameter 1
+[28-03-2022][21:44:31] LOG: ResizeEvent
+[28-03-2022][21:44:51] LOG: --------------- Starting the engine ---------------
+[28-03-2022][21:44:51] LOG: VSync is now set to 1
+[28-03-2022][21:44:51] LOG: Presentation device: NVIDIA GeForce RTX 2060
+[28-03-2022][21:44:51] LOG: Custom Event with a parameter 1
+[28-03-2022][21:44:51] LOG: ResizeEvent
+[28-03-2022][21:59:20] LOG: --------------- Starting the engine ---------------
+[28-03-2022][21:59:20] LOG: VSync is now set to 1
+[28-03-2022][21:59:20] LOG: Presentation device: NVIDIA GeForce RTX 2060
+[28-03-2022][21:59:21] LOG: Custom Event with a parameter 1
+[28-03-2022][21:59:21] LOG: ResizeEvent
+[28-03-2022][22:01:26] LOG: --------------- Starting the engine ---------------
+[28-03-2022][22:01:26] LOG: VSync is now set to 1
+[28-03-2022][22:01:26] LOG: Presentation device: NVIDIA GeForce RTX 2060
+[28-03-2022][22:01:27] LOG: Custom Event with a parameter 1
+[28-03-2022][22:01:27] LOG: ResizeEvent
+[28-03-2022][22:01:38] LOG: --------------- Starting the engine ---------------
+[28-03-2022][22:01:38] LOG: VSync is now set to 1
+[28-03-2022][22:01:38] LOG: Presentation device: NVIDIA GeForce RTX 2060
+[28-03-2022][22:01:38] LOG: Custom Event with a parameter 1
+[28-03-2022][22:01:38] LOG: ResizeEvent
+[28-03-2022][22:02:40] LOG: --------------- Starting the engine ---------------
+[28-03-2022][22:02:40] LOG: VSync is now set to 1
+[28-03-2022][22:02:40] LOG: Presentation device: NVIDIA GeForce RTX 2060
+[28-03-2022][22:02:41] LOG: Custom Event with a parameter 1
+[28-03-2022][22:02:41] LOG: ResizeEvent
+[28-03-2022][22:06:45] LOG: --------------- Starting the engine ---------------
+[28-03-2022][22:06:45] LOG: VSync is now set to 1
+[28-03-2022][22:06:45] LOG: Presentation device: NVIDIA GeForce RTX 2060
+[28-03-2022][22:06:45] LOG: Custom Event with a parameter 1
+[28-03-2022][22:06:45] LOG: ResizeEvent
+[28-03-2022][22:07:58] LOG: --------------- Starting the engine ---------------
+[28-03-2022][22:07:58] LOG: VSync is now set to 1
+[28-03-2022][22:07:58] LOG: Presentation device: NVIDIA GeForce RTX 2060
+[28-03-2022][22:07:58] LOG: Custom Event with a parameter 1
+[28-03-2022][22:07:58] LOG: ResizeEvent
+[28-03-2022][22:08:14] LOG: --------------- Starting the engine ---------------
+[28-03-2022][22:08:15] LOG: VSync is now set to 1
+[28-03-2022][22:08:15] LOG: Presentation device: NVIDIA GeForce RTX 2060
+[28-03-2022][22:08:15] LOG: Custom Event with a parameter 1
+[28-03-2022][22:08:15] LOG: ResizeEvent
+[28-03-2022][22:08:30] LOG: --------------- Starting the engine ---------------
+[28-03-2022][22:08:30] LOG: VSync is now set to 1
+[28-03-2022][22:08:30] LOG: Presentation device: NVIDIA GeForce RTX 2060
+[28-03-2022][22:08:30] LOG: Custom Event with a parameter 1
+[28-03-2022][22:08:30] LOG: ResizeEvent
+[28-03-2022][22:08:41] LOG: --------------- Starting the engine ---------------
+[28-03-2022][22:08:42] LOG: VSync is now set to 1
+[28-03-2022][22:08:42] LOG: Presentation device: NVIDIA GeForce RTX 2060
+[28-03-2022][22:08:42] LOG: Custom Event with a parameter 1
+[28-03-2022][22:08:42] LOG: ResizeEvent
+[28-03-2022][22:08:42] LOG: ScrollEvent
+[28-03-2022][22:09:01] LOG: --------------- Starting the engine ---------------
+[28-03-2022][22:09:01] LOG: VSync is now set to 1
+[28-03-2022][22:09:01] LOG: Presentation device: NVIDIA GeForce RTX 2060
+[28-03-2022][22:09:01] LOG: Custom Event with a parameter 1
+[28-03-2022][22:09:01] LOG: ResizeEvent
+[28-03-2022][22:09:12] LOG: --------------- Starting the engine ---------------
+[28-03-2022][22:09:12] LOG: VSync is now set to 1
+[28-03-2022][22:09:12] LOG: Presentation device: NVIDIA GeForce RTX 2060
+[28-03-2022][22:09:13] LOG: Custom Event with a parameter 1
+[28-03-2022][22:09:13] LOG: ResizeEvent
+[28-03-2022][22:09:41] LOG: --------------- Starting the engine ---------------
+[28-03-2022][22:09:41] LOG: VSync is now set to 1
+[28-03-2022][22:09:41] LOG: Presentation device: NVIDIA GeForce RTX 2060
+[28-03-2022][22:09:42] LOG: Custom Event with a parameter 1
+[28-03-2022][22:09:42] LOG: ResizeEvent
+[28-03-2022][22:10:27] LOG: --------------- Starting the engine ---------------
+[28-03-2022][22:10:27] LOG: VSync is now set to 1
+[28-03-2022][22:10:27] LOG: Presentation device: NVIDIA GeForce RTX 2060
+[28-03-2022][22:10:27] LOG: Custom Event with a parameter 1
+[28-03-2022][22:10:27] LOG: ResizeEvent
+[28-03-2022][22:11:53] LOG: --------------- Starting the engine ---------------
+[28-03-2022][22:11:53] LOG: VSync is now set to 1
+[28-03-2022][22:11:53] LOG: Presentation device: NVIDIA GeForce RTX 2060
+[28-03-2022][22:11:53] LOG: Custom Event with a parameter 1
+[28-03-2022][22:11:53] LOG: ResizeEvent
+[28-03-2022][22:12:24] LOG: --------------- Starting the engine ---------------
+[28-03-2022][22:12:24] LOG: VSync is now set to 1
+[28-03-2022][22:12:24] LOG: Presentation device: NVIDIA GeForce RTX 2060
+[28-03-2022][22:12:24] LOG: Custom Event with a parameter 1
+[28-03-2022][22:12:24] LOG: ResizeEvent
+[28-03-2022][22:14:16] LOG: --------------- Starting the engine ---------------
+[28-03-2022][22:14:16] LOG: VSync is now set to 1
+[28-03-2022][22:14:16] LOG: Presentation device: NVIDIA GeForce RTX 2060
+[28-03-2022][22:14:16] LOG: Custom Event with a parameter 1
+[28-03-2022][22:14:16] LOG: ResizeEvent
+[28-03-2022][22:17:29] LOG: --------------- Starting the engine ---------------
+[28-03-2022][22:17:29] LOG: VSync is now set to 1
+[28-03-2022][22:17:29] LOG: Presentation device: NVIDIA GeForce RTX 2060
+[28-03-2022][22:17:30] LOG: Custom Event with a parameter 1
+[28-03-2022][22:17:30] LOG: ResizeEvent
+[28-03-2022][22:17:32] LOG: Mesh "D:\cube.obj" was loaded succesfully
+[28-03-2022][22:17:39] LOG: The scene was cleared
+[28-03-2022][22:18:58] LOG: --------------- Starting the engine ---------------
+[28-03-2022][22:18:58] LOG: VSync is now set to 1
+[28-03-2022][22:18:58] LOG: Presentation device: NVIDIA GeForce RTX 2060
+[28-03-2022][22:18:59] LOG: Custom Event with a parameter 1
+[28-03-2022][22:18:59] LOG: ResizeEvent
+[28-03-2022][22:19:01] LOG: Mesh "D:\cube.obj" was loaded succesfully
+[28-03-2022][22:19:10] LOG: --------------- Starting the engine ---------------
+[28-03-2022][22:19:11] LOG: VSync is now set to 1
+[28-03-2022][22:19:11] LOG: Presentation device: NVIDIA GeForce RTX 2060
+[28-03-2022][22:19:11] LOG: Custom Event with a parameter 1
+[28-03-2022][22:19:11] LOG: ResizeEvent
+[28-03-2022][22:19:49] LOG: --------------- Starting the engine ---------------
+[28-03-2022][22:19:49] LOG: VSync is now set to 1
+[28-03-2022][22:19:49] LOG: Presentation device: NVIDIA GeForce RTX 2060
+[28-03-2022][22:19:49] LOG: Custom Event with a parameter 1
+[28-03-2022][22:19:49] LOG: ResizeEvent
+[28-03-2022][22:21:23] LOG: --------------- Starting the engine ---------------
+[28-03-2022][22:21:23] LOG: VSync is now set to 1
+[28-03-2022][22:21:24] LOG: Presentation device: NVIDIA GeForce RTX 2060
+[28-03-2022][22:21:24] LOG: Custom Event with a parameter 1
+[28-03-2022][22:21:24] LOG: ResizeEvent
+[28-03-2022][22:33:07] LOG: --------------- Starting the engine ---------------
+[28-03-2022][22:33:07] LOG: VSync is now set to 1
+[28-03-2022][22:33:07] LOG: Presentation device: NVIDIA GeForce RTX 2060
+[28-03-2022][22:33:07] LOG: Custom Event with a parameter 1
+[28-03-2022][22:33:07] LOG: ResizeEvent
+[28-03-2022][22:33:10] LOG: Mesh "D:\cube.obj" was loaded succesfully
+[28-03-2022][22:33:17] LOG: The scene was cleared
+[28-03-2022][22:33:19] LOG: Mesh "D:\shrek.obj" was loaded succesfully
+[28-03-2022][22:33:41] LOG: The scene was cleared
+[28-03-2022][22:33:44] LOG: Mesh "D:\toy.obj" was loaded succesfully
+[28-03-2022][22:33:46] LOG: The scene was cleared
+[28-03-2022][22:33:48] LOG: Mesh "D:\test.obj" was loaded succesfully
+[28-03-2022][22:33:51] LOG: ResizeEvent
+[28-03-2022][22:33:53] LOG: The scene was cleared
+[28-03-2022][22:33:55] LOG: Mesh "D:\cube.obj" was loaded succesfully
+[28-03-2022][22:33:55] LOG: MouseClickEvent
+[28-03-2022][22:33:59] LOG: The scene was cleared
+[28-03-2022][22:36:05] LOG: --------------- Starting the engine ---------------
+[28-03-2022][22:36:05] LOG: VSync is now set to 1
+[28-03-2022][22:36:05] LOG: Presentation device: NVIDIA GeForce RTX 2060
+[28-03-2022][22:36:05] LOG: Custom Event with a parameter 1
+[28-03-2022][22:36:05] LOG: ResizeEvent
+[28-03-2022][22:36:08] LOG: Mesh "D:\cube.obj" was loaded succesfully
+[28-03-2022][22:40:30] LOG: --------------- Starting the engine ---------------
+[28-03-2022][22:40:30] LOG: VSync is now set to 1
+[28-03-2022][22:40:30] LOG: Presentation device: NVIDIA GeForce RTX 2060
+[28-03-2022][22:40:31] LOG: Custom Event with a parameter 1
+[28-03-2022][22:40:31] LOG: ResizeEvent
+[28-03-2022][22:40:34] LOG: MouseClickEvent
+[28-03-2022][22:40:34] LOG: Mesh "D:\shrek.obj" was loaded succesfully
+[28-03-2022][22:40:42] LOG: ResizeEvent
+[28-03-2022][22:40:54] LOG: The scene was cleared
+[28-03-2022][22:43:22] LOG: --------------- Starting the engine ---------------
+[28-03-2022][22:43:22] LOG: VSync is now set to 1
+[28-03-2022][22:43:22] LOG: Presentation device: NVIDIA GeForce RTX 2060
+[28-03-2022][22:43:23] LOG: Custom Event with a parameter 1
+[28-03-2022][22:43:23] LOG: ResizeEvent
+[28-03-2022][22:43:26] LOG: Mesh "D:\shrek.obj" was loaded succesfully
+[28-03-2022][22:43:26] LOG: MouseClickEvent
+[28-03-2022][22:43:58] LOG: ResizeEvent
+[28-03-2022][22:44:04] LOG: MouseClickEvent
+[28-03-2022][22:44:04] LOG: MouseClickEvent
+[28-03-2022][22:44:05] LOG: MouseClickEvent
+[28-03-2022][22:44:05] LOG: MouseClickEvent
+[28-03-2022][22:44:10] LOG: The scene was cleared
+[28-03-2022][22:51:40] LOG: --------------- Starting the engine ---------------
+[28-03-2022][22:51:41] LOG: VSync is now set to 1
+[28-03-2022][22:51:41] LOG: Presentation device: NVIDIA GeForce RTX 2060
+[28-03-2022][22:51:41] LOG: Custom Event with a parameter 1
+[28-03-2022][22:51:41] LOG: ResizeEvent
+[28-03-2022][22:51:44] LOG: Mesh "D:\toy.obj" was loaded succesfully
+[28-03-2022][22:51:44] LOG: MouseClickEvent
+[28-03-2022][22:51:47] LOG: Mesh "D:\shrek.obj" was loaded succesfully
+[28-03-2022][22:51:47] LOG: MouseClickEvent
+[28-03-2022][22:51:52] LOG: ResizeEvent
+[28-03-2022][22:51:53] LOG: MouseClickEvent
+[28-03-2022][22:51:53] LOG: MouseClickEvent
+[28-03-2022][22:51:53] LOG: MouseClickEvent
+[28-03-2022][22:51:53] LOG: MouseClickEvent
+[28-03-2022][22:51:56] LOG: The scene was cleared
+[28-03-2022][22:54:22] LOG: --------------- Starting the engine ---------------
+[28-03-2022][22:54:23] LOG: VSync is now set to 1
+[28-03-2022][22:54:23] LOG: Presentation device: NVIDIA GeForce RTX 2060
+[28-03-2022][22:54:23] LOG: Custom Event with a parameter 1
+[28-03-2022][22:54:23] LOG: ResizeEvent
+[28-03-2022][22:54:27] LOG: Mesh "D:\shrek.obj" was loaded succesfully
+[28-03-2022][22:54:35] LOG: ResizeEvent
+[28-03-2022][22:54:38] LOG: The scene was cleared
+[28-03-2022][22:55:03] LOG: --------------- Starting the engine ---------------
+[28-03-2022][22:55:03] LOG: VSync is now set to 1
+[28-03-2022][22:55:03] LOG: Presentation device: NVIDIA GeForce RTX 2060
+[28-03-2022][22:55:03] LOG: Custom Event with a parameter 1
+[28-03-2022][22:55:03] LOG: ResizeEvent
+[28-03-2022][22:55:06] LOG: Mesh "D:\shrek.obj" was loaded succesfully
+[28-03-2022][22:55:39] LOG: --------------- Starting the engine ---------------
+[28-03-2022][22:55:39] LOG: VSync is now set to 1
+[28-03-2022][22:55:39] LOG: Presentation device: NVIDIA GeForce RTX 2060
+[28-03-2022][22:55:40] LOG: Custom Event with a parameter 1
+[28-03-2022][22:55:40] LOG: ResizeEvent
+[28-03-2022][22:55:43] LOG: Mesh "D:\shrek.obj" was loaded succesfully
+[28-03-2022][22:55:43] LOG: MouseClickEvent
+[28-03-2022][22:55:46] LOG: ResizeEvent
+[28-03-2022][22:55:51] LOG: The scene was cleared
+[28-03-2022][23:02:03] LOG: --------------- Starting the engine ---------------
+[28-03-2022][23:02:03] LOG: VSync is now set to 1
+[28-03-2022][23:02:03] LOG: Presentation device: NVIDIA GeForce RTX 2060
+[28-03-2022][23:02:04] LOG: Custom Event with a parameter 1
+[28-03-2022][23:02:04] LOG: ResizeEvent
+[28-03-2022][23:02:07] LOG: Mesh "D:\shrek.obj" was loaded succesfully
+[28-03-2022][23:02:07] LOG: MouseClickEvent
+[28-03-2022][23:02:17] LOG: ResizeEvent
+[28-03-2022][23:02:31] LOG: The scene was cleared
+[29-03-2022][10:34:49] LOG: --------------- Starting the engine ---------------
+[29-03-2022][10:34:49] LOG: VSync is now set to 1
+[29-03-2022][10:34:49] LOG: Presentation device: NVIDIA GeForce RTX 2060
+[29-03-2022][10:34:49] LOG: Custom Event with a parameter 1
+[29-03-2022][10:34:49] LOG: ResizeEvent
+[29-03-2022][10:34:53] LOG: Mesh "D:\cube.obj" was loaded succesfully
+[29-03-2022][10:35:02] LOG: The scene was cleared
+[29-03-2022][10:35:05] LOG: Mesh "D:\shrek.obj" was loaded succesfully
+[29-03-2022][10:35:05] LOG: MouseClickEvent
+[29-03-2022][10:35:19] LOG: The scene was cleared
+[29-03-2022][15:46:41] LOG: --------------- Starting the engine ---------------
+[29-03-2022][15:46:41] LOG: VSync is now set to 1
+[29-03-2022][15:46:41] LOG: Presentation device: NVIDIA GeForce RTX 2060
+[29-03-2022][15:46:42] LOG: Custom Event with a parameter 1
+[29-03-2022][15:46:42] LOG: ResizeEvent
+[29-03-2022][15:46:45] LOG: Mesh "D:\shrek.obj" was loaded succesfully
+[29-03-2022][15:47:39] LOG: --------------- Starting the engine ---------------
+[29-03-2022][15:47:40] LOG: VSync is now set to 1
+[29-03-2022][15:47:40] LOG: Presentation device: NVIDIA GeForce RTX 2060
+[29-03-2022][15:47:40] LOG: Custom Event with a parameter 1
+[29-03-2022][15:47:40] LOG: ResizeEvent
+[29-03-2022][15:47:44] LOG: Mesh "D:\cube.obj" was loaded succesfully
+[29-03-2022][15:47:49] LOG: The scene was cleared
+[29-03-2022][15:47:51] LOG: Mesh "D:\shrek.obj" was loaded succesfully
+[29-03-2022][15:47:51] LOG: MouseClickEvent
+[29-03-2022][15:47:54] LOG: ResizeEvent
+[29-03-2022][15:47:59] LOG: MouseClickEvent
+[29-03-2022][15:48:00] LOG: MouseClickEvent
+[29-03-2022][15:48:00] LOG: ScrollEvent
+[29-03-2022][15:48:01] LOG: ScrollEvent
+[29-03-2022][15:48:01] LOG: ScrollEvent
+[29-03-2022][15:48:07] LOG: ResizeEvent
+[29-03-2022][17:23:43] LOG: --------------- Starting the engine ---------------
+[29-03-2022][17:23:43] LOG: VSync is now set to 1
+[29-03-2022][17:23:43] LOG: Presentation device: NVIDIA GeForce RTX 2060
+[29-03-2022][17:23:44] LOG: Custom Event with a parameter 1
+[29-03-2022][17:23:44] LOG: ResizeEvent
+[29-03-2022][17:23:47] LOG: Mesh "D:\shrek.obj" was loaded succesfully
+[29-03-2022][17:24:01] LOG: The scene was cleared
+[29-03-2022][17:24:04] LOG: Mesh "D:\cube.obj" was loaded succesfully
+[29-03-2022][17:24:04] LOG: MouseClickEvent
+[29-03-2022][17:24:08] LOG: The scene was cleared
+[29-03-2022][17:25:57] LOG: --------------- Starting the engine ---------------
+[29-03-2022][17:25:57] LOG: VSync is now set to 1
+[29-03-2022][17:25:57] LOG: Presentation device: NVIDIA GeForce RTX 2060
+[29-03-2022][17:25:58] LOG: Custom Event with a parameter 1
+[29-03-2022][17:25:58] LOG: ResizeEvent
+[29-03-2022][17:26:01] LOG: Mesh "D:\shrek.obj" was loaded succesfully
+[29-03-2022][17:26:05] LOG: The scene was cleared
+[29-03-2022][17:26:08] LOG: Mesh "D:\cube.obj" was loaded succesfully
+[29-03-2022][17:26:20] LOG: The scene was cleared
+[29-03-2022][17:26:51] LOG: --------------- Starting the engine ---------------
+[29-03-2022][17:26:51] LOG: VSync is now set to 1
+[29-03-2022][17:26:51] LOG: Presentation device: NVIDIA GeForce RTX 2060
+[29-03-2022][17:26:52] LOG: Custom Event with a parameter 1
+[29-03-2022][17:26:52] LOG: ResizeEvent
+[29-03-2022][17:26:57] LOG: Mesh "D:\cube.obj" was loaded succesfully
+[29-03-2022][17:27:02] LOG: MouseClickEvent
+[29-03-2022][17:27:02] LOG: MouseClickEvent
+[29-03-2022][17:27:02] LOG: MouseClickEvent
+[29-03-2022][17:27:02] LOG: MouseClickEvent
+[29-03-2022][17:27:02] LOG: ScrollEvent
+[29-03-2022][17:27:02] LOG: ScrollEvent
+[29-03-2022][17:27:03] LOG: ScrollEvent
+[29-03-2022][17:27:04] LOG: ResizeEvent
+[29-03-2022][17:27:16] LOG: The scene was cleared
+[29-03-2022][17:32:24] LOG: --------------- Starting the engine ---------------
+[29-03-2022][17:32:24] LOG: VSync is now set to 1
+[29-03-2022][17:32:24] LOG: Presentation device: NVIDIA GeForce RTX 2060
+[29-03-2022][17:32:24] LOG: Custom Event with a parameter 1
+[29-03-2022][17:32:24] LOG: ResizeEvent
+[29-03-2022][17:32:27] LOG: Mesh "D:\cube.obj" was loaded succesfully
+[29-03-2022][17:32:28] LOG: The scene was cleared
+[29-03-2022][17:32:32] LOG: Mesh "D:\cube.obj" was loaded succesfully
+[29-03-2022][17:39:21] LOG: --------------- Starting the engine ---------------
+[29-03-2022][17:39:21] LOG: VSync is now set to 1
+[29-03-2022][17:39:21] LOG: Presentation device: NVIDIA GeForce RTX 2060
+[29-03-2022][17:39:21] LOG: Custom Event with a parameter 1
+[29-03-2022][17:39:21] LOG: ResizeEvent
+[29-03-2022][17:39:24] LOG: Mesh "D:\shrek.obj" was loaded succesfully
+[29-03-2022][17:39:24] LOG: MouseClickEvent
+[29-03-2022][17:39:37] LOG: --------------- Starting the engine ---------------
+[29-03-2022][17:39:37] LOG: VSync is now set to 1
+[29-03-2022][17:39:37] LOG: Presentation device: NVIDIA GeForce RTX 2060
+[29-03-2022][17:39:37] LOG: Custom Event with a parameter 1
+[29-03-2022][17:39:37] LOG: ResizeEvent
+[29-03-2022][17:39:43] LOG: Mesh "D:\shrek.obj" was loaded succesfully
+[29-03-2022][17:39:43] LOG: MouseClickEvent
+[29-03-2022][17:39:50] LOG: The scene was cleared
+[29-03-2022][17:43:51] LOG: --------------- Starting the engine ---------------
+[29-03-2022][17:43:51] LOG: VSync is now set to 1
+[29-03-2022][17:43:51] LOG: Presentation device: NVIDIA GeForce RTX 2060
+[29-03-2022][17:43:51] LOG: Custom Event with a parameter 1
+[29-03-2022][17:43:51] LOG: ResizeEvent
+[29-03-2022][17:43:54] LOG: MouseClickEvent
+[29-03-2022][17:43:54] LOG: Mesh "D:\toy.obj" was loaded succesfully
+[29-03-2022][17:43:57] LOG: ResizeEvent
+[29-03-2022][17:46:13] LOG: --------------- Starting the engine ---------------
+[29-03-2022][17:46:13] LOG: VSync is now set to 1
+[29-03-2022][17:46:14] LOG: Presentation device: NVIDIA GeForce RTX 2060
+[29-03-2022][17:46:14] LOG: Custom Event with a parameter 1
+[29-03-2022][17:46:14] LOG: ResizeEvent
+[29-03-2022][17:46:16] LOG: MouseClickEvent
+[29-03-2022][17:46:16] LOG: Mesh "D:\toy.obj" was loaded succesfully
+[29-03-2022][17:46:24] LOG: The scene was cleared
+[29-03-2022][17:46:34] LOG: --------------- Starting the engine ---------------
+[29-03-2022][17:46:34] LOG: VSync is now set to 1
+[29-03-2022][17:46:34] LOG: Presentation device: NVIDIA GeForce RTX 2060
+[29-03-2022][17:46:35] LOG: Custom Event with a parameter 1
+[29-03-2022][17:46:35] LOG: ResizeEvent
+[29-03-2022][17:46:38] LOG: Mesh "D:\cube.obj" was loaded succesfully
+[29-03-2022][17:46:38] LOG: MouseClickEvent
+[29-03-2022][21:14:09] LOG: --------------- Starting the engine ---------------
+[29-03-2022][21:14:09] LOG: VSync is now set to 1
+[29-03-2022][21:14:09] LOG: Presentation device: NVIDIA GeForce RTX 2060
+[29-03-2022][21:14:10] LOG: Custom Event with a parameter 1
+[29-03-2022][21:14:10] LOG: ResizeEvent
+[29-03-2022][21:14:14] LOG: Mesh "D:\cube.obj" was loaded succesfully
+[29-03-2022][21:14:15] LOG: The scene was cleared
+[29-03-2022][21:16:17] LOG: --------------- Starting the engine ---------------
+[29-03-2022][21:16:17] LOG: VSync is now set to 1
+[29-03-2022][21:16:17] LOG: Presentation device: NVIDIA GeForce RTX 2060
+[29-03-2022][21:16:18] LOG: Custom Event with a parameter 1
+[29-03-2022][21:16:18] LOG: ResizeEvent
+[29-03-2022][21:16:24] LOG: --------------- Starting the engine ---------------
+[29-03-2022][21:16:24] LOG: VSync is now set to 1
+[29-03-2022][21:16:24] LOG: Presentation device: NVIDIA GeForce RTX 2060
+[29-03-2022][21:16:25] LOG: Custom Event with a parameter 1
+[29-03-2022][21:16:25] LOG: ResizeEvent
+[29-03-2022][21:16:31] LOG: The scene was cleared
+[29-03-2022][21:20:27] LOG: --------------- Starting the engine ---------------
+[29-03-2022][21:20:27] LOG: VSync is now set to 1
+[29-03-2022][21:20:27] LOG: Presentation device: NVIDIA GeForce RTX 2060
+[29-03-2022][21:20:27] LOG: Custom Event with a parameter 1
+[29-03-2022][21:20:27] LOG: ResizeEvent
+[29-03-2022][21:21:30] LOG: --------------- Starting the engine ---------------
+[29-03-2022][21:21:30] LOG: VSync is now set to 1
+[29-03-2022][21:21:30] LOG: Presentation device: NVIDIA GeForce RTX 2060
+[29-03-2022][21:21:30] LOG: Custom Event with a parameter 1
+[29-03-2022][21:21:30] LOG: ResizeEvent
+[29-03-2022][21:21:33] LOG: Mesh "D:\cube.obj" was loaded succesfully
+[29-03-2022][21:21:39] LOG: The scene was cleared
+[29-03-2022][21:24:00] LOG: --------------- Starting the engine ---------------
+[29-03-2022][21:24:00] LOG: VSync is now set to 1
+[29-03-2022][21:24:00] LOG: Presentation device: NVIDIA GeForce RTX 2060
+[29-03-2022][21:24:00] LOG: Custom Event with a parameter 1
+[29-03-2022][21:24:00] LOG: ResizeEvent
+[29-03-2022][21:24:03] LOG: Mesh "D:\cube.obj" was loaded succesfully
+[29-03-2022][21:24:03] LOG: MouseClickEvent
+[29-03-2022][21:24:06] LOG: MouseClickEvent
+[29-03-2022][21:24:07] LOG: ScrollEvent
+[29-03-2022][21:24:07] LOG: ScrollEvent
+[29-03-2022][21:24:07] LOG: ScrollEvent
+[29-03-2022][21:24:07] LOG: ScrollEvent
+[29-03-2022][21:25:44] LOG: --------------- Starting the engine ---------------
+[29-03-2022][21:25:44] LOG: VSync is now set to 1
+[29-03-2022][21:25:44] LOG: Presentation device: NVIDIA GeForce RTX 2060
+[29-03-2022][21:25:44] LOG: Custom Event with a parameter 1
+[29-03-2022][21:25:44] LOG: ResizeEvent
+[29-03-2022][21:25:46] LOG: Mesh "D:\cube.obj" was loaded succesfully
+[29-03-2022][21:25:47] LOG: MouseClickEvent
+[29-03-2022][21:25:49] LOG: MouseClickEvent
+[29-03-2022][21:26:20] LOG: --------------- Starting the engine ---------------
+[29-03-2022][21:26:20] LOG: VSync is now set to 1
+[29-03-2022][21:26:20] LOG: Presentation device: NVIDIA GeForce RTX 2060
+[29-03-2022][21:26:21] LOG: Custom Event with a parameter 1
+[29-03-2022][21:26:21] LOG: ResizeEvent
+[29-03-2022][21:26:28] LOG: --------------- Starting the engine ---------------
+[29-03-2022][21:26:28] LOG: VSync is now set to 1
+[29-03-2022][21:26:28] LOG: Presentation device: NVIDIA GeForce RTX 2060
+[29-03-2022][21:26:28] LOG: Custom Event with a parameter 1
+[29-03-2022][21:26:28] LOG: ResizeEvent
+[29-03-2022][21:26:31] LOG: Mesh "D:\cube.obj" was loaded succesfully
+[29-03-2022][21:26:38] LOG: ScrollEvent
+[29-03-2022][21:26:38] LOG: ScrollEvent
+[29-03-2022][21:26:54] LOG: --------------- Starting the engine ---------------
+[29-03-2022][21:26:54] LOG: VSync is now set to 1
+[29-03-2022][21:26:54] LOG: Presentation device: NVIDIA GeForce RTX 2060
+[29-03-2022][21:26:54] LOG: Custom Event with a parameter 1
+[29-03-2022][21:26:54] LOG: ResizeEvent
+[29-03-2022][21:26:57] LOG: Mesh "D:\cube.obj" was loaded succesfully
+[29-03-2022][21:29:21] LOG: --------------- Starting the engine ---------------
+[29-03-2022][21:29:21] LOG: VSync is now set to 1
+[29-03-2022][21:29:21] LOG: Presentation device: NVIDIA GeForce RTX 2060
+[29-03-2022][21:29:22] LOG: Custom Event with a parameter 1
+[29-03-2022][21:29:22] LOG: ResizeEvent
+[29-03-2022][21:29:24] LOG: MouseClickEvent
+[29-03-2022][21:29:24] LOG: Mesh "D:\cube.obj" was loaded succesfully
+[29-03-2022][21:29:35] LOG: --------------- Starting the engine ---------------
+[29-03-2022][21:29:35] LOG: VSync is now set to 1
+[29-03-2022][21:29:35] LOG: Presentation device: NVIDIA GeForce RTX 2060
+[29-03-2022][21:29:36] LOG: Custom Event with a parameter 1
+[29-03-2022][21:29:36] LOG: ResizeEvent
+[29-03-2022][21:29:38] LOG: Mesh "D:\cube.obj" was loaded succesfully
+[29-03-2022][21:30:03] LOG: --------------- Starting the engine ---------------
+[29-03-2022][21:30:03] LOG: VSync is now set to 1
+[29-03-2022][21:30:03] LOG: Presentation device: NVIDIA GeForce RTX 2060
+[29-03-2022][21:30:04] LOG: Custom Event with a parameter 1
+[29-03-2022][21:30:04] LOG: ResizeEvent
+[29-03-2022][21:30:06] LOG: Mesh "D:\cube.obj" was loaded succesfully
+[29-03-2022][21:31:47] LOG: --------------- Starting the engine ---------------
+[29-03-2022][21:31:47] LOG: VSync is now set to 1
+[29-03-2022][21:31:47] LOG: Presentation device: NVIDIA GeForce RTX 2060
+[29-03-2022][21:31:47] LOG: Custom Event with a parameter 1
+[29-03-2022][21:31:47] LOG: ResizeEvent
+[29-03-2022][21:31:50] LOG: MouseClickEvent
+[29-03-2022][21:31:50] LOG: Mesh "D:\cube.obj" was loaded succesfully
+[29-03-2022][21:31:53] LOG: MouseClickEvent
+[29-03-2022][21:32:14] LOG: --------------- Starting the engine ---------------
+[29-03-2022][21:32:14] LOG: VSync is now set to 1
+[29-03-2022][21:32:14] LOG: Presentation device: NVIDIA GeForce RTX 2060
+[29-03-2022][21:32:14] LOG: Custom Event with a parameter 1
+[29-03-2022][21:32:14] LOG: ResizeEvent
+[29-03-2022][21:32:17] LOG: Mesh "D:\cube.obj" was loaded succesfully
+[29-03-2022][21:32:17] LOG: MouseClickEvent
+[29-03-2022][21:32:21] LOG: MouseClickEvent
+[29-03-2022][21:35:31] LOG: --------------- Starting the engine ---------------
+[29-03-2022][21:35:32] LOG: VSync is now set to 1
+[29-03-2022][21:35:32] LOG: Presentation device: NVIDIA GeForce RTX 2060
+[29-03-2022][21:35:32] LOG: Custom Event with a parameter 1
+[29-03-2022][21:35:32] LOG: ResizeEvent
+[29-03-2022][21:35:36] LOG: Mesh "D:\cube.obj" was loaded succesfully
+[29-03-2022][21:35:36] LOG: MouseClickEvent
+[29-03-2022][21:35:38] LOG: MouseClickEvent
+[29-03-2022][21:36:44] LOG: --------------- Starting the engine ---------------
+[29-03-2022][21:36:44] LOG: VSync is now set to 1
+[29-03-2022][21:36:44] LOG: Presentation device: NVIDIA GeForce RTX 2060
+[29-03-2022][21:36:44] LOG: Custom Event with a parameter 1
+[29-03-2022][21:36:44] LOG: ResizeEvent
+[29-03-2022][21:36:47] LOG: Mesh "D:\cube.obj" was loaded succesfully
+[29-03-2022][21:36:47] LOG: MouseClickEvent
+[29-03-2022][21:36:49] LOG: MouseClickEvent
+[29-03-2022][21:38:11] LOG: --------------- Starting the engine ---------------
+[29-03-2022][21:38:11] LOG: VSync is now set to 1
+[29-03-2022][21:38:11] LOG: Presentation device: NVIDIA GeForce RTX 2060
+[29-03-2022][21:38:12] LOG: Custom Event with a parameter 1
+[29-03-2022][21:38:12] LOG: ResizeEvent
+[29-03-2022][21:38:14] LOG: MouseClickEvent
+[29-03-2022][21:38:14] LOG: Mesh "D:\cube.obj" was loaded succesfully
+[29-03-2022][21:38:16] LOG: MouseClickEvent
+[29-03-2022][21:39:36] LOG: --------------- Starting the engine ---------------
+[29-03-2022][21:39:36] LOG: VSync is now set to 1
+[29-03-2022][21:39:36] LOG: Presentation device: NVIDIA GeForce RTX 2060
+[29-03-2022][21:39:37] LOG: Custom Event with a parameter 1
+[29-03-2022][21:39:37] LOG: ResizeEvent
+[29-03-2022][21:39:40] LOG: MouseClickEvent
+[29-03-2022][21:39:40] LOG: Mesh "D:\cube.obj" was loaded succesfully
+[29-03-2022][21:40:49] LOG: --------------- Starting the engine ---------------
+[29-03-2022][21:40:49] LOG: VSync is now set to 1
+[29-03-2022][21:40:49] LOG: Presentation device: NVIDIA GeForce RTX 2060
+[29-03-2022][21:40:50] LOG: Custom Event with a parameter 1
+[29-03-2022][21:40:50] LOG: ResizeEvent
+[29-03-2022][21:40:52] LOG: Mesh "D:\cube.obj" was loaded succesfully
+[29-03-2022][21:40:52] LOG: MouseClickEvent
+[29-03-2022][21:40:54] LOG: MouseClickEvent
+[29-03-2022][21:40:54] LOG: The scene was cleared
+[29-03-2022][21:40:57] LOG: The scene was cleared
+[29-03-2022][21:41:01] LOG: Mesh "D:\shrek.obj" was loaded succesfully
+[29-03-2022][21:41:01] LOG: MouseClickEvent
+[29-03-2022][21:41:08] LOG: The scene was cleared
+[29-03-2022][21:41:08] LOG: MouseClickEvent
+[29-03-2022][21:41:12] LOG: ResizeEvent
+[29-03-2022][21:41:16] LOG: ResizeEvent
+[29-03-2022][21:41:18] LOG: The scene was cleared
+[29-03-2022][21:42:23] LOG: --------------- Starting the engine ---------------
+[29-03-2022][21:42:24] LOG: VSync is now set to 1
+[29-03-2022][21:42:24] LOG: Presentation device: NVIDIA GeForce RTX 2060
+[29-03-2022][21:42:24] LOG: Custom Event with a parameter 1
+[29-03-2022][21:42:24] LOG: ResizeEvent
+[29-03-2022][21:42:26] LOG: MouseClickEvent
+[29-03-2022][21:42:26] LOG: Mesh "D:\cube.obj" was loaded succesfully
+[29-03-2022][21:42:29] LOG: MouseClickEvent
+[29-03-2022][21:42:31] LOG: The scene was cleared
+[29-03-2022][21:42:35] LOG: --------------- Starting the engine ---------------
+[29-03-2022][21:42:35] LOG: VSync is now set to 1
+[29-03-2022][21:42:35] LOG: Presentation device: NVIDIA GeForce RTX 2060
+[29-03-2022][21:42:36] LOG: Custom Event with a parameter 1
+[29-03-2022][21:42:36] LOG: ResizeEvent
+[29-03-2022][21:42:39] LOG: MouseClickEvent
+[29-03-2022][21:42:39] LOG: Mesh "D:\shrek.obj" was loaded succesfully
+[29-03-2022][21:42:41] LOG: MouseClickEvent
+[29-03-2022][21:42:46] LOG: The scene was cleared
+[29-03-2022][21:43:30] LOG: --------------- Starting the engine ---------------
+[29-03-2022][21:43:30] LOG: VSync is now set to 1
+[29-03-2022][21:43:30] LOG: Presentation device: NVIDIA GeForce RTX 2060
+[29-03-2022][21:43:30] LOG: Custom Event with a parameter 1
+[29-03-2022][21:43:30] LOG: ResizeEvent
+[29-03-2022][21:43:33] LOG: Mesh "D:\shrek.obj" was loaded succesfully
+[29-03-2022][21:43:33] LOG: MouseClickEvent
+[29-03-2022][21:43:47] LOG: The scene was cleared
+[29-03-2022][21:44:25] LOG: --------------- Starting the engine ---------------
+[29-03-2022][21:44:25] LOG: VSync is now set to 1
+[29-03-2022][21:44:25] LOG: Presentation device: NVIDIA GeForce RTX 2060
+[29-03-2022][21:44:26] LOG: Custom Event with a parameter 1
+[29-03-2022][21:44:26] LOG: ResizeEvent
+[29-03-2022][21:44:29] LOG: Mesh "D:\shrek.obj" was loaded succesfully
+[29-03-2022][21:44:33] LOG: The scene was cleared
+[29-03-2022][21:45:16] LOG: --------------- Starting the engine ---------------
+[29-03-2022][21:45:17] LOG: VSync is now set to 1
+[29-03-2022][21:45:17] LOG: Presentation device: NVIDIA GeForce RTX 2060
+[29-03-2022][21:45:17] LOG: Custom Event with a parameter 1
+[29-03-2022][21:45:17] LOG: ResizeEvent
+[29-03-2022][21:45:24] LOG: --------------- Starting the engine ---------------
+[29-03-2022][21:45:25] LOG: VSync is now set to 1
+[29-03-2022][21:45:25] LOG: Presentation device: NVIDIA GeForce RTX 2060
+[29-03-2022][21:45:25] LOG: Custom Event with a parameter 1
+[29-03-2022][21:45:25] LOG: ResizeEvent
+[29-03-2022][21:45:30] LOG: Mesh "D:\shrek.obj" was loaded succesfully
+[29-03-2022][21:45:30] LOG: MouseClickEvent
+[29-03-2022][21:45:35] LOG: The scene was cleared
+[29-03-2022][21:45:53] LOG: --------------- Starting the engine ---------------
+[29-03-2022][21:45:53] LOG: VSync is now set to 1
+[29-03-2022][21:45:53] LOG: Presentation device: NVIDIA GeForce RTX 2060
+[29-03-2022][21:45:53] LOG: Custom Event with a parameter 1
+[29-03-2022][21:45:53] LOG: ResizeEvent
+[29-03-2022][21:46:03] LOG: --------------- Starting the engine ---------------
+[29-03-2022][21:46:03] LOG: VSync is now set to 1
+[29-03-2022][21:46:03] LOG: Presentation device: NVIDIA GeForce RTX 2060
+[29-03-2022][21:46:04] LOG: Custom Event with a parameter 1
+[29-03-2022][21:46:04] LOG: ResizeEvent
+[29-03-2022][21:46:07] LOG: MouseClickEvent
+[29-03-2022][21:46:07] LOG: Mesh "D:\shrek.obj" was loaded succesfully
+[29-03-2022][21:46:11] LOG: The scene was cleared
+[29-03-2022][21:46:30] LOG: --------------- Starting the engine ---------------
+[29-03-2022][21:46:30] LOG: VSync is now set to 1
+[29-03-2022][21:46:30] LOG: Presentation device: NVIDIA GeForce RTX 2060
+[29-03-2022][21:46:31] LOG: Custom Event with a parameter 1
+[29-03-2022][21:46:31] LOG: ResizeEvent
+[29-03-2022][21:46:35] LOG: Mesh "D:\shrek.obj" was loaded succesfully
+[29-03-2022][21:46:35] LOG: MouseClickEvent
+[29-03-2022][21:46:37] LOG: MouseClickEvent
+[29-03-2022][21:46:39] LOG: The scene was cleared
+[29-03-2022][21:48:13] LOG: --------------- Starting the engine ---------------
+[29-03-2022][21:48:13] LOG: VSync is now set to 1
+[29-03-2022][21:48:13] LOG: Presentation device: NVIDIA GeForce RTX 2060
+[29-03-2022][21:48:14] LOG: Custom Event with a parameter 1
+[29-03-2022][21:48:14] LOG: ResizeEvent
+[29-03-2022][21:48:17] LOG: MouseClickEvent
+[29-03-2022][21:48:18] LOG: Mesh "D:\shrek.obj" was loaded succesfully
+[29-03-2022][21:48:35] LOG: --------------- Starting the engine ---------------
+[29-03-2022][21:48:35] LOG: VSync is now set to 1
+[29-03-2022][21:48:35] LOG: Presentation device: NVIDIA GeForce RTX 2060
+[29-03-2022][21:48:35] LOG: Custom Event with a parameter 1
+[29-03-2022][21:48:35] LOG: ResizeEvent
+[29-03-2022][21:48:38] LOG: Mesh "D:\shrek.obj" was loaded succesfully
+[29-03-2022][21:48:38] LOG: MouseClickEvent
+[29-03-2022][21:48:40] LOG: MouseClickEvent
+[29-03-2022][21:48:42] LOG: The scene was cleared
+[29-03-2022][21:49:03] LOG: --------------- Starting the engine ---------------
+[29-03-2022][21:49:03] LOG: VSync is now set to 1
+[29-03-2022][21:49:03] LOG: Presentation device: NVIDIA GeForce RTX 2060
+[29-03-2022][21:49:03] LOG: Custom Event with a parameter 1
+[29-03-2022][21:49:03] LOG: ResizeEvent
+[29-03-2022][21:49:06] LOG: Mesh "D:\shrek.obj" was loaded succesfully
+[29-03-2022][21:49:06] LOG: MouseClickEvent
+[29-03-2022][21:49:09] LOG: The scene was cleared
+[29-03-2022][21:49:25] LOG: --------------- Starting the engine ---------------
+[29-03-2022][21:49:25] LOG: VSync is now set to 1
+[29-03-2022][21:49:25] LOG: Presentation device: NVIDIA GeForce RTX 2060
+[29-03-2022][21:49:26] LOG: Custom Event with a parameter 1
+[29-03-2022][21:49:26] LOG: ResizeEvent
+[29-03-2022][21:49:29] LOG: Mesh "D:\shrek.obj" was loaded succesfully
+[29-03-2022][21:49:29] LOG: MouseClickEvent
+[29-03-2022][21:49:31] LOG: MouseClickEvent
+[29-03-2022][21:49:31] LOG: The scene was cleared
+[29-03-2022][21:49:32] LOG: The scene was cleared
+[29-03-2022][21:50:02] LOG: --------------- Starting the engine ---------------
+[29-03-2022][21:50:02] LOG: VSync is now set to 1
+[29-03-2022][21:50:02] LOG: Presentation device: NVIDIA GeForce RTX 2060
+[29-03-2022][21:50:02] LOG: Custom Event with a parameter 1
+[29-03-2022][21:50:02] LOG: ResizeEvent
+[29-03-2022][21:50:05] LOG: Mesh "D:\cube.obj" was loaded succesfully
+[29-03-2022][21:50:05] LOG: MouseClickEvent
+[29-03-2022][21:50:30] LOG: --------------- Starting the engine ---------------
+[29-03-2022][21:50:30] LOG: VSync is now set to 1
+[29-03-2022][21:50:30] LOG: Presentation device: NVIDIA GeForce RTX 2060
+[29-03-2022][21:50:30] LOG: Custom Event with a parameter 1
+[29-03-2022][21:50:30] LOG: ResizeEvent
+[29-03-2022][21:50:34] LOG: Mesh "D:\cube.obj" was loaded succesfully
+[29-03-2022][21:50:34] LOG: MouseClickEvent
+[29-03-2022][21:50:36] LOG: The scene was cleared
+[29-03-2022][21:50:37] LOG: MouseClickEvent
+[29-03-2022][21:50:52] LOG: --------------- Starting the engine ---------------
+[29-03-2022][21:50:53] LOG: VSync is now set to 1
+[29-03-2022][21:50:53] LOG: Presentation device: NVIDIA GeForce RTX 2060
+[29-03-2022][21:50:53] LOG: Custom Event with a parameter 1
+[29-03-2022][21:50:53] LOG: ResizeEvent
+[29-03-2022][21:50:55] LOG: MouseClickEvent
+[29-03-2022][21:50:55] LOG: Mesh "D:\cube.obj" was loaded succesfully
+[29-03-2022][21:50:59] LOG: The scene was cleared
+[29-03-2022][21:51:27] LOG: --------------- Starting the engine ---------------
+[29-03-2022][21:51:27] LOG: VSync is now set to 1
+[29-03-2022][21:51:27] LOG: Presentation device: NVIDIA GeForce RTX 2060
+[29-03-2022][21:51:28] LOG: Custom Event with a parameter 1
+[29-03-2022][21:51:28] LOG: ResizeEvent
+[29-03-2022][21:51:30] LOG: MouseClickEvent
+[29-03-2022][21:51:30] LOG: Mesh "D:\cube.obj" was loaded succesfully
+[29-03-2022][21:51:32] LOG: The scene was cleared
+[29-03-2022][21:51:47] LOG: --------------- Starting the engine ---------------
+[29-03-2022][21:51:47] LOG: VSync is now set to 1
+[29-03-2022][21:51:47] LOG: Presentation device: NVIDIA GeForce RTX 2060
+[29-03-2022][21:51:47] LOG: Custom Event with a parameter 1
+[29-03-2022][21:51:47] LOG: ResizeEvent
+[29-03-2022][21:51:50] LOG: Mesh "D:\cube.obj" was loaded succesfully
+[29-03-2022][21:51:52] LOG: The scene was cleared
+[29-03-2022][21:51:52] LOG: MouseClickEvent
+[29-03-2022][21:51:54] LOG: The scene was cleared
+[29-03-2022][21:52:12] LOG: --------------- Starting the engine ---------------
+[29-03-2022][21:52:12] LOG: VSync is now set to 1
+[29-03-2022][21:52:12] LOG: Presentation device: NVIDIA GeForce RTX 2060
+[29-03-2022][21:52:12] LOG: Custom Event with a parameter 1
+[29-03-2022][21:52:12] LOG: ResizeEvent
+[29-03-2022][21:52:15] LOG: Mesh "D:\cube.obj" was loaded succesfully
+[29-03-2022][21:52:15] LOG: MouseClickEvent
+[29-03-2022][21:52:17] LOG: MouseClickEvent
+[29-03-2022][21:52:17] LOG: The scene was cleared
+[29-03-2022][21:52:20] LOG: The scene was cleared
+[29-03-2022][21:52:47] LOG: --------------- Starting the engine ---------------
+[29-03-2022][21:52:47] LOG: VSync is now set to 1
+[29-03-2022][21:52:47] LOG: Presentation device: NVIDIA GeForce RTX 2060
+[29-03-2022][21:52:48] LOG: Custom Event with a parameter 1
+[29-03-2022][21:52:48] LOG: ResizeEvent
+[29-03-2022][21:52:51] LOG: Mesh "D:\cube.obj" was loaded succesfully
+[29-03-2022][21:52:51] LOG: MouseClickEvent
+[29-03-2022][21:52:53] LOG: The scene was cleared
+[29-03-2022][21:53:13] LOG: --------------- Starting the engine ---------------
+[29-03-2022][21:53:13] LOG: VSync is now set to 1
+[29-03-2022][21:53:13] LOG: Presentation device: NVIDIA GeForce RTX 2060
+[29-03-2022][21:53:13] LOG: Custom Event with a parameter 1
+[29-03-2022][21:53:13] LOG: ResizeEvent
+[29-03-2022][21:53:16] LOG: MouseClickEvent
+[29-03-2022][21:53:16] LOG: Mesh "D:\cube.obj" was loaded succesfully
+[29-03-2022][21:53:17] LOG: The scene was cleared
+[29-03-2022][21:54:04] LOG: --------------- Starting the engine ---------------
+[29-03-2022][21:54:04] LOG: VSync is now set to 1
+[29-03-2022][21:54:04] LOG: Presentation device: NVIDIA GeForce RTX 2060
+[29-03-2022][21:54:04] LOG: Custom Event with a parameter 1
+[29-03-2022][21:54:04] LOG: ResizeEvent
+[29-03-2022][21:54:08] LOG: Mesh "D:\cube.obj" was loaded succesfully
+[29-03-2022][21:54:14] LOG: The scene was cleared
+[29-03-2022][21:54:18] LOG: Mesh "D:\shrek.obj" was loaded succesfully
+[29-03-2022][21:54:18] LOG: MouseClickEvent
+[29-03-2022][21:54:22] LOG: The scene was cleared
+[29-03-2022][21:54:26] LOG: Mesh "D:\shrek.obj" was loaded succesfully
+[29-03-2022][21:54:26] LOG: MouseClickEvent
+[29-03-2022][21:54:28] LOG: The scene was cleared
+[29-03-2022][21:54:38] LOG: --------------- Starting the engine ---------------
+[29-03-2022][21:54:38] LOG: VSync is now set to 1
+[29-03-2022][21:54:38] LOG: Presentation device: NVIDIA GeForce RTX 2060
+[29-03-2022][21:54:39] LOG: Custom Event with a parameter 1
+[29-03-2022][21:54:39] LOG: ResizeEvent
+[29-03-2022][21:54:42] LOG: MouseClickEvent
+[29-03-2022][21:54:42] LOG: Mesh "D:\cube.obj" was loaded succesfully
+[29-03-2022][21:54:44] LOG: The scene was cleared
+[29-03-2022][21:54:47] LOG: Mesh "D:\shrek.obj" was loaded succesfully
+[29-03-2022][21:54:47] LOG: MouseClickEvent
+[29-03-2022][21:54:51] LOG: MouseClickEvent
+[29-03-2022][21:54:51] LOG: The scene was cleared
+[29-03-2022][21:54:55] LOG: The scene was cleared
+[29-03-2022][21:55:09] LOG: --------------- Starting the engine ---------------
+[29-03-2022][21:55:09] LOG: VSync is now set to 1
+[29-03-2022][21:55:09] LOG: Presentation device: NVIDIA GeForce RTX 2060
+[29-03-2022][21:55:09] LOG: Custom Event with a parameter 1
+[29-03-2022][21:55:09] LOG: ResizeEvent
+[29-03-2022][21:55:12] LOG: MouseClickEvent
+[29-03-2022][21:55:12] LOG: Mesh "D:\shrek.obj" was loaded succesfully
+[29-03-2022][21:55:14] LOG: MouseClickEvent
+[29-03-2022][21:55:14] LOG: The scene was cleared
+[29-03-2022][21:55:16] LOG: The scene was cleared
+[29-03-2022][21:55:18] LOG: Mesh "D:\test.obj" was loaded succesfully
+[29-03-2022][21:55:18] LOG: MouseClickEvent
+[29-03-2022][21:55:21] LOG: The scene was cleared
+[29-03-2022][21:55:23] LOG: The scene was cleared
+[29-03-2022][21:56:06] LOG: --------------- Starting the engine ---------------
+[29-03-2022][21:56:06] LOG: VSync is now set to 1
+[29-03-2022][21:56:06] LOG: Presentation device: NVIDIA GeForce RTX 2060
+[29-03-2022][21:56:06] LOG: Custom Event with a parameter 1
+[29-03-2022][21:56:06] LOG: ResizeEvent
+[29-03-2022][21:56:09] LOG: MouseClickEvent
+[29-03-2022][21:56:10] LOG: Mesh "D:\shrek.obj" was loaded succesfully
+[29-03-2022][21:56:12] LOG: MouseClickEvent
+[29-03-2022][21:56:15] LOG: Mesh "D:\cube.obj" was loaded succesfully
+[29-03-2022][21:56:15] LOG: MouseClickEvent
+[29-03-2022][21:56:18] LOG: MouseClickEvent
+[29-03-2022][21:56:24] LOG: The scene was cleared
+[29-03-2022][21:56:40] LOG: Mesh "D:\cube.obj" was loaded succesfully
+[29-03-2022][21:56:40] LOG: MouseClickEvent
+[29-03-2022][21:56:42] LOG: MouseClickEvent
+[29-03-2022][21:57:00] LOG: The scene was cleared
+[29-03-2022][21:57:02] LOG: MouseClickEvent
+[29-03-2022][21:57:02] LOG: Mesh "D:\shrek.obj" was loaded succesfully
+[29-03-2022][21:57:08] LOG: The scene was cleared
+[29-03-2022][21:59:20] LOG: --------------- Starting the engine ---------------
+[29-03-2022][21:59:20] LOG: VSync is now set to 1
+[29-03-2022][21:59:20] LOG: Presentation device: NVIDIA GeForce RTX 2060
+[29-03-2022][21:59:21] LOG: Custom Event with a parameter 1
+[29-03-2022][21:59:21] LOG: ResizeEvent
+[29-03-2022][21:59:24] LOG: Mesh "D:\shrek.obj" was loaded succesfully
+[29-03-2022][21:59:24] LOG: MouseClickEvent
+[29-03-2022][21:59:26] LOG: MouseClickEvent
+[29-03-2022][21:59:33] LOG: --------------- Starting the engine ---------------
+[29-03-2022][21:59:33] LOG: VSync is now set to 1
+[29-03-2022][21:59:33] LOG: Presentation device: NVIDIA GeForce RTX 2060
+[29-03-2022][21:59:33] LOG: Custom Event with a parameter 1
+[29-03-2022][21:59:33] LOG: ResizeEvent
+[29-03-2022][21:59:35] LOG: MouseClickEvent
+[29-03-2022][21:59:36] LOG: Mesh "D:\shrek.obj" was loaded succesfully
+[29-03-2022][22:00:57] LOG: --------------- Starting the engine ---------------
+[29-03-2022][22:00:57] LOG: VSync is now set to 1
+[29-03-2022][22:00:57] LOG: Presentation device: NVIDIA GeForce RTX 2060
+[29-03-2022][22:00:58] LOG: Custom Event with a parameter 1
+[29-03-2022][22:00:58] LOG: ResizeEvent
+[29-03-2022][22:01:00] LOG: Mesh "D:\shrek.obj" was loaded succesfully
+[29-03-2022][22:01:00] LOG: MouseClickEvent
+[29-03-2022][22:01:05] LOG: ResizeEvent
+[29-03-2022][22:01:11] LOG: The scene was cleared
+[29-03-2022][22:01:24] LOG: --------------- Starting the engine ---------------
+[29-03-2022][22:01:24] LOG: VSync is now set to 1
+[29-03-2022][22:01:24] LOG: Presentation device: NVIDIA GeForce RTX 2060
+[29-03-2022][22:01:25] LOG: Custom Event with a parameter 1
+[29-03-2022][22:01:25] LOG: ResizeEvent
+[29-03-2022][22:01:27] LOG: MouseClickEvent
+[29-03-2022][22:01:27] LOG: Mesh "D:\cube.obj" was loaded succesfully
+[29-03-2022][22:01:28] LOG: The scene was cleared
+[29-03-2022][22:01:30] LOG: Mesh "D:\test.obj" was loaded succesfully
+[29-03-2022][22:01:30] LOG: MouseClickEvent
+[29-03-2022][22:01:32] LOG: The scene was cleared
+[29-03-2022][22:01:35] LOG: Mesh "D:\cube.obj" was loaded succesfully
+[29-03-2022][22:01:35] LOG: MouseClickEvent
+[29-03-2022][22:01:37] LOG: MouseClickEvent
+[29-03-2022][22:01:38] LOG: The scene was cleared
+[29-03-2022][22:02:16] LOG: --------------- Starting the engine ---------------
+[29-03-2022][22:02:16] LOG: VSync is now set to 1
+[29-03-2022][22:02:17] LOG: Presentation device: NVIDIA GeForce RTX 2060
+[29-03-2022][22:02:17] LOG: Custom Event with a parameter 1
+[29-03-2022][22:02:17] LOG: ResizeEvent
+[29-03-2022][22:02:20] LOG: Mesh "D:\shrek.obj" was loaded succesfully
+[29-03-2022][22:02:20] LOG: MouseClickEvent
+[29-03-2022][22:02:22] LOG: MouseClickEvent
+[29-03-2022][22:02:24] LOG: The scene was cleared
+[29-03-2022][22:02:27] LOG: Mesh "D:\shrek.obj" was loaded succesfully
+[29-03-2022][22:02:27] LOG: MouseClickEvent
+[29-03-2022][22:02:29] LOG: MouseClickEvent
+[29-03-2022][22:02:32] LOG: The scene was cleared
+[29-03-2022][22:22:45] LOG: --------------- Starting the engine ---------------
+[29-03-2022][22:22:45] LOG: VSync is now set to 1
+[29-03-2022][22:22:45] LOG: Presentation device: NVIDIA GeForce RTX 2060
+[29-03-2022][22:22:45] LOG: Custom Event with a parameter 1
+[29-03-2022][22:22:45] LOG: ResizeEvent
+[29-03-2022][22:22:48] LOG: Mesh "D:\cube.obj" was loaded succesfully
+[29-03-2022][22:22:48] LOG: MouseClickEvent
+[29-03-2022][22:22:50] LOG: The scene was cleared
+[29-03-2022][22:22:52] LOG: MouseClickEvent
+[29-03-2022][22:22:53] LOG: Mesh "D:\shrek.obj" was loaded succesfully
+[29-03-2022][22:22:59] LOG: The scene was cleared
+[29-03-2022][22:25:53] LOG: --------------- Starting the engine ---------------
+[29-03-2022][22:25:53] LOG: VSync is now set to 1
+[29-03-2022][22:25:53] LOG: Presentation device: NVIDIA GeForce RTX 2060
+[29-03-2022][22:25:54] LOG: Custom Event with a parameter 1
+[29-03-2022][22:25:54] LOG: ResizeEvent
+[29-03-2022][22:25:57] LOG: Mesh "D:\shrek.obj" was loaded succesfully
+[29-03-2022][22:25:57] LOG: MouseClickEvent
+[29-03-2022][22:25:59] LOG: MouseClickEvent
+[29-03-2022][22:26:01] LOG: The scene was cleared
+[29-03-2022][22:27:06] LOG: --------------- Starting the engine ---------------
+[29-03-2022][22:27:06] LOG: VSync is now set to 1
+[29-03-2022][22:27:06] LOG: Presentation device: NVIDIA GeForce RTX 2060
+[29-03-2022][22:27:06] LOG: Custom Event with a parameter 1
+[29-03-2022][22:27:06] LOG: ResizeEvent
+[29-03-2022][22:27:10] LOG: MouseClickEvent
+[29-03-2022][22:27:10] LOG: Mesh "D:\shrek.obj" was loaded succesfully
+[29-03-2022][22:27:14] LOG: The scene was cleared
+[29-03-2022][22:27:18] LOG: Mesh "D:\cube.obj" was loaded succesfully
+[29-03-2022][22:27:18] LOG: MouseClickEvent
+[29-03-2022][22:27:23] LOG: The scene was cleared
+[29-03-2022][22:28:05] LOG: --------------- Starting the engine ---------------
+[29-03-2022][22:28:05] LOG: VSync is now set to 1
+[29-03-2022][22:28:05] LOG: Presentation device: NVIDIA GeForce RTX 2060
+[29-03-2022][22:28:06] LOG: Custom Event with a parameter 1
+[29-03-2022][22:28:06] LOG: ResizeEvent
+[29-03-2022][22:28:46] LOG: --------------- Starting the engine ---------------
+[29-03-2022][22:28:46] LOG: VSync is now set to 1
+[29-03-2022][22:28:46] LOG: Presentation device: NVIDIA GeForce RTX 2060
+[29-03-2022][22:28:46] LOG: Custom Event with a parameter 1
+[29-03-2022][22:28:46] LOG: ResizeEvent
+[29-03-2022][22:28:49] LOG: Mesh "D:\shrek.obj" was loaded succesfully
+[29-03-2022][22:28:49] LOG: MouseClickEvent
+[29-03-2022][22:29:01] LOG: --------------- Starting the engine ---------------
+[29-03-2022][22:29:01] LOG: VSync is now set to 1
+[29-03-2022][22:29:01] LOG: Presentation device: NVIDIA GeForce RTX 2060
+[29-03-2022][22:29:01] LOG: Custom Event with a parameter 1
+[29-03-2022][22:29:01] LOG: ResizeEvent
+[29-03-2022][22:29:03] LOG: MouseClickEvent
+[29-03-2022][22:29:04] LOG: Mesh "D:\shrek.obj" was loaded succesfully
+[29-03-2022][22:29:05] LOG: MouseClickEvent
+[29-03-2022][22:31:57] LOG: --------------- Starting the engine ---------------
+[29-03-2022][22:31:58] LOG: VSync is now set to 1
+[29-03-2022][22:31:58] LOG: Presentation device: NVIDIA GeForce RTX 2060
+[29-03-2022][22:31:58] LOG: Custom Event with a parameter 1
+[29-03-2022][22:31:58] LOG: ResizeEvent
+[29-03-2022][22:32:06] LOG: --------------- Starting the engine ---------------
+[29-03-2022][22:32:07] LOG: VSync is now set to 1
+[29-03-2022][22:32:07] LOG: Presentation device: NVIDIA GeForce RTX 2060
+[29-03-2022][22:32:07] LOG: Custom Event with a parameter 1
+[29-03-2022][22:32:07] LOG: ResizeEvent
+[29-03-2022][22:32:07] LOG: ScrollEvent
+[29-03-2022][22:32:07] LOG: ScrollEvent
+[29-03-2022][22:32:07] LOG: ScrollEvent
+[29-03-2022][22:32:09] LOG: Mesh "D:\cube.obj" was loaded succesfully
+[29-03-2022][22:32:09] LOG: MouseClickEvent
+[29-03-2022][22:33:01] LOG: --------------- Starting the engine ---------------
+[29-03-2022][22:33:01] LOG: VSync is now set to 1
+[29-03-2022][22:33:01] LOG: Presentation device: NVIDIA GeForce RTX 2060
+[29-03-2022][22:33:02] LOG: Custom Event with a parameter 1
+[29-03-2022][22:33:02] LOG: ResizeEvent
+[29-03-2022][22:33:04] LOG: MouseClickEvent
+[29-03-2022][22:33:04] LOG: Mesh "D:\cube.obj" was loaded succesfully
+[29-03-2022][22:33:08] LOG: The scene was cleared
+[29-03-2022][22:35:16] LOG: --------------- Starting the engine ---------------
+[29-03-2022][22:35:16] LOG: VSync is now set to 1
+[29-03-2022][22:35:16] LOG: Presentation device: NVIDIA GeForce RTX 2060
+[29-03-2022][22:35:17] LOG: Custom Event with a parameter 1
+[29-03-2022][22:35:17] LOG: ResizeEvent
+[29-03-2022][22:35:19] LOG: Mesh "D:\shrek.obj" was loaded succesfully
+[29-03-2022][22:35:19] LOG: MouseClickEvent
+[29-03-2022][22:35:21] LOG: MouseClickEvent
+[29-03-2022][22:35:29] LOG: --------------- Starting the engine ---------------
+[29-03-2022][22:35:29] LOG: VSync is now set to 1
+[29-03-2022][22:35:29] LOG: Presentation device: NVIDIA GeForce RTX 2060
+[29-03-2022][22:35:29] LOG: Custom Event with a parameter 1
+[29-03-2022][22:35:29] LOG: ResizeEvent
+[29-03-2022][22:35:32] LOG: Mesh "D:\shrek.obj" was loaded succesfully
+[29-03-2022][22:35:32] LOG: MouseClickEvent
+[29-03-2022][22:35:34] LOG: MouseClickEvent
+[29-03-2022][22:37:20] LOG: --------------- Starting the engine ---------------
+[29-03-2022][22:37:20] LOG: VSync is now set to 1
+[29-03-2022][22:37:21] LOG: Presentation device: NVIDIA GeForce RTX 2060
+[29-03-2022][22:37:21] LOG: Custom Event with a parameter 1
+[29-03-2022][22:37:21] LOG: ResizeEvent
+[29-03-2022][22:37:23] LOG: Mesh "D:\shrek.obj" was loaded succesfully
+[29-03-2022][22:37:23] LOG: MouseClickEvent
+[29-03-2022][22:37:27] LOG: The scene was cleared
+[29-03-2022][22:38:52] LOG: --------------- Starting the engine ---------------
+[29-03-2022][22:38:53] LOG: VSync is now set to 1
+[29-03-2022][22:38:53] LOG: Presentation device: NVIDIA GeForce RTX 2060
+[29-03-2022][22:38:53] LOG: Custom Event with a parameter 1
+[29-03-2022][22:38:53] LOG: ResizeEvent
+[29-03-2022][22:38:56] LOG: Mesh "D:\shrek.obj" was loaded succesfully
+[29-03-2022][22:38:56] LOG: MouseClickEvent
+[29-03-2022][22:39:39] LOG: --------------- Starting the engine ---------------
+[29-03-2022][22:39:39] LOG: VSync is now set to 1
+[29-03-2022][22:39:39] LOG: Presentation device: NVIDIA GeForce RTX 2060
+[29-03-2022][22:39:39] LOG: Custom Event with a parameter 1
+[29-03-2022][22:39:39] LOG: ResizeEvent
+[29-03-2022][22:39:42] LOG: Mesh "D:\shrek.obj" was loaded succesfully
+[29-03-2022][22:39:42] LOG: MouseClickEvent
+[29-03-2022][22:39:44] LOG: The scene was cleared
+[29-03-2022][22:42:13] LOG: --------------- Starting the engine ---------------
+[29-03-2022][22:42:13] LOG: VSync is now set to 1
+[29-03-2022][22:42:13] LOG: Presentation device: NVIDIA GeForce RTX 2060
+[29-03-2022][22:42:13] LOG: Custom Event with a parameter 1
+[29-03-2022][22:42:13] LOG: ResizeEvent
+[29-03-2022][22:42:16] LOG: Mesh "D:\shrek.obj" was loaded succesfully
+[29-03-2022][22:42:16] LOG: MouseClickEvent
+[29-03-2022][22:42:19] LOG: MouseClickEvent
+[29-03-2022][22:43:06] LOG: --------------- Starting the engine ---------------
+[29-03-2022][22:43:06] LOG: VSync is now set to 1
+[29-03-2022][22:43:06] LOG: Presentation device: NVIDIA GeForce RTX 2060
+[29-03-2022][22:43:06] LOG: Custom Event with a parameter 1
+[29-03-2022][22:43:06] LOG: ResizeEvent
+[29-03-2022][22:43:09] LOG: Mesh "D:\cube.obj" was loaded succesfully
+[29-03-2022][22:43:09] LOG: MouseClickEvent
+[29-03-2022][22:43:11] LOG: MouseClickEvent
+[29-03-2022][22:46:34] LOG: --------------- Starting the engine ---------------
+[29-03-2022][22:46:34] LOG: VSync is now set to 1
+[29-03-2022][22:46:34] LOG: Presentation device: NVIDIA GeForce RTX 2060
+[29-03-2022][22:46:35] LOG: Custom Event with a parameter 1
+[29-03-2022][22:46:35] LOG: ResizeEvent
+[29-03-2022][22:46:40] LOG: Mesh "D:\shrek.obj" was loaded succesfully
+[29-03-2022][22:46:47] LOG: The scene was cleared
+[29-03-2022][22:50:38] LOG: --------------- Starting the engine ---------------
+[29-03-2022][22:50:38] LOG: VSync is now set to 1
+[29-03-2022][22:50:38] LOG: Presentation device: NVIDIA GeForce RTX 2060
+[29-03-2022][22:50:39] LOG: Custom Event with a parameter 1
+[29-03-2022][22:50:39] LOG: ResizeEvent
+[29-03-2022][22:50:42] LOG: Mesh "D:\cube.obj" was loaded succesfully
+[29-03-2022][22:50:42] LOG: MouseClickEvent
+[29-03-2022][22:51:10] LOG: --------------- Starting the engine ---------------
+[29-03-2022][22:51:10] LOG: VSync is now set to 1
+[29-03-2022][22:51:10] LOG: Presentation device: NVIDIA GeForce RTX 2060
+[29-03-2022][22:51:10] LOG: Custom Event with a parameter 1
+[29-03-2022][22:51:10] LOG: ResizeEvent
+[29-03-2022][22:51:15] LOG: Mesh "D:\shrek.obj" was loaded succesfully
+[29-03-2022][22:51:15] LOG: MouseClickEvent
+[29-03-2022][22:51:18] LOG: MouseClickEvent
+[29-03-2022][22:52:10] LOG: --------------- Starting the engine ---------------
+[29-03-2022][22:52:10] LOG: VSync is now set to 1
+[29-03-2022][22:52:10] LOG: Presentation device: NVIDIA GeForce RTX 2060
+[29-03-2022][22:52:10] LOG: Custom Event with a parameter 1
+[29-03-2022][22:52:10] LOG: ResizeEvent
+[29-03-2022][22:52:13] LOG: Mesh "D:\shrek.obj" was loaded succesfully
+[29-03-2022][22:52:13] LOG: MouseClickEvent
+[29-03-2022][22:52:15] LOG: MouseClickEvent
+[29-03-2022][22:52:19] LOG: The scene was cleared
+[29-03-2022][22:53:37] LOG: --------------- Starting the engine ---------------
+[29-03-2022][22:53:37] LOG: VSync is now set to 1
+[29-03-2022][22:53:37] LOG: Presentation device: NVIDIA GeForce RTX 2060
+[29-03-2022][22:53:38] LOG: Custom Event with a parameter 1
+[29-03-2022][22:53:38] LOG: ResizeEvent
+[29-03-2022][22:53:42] LOG: Mesh "D:\shrek.obj" was loaded succesfully
+[29-03-2022][22:53:42] LOG: MouseClickEvent
+[29-03-2022][22:53:45] LOG: MouseClickEvent
+[29-03-2022][22:53:47] LOG: The scene was cleared
+[29-03-2022][22:54:26] LOG: --------------- Starting the engine ---------------
+[29-03-2022][22:54:26] LOG: VSync is now set to 1
+[29-03-2022][22:54:26] LOG: Presentation device: NVIDIA GeForce RTX 2060
+[29-03-2022][22:54:26] LOG: Custom Event with a parameter 1
+[29-03-2022][22:54:26] LOG: ResizeEvent
+[29-03-2022][22:54:29] LOG: Mesh "D:\shrek.obj" was loaded succesfully
+[29-03-2022][22:54:29] LOG: MouseClickEvent
+[29-03-2022][22:54:40] LOG: --------------- Starting the engine ---------------
+[29-03-2022][22:54:40] LOG: VSync is now set to 1
+[29-03-2022][22:54:40] LOG: Presentation device: NVIDIA GeForce RTX 2060
+[29-03-2022][22:54:41] LOG: Custom Event with a parameter 1
+[29-03-2022][22:54:41] LOG: ResizeEvent
+[29-03-2022][22:54:44] LOG: Mesh "D:\shrek.obj" was loaded succesfully
+[29-03-2022][22:54:44] LOG: MouseClickEvent
+[29-03-2022][22:55:04] LOG: --------------- Starting the engine ---------------
+[29-03-2022][22:55:04] LOG: VSync is now set to 1
+[29-03-2022][22:55:04] LOG: Presentation device: NVIDIA GeForce RTX 2060
+[29-03-2022][22:55:04] LOG: Custom Event with a parameter 1
+[29-03-2022][22:55:04] LOG: ResizeEvent
+[29-03-2022][22:55:08] LOG: Mesh "D:\shrek.obj" was loaded succesfully
+[29-03-2022][22:55:08] LOG: MouseClickEvent
+[29-03-2022][22:55:09] LOG: MouseClickEvent
+[29-03-2022][22:55:18] LOG: --------------- Starting the engine ---------------
+[29-03-2022][22:55:18] LOG: VSync is now set to 1
+[29-03-2022][22:55:18] LOG: Presentation device: NVIDIA GeForce RTX 2060
+[29-03-2022][22:55:19] LOG: Custom Event with a parameter 1
+[29-03-2022][22:55:19] LOG: ResizeEvent
+[29-03-2022][22:55:24] LOG: Mesh "D:\shrek.obj" was loaded succesfully
+[29-03-2022][22:55:24] LOG: MouseClickEvent
+[29-03-2022][22:55:58] LOG: --------------- Starting the engine ---------------
+[29-03-2022][22:55:59] LOG: VSync is now set to 1
+[29-03-2022][22:55:59] LOG: Presentation device: NVIDIA GeForce RTX 2060
+[29-03-2022][22:55:59] LOG: Custom Event with a parameter 1
+[29-03-2022][22:55:59] LOG: ResizeEvent
+[29-03-2022][22:56:02] LOG: Mesh "D:\shrek.obj" was loaded succesfully
+[29-03-2022][22:56:02] LOG: MouseClickEvent
+[29-03-2022][22:58:32] LOG: --------------- Starting the engine ---------------
+[29-03-2022][22:58:32] LOG: VSync is now set to 1
+[29-03-2022][22:58:32] LOG: Presentation device: NVIDIA GeForce RTX 2060
+[29-03-2022][22:58:33] LOG: Custom Event with a parameter 1
+[29-03-2022][22:58:33] LOG: ResizeEvent
+[29-03-2022][22:58:35] LOG: Mesh "D:\shrek.obj" was loaded succesfully
+[29-03-2022][22:58:35] LOG: MouseClickEvent
+[29-03-2022][22:59:12] LOG: --------------- Starting the engine ---------------
+[29-03-2022][22:59:12] LOG: VSync is now set to 1
+[29-03-2022][22:59:12] LOG: Presentation device: NVIDIA GeForce RTX 2060
+[29-03-2022][22:59:12] LOG: Custom Event with a parameter 1
+[29-03-2022][22:59:12] LOG: ResizeEvent
+[29-03-2022][22:59:18] LOG: Mesh "D:\shrek.obj" was loaded succesfully
+[29-03-2022][22:59:51] LOG: --------------- Starting the engine ---------------
+[29-03-2022][22:59:51] LOG: VSync is now set to 1
+[29-03-2022][22:59:51] LOG: Presentation device: NVIDIA GeForce RTX 2060
+[29-03-2022][22:59:51] LOG: Custom Event with a parameter 1
+[29-03-2022][22:59:51] LOG: ResizeEvent
+[29-03-2022][22:59:55] LOG: Mesh "D:\shrek.obj" was loaded succesfully
+[29-03-2022][22:59:55] LOG: MouseClickEvent
+[29-03-2022][22:59:57] LOG: MouseClickEvent
+[29-03-2022][22:59:59] LOG: The scene was cleared
+[29-03-2022][23:01:55] LOG: --------------- Starting the engine ---------------
+[29-03-2022][23:01:55] LOG: VSync is now set to 1
+[29-03-2022][23:01:55] LOG: Presentation device: NVIDIA GeForce RTX 2060
+[29-03-2022][23:01:56] LOG: Custom Event with a parameter 1
+[29-03-2022][23:01:56] LOG: ResizeEvent
+[29-03-2022][23:02:04] LOG: Mesh "D:\shrek.obj" was loaded succesfully
+[29-03-2022][23:02:04] LOG: MouseClickEvent
+[29-03-2022][23:02:06] LOG: MouseClickEvent
+[29-03-2022][23:02:48] LOG: --------------- Starting the engine ---------------
+[29-03-2022][23:02:48] LOG: VSync is now set to 1
+[29-03-2022][23:02:48] LOG: Presentation device: NVIDIA GeForce RTX 2060
+[29-03-2022][23:02:48] LOG: Custom Event with a parameter 1
+[29-03-2022][23:02:48] LOG: ResizeEvent
+[29-03-2022][23:02:51] LOG: Mesh "D:\shrek.obj" was loaded succesfully
+[29-03-2022][23:02:51] LOG: MouseClickEvent
+[29-03-2022][23:02:53] LOG: MouseClickEvent
+[29-03-2022][23:02:56] LOG: --------------- Starting the engine ---------------
+[29-03-2022][23:02:56] LOG: VSync is now set to 1
+[29-03-2022][23:02:56] LOG: Presentation device: NVIDIA GeForce RTX 2060
+[29-03-2022][23:02:56] LOG: Custom Event with a parameter 1
+[29-03-2022][23:02:56] LOG: ResizeEvent
+[29-03-2022][23:02:59] LOG: Mesh "D:\shrek.obj" was loaded succesfully
+[29-03-2022][23:02:59] LOG: MouseClickEvent
+[29-03-2022][23:03:02] LOG: MouseClickEvent
+[29-03-2022][23:03:10] LOG: ResizeEvent
+[29-03-2022][23:03:16] LOG: ResizeEvent
+[29-03-2022][23:03:39] LOG: --------------- Starting the engine ---------------
+[29-03-2022][23:03:39] LOG: VSync is now set to 1
+[29-03-2022][23:03:39] LOG: Presentation device: NVIDIA GeForce RTX 2060
+[29-03-2022][23:03:40] LOG: Custom Event with a parameter 1
+[29-03-2022][23:03:40] LOG: ResizeEvent
+[29-03-2022][23:03:42] LOG: Mesh "D:\shrek.obj" was loaded succesfully
+[29-03-2022][23:03:42] LOG: MouseClickEvent
+[29-03-2022][23:03:44] LOG: MouseClickEvent
+[29-03-2022][23:04:33] LOG: --------------- Starting the engine ---------------
+[29-03-2022][23:04:34] LOG: VSync is now set to 1
+[29-03-2022][23:04:34] LOG: Presentation device: NVIDIA GeForce RTX 2060
+[29-03-2022][23:04:34] LOG: Custom Event with a parameter 1
+[29-03-2022][23:04:34] LOG: ResizeEvent
+[29-03-2022][23:04:37] LOG: Mesh "D:\cube.obj" was loaded succesfully
+[29-03-2022][23:04:37] LOG: MouseClickEvent
+[29-03-2022][23:04:44] LOG: MouseClickEvent
+[29-03-2022][23:04:56] LOG: The scene was cleared
+[29-03-2022][23:05:03] LOG: Mesh "D:\shrek.obj" was loaded succesfully
+[29-03-2022][23:05:03] LOG: MouseClickEvent
+[29-03-2022][23:05:24] LOG: The scene was cleared
+[30-03-2022][08:55:17] LOG: --------------- Starting the engine ---------------
+[30-03-2022][08:55:17] LOG: VSync is now set to 1
+[30-03-2022][08:55:17] LOG: Presentation device: NVIDIA GeForce RTX 2060
+[30-03-2022][08:55:18] LOG: Custom Event with a parameter 1
+[30-03-2022][08:55:18] LOG: ResizeEvent
+[30-03-2022][08:55:22] LOG: Mesh "D:\shrek.obj" was loaded succesfully
+[30-03-2022][08:55:22] LOG: MouseClickEvent
+[30-03-2022][08:55:32] LOG: The scene was cleared
+[30-03-2022][08:57:13] LOG: --------------- Starting the engine ---------------
+[30-03-2022][08:57:13] LOG: VSync is now set to 1
+[30-03-2022][08:57:13] LOG: Presentation device: NVIDIA GeForce RTX 2060
+[30-03-2022][08:57:13] LOG: Custom Event with a parameter 1
+[30-03-2022][08:57:13] LOG: ResizeEvent
+[30-03-2022][08:57:16] LOG: Mesh "D:\shrek.obj" was loaded succesfully
+[30-03-2022][08:57:16] LOG: MouseClickEvent
+[30-03-2022][08:57:19] LOG: MouseClickEvent
+[30-03-2022][08:57:24] LOG: The scene was cleared
+[30-03-2022][09:00:23] LOG: --------------- Starting the engine ---------------
+[30-03-2022][09:00:23] LOG: VSync is now set to 1
+[30-03-2022][09:00:23] LOG: Presentation device: NVIDIA GeForce RTX 2060
+[30-03-2022][09:00:23] LOG: Custom Event with a parameter 1
+[30-03-2022][09:00:23] LOG: ResizeEvent
+[30-03-2022][09:00:26] LOG: MouseClickEvent
+[30-03-2022][09:00:26] LOG: Mesh "D:\shrek.obj" was loaded succesfully
+[30-03-2022][09:00:49] LOG: --------------- Starting the engine ---------------
+[30-03-2022][09:00:49] LOG: VSync is now set to 1
+[30-03-2022][09:00:49] LOG: Presentation device: NVIDIA GeForce RTX 2060
+[30-03-2022][09:00:50] LOG: Custom Event with a parameter 1
+[30-03-2022][09:00:50] LOG: ResizeEvent
+[30-03-2022][09:00:52] LOG: MouseClickEvent
+[30-03-2022][09:00:52] LOG: Mesh "D:\shrek.obj" was loaded succesfully
+[30-03-2022][09:02:48] LOG: --------------- Starting the engine ---------------
+[30-03-2022][09:02:48] LOG: VSync is now set to 1
+[30-03-2022][09:02:48] LOG: Presentation device: NVIDIA GeForce RTX 2060
+[30-03-2022][09:02:49] LOG: Custom Event with a parameter 1
+[30-03-2022][09:02:49] LOG: ResizeEvent
+[30-03-2022][09:05:11] LOG: --------------- Starting the engine ---------------
+[30-03-2022][09:05:11] LOG: VSync is now set to 1
+[30-03-2022][09:05:11] LOG: Presentation device: NVIDIA GeForce RTX 2060
+[30-03-2022][09:05:12] LOG: Custom Event with a parameter 1
+[30-03-2022][09:05:12] LOG: ResizeEvent
+[30-03-2022][09:05:14] LOG: Mesh "D:\shrek.obj" was loaded succesfully
+[30-03-2022][09:05:14] LOG: MouseClickEvent
+[30-03-2022][09:05:17] LOG: MouseClickEvent
+[30-03-2022][09:05:22] LOG: The scene was cleared
+[30-03-2022][09:05:31] LOG: --------------- Starting the engine ---------------
+[30-03-2022][09:05:32] LOG: VSync is now set to 1
+[30-03-2022][09:05:32] LOG: Presentation device: NVIDIA GeForce RTX 2060
+[30-03-2022][09:05:32] LOG: Custom Event with a parameter 1
+[30-03-2022][09:05:32] LOG: ResizeEvent
+[30-03-2022][09:05:35] LOG: Mesh "D:\shrek.obj" was loaded succesfully
+[30-03-2022][09:05:35] LOG: MouseClickEvent
+[30-03-2022][09:07:26] LOG: --------------- Starting the engine ---------------
+[30-03-2022][09:07:26] LOG: VSync is now set to 1
+[30-03-2022][09:07:26] LOG: Presentation device: NVIDIA GeForce RTX 2060
+[30-03-2022][09:07:27] LOG: Custom Event with a parameter 1
+[30-03-2022][09:07:27] LOG: ResizeEvent
+[30-03-2022][09:07:34] LOG: --------------- Starting the engine ---------------
+[30-03-2022][09:07:34] LOG: VSync is now set to 1
+[30-03-2022][09:07:34] LOG: Presentation device: NVIDIA GeForce RTX 2060
+[30-03-2022][09:07:34] LOG: Custom Event with a parameter 1
+[30-03-2022][09:07:34] LOG: ResizeEvent
+[30-03-2022][09:07:37] LOG: Mesh "D:\shrek.obj" was loaded succesfully
+[30-03-2022][09:07:37] LOG: MouseClickEvent
+[30-03-2022][09:07:47] LOG: --------------- Starting the engine ---------------
+[30-03-2022][09:07:47] LOG: VSync is now set to 1
+[30-03-2022][09:07:47] LOG: Presentation device: NVIDIA GeForce RTX 2060
+[30-03-2022][09:07:48] LOG: Custom Event with a parameter 1
+[30-03-2022][09:07:48] LOG: ResizeEvent
+[30-03-2022][09:07:50] LOG: Mesh "D:\shrek.obj" was loaded succesfully
+[30-03-2022][09:07:50] LOG: MouseClickEvent
+[30-03-2022][09:08:10] LOG: --------------- Starting the engine ---------------
+[30-03-2022][09:08:11] LOG: VSync is now set to 1
+[30-03-2022][09:08:11] LOG: Presentation device: NVIDIA GeForce RTX 2060
+[30-03-2022][09:08:11] LOG: Custom Event with a parameter 1
+[30-03-2022][09:08:11] LOG: ResizeEvent
+[30-03-2022][09:08:13] LOG: Mesh "D:\shrek.obj" was loaded succesfully
+[30-03-2022][09:08:13] LOG: MouseClickEvent
+[30-03-2022][09:08:29] LOG: --------------- Starting the engine ---------------
+[30-03-2022][09:08:30] LOG: VSync is now set to 1
+[30-03-2022][09:08:30] LOG: Presentation device: NVIDIA GeForce RTX 2060
+[30-03-2022][09:08:30] LOG: Custom Event with a parameter 1
+[30-03-2022][09:08:30] LOG: ResizeEvent
+[30-03-2022][09:08:33] LOG: Mesh "D:\shrek.obj" was loaded succesfully
+[30-03-2022][09:10:20] LOG: --------------- Starting the engine ---------------
+[30-03-2022][09:10:20] LOG: VSync is now set to 1
+[30-03-2022][09:10:20] LOG: Presentation device: NVIDIA GeForce RTX 2060
+[30-03-2022][09:10:20] LOG: Custom Event with a parameter 1
+[30-03-2022][09:10:20] LOG: ResizeEvent
+[30-03-2022][09:10:49] LOG: --------------- Starting the engine ---------------
+[30-03-2022][09:10:49] LOG: VSync is now set to 1
+[30-03-2022][09:10:50] LOG: Presentation device: NVIDIA GeForce RTX 2060
+[30-03-2022][09:10:50] LOG: Custom Event with a parameter 1
+[30-03-2022][09:10:50] LOG: ResizeEvent
+[30-03-2022][09:11:30] LOG: --------------- Starting the engine ---------------
+[30-03-2022][09:11:30] LOG: VSync is now set to 1
+[30-03-2022][09:11:31] LOG: Presentation device: NVIDIA GeForce RTX 2060
+[30-03-2022][09:11:31] LOG: Custom Event with a parameter 1
+[30-03-2022][09:11:31] LOG: ResizeEvent
+[30-03-2022][09:17:47] LOG: --------------- Starting the engine ---------------
+[30-03-2022][09:17:47] LOG: VSync is now set to 1
+[30-03-2022][09:17:47] LOG: Presentation device: NVIDIA GeForce RTX 2060
+[30-03-2022][09:17:48] LOG: Custom Event with a parameter 1
+[30-03-2022][09:17:48] LOG: ResizeEvent
+[30-03-2022][09:18:08] LOG: --------------- Starting the engine ---------------
+[30-03-2022][09:18:08] LOG: VSync is now set to 1
+[30-03-2022][09:18:08] LOG: Presentation device: NVIDIA GeForce RTX 2060
+[30-03-2022][09:18:09] LOG: Custom Event with a parameter 1
+[30-03-2022][09:18:09] LOG: ResizeEvent
+[30-03-2022][09:18:11] LOG: Mesh "D:\shrek.obj" was loaded succesfully
+[30-03-2022][09:18:11] LOG: MouseClickEvent
+[30-03-2022][09:18:34] LOG: --------------- Starting the engine ---------------
+[30-03-2022][09:18:34] LOG: VSync is now set to 1
+[30-03-2022][09:18:34] LOG: Presentation device: NVIDIA GeForce RTX 2060
+[30-03-2022][09:18:35] LOG: Custom Event with a parameter 1
+[30-03-2022][09:18:35] LOG: ResizeEvent
+[30-03-2022][09:18:37] LOG: Mesh "D:\shrek.obj" was loaded succesfully
+[30-03-2022][09:18:37] LOG: MouseClickEvent
+[30-03-2022][09:21:13] LOG: --------------- Starting the engine ---------------
+[30-03-2022][09:21:13] LOG: VSync is now set to 1
+[30-03-2022][09:21:13] LOG: Presentation device: NVIDIA GeForce RTX 2060
+[30-03-2022][09:21:13] LOG: Custom Event with a parameter 1
+[30-03-2022][09:21:13] LOG: ResizeEvent
+[30-03-2022][09:21:59] LOG: --------------- Starting the engine ---------------
+[30-03-2022][09:21:59] LOG: VSync is now set to 1
+[30-03-2022][09:21:59] LOG: Presentation device: NVIDIA GeForce RTX 2060
+[30-03-2022][09:22:00] LOG: Custom Event with a parameter 1
+[30-03-2022][09:22:00] LOG: ResizeEvent
+[30-03-2022][09:22:03] LOG: Mesh "D:\shrek.obj" was loaded succesfully
+[30-03-2022][09:22:03] LOG: MouseClickEvent
+[30-03-2022][09:22:13] LOG: --------------- Starting the engine ---------------
+[30-03-2022][09:22:13] LOG: VSync is now set to 1
+[30-03-2022][09:22:13] LOG: Presentation device: NVIDIA GeForce RTX 2060
+[30-03-2022][09:22:14] LOG: Custom Event with a parameter 1
+[30-03-2022][09:22:14] LOG: ResizeEvent
+[30-03-2022][09:22:16] LOG: Mesh "D:\shrek.obj" was loaded succesfully
+[30-03-2022][09:22:16] LOG: MouseClickEvent
+[30-03-2022][09:23:57] LOG: --------------- Starting the engine ---------------
+[30-03-2022][09:23:57] LOG: VSync is now set to 1
+[30-03-2022][09:23:57] LOG: Presentation device: NVIDIA GeForce RTX 2060
+[30-03-2022][09:23:58] LOG: Custom Event with a parameter 1
+[30-03-2022][09:23:58] LOG: ResizeEvent
+[30-03-2022][09:24:00] LOG: MouseClickEvent
+[30-03-2022][09:24:00] LOG: Mesh "D:\shrek.obj" was loaded succesfully
+[30-03-2022][09:24:05] LOG: Mesh "D:\cube.obj" was loaded succesfully
+[30-03-2022][09:24:05] LOG: MouseClickEvent
+[30-03-2022][09:24:07] LOG: The scene was cleared
+[30-03-2022][09:31:08] LOG: --------------- Starting the engine ---------------
+[30-03-2022][09:31:09] LOG: VSync is now set to 1
+[30-03-2022][09:31:09] LOG: Presentation device: NVIDIA GeForce RTX 2060
+[30-03-2022][09:31:09] LOG: Custom Event with a parameter 1
+[30-03-2022][09:31:09] LOG: ResizeEvent
+[30-03-2022][09:31:28] LOG: --------------- Starting the engine ---------------
+[30-03-2022][09:31:28] LOG: VSync is now set to 1
+[30-03-2022][09:31:28] LOG: Presentation device: NVIDIA GeForce RTX 2060
+[30-03-2022][09:31:28] LOG: Custom Event with a parameter 1
+[30-03-2022][09:31:28] LOG: ResizeEvent
+[30-03-2022][09:31:36] LOG: --------------- Starting the engine ---------------
+[30-03-2022][09:31:36] LOG: VSync is now set to 1
+[30-03-2022][09:31:36] LOG: Presentation device: NVIDIA GeForce RTX 2060
+[30-03-2022][09:31:36] LOG: Custom Event with a parameter 1
+[30-03-2022][09:31:36] LOG: ResizeEvent
+[30-03-2022][09:32:42] LOG: --------------- Starting the engine ---------------
+[30-03-2022][09:32:42] LOG: VSync is now set to 1
+[30-03-2022][09:32:42] LOG: Presentation device: NVIDIA GeForce RTX 2060
+[30-03-2022][09:32:43] LOG: Custom Event with a parameter 1
+[30-03-2022][09:32:43] LOG: ResizeEvent
+[30-03-2022][09:33:01] LOG: --------------- Starting the engine ---------------
+[30-03-2022][09:33:01] LOG: VSync is now set to 1
+[30-03-2022][09:33:01] LOG: Presentation device: NVIDIA GeForce RTX 2060
+[30-03-2022][09:33:01] LOG: Custom Event with a parameter 1
+[30-03-2022][09:33:01] LOG: ResizeEvent
+[30-03-2022][09:34:10] LOG: --------------- Starting the engine ---------------
+[30-03-2022][09:34:10] LOG: VSync is now set to 1
+[30-03-2022][09:34:10] LOG: Presentation device: NVIDIA GeForce RTX 2060
+[30-03-2022][09:34:10] LOG: Custom Event with a parameter 1
+[30-03-2022][09:34:10] LOG: ResizeEvent
+[30-03-2022][09:34:44] LOG: --------------- Starting the engine ---------------
+[30-03-2022][09:34:44] LOG: VSync is now set to 1
+[30-03-2022][09:34:44] LOG: Presentation device: NVIDIA GeForce RTX 2060
+[30-03-2022][09:34:45] LOG: Custom Event with a parameter 1
+[30-03-2022][09:34:45] LOG: ResizeEvent
+[30-03-2022][09:36:10] LOG: --------------- Starting the engine ---------------
+[30-03-2022][09:36:10] LOG: VSync is now set to 1
+[30-03-2022][09:36:10] LOG: Presentation device: NVIDIA GeForce RTX 2060
+[30-03-2022][09:36:10] LOG: Custom Event with a parameter 1
+[30-03-2022][09:36:10] LOG: ResizeEvent
+[30-03-2022][09:36:13] LOG: Mesh "D:\shrek.obj" was loaded succesfully
+[30-03-2022][09:36:13] LOG: MouseClickEvent
+[30-03-2022][09:37:08] LOG: --------------- Starting the engine ---------------
+[30-03-2022][09:37:08] LOG: VSync is now set to 1
+[30-03-2022][09:37:08] LOG: Presentation device: NVIDIA GeForce RTX 2060
+[30-03-2022][09:37:08] LOG: Custom Event with a parameter 1
+[30-03-2022][09:37:08] LOG: ResizeEvent
+[30-03-2022][09:37:19] LOG: --------------- Starting the engine ---------------
+[30-03-2022][09:37:19] LOG: VSync is now set to 1
+[30-03-2022][09:37:19] LOG: Presentation device: NVIDIA GeForce RTX 2060
+[30-03-2022][09:37:19] LOG: Custom Event with a parameter 1
+[30-03-2022][09:37:19] LOG: ResizeEvent
+[30-03-2022][09:37:32] LOG: --------------- Starting the engine ---------------
+[30-03-2022][09:37:32] LOG: VSync is now set to 1
+[30-03-2022][09:37:32] LOG: Presentation device: NVIDIA GeForce RTX 2060
+[30-03-2022][09:37:33] LOG: Custom Event with a parameter 1
+[30-03-2022][09:37:33] LOG: ResizeEvent
+[30-03-2022][09:37:35] LOG: Mesh "D:\shrek.obj" was loaded succesfully
+[30-03-2022][09:37:35] LOG: MouseClickEvent
+[30-03-2022][09:37:44] LOG: --------------- Starting the engine ---------------
+[30-03-2022][09:37:44] LOG: VSync is now set to 1
+[30-03-2022][09:37:44] LOG: Presentation device: NVIDIA GeForce RTX 2060
+[30-03-2022][09:37:45] LOG: Custom Event with a parameter 1
+[30-03-2022][09:37:45] LOG: ResizeEvent
+[30-03-2022][09:37:47] LOG: Mesh "D:\shrek.obj" was loaded succesfully
+[30-03-2022][09:37:47] LOG: MouseClickEvent
+[30-03-2022][09:37:54] LOG: --------------- Starting the engine ---------------
+[30-03-2022][09:37:54] LOG: VSync is now set to 1
+[30-03-2022][09:37:54] LOG: Presentation device: NVIDIA GeForce RTX 2060
+[30-03-2022][09:37:55] LOG: Custom Event with a parameter 1
+[30-03-2022][09:37:55] LOG: ResizeEvent
+[30-03-2022][09:37:57] LOG: Mesh "D:\shrek.obj" was loaded succesfully
+[30-03-2022][09:37:57] LOG: MouseClickEvent
+[30-03-2022][09:38:00] LOG: MouseClickEvent
+[30-03-2022][09:38:04] LOG: MouseClickEvent
+[30-03-2022][09:38:18] LOG: --------------- Starting the engine ---------------
+[30-03-2022][09:38:19] LOG: VSync is now set to 1
+[30-03-2022][09:38:19] LOG: Presentation device: NVIDIA GeForce RTX 2060
+[30-03-2022][09:38:19] LOG: Custom Event with a parameter 1
+[30-03-2022][09:38:19] LOG: ResizeEvent
+[30-03-2022][09:38:21] LOG: MouseClickEvent
+[30-03-2022][09:38:21] LOG: Mesh "D:\shrek.obj" was loaded succesfully
+[30-03-2022][09:38:24] LOG: MouseClickEvent
+[30-03-2022][09:38:27] LOG: MouseClickEvent
+[30-03-2022][09:38:34] LOG: The scene was cleared
+[30-03-2022][09:39:11] LOG: --------------- Starting the engine ---------------
+[30-03-2022][09:39:11] LOG: VSync is now set to 1
+[30-03-2022][09:39:11] LOG: Presentation device: NVIDIA GeForce RTX 2060
+[30-03-2022][09:39:11] LOG: Custom Event with a parameter 1
+[30-03-2022][09:39:11] LOG: ResizeEvent
+[30-03-2022][09:39:19] LOG: --------------- Starting the engine ---------------
+[30-03-2022][09:39:19] LOG: VSync is now set to 1
+[30-03-2022][09:39:19] LOG: Presentation device: NVIDIA GeForce RTX 2060
+[30-03-2022][09:39:20] LOG: Custom Event with a parameter 1
+[30-03-2022][09:39:20] LOG: ResizeEvent
+[30-03-2022][09:39:58] LOG: --------------- Starting the engine ---------------
+[30-03-2022][09:39:58] LOG: VSync is now set to 1
+[30-03-2022][09:39:58] LOG: Presentation device: NVIDIA GeForce RTX 2060
+[30-03-2022][09:39:58] LOG: Custom Event with a parameter 1
+[30-03-2022][09:39:58] LOG: ResizeEvent
+[30-03-2022][09:40:01] LOG: Mesh "D:\shrek.obj" was loaded succesfully
+[30-03-2022][09:40:01] LOG: MouseClickEvent
+[30-03-2022][09:40:03] LOG: MouseClickEvent
+[30-03-2022][09:40:06] LOG: The scene was cleared
+[30-03-2022][09:40:12] LOG: --------------- Starting the engine ---------------
+[30-03-2022][09:40:13] LOG: VSync is now set to 1
+[30-03-2022][09:40:13] LOG: Presentation device: NVIDIA GeForce RTX 2060
+[30-03-2022][09:40:13] LOG: Custom Event with a parameter 1
+[30-03-2022][09:40:13] LOG: ResizeEvent
+[30-03-2022][09:40:15] LOG: MouseClickEvent
+[30-03-2022][09:40:15] LOG: Mesh "D:\shrek.obj" was loaded succesfully
+[30-03-2022][09:40:47] LOG: --------------- Starting the engine ---------------
+[30-03-2022][09:40:48] LOG: VSync is now set to 1
+[30-03-2022][09:40:48] LOG: Presentation device: NVIDIA GeForce RTX 2060
+[30-03-2022][09:40:48] LOG: Custom Event with a parameter 1
+[30-03-2022][09:40:48] LOG: ResizeEvent
+[30-03-2022][09:40:51] LOG: Mesh "D:\shrek.obj" was loaded succesfully
+[30-03-2022][09:40:51] LOG: MouseClickEvent
+[30-03-2022][09:40:55] LOG: MouseClickEvent
+[30-03-2022][09:41:02] LOG: MouseClickEvent
+[30-03-2022][09:42:09] LOG: --------------- Starting the engine ---------------
+[30-03-2022][09:42:09] LOG: VSync is now set to 1
+[30-03-2022][09:42:09] LOG: Presentation device: NVIDIA GeForce RTX 2060
+[30-03-2022][09:42:10] LOG: Custom Event with a parameter 1
+[30-03-2022][09:42:10] LOG: ResizeEvent
+[30-03-2022][09:42:13] LOG: Mesh "D:\shrek.obj" was loaded succesfully
+[30-03-2022][09:42:13] LOG: MouseClickEvent
+[30-03-2022][09:42:16] LOG: MouseClickEvent
+[30-03-2022][09:42:24] LOG: MouseClickEvent
+[30-03-2022][09:42:36] LOG: The scene was cleared
+[30-03-2022][09:43:14] LOG: --------------- Starting the engine ---------------
+[30-03-2022][09:43:14] LOG: VSync is now set to 1
+[30-03-2022][09:43:14] LOG: Presentation device: NVIDIA GeForce RTX 2060
+[30-03-2022][09:43:15] LOG: Custom Event with a parameter 1
+[30-03-2022][09:43:15] LOG: ResizeEvent
+[30-03-2022][09:43:17] LOG: Mesh "D:\shrek.obj" was loaded succesfully
+[30-03-2022][09:43:17] LOG: MouseClickEvent
+[30-03-2022][09:43:21] LOG: MouseClickEvent
+[30-03-2022][09:43:32] LOG: MouseClickEvent
+[30-03-2022][09:43:46] LOG: Mesh "D:\toy.obj" was loaded succesfully
+[30-03-2022][09:43:46] LOG: MouseClickEvent
+[30-03-2022][09:43:50] LOG: MouseClickEvent
+[30-03-2022][09:44:12] LOG: --------------- Starting the engine ---------------
+[30-03-2022][09:44:12] LOG: VSync is now set to 1
+[30-03-2022][09:44:12] LOG: Presentation device: NVIDIA GeForce RTX 2060
+[30-03-2022][09:44:13] LOG: Custom Event with a parameter 1
+[30-03-2022][09:44:13] LOG: ResizeEvent
+[30-03-2022][09:51:10] LOG: Mesh "D:\shrek.obj" was loaded succesfully
+[30-03-2022][09:51:10] LOG: MouseClickEvent
+[30-03-2022][09:51:37] LOG: --------------- Starting the engine ---------------
+[30-03-2022][09:51:37] LOG: VSync is now set to 1
+[30-03-2022][09:51:37] LOG: Presentation device: NVIDIA GeForce RTX 2060
+[30-03-2022][09:51:38] LOG: Custom Event with a parameter 1
+[30-03-2022][09:51:38] LOG: ResizeEvent
+[30-03-2022][09:51:40] LOG: MouseClickEvent
+[30-03-2022][09:51:40] LOG: Mesh "D:\shrek.obj" was loaded succesfully
+[30-03-2022][09:52:01] LOG: The scene was cleared
+[30-03-2022][09:52:29] LOG: --------------- Starting the engine ---------------
+[30-03-2022][09:52:29] LOG: VSync is now set to 1
+[30-03-2022][09:52:29] LOG: Presentation device: NVIDIA GeForce RTX 2060
+[30-03-2022][09:52:30] LOG: Custom Event with a parameter 1
+[30-03-2022][09:52:30] LOG: ResizeEvent
+[30-03-2022][09:52:33] LOG: Mesh "D:\shrek.obj" was loaded succesfully
+[30-03-2022][09:53:55] LOG: --------------- Starting the engine ---------------
+[30-03-2022][09:53:55] LOG: VSync is now set to 1
+[30-03-2022][09:53:55] LOG: Presentation device: NVIDIA GeForce RTX 2060
+[30-03-2022][09:53:56] LOG: Custom Event with a parameter 1
+[30-03-2022][09:53:56] LOG: ResizeEvent
+[30-03-2022][09:54:01] LOG: Mesh "D:\shrek.obj" was loaded succesfully
+[30-03-2022][09:54:07] LOG: The scene was cleared
+[30-03-2022][09:54:10] LOG: Mesh "D:\shrek.obj" was loaded succesfully
+[30-03-2022][09:54:23] LOG: --------------- Starting the engine ---------------
+[30-03-2022][09:54:23] LOG: VSync is now set to 1
+[30-03-2022][09:54:23] LOG: Presentation device: NVIDIA GeForce RTX 2060
+[30-03-2022][09:54:24] LOG: Custom Event with a parameter 1
+[30-03-2022][09:54:24] LOG: ResizeEvent
+[30-03-2022][09:54:26] LOG: Mesh "D:\shrek.obj" was loaded succesfully
+[30-03-2022][09:54:53] LOG: --------------- Starting the engine ---------------
+[30-03-2022][09:54:53] LOG: VSync is now set to 1
+[30-03-2022][09:54:53] LOG: Presentation device: NVIDIA GeForce RTX 2060
+[30-03-2022][09:54:54] LOG: Custom Event with a parameter 1
+[30-03-2022][09:54:54] LOG: ResizeEvent
+[30-03-2022][09:54:56] LOG: Mesh "D:\shrek.obj" was loaded succesfully
+[30-03-2022][09:55:03] LOG: --------------- Starting the engine ---------------
+[30-03-2022][09:55:03] LOG: VSync is now set to 1
+[30-03-2022][09:55:03] LOG: Presentation device: NVIDIA GeForce RTX 2060
+[30-03-2022][09:55:04] LOG: Custom Event with a parameter 1
+[30-03-2022][09:55:04] LOG: ResizeEvent
+[30-03-2022][09:55:06] LOG: Mesh "D:\shrek.obj" was loaded succesfully
+[30-03-2022][09:56:08] LOG: --------------- Starting the engine ---------------
+[30-03-2022][09:56:08] LOG: VSync is now set to 1
+[30-03-2022][09:56:08] LOG: Presentation device: NVIDIA GeForce RTX 2060
+[30-03-2022][09:56:08] LOG: Custom Event with a parameter 1
+[30-03-2022][09:56:08] LOG: ResizeEvent
+[30-03-2022][09:56:11] LOG: Mesh "D:\shrek.obj" was loaded succesfully
+[30-03-2022][09:56:20] LOG: The scene was cleared
+[30-03-2022][09:58:22] LOG: --------------- Starting the engine ---------------
+[30-03-2022][09:58:22] LOG: VSync is now set to 1
+[30-03-2022][09:58:22] LOG: Presentation device: NVIDIA GeForce RTX 2060
+[30-03-2022][09:58:23] LOG: Custom Event with a parameter 1
+[30-03-2022][09:58:23] LOG: ResizeEvent
+[30-03-2022][09:58:26] LOG: Mesh "D:\cube.obj" was loaded succesfully
+[30-03-2022][09:58:33] LOG: The scene was cleared
+[30-03-2022][10:00:41] LOG: --------------- Starting the engine ---------------
+[30-03-2022][10:00:41] LOG: VSync is now set to 1
+[30-03-2022][10:00:41] LOG: Presentation device: NVIDIA GeForce RTX 2060
+[30-03-2022][10:00:42] LOG: Custom Event with a parameter 1
+[30-03-2022][10:00:42] LOG: ResizeEvent
+[30-03-2022][10:02:56] LOG: --------------- Starting the engine ---------------
+[30-03-2022][10:02:56] LOG: VSync is now set to 1
+[30-03-2022][10:02:56] LOG: Presentation device: NVIDIA GeForce RTX 2060
+[30-03-2022][10:02:56] LOG: Custom Event with a parameter 1
+[30-03-2022][10:02:56] LOG: ResizeEvent
+[30-03-2022][10:02:59] ERROR: An error occurred while loading the mesh: ‡T$≠õ
+[30-03-2022][10:02:59] LOG: Mesh "D:\shrek.obj" was loaded succesfully
+[30-03-2022][10:03:32] LOG: --------------- Starting the engine ---------------
+[30-03-2022][10:03:32] LOG: VSync is now set to 1
+[30-03-2022][10:03:32] LOG: Presentation device: NVIDIA GeForce RTX 2060
+[30-03-2022][10:03:32] LOG: Custom Event with a parameter 1
+[30-03-2022][10:03:32] LOG: ResizeEvent
+[30-03-2022][10:03:35] ERROR: Warning occurred while loading the mesh: Material file [ shrek.mtl ] not found in a path : 
+Failed to load material file(s). Use default material.
+material [ 'ShrekHead' ] not found in .mtl
+material [ 'Material' ] not found in .mtl
+material [ 'ShrekBody' ] not found in .mtl
+material [ 'ShrekBody.004' ] not found in .mtl
+material [ 'ShrekBody.002' ] not found in .mtl
+material [ 'ShrekBody.005' ] not found in .mtl
+material [ 'ShrekBody' ] not found in .mtl
+material [ 'ShrekBody.005' ] not found in .mtl
+material [ 'ShrekBody.002' ] not found in .mtl
+material [ 'ShrekBody.005' ] not found in .mtl
+material [ 'ShrekBody.004' ] not found in .mtl
+material [ 'ShrekBody' ] not found in .mtl
+material [ 'ShrekBody.005' ] not found in .mtl
+material [ 'ShrekBody.004' ] not found in .mtl
+material [ 'ShrekBody.005' ] not found in .mtl
+material [ 'ShrekBody' ] not found in .mtl
+material [ 'ShrekBody.004' ] not found in .mtl
+material [ 'ShrekBody' ] not found in .mtl
+material [ 'ShrekBody.002' ] not found in .mtl
+material [ '
+[30-03-2022][10:03:35] LOG: Mesh "D:\shrek.obj" was loaded succesfully
+[30-03-2022][10:05:18] LOG: --------------- Starting the engine ---------------
+[30-03-2022][10:05:18] LOG: VSync is now set to 1
+[30-03-2022][10:05:19] LOG: Presentation device: NVIDIA GeForce RTX 2060
+[30-03-2022][10:05:19] LOG: Custom Event with a parameter 1
+[30-03-2022][10:05:19] LOG: ResizeEvent
+[30-03-2022][10:05:22] ERROR: Warning occurred while loading the mesh: Material file [ cube.mtl ] not found in a path : 
+Failed to load material file(s). Use default material.
+material [ 'Material.001' ] not found in .mtl
+
+[30-03-2022][10:05:22] LOG: Mesh "D:\cube.obj" was loaded succesfully
+[30-03-2022][10:05:39] LOG: The scene was cleared
+[30-03-2022][16:45:37] LOG: --------------- Starting the engine ---------------
+[30-03-2022][16:45:37] LOG: VSync is now set to 1
+[30-03-2022][16:45:37] LOG: Presentation device: NVIDIA GeForce RTX 2060
+[30-03-2022][16:45:37] LOG: Custom Event with a parameter 1
+[30-03-2022][16:45:37] LOG: ResizeEvent
+[30-03-2022][16:45:40] ERROR: Warning occurred while loading the mesh: Material file [ shrek.mtl ] not found in a path : 
+Failed to load material file(s). Use default material.
+material [ 'ShrekHead' ] not found in .mtl
+material [ 'Material' ] not found in .mtl
+material [ 'ShrekBody' ] not found in .mtl
+material [ 'ShrekBody.004' ] not found in .mtl
+material [ 'ShrekBody.002' ] not found in .mtl
+material [ 'ShrekBody.005' ] not found in .mtl
+material [ 'ShrekBody' ] not found in .mtl
+material [ 'ShrekBody.005' ] not found in .mtl
+material [ 'ShrekBody.002' ] not found in .mtl
+material [ 'ShrekBody.005' ] not found in .mtl
+material [ 'ShrekBody.004' ] not found in .mtl
+material [ 'ShrekBody' ] not found in .mtl
+material [ 'ShrekBody.005' ] not found in .mtl
+material [ 'ShrekBody.004' ] not found in .mtl
+material [ 'ShrekBody.005' ] not found in .mtl
+material [ 'ShrekBody' ] not found in .mtl
+material [ 'ShrekBody.004' ] not found in .mtl
+material [ 'ShrekBody' ] not found in .mtl
+material [ 'ShrekBody.002' ] not found in .mtl
+material [ '
+[30-03-2022][16:45:40] LOG: Mesh "D:\shrek.obj" was loaded succesfully
+[30-03-2022][16:45:57] LOG: --------------- Starting the engine ---------------
+[30-03-2022][16:45:57] LOG: VSync is now set to 1
+[30-03-2022][16:45:57] LOG: Presentation device: NVIDIA GeForce RTX 2060
+[30-03-2022][16:45:58] LOG: Custom Event with a parameter 1
+[30-03-2022][16:45:58] LOG: ResizeEvent
+[30-03-2022][16:46:00] ERROR: Warning occurred while loading the mesh: Material file [ shrek.mtl ] not found in a path : 
+Failed to load material file(s). Use default material.
+material [ 'ShrekHead' ] not found in .mtl
+material [ 'Material' ] not found in .mtl
+material [ 'ShrekBody' ] not found in .mtl
+material [ 'ShrekBody.004' ] not found in .mtl
+material [ 'ShrekBody.002' ] not found in .mtl
+material [ 'ShrekBody.005' ] not found in .mtl
+material [ 'ShrekBody' ] not found in .mtl
+material [ 'ShrekBody.005' ] not found in .mtl
+material [ 'ShrekBody.002' ] not found in .mtl
+material [ 'ShrekBody.005' ] not found in .mtl
+material [ 'ShrekBody.004' ] not found in .mtl
+material [ 'ShrekBody' ] not found in .mtl
+material [ 'ShrekBody.005' ] not found in .mtl
+material [ 'ShrekBody.004' ] not found in .mtl
+material [ 'ShrekBody.005' ] not found in .mtl
+material [ 'ShrekBody' ] not found in .mtl
+material [ 'ShrekBody.004' ] not found in .mtl
+material [ 'ShrekBody' ] not found in .mtl
+material [ 'ShrekBody.002' ] not found in .mtl
+material [ '
+[30-03-2022][16:46:00] LOG: Mesh "D:\shrek.obj" was loaded succesfully
+[30-03-2022][16:46:07] LOG: MouseClickEvent
+[30-03-2022][16:46:07] LOG: MouseClickEvent
+[30-03-2022][16:46:07] LOG: MouseClickEvent
+[30-03-2022][16:46:07] LOG: MouseClickEvent
+[30-03-2022][16:46:08] LOG: ScrollEvent
+[30-03-2022][16:46:19] LOG: The scene was cleared
+[30-03-2022][16:52:46] LOG: --------------- Starting the engine ---------------
+[30-03-2022][16:52:46] LOG: VSync is now set to 1
+[30-03-2022][16:52:46] LOG: Presentation device: NVIDIA GeForce RTX 2060
+[30-03-2022][16:52:46] LOG: Custom Event with a parameter 1
+[30-03-2022][16:52:46] LOG: ResizeEvent
+[30-03-2022][16:52:48] LOG: Mesh "D:\cube.obj" was loaded succesfully
+[30-03-2022][16:52:56] LOG: --------------- Starting the engine ---------------
+[30-03-2022][16:52:56] LOG: VSync is now set to 1
+[30-03-2022][16:52:56] LOG: Presentation device: NVIDIA GeForce RTX 2060
+[30-03-2022][16:52:56] LOG: Custom Event with a parameter 1
+[30-03-2022][16:52:56] LOG: ResizeEvent
+[30-03-2022][16:55:22] LOG: --------------- Starting the engine ---------------
+[30-03-2022][16:55:22] LOG: VSync is now set to 1
+[30-03-2022][16:55:22] LOG: Presentation device: NVIDIA GeForce RTX 2060
+[30-03-2022][16:55:22] LOG: Custom Event with a parameter 1
+[30-03-2022][16:55:22] LOG: ResizeEvent
+[30-03-2022][16:55:25] LOG: Mesh "D:\shrek.obj" was loaded succesfully
+[30-03-2022][16:55:36] LOG: ResizeEvent
+[30-03-2022][16:55:47] LOG: The scene was cleared
+[30-03-2022][17:05:42] LOG: --------------- Starting the engine ---------------
+[30-03-2022][17:05:42] LOG: VSync is now set to 1
+[30-03-2022][17:05:42] LOG: Presentation device: NVIDIA GeForce RTX 2060
+[30-03-2022][17:05:43] LOG: Custom Event with a parameter 1
+[30-03-2022][17:05:43] LOG: ResizeEvent
+[30-03-2022][17:13:32] LOG: Mesh "D:\shrek.obj" was loaded succesfully
+[30-03-2022][17:13:47] LOG: ResizeEvent
+[30-03-2022][17:14:00] LOG: MouseClickEvent
+[30-03-2022][17:14:21] LOG: The scene was cleared
+[30-03-2022][17:26:47] LOG: --------------- Starting the engine ---------------
+[30-03-2022][17:26:47] LOG: VSync is now set to 1
+[30-03-2022][17:26:47] LOG: Presentation device: NVIDIA GeForce RTX 2060
+[30-03-2022][17:26:47] LOG: Custom Event with a parameter 1
+[30-03-2022][17:26:47] LOG: ResizeEvent
+[30-03-2022][17:26:51] LOG: MouseClickEvent
+[30-03-2022][17:27:24] LOG: Mesh "D:\cube.obj" was loaded succesfully
+[30-03-2022][17:31:51] LOG: --------------- Starting the engine ---------------
+[30-03-2022][17:31:51] LOG: VSync is now set to 1
+[30-03-2022][17:31:51] LOG: Presentation device: NVIDIA GeForce RTX 2060
+[30-03-2022][17:31:51] LOG: Custom Event with a parameter 1
+[30-03-2022][17:31:51] LOG: ResizeEvent
+[30-03-2022][17:32:41] LOG: Mesh "D:\cube.obj" was loaded succesfully
+[30-03-2022][17:37:00] LOG: --------------- Starting the engine ---------------
+[30-03-2022][17:37:00] LOG: VSync is now set to 1
+[30-03-2022][17:37:00] LOG: Presentation device: NVIDIA GeForce RTX 2060
+[30-03-2022][17:37:00] LOG: Custom Event with a parameter 1
+[30-03-2022][17:37:00] LOG: ResizeEvent
+[30-03-2022][17:40:46] LOG: --------------- Starting the engine ---------------
+[30-03-2022][17:40:46] LOG: VSync is now set to 1
+[30-03-2022][17:40:46] LOG: Presentation device: NVIDIA GeForce RTX 2060
+[30-03-2022][17:40:46] LOG: Custom Event with a parameter 1
+[30-03-2022][17:40:46] LOG: ResizeEvent
+[30-03-2022][17:41:20] LOG: --------------- Starting the engine ---------------
+[30-03-2022][17:41:20] LOG: VSync is now set to 1
+[30-03-2022][17:41:20] LOG: Presentation device: NVIDIA GeForce RTX 2060
+[30-03-2022][17:41:20] LOG: Custom Event with a parameter 1
+[30-03-2022][17:41:20] LOG: ResizeEvent
+[30-03-2022][17:42:16] LOG: --------------- Starting the engine ---------------
+[30-03-2022][17:42:17] LOG: VSync is now set to 1
+[30-03-2022][17:42:17] LOG: Presentation device: NVIDIA GeForce RTX 2060
+[30-03-2022][17:42:17] LOG: Custom Event with a parameter 1
+[30-03-2022][17:42:17] LOG: ResizeEvent
+[30-03-2022][17:53:39] LOG: --------------- Starting the engine ---------------
+[30-03-2022][17:53:39] LOG: VSync is now set to 1
+[30-03-2022][17:53:39] LOG: Presentation device: NVIDIA GeForce RTX 2060
+[30-03-2022][17:53:39] LOG: Custom Event with a parameter 1
+[30-03-2022][17:53:39] LOG: ResizeEvent
+[30-03-2022][17:54:00] LOG: --------------- Starting the engine ---------------
+[30-03-2022][17:54:00] LOG: VSync is now set to 1
+[30-03-2022][17:54:01] LOG: Presentation device: NVIDIA GeForce RTX 2060
+[30-03-2022][17:54:01] LOG: Custom Event with a parameter 1
+[30-03-2022][17:54:01] LOG: ResizeEvent
+[30-03-2022][17:54:59] LOG: --------------- Starting the engine ---------------
+[30-03-2022][17:55:00] LOG: VSync is now set to 1
+[30-03-2022][17:55:00] LOG: Presentation device: NVIDIA GeForce RTX 2060
+[30-03-2022][17:55:00] LOG: Custom Event with a parameter 1
+[30-03-2022][17:55:00] LOG: ResizeEvent
+[30-03-2022][17:56:26] LOG: --------------- Starting the engine ---------------
+[30-03-2022][17:56:26] LOG: VSync is now set to 1
+[30-03-2022][17:56:26] LOG: Presentation device: NVIDIA GeForce RTX 2060
+[30-03-2022][17:56:27] LOG: Custom Event with a parameter 1
+[30-03-2022][17:56:27] LOG: ResizeEvent
+[30-03-2022][17:56:29] LOG: Mesh "D:\shrek.obj" was loaded succesfully
+[30-03-2022][17:56:29] LOG: MouseClickEvent
+[30-03-2022][17:56:32] LOG: MouseClickEvent
+[30-03-2022][17:56:36] LOG: The scene was cleared

@@ -31,6 +31,9 @@ LRESULT CALLBACK HostWindowProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lPara
 	case 0x1201: //Clear viewport callback
         GrEngine::Application::clearViewport();
 		break;
+    case 0x1202: //Upload texture file callback
+        GrEngine::Application::uploadTexture((const char*)lParam);
+        break;
     default:
         return DefWindowProcA(hwnd, msg, wParam, lParam);
     }

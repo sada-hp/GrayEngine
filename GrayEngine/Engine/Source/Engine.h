@@ -15,7 +15,8 @@ namespace GrEngine
 
 	protected:
 		std::unique_ptr<AppWindow> pWindow;
-		void loadModelFromPath(const char* path);
+		void loadMeshFromPath(const char* path);
+		void loadImageFromPath(const char* path);
 		void clearScene();
 		void Run();
 		void Stop();

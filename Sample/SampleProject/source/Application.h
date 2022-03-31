@@ -83,7 +83,12 @@ namespace GrEngine
 
         static void loadModel(const char* mesh_path)
         {
-            _instance->loadModelFromPath(mesh_path);
+            _instance->loadMeshFromPath(mesh_path);
+        }
+
+        static void uploadTexture(const char* image_path)
+        {
+            _instance->loadImageFromPath(image_path);
         }
 
         static void clearViewport()

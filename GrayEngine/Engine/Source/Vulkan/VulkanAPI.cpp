@@ -5,6 +5,7 @@
 #define VK_KHR_swapchain
 #define GLM_FORCE_DEPTH_ZERO_TO_ONE
 #define GLM_FORCE_RADIANS
+#define STB_IMAGE_IMPLEMENTATION
 #include "VulkanAPI.h"
 
 GrEngine_Vulkan::VulkanAPI* GrEngine_Vulkan::VulkanAPI::pInstance = nullptr;
@@ -731,7 +732,7 @@ namespace GrEngine_Vulkan
 	{
 		for (int ind = 0; ind < drawables.size(); ind++)
 		{
-			drawables[ind].destroyObject(logicalDevice);
+			drawables[ind].destroyObject(logicalDevice, memAllocator);
 		}
 
 		drawables.clear();
@@ -747,18 +748,22 @@ namespace GrEngine_Vulkan
 		std::unordered_map<Vertex, uint32_t> uniqueVertices{};
 		std::string warn, err;
 
-		if (!tinyobj::LoadObj(&attrib, &shapes, &materials, &warn, &err, model_path))
+		if (!tinyobj::LoadObj(&attrib, &shapes, &materials, &warn, &err, model_path, "d:\\"))
 		{
-			Logger::Out("An error occurred while loading the mesh: %s", OutputColor::Green, OutputType::Error, warn + err);
+			Logger::Out("An error occurred while loading the mesh: %s", OutputColor::Green, OutputType::Error, err);
 			return false;
 		}
+
+		if (warn != "")
+			Logger::Out("Warning occurred while loading the mesh: %s", OutputColor::Green, OutputType::Error, warn.c_str());
 
 		for (const auto& shape : shapes)
 		{
 			for (const auto& index : shape.mesh.indices)
 			{
 				Vertex vertex = { {attrib.vertices[3 * index.vertex_index + 0], attrib.vertices[3 * index.vertex_index + 1], attrib.vertices[3 * index.vertex_index + 2], 1.0f},
-				{(float)rand() / RAND_MAX, (float)rand() / RAND_MAX, (float)rand() / RAND_MAX, 1.0f} };
+				{1.0f, 1.0f, 1.0f, 1.0f},
+				{attrib.texcoords[2 * index.texcoord_index + 0], 1.0f - attrib.texcoords[2 * index.texcoord_index + 1]} };
 
 				if (uniqueVertices.count(vertex) == 0) {
 					uniqueVertices[vertex] = static_cast<uint32_t>(object.object_mesh.vertices.size());
@@ -768,12 +773,220 @@ namespace GrEngine_Vulkan
 				object.object_mesh.indices.push_back(uniqueVertices[vertex]);
 			}
 		}
-
-		object.initObject(logicalDevice, this);
+		loadTexture("d:\\MissingTexture.png", &object);
+		object.initObject(logicalDevice, memAllocator, this);
 		drawables.push_back(object);
+
+		vkDeviceWaitIdle(logicalDevice);
 
 		Logger::Out("Mesh %c%s%c was loaded succesfully", OutputColor::Green, OutputType::Log, '"', model_path, '"');
 		return true;
+	}
+
+
+	bool VulkanAPI::loadImage(const char* image_path)
+	{
+		auto object = &drawables.back();
+
+		object->invalidateTexture(logicalDevice, memAllocator);
+
+		loadTexture(image_path, object);
+		object->updateObject(logicalDevice);
+
+		vkDeviceWaitIdle(logicalDevice);
+
+		return true;
+	}
+
+	bool VulkanAPI::loadTexture(const char* texture_path, DrawableObj* target)
+	{
+		ShaderBuffer stagingBuffer;
+		Texture new_texture;
+
+		int texWidth, texHeight, texChannels;
+
+		stbi_uc* pixels = stbi_load(texture_path, &texWidth, &texHeight, &texChannels, STBI_rgb_alpha);
+
+		if (!pixels) 
+		{
+			Logger::Out("An error occurred while loading the texture: %s", OutputColor::Green, OutputType::Error, texture_path);
+			return false;
+		}
+
+		createVkBuffer(logicalDevice, memAllocator, pixels, texWidth * texHeight * 4, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, &stagingBuffer);
+
+		stbi_image_free(pixels);
+
+		VkExtent3D imageExtent;
+		imageExtent.width = static_cast<uint32_t>(texWidth);
+		imageExtent.height = static_cast<uint32_t>(texHeight);
+		imageExtent.depth = 1;
+
+		VkImageCreateInfo dimg_info{};
+		dimg_info.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
+		dimg_info.pNext = nullptr;
+		dimg_info.imageType = VK_IMAGE_TYPE_2D;
+		dimg_info.format = VK_FORMAT_R8G8B8A8_SRGB;
+		dimg_info.extent = imageExtent;
+		dimg_info.mipLevels = 1;
+		dimg_info.arrayLayers = 1;
+		dimg_info.samples = VK_SAMPLE_COUNT_1_BIT;
+		dimg_info.tiling = VK_IMAGE_TILING_OPTIMAL;
+		dimg_info.usage = VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT;
+
+		VmaAllocationCreateInfo dimg_allocinfo = {};
+		dimg_allocinfo.usage = VMA_MEMORY_USAGE_GPU_ONLY;
+
+		//allocate and create the image
+		vmaCreateImage(memAllocator, &dimg_info, &dimg_allocinfo, &new_texture.newImage.allocatedImage, &new_texture.newImage.allocation, nullptr);
+
+		transitionImageLayout(new_texture.newImage.allocatedImage, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
+		copyBufferToImage(stagingBuffer.Buffer, new_texture.newImage.allocatedImage, static_cast<uint32_t>(texWidth), static_cast<uint32_t>(texHeight));
+		transitionImageLayout(new_texture.newImage.allocatedImage, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+
+		destroyShaderBuffer(logicalDevice, memAllocator, &stagingBuffer);
+
+		VkImageViewCreateInfo viewInfo{};
+		viewInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
+		viewInfo.image = new_texture.newImage.allocatedImage;
+		viewInfo.viewType = VK_IMAGE_VIEW_TYPE_2D;
+		viewInfo.format = VK_FORMAT_R8G8B8A8_SRGB;
+		viewInfo.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+		viewInfo.subresourceRange.baseMipLevel = 0;
+		viewInfo.subresourceRange.levelCount = 1;
+		viewInfo.subresourceRange.baseArrayLayer = 0;
+		viewInfo.subresourceRange.layerCount = 1;
+		vkCreateImageView(logicalDevice, &viewInfo, nullptr, &new_texture.textureImageView);
+
+		VkPhysicalDeviceProperties properties{};
+		vkGetPhysicalDeviceProperties(physicalDevice, &properties);
+
+		VkSamplerCreateInfo samplerInfo{};
+		samplerInfo.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
+		samplerInfo.magFilter = VK_FILTER_LINEAR;
+		samplerInfo.minFilter = VK_FILTER_LINEAR;
+		samplerInfo.addressModeU = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER;
+		samplerInfo.addressModeV = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER;
+		samplerInfo.addressModeW = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER;
+		samplerInfo.anisotropyEnable = VK_TRUE;
+		samplerInfo.maxAnisotropy = properties.limits.maxSamplerAnisotropy;
+		samplerInfo.borderColor = VK_BORDER_COLOR_INT_OPAQUE_BLACK;
+		samplerInfo.unnormalizedCoordinates = VK_FALSE;
+		samplerInfo.compareEnable = VK_FALSE;
+		samplerInfo.compareOp = VK_COMPARE_OP_ALWAYS;
+		samplerInfo.mipmapMode = VK_SAMPLER_MIPMAP_MODE_LINEAR;
+		samplerInfo.mipLodBias = 0.0f;
+		samplerInfo.minLod = 0.0f;
+		samplerInfo.maxLod = 0.0f;
+		vkCreateSampler(logicalDevice, &samplerInfo, nullptr, &new_texture.textureSampler);
+
+		target->object_texture.push_back(new_texture);
+
+		return true;
+	}
+
+	VkCommandBuffer VulkanAPI::beginSingleTimeCommands() 
+	{
+		VkCommandBufferAllocateInfo allocInfo{};
+		allocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
+		allocInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
+		allocInfo.commandPool = commandPool;
+		allocInfo.commandBufferCount = 1;
+
+		VkCommandBuffer commandBuffer;
+		vkAllocateCommandBuffers(logicalDevice, &allocInfo, &commandBuffer);
+
+		VkCommandBufferBeginInfo beginInfo{};
+		beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+		beginInfo.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
+
+		vkBeginCommandBuffer(commandBuffer, &beginInfo);
+
+		return commandBuffer;
+	}
+
+	void VulkanAPI::endSingleTimeCommands(VkCommandBuffer commandBuffer)
+	{
+		vkEndCommandBuffer(commandBuffer);
+
+		VkSubmitInfo submitInfo{};
+		submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+		submitInfo.commandBufferCount = 1;
+		submitInfo.pCommandBuffers = &commandBuffer;
+
+		vkQueueSubmit(graphicsQueue, 1, &submitInfo, VK_NULL_HANDLE);
+		vkQueueWaitIdle(graphicsQueue);
+
+		vkFreeCommandBuffers(logicalDevice, commandPool, 1, &commandBuffer);
+	}
+
+	void VulkanAPI::transitionImageLayout(VkImage image, VkFormat format, VkImageLayout oldLayout, VkImageLayout newLayout)
+	{
+		VkCommandBuffer commandBuffer = beginSingleTimeCommands();
+
+		VkImageMemoryBarrier barrier{};
+		barrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
+		barrier.oldLayout = oldLayout;
+		barrier.newLayout = newLayout;
+		barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+		barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+		barrier.image = image;
+		barrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+		barrier.subresourceRange.baseMipLevel = 0;
+		barrier.subresourceRange.levelCount = 1;
+		barrier.subresourceRange.baseArrayLayer = 0;
+		barrier.subresourceRange.layerCount = 1;
+
+		VkPipelineStageFlags sourceStage;
+		VkPipelineStageFlags destinationStage;
+
+		if (oldLayout == VK_IMAGE_LAYOUT_UNDEFINED && newLayout == VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL) {
+			barrier.srcAccessMask = 0;
+			barrier.dstAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
+
+			sourceStage = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
+			destinationStage = VK_PIPELINE_STAGE_TRANSFER_BIT;
+		}
+		else if (oldLayout == VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL && newLayout == VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL) {
+			barrier.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
+			barrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
+
+			sourceStage = VK_PIPELINE_STAGE_TRANSFER_BIT;
+			destinationStage = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
+		}
+		else {
+			throw std::invalid_argument("unsupported layout transition!");
+		}
+
+		vkCmdPipelineBarrier(commandBuffer, sourceStage, destinationStage, 0, 0, nullptr, 0, nullptr, 1, &barrier);
+
+		endSingleTimeCommands(commandBuffer);
+	}
+
+	void VulkanAPI::copyBufferToImage(VkBuffer buffer, VkImage image, uint32_t width, uint32_t height)
+	{
+		VkCommandBuffer commandBuffer = beginSingleTimeCommands();
+
+		VkBufferImageCopy region{};
+		region.bufferOffset = 0;
+		region.bufferRowLength = 0;
+		region.bufferImageHeight = 0;
+
+		region.imageSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+		region.imageSubresource.mipLevel = 0;
+		region.imageSubresource.baseArrayLayer = 0;
+		region.imageSubresource.layerCount = 1;
+
+		region.imageOffset = { 0, 0, 0 };
+		region.imageExtent = {
+			width,
+			height,
+			1
+		};
+
+		vkCmdCopyBufferToImage(commandBuffer, buffer, image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &region);
+
+		endSingleTimeCommands(commandBuffer);
 	}
 
 	std::vector<char> VulkanAPI::readFile(const std::string& filename)
@@ -829,5 +1042,12 @@ namespace GrEngine_Vulkan
 		vkFlushMappedMemoryRanges(device, 1, &(shader->MappedMemoryRange));
 		vkDestroyBuffer(device, shader->Buffer, NULL);
 		vmaFreeMemory(allocator, shader->Allocation);
+	}
+
+	void VulkanAPI::destroyTexture(VkDevice device, VmaAllocator allocator, Texture* texture)
+	{
+		vkDestroySampler(device, texture->textureSampler, NULL);
+		vkDestroyImageView(device, texture->textureImageView, NULL);
+		vmaDestroyImage(allocator, texture->newImage.allocatedImage, texture->newImage.allocation);
 	}
 }

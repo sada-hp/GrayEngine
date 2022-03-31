@@ -2,6 +2,8 @@
 #include "DrawableObj.h"
 #include "VulkanAPI.h"
 
+#define TEXTURE_ARRAY 5
+
 namespace GrEngine_Vulkan
 {
 	DrawableObj::DrawableObj()
@@ -14,32 +16,79 @@ namespace GrEngine_Vulkan
 
 	}
 
-	void DrawableObj::initObject(VkDevice device, void* owner)
+	void DrawableObj::initObject(VkDevice device, VmaAllocator allocator, void* owner)
 	{
 		p_Owner = owner;
-		VulkanAPI::createVkBuffer(reinterpret_cast<VulkanAPI*>(p_Owner)->logicalDevice, reinterpret_cast<VulkanAPI*>(p_Owner)->getMemAllocator(), object_mesh.vertices.data(), sizeof(object_mesh.vertices[0]) * object_mesh.vertices.size(), VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, &vertexBuffer);
-		VulkanAPI::createVkBuffer(reinterpret_cast<VulkanAPI*>(p_Owner)->logicalDevice, reinterpret_cast<VulkanAPI*>(p_Owner)->getMemAllocator(), object_mesh.indices.data(), sizeof(object_mesh.indices[0]) * object_mesh.indices.size(), VK_BUFFER_USAGE_INDEX_BUFFER_BIT, &indexBuffer);
+		VulkanAPI::createVkBuffer(device, allocator, object_mesh.vertices.data(), sizeof(object_mesh.vertices[0]) * object_mesh.vertices.size(), VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, &vertexBuffer);
+		VulkanAPI::createVkBuffer(device, allocator, object_mesh.indices.data(), sizeof(object_mesh.indices[0]) * object_mesh.indices.size(), VK_BUFFER_USAGE_INDEX_BUFFER_BIT, &indexBuffer);
 
-		//createDescriptorLayout(device);
-		//createDescriptorPool(device);
-		//createDescriptorSet(device);
+		createDescriptorLayout(device);
+		createDescriptorPool(device);
+		createDescriptorSet(device);
 		createPipelineLayout(device);
 		createGraphicsPipeline(device);
 	}
 
-	void DrawableObj::destroyObject(VkDevice device)
+	void DrawableObj::destroyObject(VkDevice device, VmaAllocator allocator)
 	{
 		vkDestroyPipeline(device, graphicsPipeline, NULL);
 		vkDestroyPipelineLayout(device, pipelineLayout, NULL);
-		//vkFreeDescriptorSets(device, descriptorPool, descriptorSets.size(), descriptorSets.data());
-		//vkDestroyDescriptorPool(device, descriptorPool, NULL);
-		//vkDestroyDescriptorSetLayout(device, descriptorSetLayout, NULL);
+		vkFreeDescriptorSets(device, descriptorPool, descriptorSets.size(), descriptorSets.data());
+		vkDestroyDescriptorPool(device, descriptorPool, NULL);
+		vkDestroyDescriptorSetLayout(device, descriptorSetLayout, NULL);
 
-		VulkanAPI::destroyShaderBuffer(device, reinterpret_cast<VulkanAPI*>(p_Owner)->getMemAllocator(), &indexBuffer);
-		VulkanAPI::destroyShaderBuffer(device, reinterpret_cast<VulkanAPI*>(p_Owner)->getMemAllocator(), &vertexBuffer);
-		//destroyShaderBuffer(device, &uniformBuffer);
+		VulkanAPI::destroyShaderBuffer(device, allocator, &indexBuffer);
+		VulkanAPI::destroyShaderBuffer(device, allocator, &vertexBuffer);
+
+		for (int ind = 0; ind < object_texture.size(); ind++)
+		{
+			VulkanAPI::destroyTexture(device, allocator, &object_texture[ind]);
+		}
 
 		this->~DrawableObj();
+	}
+
+	void DrawableObj::updateObject(VkDevice device)
+	{
+		VkDescriptorImageInfo imageInfo[TEXTURE_ARRAY];
+		for (int ind = 0; ind < TEXTURE_ARRAY; ind++)
+		{
+			if (ind < object_texture.size())
+			{
+				imageInfo[ind].imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+				imageInfo[ind].imageView = object_texture[ind].textureImageView;
+				imageInfo[ind].sampler = object_texture[ind].textureSampler;
+			}
+			else
+			{
+				imageInfo[ind].imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+				imageInfo[ind].imageView = nullptr;
+				imageInfo[ind].sampler = nullptr;
+			}
+		}
+
+		VkWriteDescriptorSet writes{};
+		//memset(&writes, 0, sizeof(writes));
+
+		writes.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+		writes.dstSet = descriptorSets[0];
+		writes.dstBinding = 1;
+		writes.dstArrayElement = 0;
+		writes.descriptorType = VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE;
+		writes.descriptorCount = TEXTURE_ARRAY;
+		writes.pImageInfo = imageInfo;
+
+		vkUpdateDescriptorSets(device, 1, &writes, 0, NULL);
+	}
+
+	void DrawableObj::invalidateTexture(VkDevice device, VmaAllocator allocator)
+	{
+		for (int ind = 0; ind < object_texture.size(); ind++)
+		{
+			VulkanAPI::destroyTexture(device, allocator, &object_texture[ind]);
+		}
+
+		object_texture.clear();
 	}
 
 	bool DrawableObj::createPipelineLayout(VkDevice device)
@@ -52,9 +101,9 @@ namespace GrEngine_Vulkan
 		VkPipelineLayoutCreateInfo pipelineLayoutInfo{};
 		pipelineLayoutInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
 		pipelineLayoutInfo.setLayoutCount = 0;
-		//pipelineLayoutInfo.setLayoutCount = 1;
+		pipelineLayoutInfo.setLayoutCount = 1;
 		pipelineLayoutInfo.pSetLayouts = NULL;
-		//pipelineLayoutInfo.pSetLayouts = &descriptorSetLayout;
+		pipelineLayoutInfo.pSetLayouts = &descriptorSetLayout;
 		pipelineLayoutInfo.pushConstantRangeCount = 1;
 		pipelineLayoutInfo.pPushConstantRanges = &pushConstant;
 
@@ -64,13 +113,16 @@ namespace GrEngine_Vulkan
 	bool DrawableObj::recordCommandBuffer(VkDevice device, VkCommandBuffer commandBuffer, VkExtent2D extent)
 	{
 		vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, graphicsPipeline);
-		//vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout, 0, 1, &descriptorSets[0], 0, NULL);
 
 		VkDeviceSize offsets[] = { 0 };
 		vkCmdBindVertexBuffers(commandBuffer, 0, 1, &vertexBuffer.Buffer, offsets);
 		vkCmdBindIndexBuffer(commandBuffer, indexBuffer.Buffer, 0, VK_INDEX_TYPE_UINT16);
 
 		pushConstants(device, commandBuffer, extent);
+		if (descriptorSets.size() > 0)
+		{
+			vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout, 0, 1, &descriptorSets[0], 0, NULL);
+		}
 
 		//vkCmdDraw(commandBuffer, static_cast<uint32_t>(object_mesh.vertices.size()), 1, 0, 0);
 		vkCmdDrawIndexed(commandBuffer, static_cast<uint32_t>(object_mesh.indices.size()), 1, 0, 0, 0);
@@ -120,8 +172,8 @@ namespace GrEngine_Vulkan
 		VkPipelineVertexInputStateCreateInfo vertexInputInfo{};
 		vertexInputInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
 
-		auto bindingDescription = DrawableObj::getBindingDescription();
-		auto attributeDescriptions = DrawableObj::getAttributeDescriptions();
+		auto bindingDescription = Vertex::getBindingDescription();
+		auto attributeDescriptions = Vertex::getAttributeDescriptions();
 
 		vertexInputInfo.vertexBindingDescriptionCount = 1;
 		vertexInputInfo.vertexAttributeDescriptionCount = static_cast<uint32_t>(attributeDescriptions.size());
@@ -146,7 +198,7 @@ namespace GrEngine_Vulkan
 		rasterizer.rasterizerDiscardEnable = VK_FALSE;
 		rasterizer.polygonMode = VK_POLYGON_MODE_FILL;
 		rasterizer.lineWidth = 1.0f;
-		rasterizer.cullMode = VK_CULL_MODE_BACK_BIT;
+		rasterizer.cullMode = VK_CULL_MODE_NONE;
 		rasterizer.frontFace = VK_FRONT_FACE_COUNTER_CLOCKWISE;
 		rasterizer.depthBiasEnable = VK_FALSE;
 		rasterizer.depthBiasConstantFactor = 0.0f;
@@ -229,16 +281,13 @@ namespace GrEngine_Vulkan
 		return true;
 	}
 
-	/*
-	*Depricated function
-	*/
 	bool DrawableObj::createDescriptorLayout(VkDevice device)
 	{
 		VkDescriptorSetLayoutBinding descriptorBindings{};
-		descriptorBindings.binding = 0; // DESCRIPTOR_SET_BINDING_INDEX
-		descriptorBindings.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-		descriptorBindings.descriptorCount = 1;
-		descriptorBindings.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
+		descriptorBindings.binding = 1; // DESCRIPTOR_SET_BINDING_INDEX
+		descriptorBindings.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+		descriptorBindings.descriptorCount = TEXTURE_ARRAY;
+		descriptorBindings.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
 		descriptorBindings.pImmutableSamplers = NULL;
 
 		VkDescriptorSetLayoutCreateInfo descriptorLayout{};
@@ -250,14 +299,11 @@ namespace GrEngine_Vulkan
 		return vkCreateDescriptorSetLayout(device, &descriptorLayout, NULL, &descriptorSetLayout) == VK_SUCCESS;
 	}
 
-	/*
-	*Depricated function
-	*/
 	bool DrawableObj::createDescriptorPool(VkDevice device)
 	{
 		VkDescriptorPoolSize descriptorTypePool;
-		descriptorTypePool.type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-		descriptorTypePool.descriptorCount = 1;
+		descriptorTypePool.type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+		descriptorTypePool.descriptorCount = TEXTURE_ARRAY;
 		VkDescriptorPoolCreateInfo createInfo{};
 		createInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
 		createInfo.pNext = nullptr;
@@ -269,9 +315,6 @@ namespace GrEngine_Vulkan
 		return vkCreateDescriptorPool(device, &createInfo, NULL, &descriptorPool) == VK_SUCCESS;
 	}
 
-	/*
-	*Depricated function
-	*/
 	bool DrawableObj::createDescriptorSet(VkDevice device)
 	{
 		VkDescriptorSetAllocateInfo descriptorAllocInfo{};
@@ -281,20 +324,36 @@ namespace GrEngine_Vulkan
 		descriptorAllocInfo.descriptorSetCount = 1;
 		descriptorAllocInfo.pSetLayouts = &descriptorSetLayout;
 
+		VkDescriptorImageInfo imageInfo[TEXTURE_ARRAY];
+		for (int ind = 0; ind < TEXTURE_ARRAY; ind++)
+		{
+			if (ind < object_texture.size())
+			{
+				imageInfo[ind].imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+				imageInfo[ind].imageView = object_texture[ind].textureImageView;
+				imageInfo[ind].sampler = object_texture[ind].textureSampler;
+			}
+			else
+			{
+				imageInfo[ind].imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+				imageInfo[ind].imageView = nullptr;
+				imageInfo[ind].sampler = nullptr;
+			}
+		}
+
 		descriptorSets.resize(1);
 		vkAllocateDescriptorSets(device, &descriptorAllocInfo, descriptorSets.data());
 
 		VkWriteDescriptorSet writes{};
-		memset(&writes, 0, sizeof(writes));
+		//memset(&writes, 0, sizeof(writes));
 
 		writes.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-		writes.pNext = NULL;
 		writes.dstSet = descriptorSets[0];
-		writes.descriptorCount = 1;
-		writes.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-		//writes.pBufferInfo = &uniformBuffer.BufferInfo;
+		writes.dstBinding = 1;
 		writes.dstArrayElement = 0;
-		writes.dstBinding = 0;
+		writes.descriptorType = VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE;
+		writes.descriptorCount = TEXTURE_ARRAY;
+		writes.pImageInfo = imageInfo;
 
 		vkUpdateDescriptorSets(device, 1, &writes, 0, NULL);
 

@@ -17,6 +17,7 @@
 
             <StackPanel Width="132" Background="#FF353538" Margin="0">
                 <Button x:Name="LoadObjButton" Content="Load .obj file" Background="#FF5D5D5D" BorderBrush="#FFC8C8C8" BorderThickness="1" Margin="5" Foreground="White" FontFamily="Lucida Sans Unicode" TextOptions.TextHintingMode="Fixed" Padding="2" Click="Button_Click" Cursor="Hand"/>
+                <Button x:Name="LoadTexture" Content="Load texture" Background="#FF5D5D5D" BorderBrush="#FFC8C8C8" BorderThickness="1" Margin="5" Foreground="White" FontFamily="Lucida Sans Unicode" TextOptions.TextHintingMode="Fixed" Padding="2" Cursor="Hand" Click="TextureButton_Click"/>
                 <Button x:Name="ClearButton" Content="Clear scene" Background="#FF5D5D5D" BorderBrush="#FFC8C8C8" BorderThickness="1" Margin="5" Foreground="White" FontFamily="Lucida Sans Unicode" TextOptions.TextHintingMode="Fixed" Padding="2" Cursor="Hand" Click="ClearButton_Click"/>
             </StackPanel>
             <DockPanel Height="120" VerticalAlignment="Top" DockPanel.Dock="Bottom" LastChildFill="True" Background="#FF353538" Margin="0">

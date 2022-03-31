@@ -3,6 +3,7 @@
 #include <glm/glm.hpp>
 #include <tiny_obj_loader.h>
 #include <vk_mem_alloc.h>
+#include <stb_image.h>
 #include "DrawableObj.h"
 #include "Engine/Source/Headers/Logger.h"
 #include "Engine/Source/Headers/Renderer.h"
@@ -41,10 +42,13 @@ namespace GrEngine_Vulkan
 		bool updateDrawables(uint32_t index);
 		static VkShaderModule createShaderModule(VkDevice device, const std::vector<char>& code);
 		bool loadModel(const char* model_path) override;
+		bool loadImage(const char* image_path) override;
+		bool loadTexture(const char* texture_path, DrawableObj* target);
 		void clearDrawables() override;
 		static std::vector<char> readFile(const std::string& filename);
 		static bool createVkBuffer(VkDevice device, VmaAllocator allocator, const void* bufData, uint32_t dataSize, VkBufferUsageFlags usage, ShaderBuffer* shader);
-		static void destroyShaderBuffer(VkDevice device, VmaAllocator allocator, ShaderBuffer* shader);
+		static void destroyShaderBuffer(VkDevice device, VmaAllocator allocator, ShaderBuffer* shaderBuf);
+		static void destroyTexture(VkDevice device, VmaAllocator allocator, Texture* texture);
 
 		void Update() override;
 
@@ -99,6 +103,11 @@ namespace GrEngine_Vulkan
 
 		void recreateSwapChain();
 		void cleanupSwapChain();
+
+		VkCommandBuffer beginSingleTimeCommands();
+		void endSingleTimeCommands(VkCommandBuffer commandBuffer);
+		void transitionImageLayout(VkImage image, VkFormat format, VkImageLayout oldLayout, VkImageLayout newLayout);
+		void copyBufferToImage(VkBuffer buffer, VkImage image, uint32_t width, uint32_t height);
 
 		VkImageView depthImageView;
 		AllocatedImage depthImage;

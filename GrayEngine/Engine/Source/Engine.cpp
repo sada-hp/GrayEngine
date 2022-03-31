@@ -33,9 +33,14 @@ namespace GrEngine
 		glfwSetWindowShouldClose(pWindow.get()->getWindow(), true);
 	}
 
-	void Engine::loadModelFromPath(const char* path)
+	void Engine::loadMeshFromPath(const char* path)
 	{
 		GrEngine_Vulkan::VulkanAPI::m_getRenderer()->loadModel(path);
+	}
+
+	void Engine::loadImageFromPath(const char* path)
+	{
+		GrEngine_Vulkan::VulkanAPI::m_getRenderer()->loadImage(path);
 	}
 
 	void Engine::clearScene()
