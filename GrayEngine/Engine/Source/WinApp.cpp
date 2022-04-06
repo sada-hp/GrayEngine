@@ -23,12 +23,12 @@ namespace GrEngine
 
 	void WinApp::StartUp(const AppParameters& Properties)
 	{
-		p_AppRenderer = new GrEngine_Vulkan::VulkanAPI();
+		pAppRenderer = new GrEngine_Vulkan::VulkanAPI();
 
 		props = Properties;
-		props.p_Renderer = p_AppRenderer;
+		props.p_Renderer = pAppRenderer;
 
-		glfwInit();
+		auto res = glfwInit();
 
 		glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
 		glfwWindowHint(GLFW_DOUBLEBUFFER, 1);
@@ -37,9 +37,6 @@ namespace GrEngine
 		glfwWindowHint(GLFW_VISIBLE, false); //TBD
 
 		window = glfwCreateWindow(props.Width, props.Height, props.Title, nullptr, nullptr);
-		glfwSetWindowUserPointer(window, &props);
-
-		nativeWindow = glfwGetWin32Window(window);
 
 		if (!window)
 		{
@@ -48,13 +45,16 @@ namespace GrEngine
 		}
 		else
 		{
+			nativeWindow = glfwGetWin32Window(window);
+			glfwSetWindowUserPointer(window, &props);
+
 			SetVSync(true);
 			SetUpEvents(window);
 			RECT desktop;
 			GetWindowRect(GetDesktopWindow(), &desktop);
 			glfwSetWindowPos(window, desktop.right/2 - Properties.Width/2, desktop.bottom/2 - Properties.Height/2);
 
-			if (!p_AppRenderer->init(window, p_AppRenderer))
+			if (!pAppRenderer->init(window))
 			{
 				Logger::Out("Failed to initialize Vulkan!", OutputColor::Red, OutputType::Error);
 				ShutDown();
@@ -67,11 +67,15 @@ namespace GrEngine
 	void WinApp::ShutDown()
 	{
 		Logger::Out("Shutting down the engine", OutputColor::Gray, OutputType::Log);
-		p_AppRenderer->destroy();
-		glfwDestroyWindow(window);
-		glfwTerminate();
-
-		delete p_AppRenderer;
+		if (pAppRenderer)
+		{
+			pAppRenderer->destroy();
+			delete pAppRenderer;
+		}
+		if (window)
+		{
+			glfwDestroyWindow(window);
+		}
 	}
 
 	void WinApp::MaximizeGLFW(bool state)
@@ -95,7 +99,7 @@ namespace GrEngine
 		double currentTime = glfwGetTime();
 		
 		glfwPollEvents();
-		p_AppRenderer->drawFrame();
+		pAppRenderer->drawFrame();
 		EventListener::pollEngineEvents();
 		glfwSwapBuffers(window);
 		frames++;
@@ -105,6 +109,8 @@ namespace GrEngine
 			new_title += " [" + std::to_string(frames) + " fps, " + std::to_string(1000.0 / double(frames)) + " ms/frame]";
 
 			glfwSetWindowTitle(window, new_title.c_str());
+			std::vector<double> para{ (double)frames };
+			EventListener::registerEvent(EventType::Step, para);
 			frames = 0;
 			time += 1.0;
 		}

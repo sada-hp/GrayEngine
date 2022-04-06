@@ -6,5 +6,6 @@
   <ItemGroup>
     <ClInclude Include="source\EditorUI.h" />
     <ClInclude Include="source\Application.h" />
+    <ClInclude Include="source\ModelBrowser.h" />
   </ItemGroup>
 </Project>

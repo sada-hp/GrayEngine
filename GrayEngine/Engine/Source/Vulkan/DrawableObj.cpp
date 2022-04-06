@@ -2,8 +2,6 @@
 #include "DrawableObj.h"
 #include "VulkanAPI.h"
 
-#define TEXTURE_ARRAY 5
-
 namespace GrEngine_Vulkan
 {
 	DrawableObj::DrawableObj()
@@ -50,8 +48,8 @@ namespace GrEngine_Vulkan
 
 	void DrawableObj::updateObject(VkDevice device)
 	{
-		VkDescriptorImageInfo imageInfo[TEXTURE_ARRAY];
-		for (int ind = 0; ind < TEXTURE_ARRAY; ind++)
+		VkDescriptorImageInfo imageInfo[TEXTURE_ARRAY_SIZE];
+		for (int ind = 0; ind < TEXTURE_ARRAY_SIZE; ind++)
 		{
 			if (ind < object_texture.size())
 			{
@@ -75,7 +73,7 @@ namespace GrEngine_Vulkan
 		writes.dstBinding = 1;
 		writes.dstArrayElement = 0;
 		writes.descriptorType = VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE;
-		writes.descriptorCount = TEXTURE_ARRAY;
+		writes.descriptorCount = TEXTURE_ARRAY_SIZE;
 		writes.pImageInfo = imageInfo;
 
 		vkUpdateDescriptorSets(device, 1, &writes, 0, NULL);
@@ -286,7 +284,7 @@ namespace GrEngine_Vulkan
 		VkDescriptorSetLayoutBinding descriptorBindings{};
 		descriptorBindings.binding = 1; // DESCRIPTOR_SET_BINDING_INDEX
 		descriptorBindings.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-		descriptorBindings.descriptorCount = TEXTURE_ARRAY;
+		descriptorBindings.descriptorCount = TEXTURE_ARRAY_SIZE;
 		descriptorBindings.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
 		descriptorBindings.pImmutableSamplers = NULL;
 
@@ -303,7 +301,7 @@ namespace GrEngine_Vulkan
 	{
 		VkDescriptorPoolSize descriptorTypePool;
 		descriptorTypePool.type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-		descriptorTypePool.descriptorCount = TEXTURE_ARRAY;
+		descriptorTypePool.descriptorCount = TEXTURE_ARRAY_SIZE;
 		VkDescriptorPoolCreateInfo createInfo{};
 		createInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
 		createInfo.pNext = nullptr;
@@ -324,8 +322,8 @@ namespace GrEngine_Vulkan
 		descriptorAllocInfo.descriptorSetCount = 1;
 		descriptorAllocInfo.pSetLayouts = &descriptorSetLayout;
 
-		VkDescriptorImageInfo imageInfo[TEXTURE_ARRAY];
-		for (int ind = 0; ind < TEXTURE_ARRAY; ind++)
+		VkDescriptorImageInfo imageInfo[TEXTURE_ARRAY_SIZE];
+		for (int ind = 0; ind < TEXTURE_ARRAY_SIZE; ind++)
 		{
 			if (ind < object_texture.size())
 			{
@@ -352,7 +350,7 @@ namespace GrEngine_Vulkan
 		writes.dstBinding = 1;
 		writes.dstArrayElement = 0;
 		writes.descriptorType = VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE;
-		writes.descriptorCount = TEXTURE_ARRAY;
+		writes.descriptorCount = TEXTURE_ARRAY_SIZE;
 		writes.pImageInfo = imageInfo;
 
 		vkUpdateDescriptorSets(device, 1, &writes, 0, NULL);

@@ -26,11 +26,10 @@ namespace GrEngine
 
 		inline AppParameters* WindowProperties() override { return &props; };
 	private:
-		Renderer* p_AppRenderer;
+		Renderer* pAppRenderer;
 		void StartUp(const AppParameters& Properties);
 		void ShutDown();
 		void SetUpEvents(GLFWwindow* target);
-		AppParameters props;
 
 		unsigned long frames = 0;
 		double time;

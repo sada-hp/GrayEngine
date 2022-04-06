@@ -3,113 +3,80 @@ using System.Windows.Interop;
 using RGiesecke.DllExport;
 using System.Threading;
 using System.Runtime.InteropServices;
+using System.Windows;
+using EditorUI.Wrappers;
 
 namespace EditorUI
 {
     public class UIBridge
     {
-        public static MainView mainview_ui;
-        public static Thread gui_thread;
-        public static IntPtr mainview_handle = IntPtr.Zero;
+        public static Wrapper[] wrappers = new Wrapper[2];
 
         [DllExport]
-        public static IntPtr CreateUserInterface(IntPtr pointer) // Multi-Threaded Version
+        public static IntPtr CreateUserInterface(IntPtr owner, uint index)
         {
-            gui_thread = new Thread(() =>
+            if (wrappers[0] == null)
             {
-                if (mainview_handle == IntPtr.Zero)
-                {
-                    mainview_ui = new MainView(pointer)
-                    { Opacity = 0, Width = 0, Height = 0 };
-                    mainview_ui.Show();
-                    mainview_handle = new WindowInteropHelper(mainview_ui).Handle;
-                }
-                System.Windows.Threading.Dispatcher.Run();
-            });
-            gui_thread.SetApartmentState(ApartmentState.STA); // STA Thread Initialization
-            gui_thread.Start();
+                wrappers[0] = new EditorWrapper();
+                wrappers[1] = new ModelBrowserWrapper();
+            }
 
-            while (mainview_handle == IntPtr.Zero) { }
-            return mainview_handle;
+            return wrappers[index].CreateWrapper(owner);
         }
 
         [DllExport]
-        public static void DisplayUserInterface() // Multi-Threaded Version
+        public static void DisplayUserInterface(uint index)
         {
-            try
-            {
-                mainview_ui.Opacity = 1;
-            }
-            catch // Can't Access to UI Thread , So Dispatching
-            {
-                mainview_ui.Dispatcher.BeginInvoke((Action)(() =>
-                {
-                    mainview_ui.Opacity = 1;
-                }));
-            }
+            wrappers[index].DisplayUserInterface();
         }
 
         [DllExport]
-        public static void DestroyUserInterface() // Multi-Threaded Version
+        public static void DestroyUserInterface(uint index)
         {
-            try
-            {
-                mainview_ui.Close();
-            }
-            catch // Can't Access to UI Thread , So Dispatching
-            {
-                mainview_ui.Dispatcher.BeginInvoke((Action)(() =>
-                {
-                    mainview_ui.Close();
-                }));
-            }
+            wrappers[index].DestroyWrapper();
         }
 
         [DllExport]
-        public static void UpdateLogger(IntPtr value) // Multi-Threaded Version
+        public static void ParentRenderer(IntPtr value, uint index)
+        {
+            wrappers[index].ParentRenderer(value);
+        }
+
+        [DllExport]
+        public static void UpdateChildPosition(uint index)
+        {
+            wrappers[index].UpdateChildWnd();
+        }
+
+        [DllExport]
+        public static void UpdateLogger(IntPtr value)
         {
             var input = Marshal.PtrToStringAnsi(value);
             try
             {
-                mainview_ui.PushIntoLogger(input);
+                ((MainView)wrappers[0].ui_window).PushIntoLogger(input);
             }
             catch // Can't Access to UI Thread , So Dispatching
             {
-                mainview_ui.Dispatcher.BeginInvoke((Action)(() =>
+                wrappers[0].ui_window.Dispatcher.BeginInvoke((Action)(() =>
                 {
-                    mainview_ui.PushIntoLogger(input);
+                    ((MainView)wrappers[0].ui_window).PushIntoLogger(input);
                 }));
             }
         }
 
         [DllExport]
-        public static void ParentRenderer(IntPtr value) // Multi-Threaded Version
+        public static void UpdateFrameCounter(double frames)
         {
             try
             {
-                mainview_ui.ParentRender(value);
+                ((MainView)wrappers[0].ui_window).UpdateFrameCounter(frames);
             }
             catch // Can't Access to UI Thread , So Dispatching
             {
-                mainview_ui.Dispatcher.BeginInvoke((Action)(() =>
+                wrappers[0].ui_window.Dispatcher.BeginInvoke((Action)(() =>
                 {
-                    mainview_ui.ParentRender(value);
-                }));
-            }
-        }
-
-        [DllExport]
-        public static void UpdateChildPosition()
-        {
-            try
-            {
-                mainview_ui.UpdateChildPosition();
-            }
-            catch // Can't Access to UI Thread , So Dispatching
-            {
-                mainview_ui.Dispatcher.BeginInvoke((Action)(() =>
-                {
-                    mainview_ui.UpdateChildPosition();
+                    ((MainView)wrappers[0].ui_window).UpdateFrameCounter(frames);
                 }));
             }
         }

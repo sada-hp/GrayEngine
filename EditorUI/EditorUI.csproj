@@ -62,17 +62,28 @@
     <Reference Include="WindowsFormsIntegration" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="EditorWindow.cs" />
+    <Compile Include="ModelBrowser.xaml.cs">
+      <DependentUpon>ModelBrowser.xaml</DependentUpon>
+    </Compile>
     <Compile Include="UIBridge.cs" />
     <Compile Include="MainView.xaml.cs">
       <DependentUpon>MainView.xaml</DependentUpon>
     </Compile>
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="Wrappers\EditorWrapper.cs" />
+    <Compile Include="Wrappers\ModelBrowserWrapper.cs" />
+    <Compile Include="Wrappers\Wrapper.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
     <Page Include="MainView.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="ModelBrowser.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>

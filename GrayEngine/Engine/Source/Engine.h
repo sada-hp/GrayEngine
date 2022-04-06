@@ -20,6 +20,7 @@ namespace GrEngine
 		void clearScene();
 		void Run();
 		void Stop();
+		void TerminateLiraries();
 		void* getWndNative() { return pWindow.get()->getNativePlatformWND(); };
 	};
 }

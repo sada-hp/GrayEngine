@@ -1,12 +1,13 @@
 #pragma once
 #include <glfw/glfw3.h>
 #include <glm/glm.hpp>
-#include <tiny_obj_loader.h>
 #include <vk_mem_alloc.h>
 #include <stb_image.h>
 #include "DrawableObj.h"
 #include "Engine/Source/Headers/Logger.h"
 #include "Engine/Source/Headers/Renderer.h"
+
+#define TEXTURE_ARRAY_SIZE 5
 
 namespace GrEngine_Vulkan
 {
@@ -30,13 +31,12 @@ namespace GrEngine_Vulkan
 	class VulkanAPI : public GrEngine::Renderer
 	{
 	public:
-		bool init(GLFWwindow* window, Renderer* apiInstance) override;
+		bool init(GLFWwindow* window) override;
 		void destroy() override;
 		void drawFrame() override;
 		VkDevice logicalDevice;
 
 		inline VkExtent2D getExtent() { return swapChainExtent; };
-		inline static Renderer* m_getRenderer() { return pInstance; };
 		inline VmaAllocator getMemAllocator() { return memAllocator; };
 		inline VkRenderPass getRenderPass() { return renderPass; };
 		bool updateDrawables(uint32_t index);
@@ -54,7 +54,6 @@ namespace GrEngine_Vulkan
 
 	private:
 		GLFWwindow* pParentWindow;
-		static VulkanAPI* pInstance;
 		VmaAllocator memAllocator;
 
 		VkInstance _vulkan;
@@ -75,6 +74,7 @@ namespace GrEngine_Vulkan
 		VkSemaphore imageAvailableSemaphore;
 		VkSemaphore renderFinishedSemaphore;
 		VkQueue graphicsQueue;
+		VkFence graphicsFence;
 
 		VkMemoryRequirements memRequirements;
 

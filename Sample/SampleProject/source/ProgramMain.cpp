@@ -1,8 +1,13 @@
+#define MAIN_WIN_CLASSNAME "CppMAppHostWinClass"
+#define MODEL_BROWSER_CLASSNAME "CppModelBrowserHostWin"
+
 #pragma once
 #include "EditorUI.h"
 #include "Application.h"
+#include "ModelBrowser.h"
 
 GrEngine::Application* GrEngine::Application::_instance = nullptr;
+GrEngine::ModelBrowser* GrEngine::ModelBrowser::_instance = nullptr;
 
 LRESULT CALLBACK HostWindowProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) //Background Win32 is used to receive messages from WPF front-end window
 {
@@ -10,19 +15,13 @@ LRESULT CALLBACK HostWindowProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lPara
     {
     case WM_CLOSE:
         GrEngine::Application::KillEngine();
-        GrEngine::Application::getEditorUI()->DestroyUserInterface();
+        GrEngine::Application::getEditorUI()->destroyUI(VIEWPORT_EDITOR);
         DestroyWindow(hwnd);
         break;
     case WM_DESTROY:
         break;
     case WM_SIZE:
-        if (wpf_hwnd != nullptr) 
-		{
-			RECT hwin_rect;
-        	GetClientRect(cpphwin_hwnd, &hwin_rect);
-        	MoveWindow(wpf_hwnd, 0, 0, hwin_rect.right - hwin_rect.left, hwin_rect.bottom - hwin_rect.top, TRUE);
-            GrEngine::Application::getEditorUI()->SetViewportPosition();
-        }
+        GrEngine::Application::updateWpfWnd();
         break;
     /*Messages received from the C# WPF front-end part of the editor*/
 	case 0x1200: //Load obj file callback
@@ -33,6 +32,12 @@ LRESULT CALLBACK HostWindowProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lPara
 		break;
     case 0x1202: //Upload texture file callback
         GrEngine::Application::uploadTexture((const char*)lParam);
+        break;
+    case 0x1203: //Open the model browser
+        GrEngine::Application::initModelBrowser();
+        break;
+    case 0x2200: //Model browser is closing
+        GrEngine::ModelBrowser::loadModel((const char*)lParam);
         break;
     default:
         return DefWindowProcA(hwnd, msg, wParam, lParam);
@@ -47,8 +52,8 @@ int main(int argc, char** argv)
 
     GrEngine::Application* app = new GrEngine::Application();
 
-    app->getEditorUI()->InitUI(HostWindowProc);
-    app->getEditorUI()->SetViewportHWND(app->getGLFW_HWND());
+    app->getEditorUI()->InitUI(HostWindowProc, MAIN_WIN_CLASSNAME, VIEWPORT_EDITOR);
+    app->getEditorUI()->SetViewportHWND(app->getGLFW_HWND(), VIEWPORT_EDITOR);
 	
 	app->InitializeInAppLogger();
     app->StartEngine();

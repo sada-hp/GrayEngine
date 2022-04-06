@@ -1,25 +1,50 @@
 #pragma once
 #include <GrayEngine.h>
 #include "EditorUI.h"
-#include "ModelBrowser.h"
-
-std::string log_path = SOLUTION_DIR + std::string("GE_Log.txt");
 
 namespace GrEngine
 {
-    class Application : public Engine
+    class ModelBrowser : public Engine
     {
-        static Application* _instance;
-        EditorUI wpfUI;
-    public:
-        Application(const AppParameters& Properties = AppParameters())
+        static ModelBrowser* _instance;
+        EditorUI* wpfUI;
+
+        static LRESULT CALLBACK HostWindowProcBrowser(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) //Background Win32 is used to receive messages from WPF front-end window
         {
-            if (_instance != nullptr)
-                delete _instance;
+            switch (msg)
+            {
+            case WM_CLOSE:
+                GrEngine::ModelBrowser::closeBrowser();
+                DestroyWindow(hwnd);
+                break;
+            case WM_DESTROY:
+                break;
+            case WM_SIZE:
+                GrEngine::ModelBrowser::updateWpfWnd();
+                break;
+                /*Messages received from the C# WPF front-end part of the editor*/
+            case 0x1200: //Load obj file callback
+                GrEngine::ModelBrowser::loadModel((const char*)lParam);
+                break;
+            case 0x1201: //Clear viewport callback
+                GrEngine::ModelBrowser::clearViewport();
+                break;
+            case 0x1202: //Upload texture file callback
+                GrEngine::ModelBrowser::uploadTexture((const char*)lParam);
+                break;
+            case 0x1203: //Close model browser
+                GrEngine::ModelBrowser::closeBrowser();
+                break;
+            default:
+                return DefWindowProcA(hwnd, msg, wParam, lParam);
+            }
+            return 0;
+        }
 
-            _instance = this;
-
-            EventListener::pushEvent(EventType::MouseClick,[](std::vector<double> para)
+    public:
+        ModelBrowser(const AppParameters& Properties = AppParameters())
+        {
+            EventListener::pushEvent(EventType::MouseClick, [](std::vector<double> para)
                 {
                     Logger::Out("MouseClickEvent", OutputColor::Blue, OutputType::Log);
                 });
@@ -48,29 +73,24 @@ namespace GrEngine
                 {
                     Logger::Out("Custom Event with a parameter %d", OutputColor::Blue, OutputType::Log, (int)para.front());
                 });
-
-            EventListener::pushEvent(EventType::Step, [](std::vector<double> para)
-                {
-                    _instance->wpfUI.UpdateFramecounter(para.front());
-                });
-
-            std::vector<double> para = { 1 };
-
-            EventListener::registerEvent("MyEvent", para);
         }
 
-        ~Application()
+        ~ModelBrowser()
         {
-            TerminateLiraries();
+            _instance = nullptr;
         }
 
-        static void InitializeInAppLogger()
+        void init(ModelBrowser* instance, EditorUI* pUserInterface)
         {
-            EventListener::pushEvent(EventType::Log, [](std::vector<double> para)
-                {
-                    Application::UpdateAppLogger(para);
-                }
-            );
+            if (_instance != nullptr)
+            {
+                delete _instance;
+                _instance = nullptr;
+            }
+
+            _instance = instance;
+            wpfUI = pUserInterface;
+            initModelBrowser();
         }
 
         static void StartEngine()
@@ -85,7 +105,7 @@ namespace GrEngine
 
         static EditorUI* getEditorUI()
         {
-            return &_instance->wpfUI;
+            return _instance->wpfUI;
         };
 
         static void loadModel(const char* mesh_path)
@@ -115,41 +135,21 @@ namespace GrEngine
                 RECT hwin_rect;
                 GetClientRect(getEditorUI()->cpphwin_hwnd, &hwin_rect);
                 MoveWindow(getEditorUI()->wpf_hwnd, 0, 0, hwin_rect.right - hwin_rect.left, hwin_rect.bottom - hwin_rect.top, TRUE);
-                GrEngine::Application::getEditorUI()->SetViewportPosition(VIEWPORT_EDITOR);
+                GrEngine::ModelBrowser::getEditorUI()->SetViewportPosition(VIEWPORT_EDITOR);
             }
         }
 
         static void initModelBrowser()
         {
-            std::unique_ptr<ModelBrowser> mdlBrowser = std::make_unique<ModelBrowser>();
-            mdlBrowser->init(mdlBrowser.get(), &_instance->wpfUI);
-            mdlBrowser->StartEngine();
-            mdlBrowser->KillEngine();
+            getEditorUI()->InitUI(HostWindowProcBrowser, MODEL_BROWSER_CLASSNAME, VIEWPORT_MODEL_BROWSER);
+            getEditorUI()->SetViewportHWND(getGLFW_HWND(), 1);
+            ShowWindow(getGLFW_HWND(), SW_SHOW);
         }
 
-        static void UpdateAppLogger(std::vector<double> para)
+        static void closeBrowser()
         {
-            std::fstream log_file;
-            std::string message = "";
-            char* msg = new char[para.size() + 2];
-            int i = 0;
-            for (char letter : para)
-            {
-                msg[i++] = (int)letter;
-            }
-            msg[i++] = '\n';
-            msg[i] = '\0';
-
-
-            log_file.open(log_path, std::fstream::out | std::ios::app);
-
-            log_file << msg;
-
-            log_file.close();
-
-            _instance->wpfUI.UpdateLogger(msg);
-
-            delete[] msg;
+            KillEngine();
+            getEditorUI()->destroyUI(VIEWPORT_MODEL_BROWSER);
         }
     };
 }

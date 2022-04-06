@@ -1,0 +1,17 @@
+﻿<Window x:Name="MdlBrowser" x:Class="EditorUI.ModelBrowser"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+             xmlns:local="clr-namespace:EditorUI"
+             mc:Ignorable="d" 
+             d:DesignHeight="450" d:DesignWidth="800" Title="Gray Engine: Model Browser" WindowStartupLocation="CenterScreen" Closing="MdlBrowser_Closing" SizeChanged="MdlBrowser_SizeChanged">
+    <DockPanel LastChildFill="True" Background="Black">
+        <StackPanel DockPanel.Dock="Left" Background="#FF353538" Width="200">
+            <Button Name="BtnLoadMdl" Height="50" Content="Load mesh" Click="BtnLoadMdl_Click"/>
+        </StackPanel>
+        <WindowsFormsHost Name="FormHost" DockPanel.Dock="Right" Background="Black" Visibility="Visible">
+            
+        </WindowsFormsHost>
+    </DockPanel>
+</Window>

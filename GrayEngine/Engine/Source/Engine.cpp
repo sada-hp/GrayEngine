@@ -19,10 +19,6 @@ namespace GrEngine
 		while (!glfwWindowShouldClose(pWindow.get()->getWindow()))
 		{
 			pWindow.get()->OnStep();
-
-			std::vector<double> para{};
-
-			EventListener::registerEvent(EventType::Step, para);
 		}
 
 		pWindow.get()->~AppWindow();
@@ -35,17 +31,22 @@ namespace GrEngine
 
 	void Engine::loadMeshFromPath(const char* path)
 	{
-		GrEngine_Vulkan::VulkanAPI::m_getRenderer()->loadModel(path);
+		pWindow.get()->getRenderer()->loadModel(path);
 	}
 
 	void Engine::loadImageFromPath(const char* path)
 	{
-		GrEngine_Vulkan::VulkanAPI::m_getRenderer()->loadImage(path);
+		pWindow.get()->getRenderer()->loadImage(path);
 	}
 
 	void Engine::clearScene()
 	{
-		GrEngine_Vulkan::VulkanAPI::m_getRenderer()->clearDrawables();
+		pWindow.get()->getRenderer()->clearDrawables();
+	}
+
+	void Engine::TerminateLiraries()
+	{
+		glfwTerminate();
 	}
 
 	void Engine::PokeIt()

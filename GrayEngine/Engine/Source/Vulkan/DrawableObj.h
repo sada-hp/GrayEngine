@@ -17,6 +17,7 @@ namespace GrEngine_Vulkan
 		glm::vec4 pos;
 		glm::vec4 color;
 		glm::vec2 uv;
+		uint32_t uv_index;
 
 		static VkVertexInputBindingDescription getBindingDescription() {
 			VkVertexInputBindingDescription bindingDescription{};
@@ -27,8 +28,8 @@ namespace GrEngine_Vulkan
 			return bindingDescription;
 		}
 
-		static std::array<VkVertexInputAttributeDescription, 3> getAttributeDescriptions() {
-			std::array<VkVertexInputAttributeDescription, 3> attributeDescriptions{};
+		static std::array<VkVertexInputAttributeDescription, 4> getAttributeDescriptions() {
+			std::array<VkVertexInputAttributeDescription, 4> attributeDescriptions{};
 
 			attributeDescriptions[0].binding = 0;
 			attributeDescriptions[0].location = 0;
@@ -44,6 +45,11 @@ namespace GrEngine_Vulkan
 			attributeDescriptions[2].location = 2;
 			attributeDescriptions[2].format = VK_FORMAT_R32G32_SFLOAT;
 			attributeDescriptions[2].offset = offsetof(Vertex, uv);
+
+			attributeDescriptions[3].binding = 0;
+			attributeDescriptions[3].location = 3;
+			attributeDescriptions[3].format = VK_FORMAT_R32_UINT;
+			attributeDescriptions[3].offset = offsetof(Vertex, uv_index);
 
 			return attributeDescriptions;
 		}
@@ -110,6 +116,8 @@ namespace GrEngine_Vulkan
 		void invalidateTexture(VkDevice device, VmaAllocator allocator);
 		bool pushConstants(VkDevice devicce, VkCommandBuffer cmd, VkExtent2D extent);
 		bool recordCommandBuffer(VkDevice device, VkCommandBuffer commandBuffer, VkExtent2D extent);
+
+		bool is_textured = false;
 	private:
 		void* p_Owner;
 		VkDescriptorSetLayout descriptorSetLayout;

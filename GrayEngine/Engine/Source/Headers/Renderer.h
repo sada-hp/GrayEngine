@@ -9,7 +9,7 @@ namespace GrEngine
 		Renderer() {};
 		virtual ~Renderer() {};
 
-		virtual bool init(GLFWwindow* window, Renderer* apiInstance) = 0;
+		virtual bool init(GLFWwindow* window) = 0;
 		virtual void destroy() = 0;
 		virtual void drawFrame() = 0;
 		virtual bool loadModel(const char* model_path) = 0;

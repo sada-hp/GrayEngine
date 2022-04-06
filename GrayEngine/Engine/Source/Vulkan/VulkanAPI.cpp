@@ -1,20 +1,22 @@
 #include <pch.h>
 #define GLFW_INCLUDE_VULKAN
 #define VMA_IMPLEMENTATION
-#define TINYOBJLOADER_IMPLEMENTATION
 #define VK_KHR_swapchain
 #define GLM_FORCE_DEPTH_ZERO_TO_ONE
 #define GLM_FORCE_RADIANS
 #define STB_IMAGE_IMPLEMENTATION
 #include "VulkanAPI.h"
-
-GrEngine_Vulkan::VulkanAPI* GrEngine_Vulkan::VulkanAPI::pInstance = nullptr;
+#include <assimp/Importer.hpp>
+#include <assimp/scene.h>
+#include <assimp/postprocess.h>
 
 namespace GrEngine_Vulkan
 {
 	void VulkanAPI::destroy()
 	{
+		if (Initialized == false) return;
 		Initialized = false;
+
 		vkDeviceWaitIdle(logicalDevice);
 		vkQueueWaitIdle(graphicsQueue);
 
@@ -29,11 +31,10 @@ namespace GrEngine_Vulkan
 		vkDestroyInstance(_vulkan, nullptr);
 	}
 
-	bool VulkanAPI::init(GLFWwindow* window, Renderer* apiInstance) //Vulkan integration done with a help of vulkan-tutorial.com
+	bool VulkanAPI::init(GLFWwindow* window) //Vulkan integration done with a help of vulkan-tutorial.com
 	{
 		bool res = true;
 		pParentWindow = window;
-		pInstance = reinterpret_cast<VulkanAPI*>(apiInstance);
 
 		if (!createVKInstance())
 			throw std::runtime_error("Failed to create vulkan instance!");
@@ -90,7 +91,6 @@ namespace GrEngine_Vulkan
 		if ((res = createSemaphores() & res) == false)
 			Logger::Out("[Vk] Failed to create semaphores", OutputColor::Red, OutputType::Error);
 
-		vkQueueWaitIdle(graphicsQueue);
 		vkDeviceWaitIdle(logicalDevice);
 
 		return Initialized = res;
@@ -100,7 +100,9 @@ namespace GrEngine_Vulkan
 	{
 		if (!Initialized) return;
 
-		uint32_t imageIndex;
+		vkQueueWaitIdle(graphicsQueue); //TBD
+
+		uint32_t imageIndex = 0;
 		vkAcquireNextImageKHR(logicalDevice, swapChain, UINT64_MAX, imageAvailableSemaphore, VK_NULL_HANDLE, &imageIndex);
 		updateDrawables(imageIndex);
 
@@ -119,7 +121,7 @@ namespace GrEngine_Vulkan
 		submitInfo.pSignalSemaphores = signalSemaphores;
 
 		VkResult res;
-		res = vkQueueSubmit(graphicsQueue, 1, &submitInfo, NULL);
+		res = vkQueueSubmit(graphicsQueue, 1, &submitInfo, graphicsFence);
 
 		if (res != VK_SUCCESS)
 			throw std::runtime_error("failed to submit draw command buffer!");
@@ -496,7 +498,7 @@ namespace GrEngine_Vulkan
 	{
 		swapChainImageViews.resize(swapChainImages.size());
 
-		for (size_t i = 0; i < swapChainImages.size(); i++) {
+		for (std::size_t i = 0; i < swapChainImages.size(); i++) {
 			VkImageViewCreateInfo createInfo{};
 			createInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
 			createInfo.viewType = VK_IMAGE_VIEW_TYPE_2D;
@@ -607,7 +609,7 @@ namespace GrEngine_Vulkan
 	{
 		swapChainFramebuffers.resize(swapChainImageViews.size());
 
-		for (size_t i = 0; i < swapChainImageViews.size(); i++) {
+		for (std::size_t i = 0; i < swapChainImageViews.size(); i++) {
 			VkImageView attachments[] = {
 				swapChainImageViews[i], depthImageView
 			};
@@ -668,7 +670,8 @@ namespace GrEngine_Vulkan
 		fenceInfo.flags = VK_FENCE_CREATE_SIGNALED_BIT;
 
 		if (vkCreateSemaphore(logicalDevice, &semaphoreInfo, nullptr, &imageAvailableSemaphore) != VK_SUCCESS ||
-			vkCreateSemaphore(logicalDevice, &semaphoreInfo, nullptr, &renderFinishedSemaphore) != VK_SUCCESS)
+			vkCreateSemaphore(logicalDevice, &semaphoreInfo, nullptr, &renderFinishedSemaphore) != VK_SUCCESS ||
+			vkCreateFence(logicalDevice, &fenceInfo, nullptr, &graphicsFence) != VK_SUCCESS)
 			return false;
 
 		return true;
@@ -676,10 +679,7 @@ namespace GrEngine_Vulkan
 
 	void VulkanAPI::Update()
 	{
-		if (pInstance->Initialized)
-		{
-			pInstance->recreateSwapChain();
-		}
+		recreateSwapChain();
 	}
 
 	void VulkanAPI::recreateSwapChain()
@@ -700,7 +700,7 @@ namespace GrEngine_Vulkan
 
 	void VulkanAPI::cleanupSwapChain()
 	{
-		for (size_t i = 0; i < swapChainFramebuffers.size(); i++)
+		for (std::size_t i = 0; i < swapChainFramebuffers.size(); i++)
 		{
 			vkDestroyFramebuffer(logicalDevice, swapChainFramebuffers[i], nullptr);
 		}
@@ -709,7 +709,7 @@ namespace GrEngine_Vulkan
 
 		vkDestroyRenderPass(logicalDevice, renderPass, nullptr);
 
-		for (size_t i = 0; i < swapChainImageViews.size(); i++)
+		for (std::size_t i = 0; i < swapChainImageViews.size(); i++)
 		{
 			vkDestroyImageView(logicalDevice, swapChainImageViews[i], nullptr);
 		}
@@ -730,6 +730,9 @@ namespace GrEngine_Vulkan
 
 	void VulkanAPI::clearDrawables()
 	{
+		vkDeviceWaitIdle(logicalDevice);
+		vkQueueWaitIdle(graphicsQueue);
+
 		for (int ind = 0; ind < drawables.size(); ind++)
 		{
 			drawables[ind].destroyObject(logicalDevice, memAllocator);
@@ -741,29 +744,41 @@ namespace GrEngine_Vulkan
 
 	bool VulkanAPI::loadModel(const char* model_path)
 	{
-		DrawableObj object;
-		tinyobj::attrib_t attrib;
-		std::vector<tinyobj::shape_t> shapes;
-		std::vector<tinyobj::material_t> materials;
-		std::unordered_map<Vertex, uint32_t> uniqueVertices{};
-		std::string warn, err;
+		vkDeviceWaitIdle(logicalDevice);
+		vkQueueWaitIdle(graphicsQueue);
 
-		if (!tinyobj::LoadObj(&attrib, &shapes, &materials, &warn, &err, model_path, "d:\\"))
+		DrawableObj object;
+		std::unordered_map<Vertex, uint32_t> uniqueVertices{};
+		Assimp::Importer importer;
+
+		auto model = importer.ReadFile(model_path, 0);
+
+		if (model == NULL)
 		{
-			Logger::Out("An error occurred while loading the mesh: %s", OutputColor::Green, OutputType::Error, err);
+			Logger::Out("Could not load the mesh %c%s%c!", OutputColor::Red, OutputType::Error, '"', model_path, '"');
+			return false;
+		}
+		else if (model->mNumMaterials > TEXTURE_ARRAY_SIZE)
+		{
+			Logger::Out("Max number of supported materials(%d) exceded in the mesh %c%s%c!", OutputColor::Red, OutputType::Error, TEXTURE_ARRAY_SIZE, '"', model_path, '"');
 			return false;
 		}
 
-		if (warn != "")
-			Logger::Out("Warning occurred while loading the mesh: %s", OutputColor::Green, OutputType::Error, warn.c_str());
-
-		for (const auto& shape : shapes)
+		for (int mesh_ind = 0; mesh_ind < model->mNumMeshes; mesh_ind++)
 		{
-			for (const auto& index : shape.mesh.indices)
+			auto num_vert = model->mMeshes[mesh_ind]->mNumVertices;
+			auto cur_mesh = model->mMeshes[mesh_ind];
+			//auto uv_ind = model->mMeshes[mesh_ind]->mMaterialIndex;
+			auto name = model->mMeshes[mesh_ind]->mName;
+			auto uv_ind = mesh_ind;
+			for (int vert_ind = 0; vert_ind < num_vert; vert_ind++)
 			{
-				Vertex vertex = { {attrib.vertices[3 * index.vertex_index + 0], attrib.vertices[3 * index.vertex_index + 1], attrib.vertices[3 * index.vertex_index + 2], 1.0f},
+				auto coord = model->mMeshes[mesh_ind]->mTextureCoords[0];
+
+				Vertex vertex = { {cur_mesh->mVertices[vert_ind].x, cur_mesh->mVertices[vert_ind].y, cur_mesh->mVertices[vert_ind].z, 1.0f},
 				{1.0f, 1.0f, 1.0f, 1.0f},
-				{attrib.texcoords[2 * index.texcoord_index + 0], 1.0f - attrib.texcoords[2 * index.texcoord_index + 1]} };
+				{coord[vert_ind].x, 1.0f - coord[vert_ind].y},
+				uv_ind};
 
 				if (uniqueVertices.count(vertex) == 0) {
 					uniqueVertices[vertex] = static_cast<uint32_t>(object.object_mesh.vertices.size());
@@ -772,12 +787,12 @@ namespace GrEngine_Vulkan
 
 				object.object_mesh.indices.push_back(uniqueVertices[vertex]);
 			}
+
+			loadTexture("d:\\MissingTexture.png", &object);
 		}
-		loadTexture("d:\\MissingTexture.png", &object);
+		
 		object.initObject(logicalDevice, memAllocator, this);
 		drawables.push_back(object);
-
-		vkDeviceWaitIdle(logicalDevice);
 
 		Logger::Out("Mesh %c%s%c was loaded succesfully", OutputColor::Green, OutputType::Log, '"', model_path, '"');
 		return true;
@@ -786,14 +801,17 @@ namespace GrEngine_Vulkan
 
 	bool VulkanAPI::loadImage(const char* image_path)
 	{
+		vkDeviceWaitIdle(logicalDevice);
+		vkQueueWaitIdle(graphicsQueue);
+
 		auto object = &drawables.back();
 
-		object->invalidateTexture(logicalDevice, memAllocator);
+		if (!object->is_textured)
+			object->invalidateTexture(logicalDevice, memAllocator);
 
 		loadTexture(image_path, object);
 		object->updateObject(logicalDevice);
-
-		vkDeviceWaitIdle(logicalDevice);
+		object->is_textured = true;
 
 		return true;
 	}
@@ -996,7 +1014,7 @@ namespace GrEngine_Vulkan
 		if (!file.is_open())
 			throw std::runtime_error("Failed to open file!");
 
-		size_t fileSize = (size_t)file.tellg();
+		std::size_t fileSize = (std::size_t)file.tellg();
 		std::vector<char> buffer(fileSize);
 		file.seekg(0);
 		file.read(buffer.data(), fileSize);
