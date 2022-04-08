@@ -12,6 +12,42 @@ namespace GrEngine
         static Application* _instance;
         EditorUI wpfUI;
     public:
+        static LRESULT CALLBACK HostWindowProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) //Background Win32 is used to receive messages from WPF front-end window
+        {
+            switch (msg)
+            {
+            case WM_CLOSE:
+                GrEngine::Application::KillEngine();
+                GrEngine::Application::getEditorUI()->destroyUI(VIEWPORT_EDITOR);
+                DestroyWindow(hwnd);
+                break;
+            case WM_DESTROY:
+                break;
+            case WM_SIZE:
+                GrEngine::Application::updateWpfWnd();
+                break;
+                /*Messages received from the C# WPF front-end part of the editor*/
+            case 0x1200: //Load obj file callback
+                GrEngine::Application::loadModel((const char*)lParam);
+                break;
+            case 0x1201: //Clear viewport callback
+                GrEngine::Application::clearViewport();
+                break;
+            case 0x1202: //Upload texture file callback
+                GrEngine::Application::uploadTexture((const char*)lParam);
+                break;
+            case 0x1203: //Open the model browser
+                GrEngine::Application::initModelBrowser();
+                break;
+            case 0x2200: //Model browser is closing
+                GrEngine::ModelBrowser::loadModel((const char*)lParam);
+                break;
+            default:
+                return DefWindowProcA(hwnd, msg, wParam, lParam);
+            }
+            return 0;
+        }
+
         Application(const AppParameters& Properties = AppParameters())
         {
             if (_instance != nullptr)
@@ -21,19 +57,19 @@ namespace GrEngine
 
             EventListener::pushEvent(EventType::MouseClick,[](std::vector<double> para)
                 {
-                    Logger::Out("MouseClickEvent", OutputColor::Blue, OutputType::Log);
+                    //Logger::Out("MouseClickEvent", OutputColor::Blue, OutputType::Log);
                 });
             EventListener::pushEvent(EventType::WindowResize, [](std::vector<double> para)
                 {
-                    Logger::Out("ResizeEvent", OutputColor::Blue, OutputType::Log);
+                    //Logger::Out("ResizeEvent", OutputColor::Blue, OutputType::Log);
                 });
             EventListener::pushEvent(EventType::KeyPress, [](std::vector<double> para)
                 {
-                    Logger::Out("KeyEvent", OutputColor::Blue, OutputType::Log);
+                    //Logger::Out("KeyEvent", OutputColor::Blue, OutputType::Log);
                 });
             EventListener::pushEvent(EventType::Scroll, [](std::vector<double> para)
                 {
-                    Logger::Out("ScrollEvent", OutputColor::Blue, OutputType::Log);
+                    //Logger::Out("ScrollEvent", OutputColor::Blue, OutputType::Log);
                 });
             EventListener::pushEvent(EventType::MouseMove, [](std::vector<double> para)
                 {
@@ -51,7 +87,14 @@ namespace GrEngine
 
             EventListener::pushEvent(EventType::Step, [](std::vector<double> para)
                 {
-                    _instance->wpfUI.UpdateFramecounter(para.front());
+                    if (para.size() > 0)
+                    {
+                        std::async(std::launch::async, [](double param)
+                            {
+                                _instance->wpfUI.UpdateFramecounter(param);
+                            }, (float)para[0]);
+                    }
+                        
                 });
 
             std::vector<double> para = { 1 };
@@ -121,10 +164,12 @@ namespace GrEngine
 
         static void initModelBrowser()
         {
+            getEditorUI()->DisableUIWindow();
             std::unique_ptr<ModelBrowser> mdlBrowser = std::make_unique<ModelBrowser>();
-            mdlBrowser->init(mdlBrowser.get(), &_instance->wpfUI);
+            mdlBrowser->init(mdlBrowser.get());
             mdlBrowser->StartEngine();
             mdlBrowser->KillEngine();
+            getEditorUI()->EnableUIWindow();
         }
 
         static void UpdateAppLogger(std::vector<double> para)

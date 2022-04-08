@@ -63,6 +63,9 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="EditorWindow.cs" />
+    <Compile Include="MaterialInput.xaml.cs">
+      <DependentUpon>MaterialInput.xaml</DependentUpon>
+    </Compile>
     <Compile Include="ModelBrowser.xaml.cs">
       <DependentUpon>ModelBrowser.xaml</DependentUpon>
     </Compile>
@@ -80,6 +83,10 @@
   </ItemGroup>
   <ItemGroup>
     <Page Include="MainView.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="MaterialInput.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>

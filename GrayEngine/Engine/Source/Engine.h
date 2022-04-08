@@ -10,13 +10,13 @@ namespace GrEngine
 	public:
 		Engine(const AppParameters& Properties = AppParameters());
 		virtual ~Engine();
-		static void PokeIt();
+		static bool PokeIt();
 		inline AppWindow* getAppWindow() { return pWindow.get(); };
 
 	protected:
 		std::unique_ptr<AppWindow> pWindow;
-		void loadMeshFromPath(const char* path);
-		void loadImageFromPath(const char* path);
+		bool loadMeshFromPath(const char* path, std::string* out_materials = nullptr);
+		bool loadImageFromPath(const char* path, int material_index = 0);
 		void clearScene();
 		void Run();
 		void Stop();

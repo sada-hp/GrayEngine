@@ -120,7 +120,7 @@ namespace EditorUI
 
         internal void UpdateFrameCounter(double frames)
         {
-            FrameBlock.Text = frames.ToString();
+            FrameBlock.Text = frames.ToString("0.0");
         }
     }
 }

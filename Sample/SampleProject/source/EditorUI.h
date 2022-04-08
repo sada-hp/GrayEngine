@@ -38,6 +38,9 @@ public:
 	typedef void(*UpdateFramecounterFunc)(double);
 	UpdateFramecounterFunc UpdateFramecounter;
 
+	typedef void(*UpdateMaterialsFunc)(char*);
+	UpdateMaterialsFunc UpdateMaterials;
+
 	EditorUI()
 	{
 		dotNetGUILibrary = LoadLibraryA("EditorUI.dll");
@@ -48,6 +51,7 @@ public:
 		UpdateLogger = (UpdateLoggerFunc)GetProcAddress(dotNetGUILibrary, "UpdateLogger");
 		SetViewportPosition = (SetChildPositionFunc)GetProcAddress(dotNetGUILibrary, "UpdateChildPosition");
 		UpdateFramecounter = (UpdateFramecounterFunc)GetProcAddress(dotNetGUILibrary, "UpdateFrameCounter");
+		UpdateMaterials = (UpdateMaterialsFunc)GetProcAddress(dotNetGUILibrary, "PassMaterialString");
 	};
 
 	~EditorUI()
@@ -84,10 +88,10 @@ public:
 		}
 
 		/// Centering Host Window
-		RECT window_r; RECT desktop_r;
-		GetWindowRect(cpphwin_hwnd, &window_r); GetWindowRect(GetDesktopWindow(), &desktop_r);
-		int xPos = (desktop_r.right - (window_r.right - window_r.left)) / 2;
-		int yPos = (desktop_r.bottom - (window_r.bottom - window_r.top)) / 2;
+		RECT window_r;
+		GetWindowRect(cpphwin_hwnd, &window_r); 
+		int xPos = (GetSystemMetrics(SM_CXSCREEN) - (window_r.right - window_r.left)) / 2;
+		int yPos = (GetSystemMetrics(SM_CYSCREEN) - (window_r.bottom - window_r.top)) / 2;
 		SetWindowPos(cpphwin_hwnd, 0, xPos, yPos, 0, 0, SWP_NOZORDER | SWP_NOSIZE);
 
 		/// Creating .Net GUI
@@ -95,7 +99,6 @@ public:
 
 		/// Set Thread to STA
 		CoInitializeEx(NULL, COINIT_APARTMENTTHREADED);
-
 		if (wpf_hwnd != nullptr)
 		{
 			SendMessage(cpphwin_hwnd, WM_SETREDRAW, FALSE, 0);
@@ -104,21 +107,14 @@ public:
 			SetWindowLong(cpphwin_hwnd, GWL_EXSTYLE, dwExStyle);
 			SetWindowLong(wpf_hwnd, GWL_STYLE, WS_CHILD | WS_CLIPCHILDREN);
 
-			RECT hwin_rect;
-			GetClientRect(cpphwin_hwnd, &hwin_rect);
-
-			MoveWindow(wpf_hwnd, 0, 0, hwin_rect.right, hwin_rect.bottom, TRUE);
-			SetWindowPos(wpf_hwnd, HWND_TOP, 0, 0, hwin_rect.right, hwin_rect.bottom, SWP_NOMOVE);
-
 			SetParent(wpf_hwnd, cpphwin_hwnd);
 
-			ShowWindow(wpf_hwnd, SW_RESTORE);
+			ShowWindow(wpf_hwnd, SW_SHOW);
 			DisplayUserInterface(viewport_index);
 		}
 
 		ShowWindow(cpphwin_hwnd, SW_SHOW);
-		UpdateWindow(cpphwin_hwnd);
-		BringWindowToTop(cpphwin_hwnd);
+		SetFocus(cpphwin_hwnd);
 
 		return true;
 	}
@@ -152,5 +148,16 @@ public:
 
 		ParentRenderer(child, viewport_index);
 		ShowWindow(child, SW_SHOW);
+	}
+
+	void EnableUIWindow()
+	{
+		SetForegroundWindow(cpphwin_hwnd);
+		EnableWindow(cpphwin_hwnd, TRUE);
+	}
+
+	void DisableUIWindow()
+	{
+		EnableWindow(cpphwin_hwnd, FALSE);
 	}
 };

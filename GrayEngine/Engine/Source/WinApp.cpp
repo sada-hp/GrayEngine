@@ -96,25 +96,30 @@ namespace GrEngine
 
 	void WinApp::OnStep()
 	{
-		double currentTime = glfwGetTime();
-		
+
 		glfwPollEvents();
 		pAppRenderer->drawFrame();
 		EventListener::pollEngineEvents();
 		glfwSwapBuffers(window);
+
+		double currentTime = glfwGetTime();
 		frames++;
 
-		if (currentTime - time >= 1.0) {
-			std::string new_title = props.Title;
-			new_title += " [" + std::to_string(frames) + " fps, " + std::to_string(1000.0 / double(frames)) + " ms/frame]";
-
-			glfwSetWindowTitle(window, new_title.c_str());
-			std::vector<double> para{ (double)frames };
+		if (currentTime - time >= 1.0) 
+		{
+			std::vector<double> para{ (float)frames, time };
 			EventListener::registerEvent(EventType::Step, para);
+
 			frames = 0;
 			time += 1.0;
 		}
+		else
+		{
+			std::vector<double> para{  };
+			EventListener::registerEvent(EventType::Step, para);
+		}
 	}
+
 
 	void WinApp::SetVSync(bool state)
 	{

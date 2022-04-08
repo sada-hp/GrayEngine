@@ -73,5 +73,27 @@ namespace EditorUI
         {
             UpdateChildPosition();
         }
+
+        internal void AddMaterialToTheTable(string string_names)
+        {
+            MaterialsPanel.Children.Clear();
+
+            int mat_index = 0;
+            string[] material_names = string_names.Split('\\');
+            
+            foreach (string material_name in material_names)
+            {
+                if (material_name != String.Empty)
+                {
+                    MaterialInput material_panel = new MaterialInput(pOwner);
+
+                    material_panel.NameTextBlock.Text = material_name;
+                    System.Windows.Controls.DockPanel.SetDock(material_panel, System.Windows.Controls.Dock.Top);
+                    material_panel.material_index = mat_index++;
+
+                    MaterialsPanel.Children.Add(material_panel);
+                }
+            }
+        }
     }
 }

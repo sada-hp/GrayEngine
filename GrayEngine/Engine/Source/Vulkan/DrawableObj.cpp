@@ -17,6 +17,8 @@ namespace GrEngine_Vulkan
 	void DrawableObj::initObject(VkDevice device, VmaAllocator allocator, void* owner)
 	{
 		p_Owner = owner;
+		object_texture.resize(TEXTURE_ARRAY_SIZE);
+
 		VulkanAPI::createVkBuffer(device, allocator, object_mesh.vertices.data(), sizeof(object_mesh.vertices[0]) * object_mesh.vertices.size(), VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, &vertexBuffer);
 		VulkanAPI::createVkBuffer(device, allocator, object_mesh.indices.data(), sizeof(object_mesh.indices[0]) * object_mesh.indices.size(), VK_BUFFER_USAGE_INDEX_BUFFER_BIT, &indexBuffer);
 
@@ -117,9 +119,10 @@ namespace GrEngine_Vulkan
 		vkCmdBindIndexBuffer(commandBuffer, indexBuffer.Buffer, 0, VK_INDEX_TYPE_UINT16);
 
 		pushConstants(device, commandBuffer, extent);
-		if (descriptorSets.size() > 0)
+
+		for (int ind = 0; ind < descriptorSets.size(); ind++)
 		{
-			vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout, 0, 1, &descriptorSets[0], 0, NULL);
+			vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout, 0, 1, &descriptorSets[ind], 0, NULL);
 		}
 
 		//vkCmdDraw(commandBuffer, static_cast<uint32_t>(object_mesh.vertices.size()), 1, 0, 0);
@@ -325,18 +328,9 @@ namespace GrEngine_Vulkan
 		VkDescriptorImageInfo imageInfo[TEXTURE_ARRAY_SIZE];
 		for (int ind = 0; ind < TEXTURE_ARRAY_SIZE; ind++)
 		{
-			if (ind < object_texture.size())
-			{
-				imageInfo[ind].imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-				imageInfo[ind].imageView = object_texture[ind].textureImageView;
-				imageInfo[ind].sampler = object_texture[ind].textureSampler;
-			}
-			else
-			{
-				imageInfo[ind].imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-				imageInfo[ind].imageView = nullptr;
-				imageInfo[ind].sampler = nullptr;
-			}
+			imageInfo[ind].imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+			imageInfo[ind].imageView = object_texture[ind].textureImageView;
+			imageInfo[ind].sampler = object_texture[ind].textureSampler;
 		}
 
 		descriptorSets.resize(1);

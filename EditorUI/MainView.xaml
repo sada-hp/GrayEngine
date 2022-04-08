@@ -12,7 +12,7 @@
             <MenuItem Header="File" Foreground="WhiteSmoke" Margin="0"/>
             <MenuItem Header="Edit" Foreground="WhiteSmoke" Margin="0"/>
             <MenuItem Header="Help" Foreground="WhiteSmoke" Margin="0"/>
-            <TextBlock Name="FrameBlock" Text="0.000" Foreground="WhiteSmoke"/>
+            <TextBlock Name="FrameBlock" Text="0,0" Foreground="WhiteSmoke"/>
         </Menu>
         <DockPanel Background="#FF292A30" LastChildFill="True">
 

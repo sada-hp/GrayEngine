@@ -68,17 +68,21 @@ namespace EditorUI
         [DllExport]
         public static void UpdateFrameCounter(double frames)
         {
-            try
+            wrappers[0].ui_window.Dispatcher.BeginInvoke((Action)(() =>
             {
                 ((MainView)wrappers[0].ui_window).UpdateFrameCounter(frames);
-            }
-            catch // Can't Access to UI Thread , So Dispatching
+            }));
+        }
+
+        [DllExport]
+        public static void PassMaterialString(IntPtr value)
+        {
+            var input = Marshal.PtrToStringAnsi(value);
+
+            wrappers[1].ui_window.Dispatcher.BeginInvoke((Action)(() =>
             {
-                wrappers[0].ui_window.Dispatcher.BeginInvoke((Action)(() =>
-                {
-                    ((MainView)wrappers[0].ui_window).UpdateFrameCounter(frames);
-                }));
-            }
+                ((ModelBrowser)wrappers[1].ui_window).AddMaterialToTheTable(input);
+            }));
         }
     }
 }

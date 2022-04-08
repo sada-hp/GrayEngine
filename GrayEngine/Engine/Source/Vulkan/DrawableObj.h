@@ -5,6 +5,8 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include <vk_mem_alloc.h>
 
+#define TEXTURE_ARRAY_SIZE 5
+
 namespace GrEngine_Vulkan
 {
 	struct Vertex
@@ -59,6 +61,8 @@ namespace GrEngine_Vulkan
 	{
 		std::vector<Vertex> vertices;
 		std::vector<uint16_t> indices;
+
+		const char* mesh_path;
 	};
 
 	struct ShaderBuffer
@@ -87,6 +91,8 @@ namespace GrEngine_Vulkan
 		AllocatedImage newImage;
 		VkImageView textureImageView;
 		VkSampler textureSampler;
+
+		const char* texture_path;
 	};
 }
 
@@ -117,7 +123,6 @@ namespace GrEngine_Vulkan
 		bool pushConstants(VkDevice devicce, VkCommandBuffer cmd, VkExtent2D extent);
 		bool recordCommandBuffer(VkDevice device, VkCommandBuffer commandBuffer, VkExtent2D extent);
 
-		bool is_textured = false;
 	private:
 		void* p_Owner;
 		VkDescriptorSetLayout descriptorSetLayout;

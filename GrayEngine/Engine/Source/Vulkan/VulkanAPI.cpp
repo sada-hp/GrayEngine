@@ -123,8 +123,12 @@ namespace GrEngine_Vulkan
 		VkResult res;
 		res = vkQueueSubmit(graphicsQueue, 1, &submitInfo, graphicsFence);
 
-		if (res != VK_SUCCESS)
-			throw std::runtime_error("failed to submit draw command buffer!");
+		if (res == VK_ERROR_DEVICE_LOST)
+		{
+			//recreateSwapChain();
+			Logger::Out("Logical device was lost!", OutputColor::Red, OutputType::Error);
+			throw std::runtime_error("Logical device was lost!");
+		}
 
 		VkPresentInfoKHR presentInfo{};
 		presentInfo.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
@@ -742,7 +746,7 @@ namespace GrEngine_Vulkan
 		Logger::Out("The scene was cleared", OutputColor::Green, OutputType::Log);
 	}
 
-	bool VulkanAPI::loadModel(const char* model_path)
+	bool VulkanAPI::loadModel(const char* mesh_path, std::string* materials)
 	{
 		vkDeviceWaitIdle(logicalDevice);
 		vkQueueWaitIdle(graphicsQueue);
@@ -751,16 +755,16 @@ namespace GrEngine_Vulkan
 		std::unordered_map<Vertex, uint32_t> uniqueVertices{};
 		Assimp::Importer importer;
 
-		auto model = importer.ReadFile(model_path, 0);
+		auto model = importer.ReadFile(mesh_path, 0);
 
 		if (model == NULL)
 		{
-			Logger::Out("Could not load the mesh %c%s%c!", OutputColor::Red, OutputType::Error, '"', model_path, '"');
+			Logger::Out("Could not load the mesh %c%s%c!", OutputColor::Red, OutputType::Error, '"', mesh_path, '"');
 			return false;
 		}
 		else if (model->mNumMaterials > TEXTURE_ARRAY_SIZE)
 		{
-			Logger::Out("Max number of supported materials(%d) exceded in the mesh %c%s%c!", OutputColor::Red, OutputType::Error, TEXTURE_ARRAY_SIZE, '"', model_path, '"');
+			Logger::Out("Max number of supported materials(%d) exceded in the mesh %c%s%c!", OutputColor::Red, OutputType::Error, TEXTURE_ARRAY_SIZE, '"', mesh_path, '"');
 			return false;
 		}
 
@@ -769,7 +773,7 @@ namespace GrEngine_Vulkan
 			auto num_vert = model->mMeshes[mesh_ind]->mNumVertices;
 			auto cur_mesh = model->mMeshes[mesh_ind];
 			//auto uv_ind = model->mMeshes[mesh_ind]->mMaterialIndex;
-			auto name = model->mMeshes[mesh_ind]->mName;
+			auto name3 = model->mMeshes[mesh_ind]->mName;
 			auto uv_ind = mesh_ind;
 			for (int vert_ind = 0; vert_ind < num_vert; vert_ind++)
 			{
@@ -788,35 +792,40 @@ namespace GrEngine_Vulkan
 				object.object_mesh.indices.push_back(uniqueVertices[vertex]);
 			}
 
-			loadTexture("d:\\MissingTexture.png", &object);
+			aiString name;
+			aiGetMaterialString(model->mMaterials[model->mMeshes[mesh_ind]->mMaterialIndex], AI_MATKEY_NAME, &name);
+
+			if (materials)
+			{
+				materials->append(name.C_Str());
+				materials->append("\\");
+			}
+
+			loadTexture("d:\\MissingTexture.png", &object, mesh_ind);
 		}
 		
+		object.object_mesh.mesh_path = mesh_path;
 		object.initObject(logicalDevice, memAllocator, this);
 		drawables.push_back(object);
 
-		Logger::Out("Mesh %c%s%c was loaded succesfully", OutputColor::Green, OutputType::Log, '"', model_path, '"');
+		Logger::Out("Mesh %c%s%c was loaded succesfully", OutputColor::Green, OutputType::Log, '"', mesh_path, '"');
 		return true;
 	}
 
-
-	bool VulkanAPI::loadImage(const char* image_path)
+	bool VulkanAPI::loadImage(const char* image_path, int material_index)
 	{
 		vkDeviceWaitIdle(logicalDevice);
 		vkQueueWaitIdle(graphicsQueue);
 
 		auto object = &drawables.back();
 
-		if (!object->is_textured)
-			object->invalidateTexture(logicalDevice, memAllocator);
-
-		loadTexture(image_path, object);
+		loadTexture(image_path, object, material_index);
 		object->updateObject(logicalDevice);
-		object->is_textured = true;
 
 		return true;
 	}
 
-	bool VulkanAPI::loadTexture(const char* texture_path, DrawableObj* target)
+	bool VulkanAPI::loadTexture(const char* texture_path, DrawableObj* target, int material_index)
 	{
 		ShaderBuffer stagingBuffer;
 		Texture new_texture;
@@ -898,7 +907,12 @@ namespace GrEngine_Vulkan
 		samplerInfo.maxLod = 0.0f;
 		vkCreateSampler(logicalDevice, &samplerInfo, nullptr, &new_texture.textureSampler);
 
-		target->object_texture.push_back(new_texture);
+		if (target->object_texture.size() < TEXTURE_ARRAY_SIZE)
+			target->object_texture.resize(TEXTURE_ARRAY_SIZE);
+
+		new_texture.texture_path = texture_path;
+		destroyTexture(logicalDevice, memAllocator, &target->object_texture[material_index]);
+		target->object_texture[material_index] = new_texture;
 
 		return true;
 	}

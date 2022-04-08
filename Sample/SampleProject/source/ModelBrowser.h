@@ -7,7 +7,7 @@ namespace GrEngine
     class ModelBrowser : public Engine
     {
         static ModelBrowser* _instance;
-        EditorUI* wpfUI;
+        EditorUI wpfUI;
 
         static LRESULT CALLBACK HostWindowProcBrowser(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) //Background Win32 is used to receive messages from WPF front-end window
         {
@@ -30,7 +30,7 @@ namespace GrEngine
                 GrEngine::ModelBrowser::clearViewport();
                 break;
             case 0x1202: //Upload texture file callback
-                GrEngine::ModelBrowser::uploadTexture((const char*)lParam);
+                GrEngine::ModelBrowser::uploadTexture((const char*)lParam, (int)wParam);
                 break;
             case 0x1203: //Close model browser
                 GrEngine::ModelBrowser::closeBrowser();
@@ -44,35 +44,7 @@ namespace GrEngine
     public:
         ModelBrowser(const AppParameters& Properties = AppParameters())
         {
-            EventListener::pushEvent(EventType::MouseClick, [](std::vector<double> para)
-                {
-                    Logger::Out("MouseClickEvent", OutputColor::Blue, OutputType::Log);
-                });
-            EventListener::pushEvent(EventType::WindowResize, [](std::vector<double> para)
-                {
-                    Logger::Out("ResizeEvent", OutputColor::Blue, OutputType::Log);
-                });
-            EventListener::pushEvent(EventType::KeyPress, [](std::vector<double> para)
-                {
-                    Logger::Out("KeyEvent", OutputColor::Blue, OutputType::Log);
-                });
-            EventListener::pushEvent(EventType::Scroll, [](std::vector<double> para)
-                {
-                    Logger::Out("ScrollEvent", OutputColor::Blue, OutputType::Log);
-                });
-            EventListener::pushEvent(EventType::MouseMove, [](std::vector<double> para)
-                {
-                    //WLogger::Out("CursorMoveEvent %f", OutputColor::Blue, para.back());
-                });
-            EventListener::pushEvent(EventType::WindowClosed, [](std::vector<double> para)
-                {
-                    Logger::Out("Window is now being closed", OutputColor::Gray, OutputType::Log);
-                });
 
-            EventListener::pushEvent("MyEvent", [](std::vector<double> para)
-                {
-                    Logger::Out("Custom Event with a parameter %d", OutputColor::Blue, OutputType::Log, (int)para.front());
-                });
         }
 
         ~ModelBrowser()
@@ -80,7 +52,7 @@ namespace GrEngine
             _instance = nullptr;
         }
 
-        void init(ModelBrowser* instance, EditorUI* pUserInterface)
+        void init(ModelBrowser* instance)
         {
             if (_instance != nullptr)
             {
@@ -89,7 +61,6 @@ namespace GrEngine
             }
 
             _instance = instance;
-            wpfUI = pUserInterface;
             initModelBrowser();
         }
 
@@ -105,17 +76,23 @@ namespace GrEngine
 
         static EditorUI* getEditorUI()
         {
-            return _instance->wpfUI;
+            return &_instance->wpfUI;
         };
 
         static void loadModel(const char* mesh_path)
         {
-            _instance->loadMeshFromPath(mesh_path);
+            std::string materials;
+            clearViewport();
+
+            auto res = _instance->loadMeshFromPath(mesh_path, &materials);
+
+            if (res)
+                getEditorUI()->UpdateMaterials((char*)materials.c_str());
         }
 
-        static void uploadTexture(const char* image_path)
+        static void uploadTexture(const char* image_path, int material_index)
         {
-            _instance->loadImageFromPath(image_path);
+            _instance->loadImageFromPath(image_path, material_index);
         }
 
         static void clearViewport()
@@ -143,7 +120,6 @@ namespace GrEngine
         {
             getEditorUI()->InitUI(HostWindowProcBrowser, MODEL_BROWSER_CLASSNAME, VIEWPORT_MODEL_BROWSER);
             getEditorUI()->SetViewportHWND(getGLFW_HWND(), 1);
-            ShowWindow(getGLFW_HWND(), SW_SHOW);
         }
 
         static void closeBrowser()

@@ -7,8 +7,6 @@
 #include "Engine/Source/Headers/Logger.h"
 #include "Engine/Source/Headers/Renderer.h"
 
-#define TEXTURE_ARRAY_SIZE 5
-
 namespace GrEngine_Vulkan
 {
 	struct QueueFamilyIndices
@@ -41,9 +39,9 @@ namespace GrEngine_Vulkan
 		inline VkRenderPass getRenderPass() { return renderPass; };
 		bool updateDrawables(uint32_t index);
 		static VkShaderModule createShaderModule(VkDevice device, const std::vector<char>& code);
-		bool loadModel(const char* model_path) override;
-		bool loadImage(const char* image_path) override;
-		bool loadTexture(const char* texture_path, DrawableObj* target);
+		bool loadModel(const char* mesh_path, std::string* out_materials = nullptr) override;
+		bool loadImage(const char* image_path, int material_index = 0) override;
+		bool loadTexture(const char* texture_path, DrawableObj* target, int material_index = 0);
 		void clearDrawables() override;
 		static std::vector<char> readFile(const std::string& filename);
 		static bool createVkBuffer(VkDevice device, VmaAllocator allocator, const void* bufData, uint32_t dataSize, VkBufferUsageFlags usage, ShaderBuffer* shader);

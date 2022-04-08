@@ -18,10 +18,10 @@ namespace GrEngine
 	{
 		while (!glfwWindowShouldClose(pWindow.get()->getWindow()))
 		{
-			pWindow.get()->OnStep();
+			pWindow->OnStep();
 		}
 
-		pWindow.get()->~AppWindow();
+		pWindow->~AppWindow();
 	}
 
 	void Engine::Stop()
@@ -29,19 +29,19 @@ namespace GrEngine
 		glfwSetWindowShouldClose(pWindow.get()->getWindow(), true);
 	}
 
-	void Engine::loadMeshFromPath(const char* path)
+	bool Engine::loadMeshFromPath(const char* path, std::string* out_materials)
 	{
-		pWindow.get()->getRenderer()->loadModel(path);
+		return pWindow->getRenderer()->loadModel(path, out_materials);
 	}
 
-	void Engine::loadImageFromPath(const char* path)
+	bool Engine::loadImageFromPath(const char* path, int material_index)
 	{
-		pWindow.get()->getRenderer()->loadImage(path);
+		return pWindow->getRenderer()->loadImage(path, material_index);
 	}
 
 	void Engine::clearScene()
 	{
-		pWindow.get()->getRenderer()->clearDrawables();
+		pWindow->getRenderer()->clearDrawables();
 	}
 
 	void Engine::TerminateLiraries()
@@ -49,8 +49,9 @@ namespace GrEngine
 		glfwTerminate();
 	}
 
-	void Engine::PokeIt()
+	bool Engine::PokeIt()
 	{
 		Logger::Out("You've just poked an engine", OutputColor::Gray, OutputType::Log);
+		return true;
 	}
 }

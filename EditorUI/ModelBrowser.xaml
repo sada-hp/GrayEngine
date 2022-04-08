@@ -5,10 +5,11 @@
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
              xmlns:local="clr-namespace:EditorUI"
              mc:Ignorable="d" 
-             d:DesignHeight="450" d:DesignWidth="800" Title="Gray Engine: Model Browser" WindowStartupLocation="CenterScreen" Closing="MdlBrowser_Closing" SizeChanged="MdlBrowser_SizeChanged">
+             d:DesignHeight="450" d:DesignWidth="800" Title="Gray Engine: Model Browser" WindowStartupLocation="CenterScreen" Closing="MdlBrowser_Closing" SizeChanged="MdlBrowser_SizeChanged" Topmost="True">
     <DockPanel LastChildFill="True" Background="Black">
         <StackPanel DockPanel.Dock="Left" Background="#FF353538" Width="200">
             <Button Name="BtnLoadMdl" Height="50" Content="Load mesh" Click="BtnLoadMdl_Click"/>
+            <DockPanel Name="MaterialsPanel" Height="371" LastChildFill="False" />
         </StackPanel>
         <WindowsFormsHost Name="FormHost" DockPanel.Dock="Right" Background="Black" Visibility="Visible">
             
