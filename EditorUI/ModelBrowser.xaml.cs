@@ -33,6 +33,7 @@ namespace EditorUI
             panel.BackColor = System.Drawing.Color.Black;
             panel.BorderStyle = BorderStyle.None;
             panel.Margin = new System.Windows.Forms.Padding(0);
+            panel.BorderStyle = BorderStyle.None;
             FormHost.Child = panel;
         }
 

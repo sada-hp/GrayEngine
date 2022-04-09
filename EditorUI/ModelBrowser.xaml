@@ -6,13 +6,59 @@
              xmlns:local="clr-namespace:EditorUI"
              mc:Ignorable="d" 
              d:DesignHeight="450" d:DesignWidth="800" Title="Gray Engine: Model Browser" WindowStartupLocation="CenterScreen" Closing="MdlBrowser_Closing" SizeChanged="MdlBrowser_SizeChanged" Topmost="True">
-    <DockPanel LastChildFill="True" Background="Black">
-        <StackPanel DockPanel.Dock="Left" Background="#FF353538" Width="200">
-            <Button Name="BtnLoadMdl" Height="50" Content="Load mesh" Click="BtnLoadMdl_Click"/>
-            <DockPanel Name="MaterialsPanel" Height="371" LastChildFill="False" />
-        </StackPanel>
-        <WindowsFormsHost Name="FormHost" DockPanel.Dock="Right" Background="Black" Visibility="Visible">
-            
-        </WindowsFormsHost>
+    <Window.Resources>
+        <Style TargetType="{x:Type TabItem}">
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="{x:Type TabItem}">
+                        <Grid>
+                            <Border 
+                                Name="Border"
+                                Margin="0,0,-4,0" 
+                                Background="#FF23232C"
+                                BorderThickness="0,0,0,0" 
+                                CornerRadius="2,12,0,0" >
+                                <ContentPresenter x:Name="ContentSite"
+                                    VerticalAlignment="Center"
+                                    HorizontalAlignment="Center"
+                                    ContentSource="Header"
+                                    Margin="12,2,12,2"
+                                    RecognizesAccessKey="True"/>
+                            </Border>
+                        </Grid>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsSelected" Value="True">
+                                <Setter Property="Panel.ZIndex" Value="100" />
+                                <Setter TargetName="Border" Property="Background" Value="#FF353538" />
+                                <Setter Property="Foreground" Value="WhiteSmoke" />
+                            </Trigger>
+                            <Trigger Property="IsEnabled" Value="False">
+                                <Setter Property="Foreground" Value="Gray" />
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+    </Window.Resources>
+    <DockPanel LastChildFill="True" Background="#FF292A30">
+        <DockPanel Background="#FF3F3F46" LastChildFill="True">
+            <TabControl DockPanel.Dock="Left" Background="#FF343440" BorderBrush="{x:Null}">
+                <TabItem Background="{x:Null}" Header="Browse" Foreground="WhiteSmoke" BorderBrush="{x:Null}">
+                    <DockPanel Background="#FF353538" Width="200" LastChildFill="True">
+                        <Menu Background="#FF242427" Width="200" Margin="5">
+
+                        </Menu>
+                    </DockPanel>
+                </TabItem>
+                <TabItem Background="{x:Null}" Header="Create" Foreground="WhiteSmoke" BorderBrush="{x:Null}">
+                    <StackPanel Background="#FF353538" Width="200">
+                        <Button Name="BtnLoadMdl" Height="28" Content="Load mesh" Background="#FF5D5D5D" BorderBrush="#FFC8C8C8" BorderThickness="1" Margin="5" Foreground="White" FontFamily="Lucida Sans Unicode" TextOptions.TextHintingMode="Fixed" Padding="2" Click="BtnLoadMdl_Click" Cursor="Hand"/>
+                        <DockPanel Name="MaterialsPanel" Height="340" LastChildFill="False" />
+                    </StackPanel>
+                </TabItem>
+            </TabControl>
+        </DockPanel>
+        <WindowsFormsHost Name="FormHost" DockPanel.Dock="Right" Background="Black" Visibility="Visible" Margin="7,5"/>
     </DockPanel>
 </Window>

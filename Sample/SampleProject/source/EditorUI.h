@@ -143,6 +143,7 @@ public:
 		long style = GetWindowLong(child, GWL_STYLE);
 		style &= ~WS_POPUP; // remove popup style
 		style &= ~WS_BORDER; // remove border style
+		style &= WS_THICKFRAME; // remove border style
 		style |= WS_CHILDWINDOW; // add childwindow style
 		SetWindowLong(child, GWL_STYLE, style);
 

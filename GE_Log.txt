@@ -39052,3 +39052,272 @@ material [ '
 [08-04-2022][16:38:18] LOG: Presentation device: NVIDIA GeForce RTX 2060
 [08-04-2022][16:38:18] LOG: Custom Event with a parameter 1
 [08-04-2022][16:38:21] LOG: Mesh "D:\cube.obj" was loaded succesfully
+[08-04-2022][16:53:22] LOG: --------------- Starting the engine ---------------
+[08-04-2022][16:53:22] LOG: VSync is now set to 1
+[08-04-2022][16:53:22] LOG: Presentation device: NVIDIA GeForce RTX 2060
+[08-04-2022][16:53:23] LOG: Custom Event with a parameter 1
+[08-04-2022][16:53:24] LOG: VSync is now set to 1
+[08-04-2022][16:53:24] LOG: Presentation device: NVIDIA GeForce RTX 2060
+[08-04-2022][16:54:59] LOG: --------------- Starting the engine ---------------
+[08-04-2022][16:54:59] LOG: VSync is now set to 1
+[08-04-2022][16:54:59] LOG: Presentation device: NVIDIA GeForce RTX 2060
+[08-04-2022][16:54:59] LOG: Custom Event with a parameter 1
+[08-04-2022][16:55:00] LOG: VSync is now set to 1
+[08-04-2022][16:55:00] LOG: Presentation device: NVIDIA GeForce RTX 2060
+[08-04-2022][16:55:03] LOG: The scene was cleared
+[08-04-2022][16:55:03] LOG: Mesh "D:\test.obj" was loaded succesfully
+[08-04-2022][16:55:12] LOG: The scene was cleared
+[08-04-2022][16:55:12] LOG: Mesh "D:\test2.obj" was loaded succesfully
+[08-04-2022][16:55:15] LOG: Shutting down the engine
+[08-04-2022][16:55:15] LOG: The scene was cleared
+[08-04-2022][17:22:21] LOG: --------------- Starting the engine ---------------
+[08-04-2022][17:22:22] LOG: VSync is now set to 1
+[08-04-2022][17:22:22] LOG: Presentation device: NVIDIA GeForce RTX 2060
+[08-04-2022][17:22:22] LOG: Custom Event with a parameter 1
+[08-04-2022][17:22:23] LOG: VSync is now set to 1
+[08-04-2022][17:22:23] LOG: Presentation device: NVIDIA GeForce RTX 2060
+[08-04-2022][17:22:34] LOG: The scene was cleared
+[08-04-2022][17:22:34] LOG: Mesh "D:\shrek.obj" was loaded succesfully
+[08-04-2022][17:22:40] LOG: Shutting down the engine
+[08-04-2022][17:22:40] LOG: The scene was cleared
+[08-04-2022][17:23:38] LOG: --------------- Starting the engine ---------------
+[08-04-2022][17:23:38] LOG: VSync is now set to 1
+[08-04-2022][17:23:38] LOG: Presentation device: NVIDIA GeForce RTX 2060
+[08-04-2022][17:23:39] LOG: Custom Event with a parameter 1
+[08-04-2022][17:23:44] LOG: --------------- Starting the engine ---------------
+[08-04-2022][17:23:44] LOG: VSync is now set to 1
+[08-04-2022][17:23:44] LOG: Presentation device: NVIDIA GeForce RTX 2060
+[08-04-2022][17:23:44] LOG: Custom Event with a parameter 1
+[08-04-2022][17:23:45] LOG: VSync is now set to 1
+[08-04-2022][17:23:45] LOG: Presentation device: NVIDIA GeForce RTX 2060
+[08-04-2022][17:24:31] LOG: --------------- Starting the engine ---------------
+[08-04-2022][17:24:31] LOG: VSync is now set to 1
+[08-04-2022][17:24:31] LOG: Presentation device: NVIDIA GeForce RTX 2060
+[08-04-2022][17:24:31] LOG: Custom Event with a parameter 1
+[08-04-2022][17:25:19] LOG: --------------- Starting the engine ---------------
+[08-04-2022][17:25:19] LOG: VSync is now set to 1
+[08-04-2022][17:25:19] LOG: Presentation device: NVIDIA GeForce RTX 2060
+[08-04-2022][17:25:20] LOG: Custom Event with a parameter 1
+[08-04-2022][17:25:20] LOG: VSync is now set to 1
+[08-04-2022][17:25:20] LOG: Presentation device: NVIDIA GeForce RTX 2060
+[08-04-2022][17:26:46] LOG: --------------- Starting the engine ---------------
+[08-04-2022][17:26:46] LOG: VSync is now set to 1
+[08-04-2022][17:26:46] LOG: Presentation device: NVIDIA GeForce RTX 2060
+[08-04-2022][17:26:47] LOG: Custom Event with a parameter 1
+[08-04-2022][17:26:47] LOG: VSync is now set to 1
+[08-04-2022][17:26:47] LOG: Presentation device: NVIDIA GeForce RTX 2060
+[08-04-2022][17:26:53] LOG: The scene was cleared
+[08-04-2022][17:26:53] LOG: Mesh "D:\test.obj" was loaded succesfully
+[08-04-2022][17:27:12] LOG: Shutting down the engine
+[08-04-2022][17:27:12] LOG: The scene was cleared
+[08-04-2022][17:28:10] LOG: --------------- Starting the engine ---------------
+[08-04-2022][17:28:10] LOG: VSync is now set to 1
+[08-04-2022][17:28:10] LOG: Presentation device: NVIDIA GeForce RTX 2060
+[08-04-2022][17:28:10] LOG: Custom Event with a parameter 1
+[08-04-2022][17:28:11] LOG: VSync is now set to 1
+[08-04-2022][17:28:11] LOG: Presentation device: NVIDIA GeForce RTX 2060
+[08-04-2022][17:28:16] LOG: The scene was cleared
+[08-04-2022][17:28:16] LOG: Mesh "D:\shrek.obj" was loaded succesfully
+[08-04-2022][17:28:21] LOG: Shutting down the engine
+[08-04-2022][17:28:21] LOG: The scene was cleared
+[08-04-2022][18:30:39] LOG: --------------- Starting the engine ---------------
+[08-04-2022][18:30:40] LOG: VSync is now set to 1
+[08-04-2022][18:30:40] LOG: Presentation device: NVIDIA GeForce RTX 2060
+[08-04-2022][18:30:40] LOG: Custom Event with a parameter 1
+[08-04-2022][18:30:41] LOG: VSync is now set to 1
+[08-04-2022][18:30:41] LOG: Presentation device: NVIDIA GeForce RTX 2060
+[08-04-2022][18:30:52] LOG: Shutting down the engine
+[08-04-2022][18:30:52] LOG: The scene was cleared
+[08-04-2022][18:32:17] LOG: --------------- Starting the engine ---------------
+[08-04-2022][18:32:17] LOG: VSync is now set to 1
+[08-04-2022][18:32:17] LOG: Presentation device: NVIDIA GeForce RTX 2060
+[08-04-2022][18:32:18] LOG: Custom Event with a parameter 1
+[08-04-2022][18:32:18] LOG: VSync is now set to 1
+[08-04-2022][18:32:18] LOG: Presentation device: NVIDIA GeForce RTX 2060
+[08-04-2022][18:32:28] LOG: The scene was cleared
+[08-04-2022][18:32:28] LOG: Mesh "D:\test2.obj" was loaded succesfully
+[08-04-2022][18:32:36] LOG: The scene was cleared
+[08-04-2022][18:32:36] LOG: Mesh "D:\cube.obj" was loaded succesfully
+[08-04-2022][18:32:41] LOG: The scene was cleared
+[08-04-2022][18:32:41] LOG: Mesh "D:\shrek.obj" was loaded succesfully
+[08-04-2022][18:32:51] LOG: Shutting down the engine
+[08-04-2022][18:32:51] LOG: The scene was cleared
+[08-04-2022][18:34:55] LOG: --------------- Starting the engine ---------------
+[08-04-2022][18:34:55] LOG: VSync is now set to 1
+[08-04-2022][18:34:55] LOG: Presentation device: NVIDIA GeForce RTX 2060
+[08-04-2022][18:34:56] LOG: Custom Event with a parameter 1
+[08-04-2022][18:34:56] LOG: VSync is now set to 1
+[08-04-2022][18:34:56] LOG: Presentation device: NVIDIA GeForce RTX 2060
+[08-04-2022][18:35:29] LOG: --------------- Starting the engine ---------------
+[08-04-2022][18:35:29] LOG: VSync is now set to 1
+[08-04-2022][18:35:29] LOG: Presentation device: NVIDIA GeForce RTX 2060
+[08-04-2022][18:35:30] LOG: Custom Event with a parameter 1
+[08-04-2022][18:35:36] LOG: --------------- Starting the engine ---------------
+[08-04-2022][18:35:36] LOG: VSync is now set to 1
+[08-04-2022][18:35:36] LOG: Presentation device: NVIDIA GeForce RTX 2060
+[08-04-2022][18:35:36] LOG: Custom Event with a parameter 1
+[08-04-2022][18:35:37] LOG: VSync is now set to 1
+[08-04-2022][18:35:37] LOG: Presentation device: NVIDIA GeForce RTX 2060
+[08-04-2022][18:40:59] LOG: --------------- Starting the engine ---------------
+[08-04-2022][18:40:59] LOG: VSync is now set to 1
+[08-04-2022][18:40:59] LOG: Presentation device: NVIDIA GeForce RTX 2060
+[08-04-2022][18:40:59] LOG: Custom Event with a parameter 1
+[08-04-2022][18:41:00] LOG: VSync is now set to 1
+[08-04-2022][18:41:00] LOG: Presentation device: NVIDIA GeForce RTX 2060
+[08-04-2022][18:41:18] LOG: Shutting down the engine
+[08-04-2022][18:41:18] LOG: The scene was cleared
+[08-04-2022][18:43:37] LOG: --------------- Starting the engine ---------------
+[08-04-2022][18:43:37] LOG: VSync is now set to 1
+[08-04-2022][18:43:37] LOG: Presentation device: NVIDIA GeForce RTX 2060
+[08-04-2022][18:43:38] LOG: Custom Event with a parameter 1
+[08-04-2022][18:43:38] LOG: VSync is now set to 1
+[08-04-2022][18:43:38] LOG: Presentation device: NVIDIA GeForce RTX 2060
+[08-04-2022][18:47:40] LOG: --------------- Starting the engine ---------------
+[08-04-2022][18:47:40] LOG: VSync is now set to 1
+[08-04-2022][18:47:40] LOG: Presentation device: NVIDIA GeForce RTX 2060
+[08-04-2022][18:47:41] LOG: Custom Event with a parameter 1
+[08-04-2022][18:47:42] LOG: VSync is now set to 1
+[08-04-2022][18:47:42] LOG: Presentation device: NVIDIA GeForce RTX 2060
+[08-04-2022][18:47:52] LOG: The scene was cleared
+[08-04-2022][18:47:52] LOG: Mesh "D:\shrek.obj" was loaded succesfully
+[08-04-2022][18:48:21] LOG: Shutting down the engine
+[08-04-2022][18:48:21] LOG: The scene was cleared
+[08-04-2022][18:48:40] LOG: --------------- Starting the engine ---------------
+[08-04-2022][18:48:40] LOG: VSync is now set to 1
+[08-04-2022][18:48:41] LOG: Presentation device: NVIDIA GeForce RTX 2060
+[08-04-2022][18:48:41] LOG: Custom Event with a parameter 1
+[08-04-2022][18:48:42] LOG: VSync is now set to 1
+[08-04-2022][18:48:42] LOG: Presentation device: NVIDIA GeForce RTX 2060
+[08-04-2022][18:48:48] LOG: The scene was cleared
+[08-04-2022][18:48:48] LOG: Mesh "D:\shrek.obj" was loaded succesfully
+[08-04-2022][18:49:29] LOG: Shutting down the engine
+[08-04-2022][18:49:29] LOG: The scene was cleared
+[08-04-2022][18:50:14] LOG: --------------- Starting the engine ---------------
+[08-04-2022][18:50:14] LOG: VSync is now set to 1
+[08-04-2022][18:50:15] LOG: Presentation device: NVIDIA GeForce RTX 2060
+[08-04-2022][18:50:15] LOG: Custom Event with a parameter 1
+[08-04-2022][18:50:16] LOG: VSync is now set to 1
+[08-04-2022][18:50:16] LOG: Presentation device: NVIDIA GeForce RTX 2060
+[08-04-2022][18:50:56] LOG: --------------- Starting the engine ---------------
+[08-04-2022][18:50:56] LOG: VSync is now set to 1
+[08-04-2022][18:50:56] LOG: Presentation device: NVIDIA GeForce RTX 2060
+[08-04-2022][18:50:57] LOG: Custom Event with a parameter 1
+[08-04-2022][18:50:57] LOG: VSync is now set to 1
+[08-04-2022][18:50:57] LOG: Presentation device: NVIDIA GeForce RTX 2060
+[08-04-2022][18:51:03] LOG: Shutting down the engine
+[08-04-2022][18:51:03] LOG: The scene was cleared
+[08-04-2022][18:51:33] LOG: --------------- Starting the engine ---------------
+[08-04-2022][18:51:33] LOG: VSync is now set to 1
+[08-04-2022][18:51:33] LOG: Presentation device: NVIDIA GeForce RTX 2060
+[08-04-2022][18:51:34] LOG: Custom Event with a parameter 1
+[08-04-2022][18:51:34] LOG: VSync is now set to 1
+[08-04-2022][18:51:34] LOG: Presentation device: NVIDIA GeForce RTX 2060
+[08-04-2022][18:52:06] LOG: --------------- Starting the engine ---------------
+[08-04-2022][18:52:06] LOG: VSync is now set to 1
+[08-04-2022][18:52:07] LOG: Presentation device: NVIDIA GeForce RTX 2060
+[08-04-2022][18:52:07] LOG: Custom Event with a parameter 1
+[08-04-2022][18:52:08] LOG: VSync is now set to 1
+[08-04-2022][18:52:08] LOG: Presentation device: NVIDIA GeForce RTX 2060
+[08-04-2022][18:52:47] LOG: --------------- Starting the engine ---------------
+[08-04-2022][18:52:48] LOG: VSync is now set to 1
+[08-04-2022][18:52:48] LOG: Presentation device: NVIDIA GeForce RTX 2060
+[08-04-2022][18:52:48] LOG: Custom Event with a parameter 1
+[08-04-2022][18:52:50] LOG: VSync is now set to 1
+[08-04-2022][18:52:50] LOG: Presentation device: NVIDIA GeForce RTX 2060
+[08-04-2022][18:54:13] LOG: --------------- Starting the engine ---------------
+[08-04-2022][18:54:13] LOG: VSync is now set to 1
+[08-04-2022][18:54:13] LOG: Presentation device: NVIDIA GeForce RTX 2060
+[08-04-2022][18:54:14] LOG: Custom Event with a parameter 1
+[08-04-2022][18:54:15] LOG: VSync is now set to 1
+[08-04-2022][18:54:15] LOG: Presentation device: NVIDIA GeForce RTX 2060
+[08-04-2022][18:54:19] LOG: The scene was cleared
+[08-04-2022][18:54:19] LOG: Mesh "D:\test2.obj" was loaded succesfully
+[08-04-2022][18:54:24] LOG: Shutting down the engine
+[08-04-2022][18:54:24] LOG: The scene was cleared
+[08-04-2022][18:54:27] LOG: Mesh "D:\cube.obj" was loaded succesfully
+[08-04-2022][18:54:42] LOG: VSync is now set to 1
+[08-04-2022][18:54:42] LOG: Presentation device: NVIDIA GeForce RTX 2060
+[08-04-2022][18:55:12] LOG: The scene was cleared
+[08-04-2022][18:55:12] LOG: Mesh "D:\cube.obj" was loaded succesfully
+[08-04-2022][18:55:17] LOG: Shutting down the engine
+[08-04-2022][18:55:17] LOG: The scene was cleared
+[08-04-2022][19:03:27] LOG: --------------- Starting the engine ---------------
+[08-04-2022][19:03:27] LOG: VSync is now set to 1
+[08-04-2022][19:03:27] LOG: Presentation device: NVIDIA GeForce RTX 2060
+[08-04-2022][19:03:27] LOG: Custom Event with a parameter 1
+[08-04-2022][19:03:28] LOG: VSync is now set to 1
+[08-04-2022][19:03:28] LOG: Presentation device: NVIDIA GeForce RTX 2060
+[08-04-2022][19:03:32] LOG: The scene was cleared
+[08-04-2022][19:03:32] LOG: Mesh "D:\shrek.obj" was loaded succesfully
+[08-04-2022][19:03:49] LOG: The scene was cleared
+[08-04-2022][19:03:49] LOG: Mesh "D:\cube.obj" was loaded succesfully
+[08-04-2022][19:03:50] LOG: Shutting down the engine
+[08-04-2022][19:03:50] LOG: The scene was cleared
+[08-04-2022][19:36:48] LOG: --------------- Starting the engine ---------------
+[08-04-2022][19:36:48] LOG: VSync is now set to 1
+[08-04-2022][19:36:48] LOG: Presentation device: NVIDIA GeForce RTX 2060
+[08-04-2022][19:36:49] LOG: Custom Event with a parameter 1
+[08-04-2022][19:36:51] LOG: VSync is now set to 1
+[08-04-2022][19:36:51] LOG: Presentation device: NVIDIA GeForce RTX 2060
+[08-04-2022][19:38:41] LOG: --------------- Starting the engine ---------------
+[08-04-2022][19:38:41] LOG: VSync is now set to 1
+[08-04-2022][19:38:41] LOG: Presentation device: NVIDIA GeForce RTX 2060
+[08-04-2022][19:38:41] LOG: Custom Event with a parameter 1
+[08-04-2022][19:38:42] LOG: VSync is now set to 1
+[08-04-2022][19:38:42] LOG: Presentation device: NVIDIA GeForce RTX 2060
+[08-04-2022][19:38:48] LOG: The scene was cleared
+[08-04-2022][19:38:48] LOG: Mesh "D:\shrek.obj" was loaded succesfully
+[08-04-2022][19:39:09] LOG: Shutting down the engine
+[08-04-2022][19:39:09] LOG: The scene was cleared
+[08-04-2022][19:43:26] LOG: --------------- Starting the engine ---------------
+[08-04-2022][19:43:26] LOG: VSync is now set to 1
+[08-04-2022][19:43:27] LOG: Presentation device: NVIDIA GeForce RTX 2060
+[08-04-2022][19:43:27] LOG: Custom Event with a parameter 1
+[08-04-2022][19:43:29] LOG: VSync is now set to 1
+[08-04-2022][19:43:29] LOG: Presentation device: NVIDIA GeForce RTX 2060
+[08-04-2022][19:43:39] LOG: The scene was cleared
+[08-04-2022][19:43:39] LOG: Mesh "D:\test2.obj" was loaded succesfully
+[08-04-2022][19:43:51] LOG: Shutting down the engine
+[08-04-2022][19:43:51] LOG: The scene was cleared
+[08-04-2022][23:56:22] LOG: --------------- Starting the engine ---------------
+[08-04-2022][23:56:22] LOG: VSync is now set to 1
+[08-04-2022][23:56:22] LOG: Presentation device: NVIDIA GeForce RTX 2060
+[08-04-2022][23:56:23] LOG: Custom Event with a parameter 1
+[08-04-2022][23:56:24] LOG: VSync is now set to 1
+[08-04-2022][23:56:24] LOG: Presentation device: NVIDIA GeForce RTX 2060
+[08-04-2022][23:56:37] LOG: The scene was cleared
+[08-04-2022][23:56:38] LOG: Mesh "D:\shrek.obj" was loaded succesfully
+[08-04-2022][23:56:48] LOG: Shutting down the engine
+[08-04-2022][23:56:48] LOG: The scene was cleared
+[09-04-2022][10:21:29] LOG: --------------- Starting the engine ---------------
+[09-04-2022][10:21:29] LOG: VSync is now set to 1
+[09-04-2022][10:21:29] LOG: Presentation device: NVIDIA GeForce RTX 2060
+[09-04-2022][10:21:30] LOG: Custom Event with a parameter 1
+[09-04-2022][10:21:35] LOG: VSync is now set to 1
+[09-04-2022][10:21:35] LOG: Presentation device: NVIDIA GeForce RTX 2060
+[09-04-2022][10:22:00] LOG: The scene was cleared
+[09-04-2022][10:22:00] LOG: Mesh "D:\shrek.obj" was loaded succesfully
+[09-04-2022][10:22:15] LOG: Shutting down the engine
+[09-04-2022][10:22:15] LOG: The scene was cleared
+[09-04-2022][15:41:08] LOG: --------------- Starting the engine ---------------
+[09-04-2022][15:41:08] LOG: VSync is now set to 1
+[09-04-2022][15:41:08] LOG: Presentation device: NVIDIA GeForce RTX 2060
+[09-04-2022][15:41:09] LOG: Custom Event with a parameter 1
+[09-04-2022][15:41:11] LOG: VSync is now set to 1
+[09-04-2022][15:41:11] LOG: Presentation device: NVIDIA GeForce RTX 2060
+[09-04-2022][15:41:15] LOG: The scene was cleared
+[09-04-2022][15:41:15] LOG: Mesh "D:\shrek.obj" was loaded succesfully
+[09-04-2022][15:41:34] LOG: The scene was cleared
+[09-04-2022][15:41:34] LOG: Mesh "D:\cube.obj" was loaded succesfully
+[09-04-2022][15:41:42] LOG: Shutting down the engine
+[09-04-2022][15:41:42] LOG: The scene was cleared
+[09-04-2022][21:35:24] LOG: --------------- Starting the engine ---------------
+[09-04-2022][21:35:24] LOG: VSync is now set to 1
+[09-04-2022][21:35:24] LOG: Presentation device: NVIDIA GeForce RTX 2060
+[09-04-2022][21:35:25] LOG: Custom Event with a parameter 1
+[09-04-2022][21:36:10] LOG: VSync is now set to 1
+[09-04-2022][21:36:10] LOG: Presentation device: NVIDIA GeForce RTX 2060
+[09-04-2022][21:36:20] LOG: The scene was cleared
+[09-04-2022][21:36:20] LOG: Mesh "D:\shrek.obj" was loaded succesfully
+[09-04-2022][21:36:37] LOG: Shutting down the engine
+[09-04-2022][21:36:37] LOG: The scene was cleared
