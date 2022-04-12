@@ -23,6 +23,8 @@ namespace EditorUI
         IntPtr pOwner;
         IntPtr child_hwnd;
         System.Windows.Forms.Panel panel = new System.Windows.Forms.Panel();
+        string loaded_mesh = "";
+        Dictionary<string, System.Windows.Controls.ListViewItem> LoadedAssets = new Dictionary<string, System.Windows.Controls.ListViewItem>();
 
         public ModelBrowser(IntPtr p)
         {
@@ -35,6 +37,7 @@ namespace EditorUI
             panel.Margin = new System.Windows.Forms.Padding(0);
             panel.BorderStyle = BorderStyle.None;
             FormHost.Child = panel;
+            LoadData();
         }
 
         public void ParentRender(IntPtr child)
@@ -42,6 +45,80 @@ namespace EditorUI
             child_hwnd = child;
             SetParent(child, panel.Handle);
             UpdateChildPosition();
+        }
+
+        private void NewDataBaseEntry(string name)
+        {
+            if (name != "") //TBD: existence check
+            {
+                var sqlConnection1 = new System.Data.SqlClient.SqlConnection(@"Data Source=(LocalDB)\MSSQLLocalDB;AttachDbFilename=D:\GrEngine\GrayEngine\EditorUI\Database\Assets_models.mdf;Integrated Security=True");
+                var cmd = new System.Data.SqlClient.SqlCommand();
+                cmd.CommandType = System.Data.CommandType.Text;
+                cmd.CommandText = @"INSERT INTO Models (Mesh) VALUES ('" + name + "')";
+                cmd.Connection = sqlConnection1;
+
+                sqlConnection1.Open();
+                cmd.ExecuteNonQuery();
+                sqlConnection1.Close();
+            }
+
+            LoadData();
+        }
+
+        private void LoadData()
+        {
+            ClearBrowser();
+
+            var sqlConnection1 = new System.Data.SqlClient.SqlConnection(@"Data Source=(LocalDB)\MSSQLLocalDB;AttachDbFilename=D:\GrEngine\GrayEngine\EditorUI\Database\Assets_models.mdf;Integrated Security=True"); //TBD
+            var cmd = new System.Data.SqlClient.SqlCommand();
+            string filter = SearchBar.Text.Replace("Search...", String.Empty);
+
+            cmd.CommandType = System.Data.CommandType.Text;
+            cmd.CommandText = "SELECT * FROM Models WHERE Mesh LIKE '%" + filter + "%'";
+            cmd.Connection = sqlConnection1;
+
+            sqlConnection1.Open();
+            var reader = cmd.ExecuteReader();
+
+            while (reader.Read())
+            {
+                System.Windows.Controls.ListViewItem item = new System.Windows.Controls.ListViewItem();
+                string name = reader.GetString(0);
+                item.Content = name + '\n';
+
+                if (!LoadedAssets.ContainsKey(name))
+                {
+                    LoadedAssets.Add(name, item);
+                    Browser.Items.Add(item);
+                }
+            }
+
+            sqlConnection1.Close();
+        }
+
+
+        private void ClearBrowser()
+        {
+            if (Browser.Items.Count > 0)
+            {
+                Browser.SelectedIndex = -1;
+                Browser.Items.Clear();
+                LoadedAssets.Clear();
+                return;
+            }
+        }
+
+        private void ClearDataBase()
+        {
+            var sqlConnection1 = new System.Data.SqlClient.SqlConnection(@"Data Source=(LocalDB)\MSSQLLocalDB;AttachDbFilename=D:\GrEngine\GrayEngine\EditorUI\Database\Assets_models.mdf;Integrated Security=True"); //TBD
+            var cmd = new System.Data.SqlClient.SqlCommand();
+            cmd.CommandType = System.Data.CommandType.Text;
+            cmd.CommandText = @"TRUNCATE TABLE Models";
+            cmd.Connection = sqlConnection1;
+
+            sqlConnection1.Open();
+            cmd.ExecuteNonQuery();
+            sqlConnection1.Close();
         }
 
         public void UpdateChildPosition()
@@ -54,6 +131,7 @@ namespace EditorUI
 
         private void MdlBrowser_Closing(object sender, System.ComponentModel.CancelEventArgs e)
         {
+            //ClearDataBase(); //To Be Removed
         }
 
         private void BtnLoadMdl_Click(object sender, RoutedEventArgs e)
@@ -65,6 +143,8 @@ namespace EditorUI
             if (openFileDialog.ShowDialog() == System.Windows.Forms.DialogResult.OK)
             {
                 SendMessage(pOwner, 0x1200, IntPtr.Zero, Marshal.StringToHGlobalAnsi(openFileDialog.FileName));
+
+                loaded_mesh = openFileDialog.FileName;
             }
 
             GC.Collect();
@@ -94,6 +174,50 @@ namespace EditorUI
 
                     MaterialsPanel.Children.Add(material_panel);
                 }
+            }
+        }
+
+        private void BtnCreate_Click(object sender, RoutedEventArgs e)
+        {
+            NewDataBaseEntry(loaded_mesh);
+
+            Browser.SelectedIndex = LoadedAssets.Keys.ToList().IndexOf(loaded_mesh);
+        }
+
+        private void Browser_SelectionChanged(object sender, System.Windows.Controls.SelectionChangedEventArgs e)
+        {
+            if (Browser.SelectedItem != null)
+            {
+                string model = (Browser.SelectedItem as System.Windows.Controls.ListViewItem).Content.ToString();
+                model = model.Trim();
+
+                SendMessage(pOwner, 0x1200, IntPtr.Zero, Marshal.StringToHGlobalAnsi(model));
+
+                loaded_mesh = "";
+            }
+        }
+
+        private void SearchBar_TextChanged(object sender, System.Windows.Controls.TextChangedEventArgs e)
+        {
+            if (SearchBar.IsFocused)
+            {
+                LoadData();
+            }
+        }
+
+        private void SearchBar_GotFocus(object sender, RoutedEventArgs e)
+        {
+            if (SearchBar.Text == "Search...")
+            {
+                SearchBar.Text = "";
+            }
+        }
+
+        private void SearchBar_LostFocus(object sender, RoutedEventArgs e)
+        {
+            if (SearchBar.Text == "")
+            {
+                SearchBar.Text = "Search...";
             }
         }
     }

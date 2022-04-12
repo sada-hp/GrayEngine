@@ -1,6 +1,7 @@
 #pragma once
 #include <pch.h>
 #include <glfw/glfw3.h>
+#include "Engine/Source/Headers/Core.h"
 
 namespace GrEngine
 {

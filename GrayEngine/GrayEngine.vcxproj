@@ -116,7 +116,7 @@
       <AdditionalDependencies>glfw3.lib;vulkan-1.lib;assimp.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <PostBuildEvent>
-      <Command>copy "$(SolutionDir)\bin\$(Configuration)-$(Platform)\$(ProjectName)\GrayEngine.dll" "$(SolutionDir)\bin\$(Configuration)-$(Platform)\SampleProject\"</Command>
+      <Command>copy "$(SolutionDir)\bin\$(Configuration)-$(Platform)\$(ProjectName)\GrayEngine.dll" "$(SolutionDir)\bin\$(Configuration)-$(Platform)\SceneEditor\"</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -142,7 +142,7 @@
       <AdditionalDependencies>glfw3.lib;vulkan-1.lib;assimp.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <PostBuildEvent>
-      <Command>copy "$(SolutionDir)\bin\$(Configuration)-$(Platform)\$(ProjectName)\GrayEngine.dll" "$(SolutionDir)\bin\$(Configuration)-$(Platform)\SampleProject\"</Command>
+      <Command>copy "$(SolutionDir)\bin\$(Configuration)-$(Platform)\$(ProjectName)\GrayEngine.dll" "$(SolutionDir)\bin\$(Configuration)-$(Platform)\SceneEditor\"</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
