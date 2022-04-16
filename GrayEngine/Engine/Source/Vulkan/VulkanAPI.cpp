@@ -746,12 +746,66 @@ namespace GrEngine_Vulkan
 		Logger::Out("The scene was cleared", OutputColor::Green, OutputType::Log);
 	}
 
-	bool VulkanAPI::loadModel(const char* mesh_path, std::string* materials)
+	bool VulkanAPI::loadModel(const char* mesh_path, const char* materials_string, std::string* out_materials_names)
 	{
-		vkDeviceWaitIdle(logicalDevice);
-		vkQueueWaitIdle(graphicsQueue);
+		auto start = std::chrono::steady_clock::now();
 
 		DrawableObj object;
+		DrawableObj* ref_obj = &object;
+		VulkanAPI* inst = this;
+		std::map<int, std::future<void>> mat_map;
+		std::string temp_str = "";
+		int mat_index = 0;
+
+		if (materials_string)
+		{
+			std::string mats = materials_string;
+
+			for (char chr : mats)
+			{
+				if (chr != '|')
+				{
+					temp_str += chr;
+				}
+				else
+				{
+					mat_map[mat_index] = std::async(std::launch::async, [temp_str, ref_obj, mat_index, inst]()
+						{
+							inst->loadTexture(temp_str.c_str(), ref_obj, mat_index);
+						});
+					temp_str = "";
+					mat_index++;
+					continue;
+				}
+			}
+		}
+
+		mat_map[mat_index] = std::async(std::launch::async, [mesh_path, ref_obj, out_materials_names, inst]()
+			{
+				inst->loadMesh(mesh_path, ref_obj, out_materials_names);
+			});
+
+		for (int ind = 0; ind < mat_map.size(); ind++)
+		{
+			if (mat_map[ind].valid())
+			{
+				mat_map[ind].wait();
+			}
+		}
+
+		ref_obj->updateObject(logicalDevice);
+		drawables.push_back(object);
+
+		auto end = std::chrono::steady_clock::now();
+		auto time = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
+
+		Logger::Out("Model %s loaded in %d ms", OutputColor::Gray, OutputType::Log, mesh_path, (int)time);
+
+		return true;
+	}
+
+	bool VulkanAPI::loadMesh(const char* mesh_path, DrawableObj* target, std::string* out_materials)
+	{
 		std::unordered_map<Vertex, uint32_t> uniqueVertices{};
 		Assimp::Importer importer;
 
@@ -767,12 +821,14 @@ namespace GrEngine_Vulkan
 			Logger::Out("Max number of supported materials(%d) exceded in the mesh %c%s%c!", OutputColor::Red, OutputType::Error, TEXTURE_ARRAY_SIZE, '"', mesh_path, '"');
 			return false;
 		}
+		float highest_pointx = 0.f;
+		float highest_pointy = 0.f;
+		float highest_pointz = 0.f;
 
 		for (int mesh_ind = 0; mesh_ind < model->mNumMeshes; mesh_ind++)
 		{
 			auto num_vert = model->mMeshes[mesh_ind]->mNumVertices;
 			auto cur_mesh = model->mMeshes[mesh_ind];
-			//auto uv_ind = model->mMeshes[mesh_ind]->mMaterialIndex;
 			auto name3 = model->mMeshes[mesh_ind]->mName;
 			auto uv_ind = mesh_ind;
 			for (int vert_ind = 0; vert_ind < num_vert; vert_ind++)
@@ -782,31 +838,35 @@ namespace GrEngine_Vulkan
 				Vertex vertex = { {cur_mesh->mVertices[vert_ind].x, cur_mesh->mVertices[vert_ind].y, cur_mesh->mVertices[vert_ind].z, 1.0f},
 				{1.0f, 1.0f, 1.0f, 1.0f},
 				{coord[vert_ind].x, 1.0f - coord[vert_ind].y},
-				uv_ind};
+				uv_ind };
 
 				if (uniqueVertices.count(vertex) == 0) {
-					uniqueVertices[vertex] = static_cast<uint32_t>(object.object_mesh.vertices.size());
-					object.object_mesh.vertices.push_back(vertex);
+					uniqueVertices[vertex] = static_cast<uint32_t>(target->object_mesh.vertices.size());
+					target->object_mesh.vertices.push_back(vertex);
 				}
 
-				object.object_mesh.indices.push_back(uniqueVertices[vertex]);
+				if (highest_pointx < cur_mesh->mVertices[vert_ind].x)
+					highest_pointx = cur_mesh->mVertices[vert_ind].x;
+				if (highest_pointy < cur_mesh->mVertices[vert_ind].y)
+					highest_pointy = cur_mesh->mVertices[vert_ind].y;
+				if (highest_pointz < cur_mesh->mVertices[vert_ind].z)
+					highest_pointz = cur_mesh->mVertices[vert_ind].z;
+
+				target->object_mesh.indices.push_back(uniqueVertices[vertex]);
 			}
 
 			aiString name;
 			aiGetMaterialString(model->mMaterials[model->mMeshes[mesh_ind]->mMaterialIndex], AI_MATKEY_NAME, &name);
 
-			if (materials)
+			if (out_materials)
 			{
-				materials->append(name.C_Str());
-				materials->append("\\");
+				out_materials->append(name.C_Str());
+				out_materials->append("\\");
 			}
-
-			loadTexture("d:\\MissingTexture.png", &object, mesh_ind);
 		}
-		
-		object.object_mesh.mesh_path = mesh_path;
-		object.initObject(logicalDevice, memAllocator, this);
-		drawables.push_back(object);
+		target->bound = {highest_pointx, highest_pointy, highest_pointz};
+		target->object_mesh.mesh_path = mesh_path;
+		target->initObject(logicalDevice, memAllocator, this);
 
 		Logger::Out("Mesh %c%s%c was loaded succesfully", OutputColor::Green, OutputType::Log, '"', mesh_path, '"');
 		return true;
@@ -814,9 +874,6 @@ namespace GrEngine_Vulkan
 
 	bool VulkanAPI::loadImage(const char* image_path, int material_index)
 	{
-		vkDeviceWaitIdle(logicalDevice);
-		vkQueueWaitIdle(graphicsQueue);
-
 		auto object = &drawables.back();
 
 		loadTexture(image_path, object, material_index);
@@ -1019,22 +1076,6 @@ namespace GrEngine_Vulkan
 		vkCmdCopyBufferToImage(commandBuffer, buffer, image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &region);
 
 		endSingleTimeCommands(commandBuffer);
-	}
-
-	std::vector<char> VulkanAPI::readFile(const std::string& filename)
-	{
-		std::ifstream file(filename, std::ios::ate | std::ios::binary);
-
-		if (!file.is_open())
-			throw std::runtime_error("Failed to open file!");
-
-		std::size_t fileSize = (std::size_t)file.tellg();
-		std::vector<char> buffer(fileSize);
-		file.seekg(0);
-		file.read(buffer.data(), fileSize);
-		file.close();
-
-		return buffer;
 	}
 
 	bool VulkanAPI::createVkBuffer(VkDevice device, VmaAllocator allocator, const void* bufData, uint32_t dataSize, VkBufferUsageFlags usage, ShaderBuffer* shaderBuffer)

@@ -39,11 +39,9 @@ namespace GrEngine_Vulkan
 		inline VkRenderPass getRenderPass() { return renderPass; };
 		bool updateDrawables(uint32_t index);
 		static VkShaderModule createShaderModule(VkDevice device, const std::vector<char>& code);
-		bool loadModel(const char* mesh_path, std::string* out_materials = nullptr) override;
+		bool loadModel(const char* mesh_path, const char* materials_string = nullptr, std::string* out_materials_names = nullptr) override;
 		bool loadImage(const char* image_path, int material_index = 0) override;
-		bool loadTexture(const char* texture_path, DrawableObj* target, int material_index = 0);
 		void clearDrawables() override;
-		static std::vector<char> readFile(const std::string& filename);
 		static bool createVkBuffer(VkDevice device, VmaAllocator allocator, const void* bufData, uint32_t dataSize, VkBufferUsageFlags usage, ShaderBuffer* shader);
 		static void destroyShaderBuffer(VkDevice device, VmaAllocator allocator, ShaderBuffer* shaderBuf);
 		static void destroyTexture(VkDevice device, VmaAllocator allocator, Texture* texture);
@@ -77,6 +75,9 @@ namespace GrEngine_Vulkan
 		VkMemoryRequirements memRequirements;
 
 		std::vector<DrawableObj> drawables;
+
+		bool loadMesh(const char* mesh_path, DrawableObj* target, std::string* out_materials = nullptr);
+		bool loadTexture(const char* texture_path, DrawableObj* target, int material_index = 0);
 
 		bool createVKInstance();
 		bool createMemoryAllocator();

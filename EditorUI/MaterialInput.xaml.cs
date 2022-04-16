@@ -17,6 +17,8 @@ namespace EditorUI
 
         IntPtr pOwner;
         public int material_index;
+
+        public event EventHandler event_load_material;
         public MaterialInput(IntPtr p)
         {
             pOwner = p;
@@ -25,16 +27,7 @@ namespace EditorUI
 
         private void LoadBtn_Click(object sender, RoutedEventArgs e)
         {
-            OpenFileDialog openFileDialog = new OpenFileDialog();
-            openFileDialog.Filter = "png files (*.png)|*.png";
-            openFileDialog.FilterIndex = 1;
-            openFileDialog.RestoreDirectory = true;
-            if (openFileDialog.ShowDialog() == System.Windows.Forms.DialogResult.OK)
-            {
-                SendMessage(pOwner, 0x1202, (IntPtr)material_index, Marshal.StringToHGlobalAnsi(openFileDialog.FileName));
-            }
-
-            GC.Collect();
+            event_load_material?.Invoke(this, null);
         }
     }
 }

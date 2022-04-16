@@ -1,6 +1,7 @@
 #pragma once
 #include <GrayEngine.h>
 #include "EditorUI.h"
+#include <chrono>
 
 namespace GrEngine
 {
@@ -11,6 +12,8 @@ namespace GrEngine
 
         static LRESULT CALLBACK HostWindowProcBrowser(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) //Background Win32 is used to receive messages from WPF front-end window
         {
+            const char* mod = (const char*)wParam;
+            const char* mat = (const char*)lParam;
             switch (msg)
             {
             case WM_CLOSE:
@@ -24,7 +27,7 @@ namespace GrEngine
                 break;
                 /*Messages received from the C# WPF front-end part of the editor*/
             case 0x1200: //Load obj file callback
-                GrEngine::ModelBrowser::loadModel((const char*)lParam);
+                GrEngine::ModelBrowser::createModel((const char*)lParam);
                 break;
             case 0x1201: //Clear viewport callback
                 GrEngine::ModelBrowser::clearViewport();
@@ -33,7 +36,7 @@ namespace GrEngine
                 GrEngine::ModelBrowser::uploadTexture((const char*)lParam, (int)wParam);
                 break;
             case 0x1203: //Close model browser
-                GrEngine::ModelBrowser::closeBrowser();
+                GrEngine::ModelBrowser::createModel((const char*)wParam, (const char*)lParam);
                 break;
             default:
                 return DefWindowProcA(hwnd, msg, wParam, lParam);
@@ -77,22 +80,22 @@ namespace GrEngine
         static EditorUI* getEditorUI()
         {
             return &_instance->wpfUI;
-        };
-
-        static void loadModel(const char* mesh_path)
-        {
-            std::string materials;
-            clearViewport();
-
-            auto res = _instance->loadMeshFromPath(mesh_path, &materials);
-
-            if (res)
-                getEditorUI()->UpdateMaterials((char*)materials.c_str());
         }
 
         static void uploadTexture(const char* image_path, int material_index)
         {
             _instance->loadImageFromPath(image_path, material_index);
+        }
+
+        static void createModel(const char* mesh_path, const char* textures_str = nullptr)
+        {
+            std::string materials;
+
+            clearViewport();
+            auto res = _instance->loadModel(mesh_path, textures_str, &materials);
+
+            if (res)
+                getEditorUI()->UpdateMaterials((char*)materials.c_str());
         }
 
         static void clearViewport()

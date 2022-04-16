@@ -48,20 +48,6 @@ namespace EditorUI
             FormHost.Child = panel;
         }
 
-        private void Button_Click(object sender, RoutedEventArgs e)
-        {
-            OpenFileDialog openFileDialog = new OpenFileDialog();
-            openFileDialog.Filter = "obj files (*.obj)|*.obj";
-            openFileDialog.FilterIndex = 1;
-            openFileDialog.RestoreDirectory = true;
-            if (openFileDialog.ShowDialog() == System.Windows.Forms.DialogResult.OK)
-            {
-                SendMessage(pOwner, 0x1200, IntPtr.Zero, Marshal.StringToHGlobalAnsi(openFileDialog.FileName));
-            }
-
-            GC.Collect();
-        }
-
         private void FormHost_SizeChanged(object sender, SizeChangedEventArgs e)
         {
         }
@@ -74,20 +60,6 @@ namespace EditorUI
             {
                 SendMessage(pOwner, 0x1201, IntPtr.Zero, IntPtr.Zero);
             }
-        }
-
-        private void TextureButton_Click(object sender, RoutedEventArgs e)
-        {
-            OpenFileDialog openFileDialog = new OpenFileDialog();
-            openFileDialog.Filter = "png files (*.png)|*.png";
-            openFileDialog.FilterIndex = 1;
-            openFileDialog.RestoreDirectory = true;
-            if (openFileDialog.ShowDialog() == System.Windows.Forms.DialogResult.OK)
-            {
-                SendMessage(pOwner, 0x1202, IntPtr.Zero, Marshal.StringToHGlobalAnsi(openFileDialog.FileName));
-            }
-
-            GC.Collect();
         }
 
         private void BrowserButton_Click(object sender, RoutedEventArgs e)
@@ -120,7 +92,7 @@ namespace EditorUI
 
         internal void UpdateFrameCounter(double frames)
         {
-            FrameBlock.Text = frames.ToString("0.0");
+            FrameBlock.Text = "FPS : " + frames.ToString("0.0");
         }
     }
 }

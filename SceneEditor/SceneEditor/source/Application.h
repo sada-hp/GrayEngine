@@ -3,7 +3,6 @@
 #include "EditorUI.h"
 #include "ModelBrowser.h"
 
-std::string log_path = SOLUTION_DIR + std::string("GE_Log.txt");
 
 namespace GrEngine
 {
@@ -11,6 +10,8 @@ namespace GrEngine
     {
         static Application* _instance;
         EditorUI wpfUI;
+        std::string log_path;
+
     public:
         static LRESULT CALLBACK HostWindowProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) //Background Win32 is used to receive messages from WPF front-end window
         {
@@ -39,9 +40,6 @@ namespace GrEngine
             case 0x1203: //Open the model browser
                 GrEngine::Application::initModelBrowser();
                 break;
-            case 0x2200: //Model browser is closing
-                GrEngine::ModelBrowser::loadModel((const char*)lParam);
-                break;
             default:
                 return DefWindowProcA(hwnd, msg, wParam, lParam);
             }
@@ -54,6 +52,7 @@ namespace GrEngine
                 delete _instance;
 
             _instance = this;
+            log_path = getExecutablePath() + std::string("GE_Log.txt");
 
             EventListener::pushEvent(EventType::MouseClick,[](std::vector<double> para)
                 {
@@ -133,12 +132,12 @@ namespace GrEngine
 
         static void loadModel(const char* mesh_path)
         {
-            _instance->loadMeshFromPath(mesh_path);
+            //_instance->loadMeshFromPath(mesh_path);
         }
 
         static void uploadTexture(const char* image_path)
         {
-            _instance->loadImageFromPath(image_path);
+            //_instance->loadImageFromPath(image_path);
         }
 
         static void clearViewport()
@@ -186,7 +185,7 @@ namespace GrEngine
             msg[i] = '\0';
 
 
-            log_file.open(log_path, std::fstream::out | std::ios::app);
+            log_file.open(_instance->log_path, std::fstream::out | std::ios::app);
 
             log_file << msg;
 

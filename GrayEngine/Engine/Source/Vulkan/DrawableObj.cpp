@@ -139,7 +139,7 @@ namespace GrEngine_Vulkan
 		float time = std::chrono::duration<float, std::chrono::seconds::period>(currentTime - startTime).count();
 
 		ubo.model = glm::rotate(glm::mat4(1.0f), time * glm::radians(30.0f), glm::vec3(0.0f, 0.0f, 1.0f));
-		ubo.view = glm::lookAt(glm::vec3(2.0f, 2.0f, 2.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f));
+		ubo.view = glm::lookAt(glm::vec3(bound.x + 1.f, bound.y + 1.5f, bound.z + 1.f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f));
 		ubo.proj = glm::perspective(glm::radians(45.0f), (float)extent.width / (float)extent.height, 0.1f, 10.0f);
 		ubo.proj[1][1] *= -1;
 
@@ -150,9 +150,10 @@ namespace GrEngine_Vulkan
 
 	bool DrawableObj::createGraphicsPipeline(VkDevice device)
 	{
-		std::string solution_path = SOLUTION_DIR;
-		std::vector<char> vertShaderCode = VulkanAPI::readFile(solution_path + "GrayEngine//Engine//Source//Vulkan//Shaders//vert.spv");
-		std::vector<char> fragShaderCode = VulkanAPI::readFile(solution_path + "GrayEngine//Engine//Source//Vulkan//Shaders//frag.spv");
+		std::string solution_path = GrEngine::Renderer::getExecutablePath();
+
+		std::vector<char> vertShaderCode = GrEngine::Renderer::readFile(solution_path + "Shaders//vert.spv");
+		std::vector<char> fragShaderCode = GrEngine::Renderer::readFile(solution_path + "Shaders//frag.spv");
 
 		VkShaderModule shaders[2] = { VulkanAPI::createShaderModule(device, vertShaderCode) , VulkanAPI::createShaderModule(device, fragShaderCode) };
 
@@ -217,12 +218,12 @@ namespace GrEngine_Vulkan
 
 		VkPipelineColorBlendAttachmentState colorBlendAttachment{};
 		colorBlendAttachment.colorWriteMask = VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT;
-		colorBlendAttachment.blendEnable = VK_FALSE;
-		colorBlendAttachment.srcColorBlendFactor = VK_BLEND_FACTOR_ONE; // Optional
-		colorBlendAttachment.dstColorBlendFactor = VK_BLEND_FACTOR_ZERO; // Optional
+		colorBlendAttachment.blendEnable = VK_TRUE;
+		colorBlendAttachment.srcColorBlendFactor = VK_BLEND_FACTOR_SRC_ALPHA; // Optional
+		colorBlendAttachment.dstColorBlendFactor = VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA; // Optional
 		colorBlendAttachment.colorBlendOp = VK_BLEND_OP_ADD; // Optional
-		colorBlendAttachment.srcAlphaBlendFactor = VK_BLEND_FACTOR_ONE; // Optional
-		colorBlendAttachment.dstAlphaBlendFactor = VK_BLEND_FACTOR_ZERO; // Optional
+		colorBlendAttachment.srcAlphaBlendFactor = VK_BLEND_FACTOR_SRC_ALPHA; // Optional
+		colorBlendAttachment.dstAlphaBlendFactor = VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA; // Optional
 		colorBlendAttachment.alphaBlendOp = VK_BLEND_OP_ADD; // Optional
 
 		VkPipelineColorBlendStateCreateInfo colorBlending{};
@@ -231,10 +232,10 @@ namespace GrEngine_Vulkan
 		colorBlending.logicOp = VK_LOGIC_OP_COPY; // Optional
 		colorBlending.attachmentCount = 1;
 		colorBlending.pAttachments = &colorBlendAttachment;
-		colorBlending.blendConstants[0] = 0.0f; // Optional
-		colorBlending.blendConstants[1] = 0.0f; // Optional
-		colorBlending.blendConstants[2] = 0.0f; // Optional
-		colorBlending.blendConstants[3] = 0.0f; // Optional
+		colorBlending.blendConstants[0] = 1.0f; // Optional
+		colorBlending.blendConstants[1] = 1.0f; // Optional
+		colorBlending.blendConstants[2] = 1.0f; // Optional
+		colorBlending.blendConstants[3] = 1.0f; // Optional
 
 		std::vector<VkDynamicState> dynamicStates = { VK_DYNAMIC_STATE_VIEWPORT, VK_DYNAMIC_STATE_SCISSOR };
 		VkPipelineDynamicStateCreateInfo dynamicCreateInfo{};

@@ -115,6 +115,7 @@ namespace GrEngine_Vulkan
 
 		Mesh object_mesh;
 		std::vector<Texture> object_texture;
+		glm::vec3 bound;
 
 		void initObject(VkDevice device, VmaAllocator allocator, void* owner);
 		void destroyObject(VkDevice device, VmaAllocator allocator);

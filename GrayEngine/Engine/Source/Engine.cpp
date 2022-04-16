@@ -29,9 +29,9 @@ namespace GrEngine
 		glfwSetWindowShouldClose(pWindow.get()->getWindow(), true);
 	}
 
-	bool Engine::loadMeshFromPath(const char* path, std::string* out_materials)
+	bool Engine::loadModel(const char* mesh_path, const char* textures_str, std::string* out_materials)
 	{
-		return pWindow->getRenderer()->loadModel(path, out_materials);
+		return pWindow->getRenderer()->loadModel(mesh_path, textures_str, out_materials);
 	}
 
 	bool Engine::loadImageFromPath(const char* path, int material_index)
@@ -53,5 +53,10 @@ namespace GrEngine
 	{
 		Logger::Out("You've just poked an engine", OutputColor::Gray, OutputType::Log);
 		return true;
+	}
+
+	std::string Engine::getExecutablePath()
+	{
+		return Renderer::getExecutablePath();
 	}
 }
