@@ -2,7 +2,7 @@
 #include <GrayEngine.h>
 #include "EditorUI.h"
 #include "ModelBrowser.h"
-
+#include <resource.h>
 
 namespace GrEngine
 {
@@ -11,7 +11,6 @@ namespace GrEngine
         static Application* _instance;
         EditorUI wpfUI;
         std::string log_path;
-
     public:
         static LRESULT CALLBACK HostWindowProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) //Background Win32 is used to receive messages from WPF front-end window
         {
@@ -52,7 +51,7 @@ namespace GrEngine
                 delete _instance;
 
             _instance = this;
-            log_path = getExecutablePath() + std::string("GE_Log.txt");
+            log_path = getExecutablePath() + std::string("grayengine.log");
 
             EventListener::pushEvent(EventType::MouseClick,[](std::vector<double> para)
                 {
@@ -88,10 +87,7 @@ namespace GrEngine
                 {
                     if (para.size() > 0)
                     {
-                        std::async(std::launch::async, [](double param)
-                            {
-                                _instance->wpfUI.UpdateFramecounter(param);
-                            }, (float)para[0]);
+                        _instance->wpfUI.UpdateFramecounter((float)para[0]);
                     }
                         
                 });

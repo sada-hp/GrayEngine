@@ -61,7 +61,7 @@
       <WarningLevel>Level3</WarningLevel>
       <SDLCheck>true</SDLCheck>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>$(SolutionDir)\GrayEngine;$(SolutionDir)\GrayEngine\Engine\Source\Headers\;$(SolutionDir)GrayEngine\Engine\Source\Libs\IncludeVK;$(SolutionDir)GrayEngine\Engine\Source\Libs\includeGL;$(SolutionDir)GrayEngine\Engine\Source\Libs\IncludeAssimp;$(SolutionDir)GrayEngine\Engine\Source\Libs\glm;$(SolutionDir)GrayEngine\Engine\Source\Libs\TexLoader;$(SolutionDir)GrayEngine\Engine\Source\Libs\VkMemAlloc</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)\SceneEditor\SceneEditor\;$(SolutionDir)\GrayEngine;$(SolutionDir)\GrayEngine\Engine\Source\Headers\;$(SolutionDir)GrayEngine\Engine\Source\Libs\IncludeVK;$(SolutionDir)GrayEngine\Engine\Source\Libs\includeGL;$(SolutionDir)GrayEngine\Engine\Source\Libs\IncludeAssimp;$(SolutionDir)GrayEngine\Engine\Source\Libs\glm;$(SolutionDir)GrayEngine\Engine\Source\Libs\TexLoader;$(SolutionDir)GrayEngine\Engine\Source\Libs\VkMemAlloc</AdditionalIncludeDirectories>
       <LanguageStandard>stdcpp20</LanguageStandard>
       <PreprocessorDefinitions>SOLUTION_DIR=R"($(SolutionDir))";%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
@@ -77,7 +77,7 @@
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>$(SolutionDir)\GrayEngine;$(SolutionDir)\GrayEngine\Engine\Source\Headers\;$(SolutionDir)GrayEngine\Engine\Source\Libs\IncludeVK;$(SolutionDir)GrayEngine\Engine\Source\Libs\includeGL;$(SolutionDir)GrayEngine\Engine\Source\Libs\IncludeAssimp;$(SolutionDir)GrayEngine\Engine\Source\Libs\glm;$(SolutionDir)GrayEngine\Engine\Source\Libs\TexLoader;$(SolutionDir)GrayEngine\Engine\Source\Libs\VkMemAlloc</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)\SceneEditor\SceneEditor\;$(SolutionDir)\GrayEngine;$(SolutionDir)\GrayEngine\Engine\Source\Headers\;$(SolutionDir)GrayEngine\Engine\Source\Libs\IncludeVK;$(SolutionDir)GrayEngine\Engine\Source\Libs\includeGL;$(SolutionDir)GrayEngine\Engine\Source\Libs\IncludeAssimp;$(SolutionDir)GrayEngine\Engine\Source\Libs\glm;$(SolutionDir)GrayEngine\Engine\Source\Libs\TexLoader;$(SolutionDir)GrayEngine\Engine\Source\Libs\VkMemAlloc</AdditionalIncludeDirectories>
       <LanguageStandard>stdcpp20</LanguageStandard>
       <PreprocessorDefinitions>SOLUTION_DIR=R"($(SolutionDir))";%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
@@ -97,9 +97,13 @@
     <ClCompile Include="source\ProgramMain.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="resource.h" />
     <ClInclude Include="source\Application.h" />
     <ClInclude Include="source\EditorUI.h" />
     <ClInclude Include="source\ModelBrowser.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="SceneEditor.rc" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

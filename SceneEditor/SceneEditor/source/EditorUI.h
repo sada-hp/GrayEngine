@@ -1,6 +1,6 @@
 #pragma once
 #include <GrayEngine.h>
-#include <Windows.h>
+#include <resource.h>
 
 #define VIEWPORT_EDITOR 0
 #define VIEWPORT_MODEL_BROWSER 1
@@ -67,7 +67,9 @@ public:
 		HostWindowClass.cbClsExtra = 0; HostWindowClass.style = 0;
 		HostWindowClass.cbWndExtra = 0;    HostWindowClass.hInstance = NULL;
 		HostWindowClass.lpszClassName = HostClassName; HostWindowClass.lpszMenuName = NULL;
+		HostWindowClass.hIcon = static_cast<HICON>(LoadImageA(GetModuleHandle(NULL), MAKEINTRESOURCE(APP_ICON), IMAGE_ICON, 256, 256, LR_DEFAULTCOLOR | LR_DEFAULTSIZE));
 
+		auto err = GetLastError();
 		if (!RegisterClassEx(&HostWindowClass))
 		{
 			return false;
@@ -78,7 +80,7 @@ public:
 			WS_EX_CONTROLPARENT,
 			HostClassName,
 			"Gray Engine: World Editor",
-			WS_THICKFRAME | WS_OVERLAPPEDWINDOW,
+			WS_OVERLAPPEDWINDOW,
 			CW_USEDEFAULT, CW_USEDEFAULT, 1280, 720,
 			NULL, NULL, NULL, NULL);
 

@@ -1,10 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Windows;
 using System.Runtime.InteropServices;
-using System.Windows.Interop;
+using System.Windows;
 using System.Windows.Forms;
 
 namespace EditorUI
@@ -28,6 +26,9 @@ namespace EditorUI
         string loaded_material = "";
         Dictionary<string, System.Windows.Controls.ListViewItem> LoadedAssets = new Dictionary<string, System.Windows.Controls.ListViewItem>();
         SortedDictionary<int, string> Materials = new SortedDictionary<int, string>();
+        bool b_order = false;
+        bool b_fullpath = false;
+        string missing_texture = System.IO.Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location) + @"\Content\Editor\MissingTexture.png";
 
         public ModelBrowser(IntPtr p)
         {
@@ -41,8 +42,10 @@ namespace EditorUI
             panel.BorderStyle = BorderStyle.None;
             FormHost.Child = panel;
 
-            connection = @"Data Source=(LocalDB)\MSSQLLocalDB;AttachDbFilename="+ System.IO.Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location)  + @"\Database\Assets_models.mdf;Integrated Security=True";
+            connection = @"Data Source=(LocalDB)\MSSQLLocalDB;AttachDbFilename=" + System.IO.Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location) + @"\Database\Assets_models.mdf;Integrated Security=True";
             LoadData();
+
+            MeshNameBar.Content = "Name \u2B9F";
         }
 
         public void ParentRender(IntPtr child)
@@ -100,7 +103,18 @@ namespace EditorUI
             ClearBrowser();
 
             string filter = SearchBar.Text.Replace("Search...", String.Empty);
-            ConnectDatabase(connection, "SELECT * FROM Models WHERE Mesh LIKE '%" + filter + "%'", out System.Data.SqlClient.SqlConnection sqlConnection, out System.Data.SqlClient.SqlCommand cmd);
+            string cmd_string;
+
+            if (!b_order)
+            {
+                cmd_string = "SELECT * FROM Models WHERE Mesh LIKE '%" + filter + "%' ORDER BY Mesh ASC";
+            }
+            else
+            {
+                cmd_string = "SELECT * FROM Models WHERE Mesh LIKE '%" + filter + "%' ORDER BY Mesh DESC";
+            }
+
+            ConnectDatabase(connection, cmd_string, out System.Data.SqlClient.SqlConnection sqlConnection, out System.Data.SqlClient.SqlCommand cmd);
 
             var reader = cmd.ExecuteReader();
 
@@ -108,8 +122,17 @@ namespace EditorUI
             {
                 System.Windows.Controls.ListViewItem item = new System.Windows.Controls.ListViewItem();
                 string name = reader.GetString(0);
-                string[] name_cut = name.Split('\\');
-                item.Content = name_cut[name_cut.Length - 2] + '\\' + name_cut[name_cut.Length - 1] + '\n';
+
+                if (!b_fullpath)
+                {
+                    string[] name_cut = name.Split('\\');
+                    item.Content = "...\\" + name_cut[name_cut.Length - 2] + '\\' + name_cut[name_cut.Length - 1];
+                }
+                else
+                {
+                    item.Content = name;
+                }
+                item.Padding = new System.Windows.Thickness(5);
                 item.ToolTip = name;
 
                 if (!LoadedAssets.ContainsKey(name))
@@ -165,6 +188,7 @@ namespace EditorUI
                 loaded_mesh = openFileDialog.FileName;
                 loaded_material = String.Empty;
                 MeshPath.Text = loaded_mesh;
+                MeshPath.ToolTip = loaded_mesh;
 
                 SendMessage(pOwner, 0x1200, IntPtr.Zero, Marshal.StringToHGlobalAnsi(openFileDialog.FileName));
             }
@@ -185,7 +209,7 @@ namespace EditorUI
             int mat_index = 0;
             string[] material_names = string_names.Split('\\');
             string[] texture_names = loaded_material.Split('|');
-            
+
             foreach (string material_name in material_names)
             {
                 if (material_name != String.Empty)
@@ -195,14 +219,16 @@ namespace EditorUI
                     material_panel.NameTextBlock.Text = material_name;
                     System.Windows.Controls.DockPanel.SetDock(material_panel, System.Windows.Controls.Dock.Top);
 
-                    if (mat_index < texture_names.Length)
+                    if (mat_index < texture_names.Length && texture_names[mat_index] != "")
                     {
                         Materials.Add(mat_index, texture_names[mat_index]);
                         material_panel.MaterialPath.Text = texture_names[mat_index];
+                        material_panel.MaterialPath.ToolTip = texture_names[mat_index];
                     }
                     else
-                        Materials.Add(mat_index, String.Empty);
+                        Materials.Add(mat_index, missing_texture);
 
+                    SendMessage(pOwner, 0x1202, (IntPtr)mat_index, Marshal.StringToHGlobalAnsi(Materials[mat_index]));
                     material_panel.event_load_material += LoadMaterial;
                     material_panel.material_index = mat_index++;
 
@@ -214,14 +240,13 @@ namespace EditorUI
         private void BtnCreate_Click(object sender, RoutedEventArgs e)
         {
             loaded_material = "";
-            
 
             foreach (string material in Materials.Values)
             {
                 if (material != String.Empty)
                     loaded_material += material + '|';
                 else
-                    loaded_material += @"D:\MissingTexture.png" + '|';
+                    loaded_material += missing_texture + '|';
             }
 
             NewDataBaseEntry(loaded_mesh, loaded_material);
@@ -240,6 +265,7 @@ namespace EditorUI
                 SendMessage(pOwner, 0x1202, (IntPtr)((MaterialInput)sender).material_index, Marshal.StringToHGlobalAnsi(openFileDialog.FileName));
                 Materials[((MaterialInput)sender).material_index] = openFileDialog.FileName;
                 ((MaterialInput)sender).MaterialPath.Text = openFileDialog.FileName;
+                ((MaterialInput)sender).MaterialPath.ToolTip = openFileDialog.FileName;
             }
 
             GC.Collect();
@@ -263,6 +289,7 @@ namespace EditorUI
                 loaded_mesh = model;
                 loaded_material = materials;
                 MeshPath.Text = loaded_mesh;
+                MeshPath.ToolTip = loaded_mesh;
 
                 sqlConnection.Close();
             }
@@ -300,6 +327,25 @@ namespace EditorUI
         private void GridSplitter_DragDelta(object sender, System.Windows.Controls.Primitives.DragDeltaEventArgs e)
         {
             TabCtr.Width += e.HorizontalChange;
+        }
+
+        private void MeshNameBar_Click(object sender, RoutedEventArgs e)
+        {
+            b_order = !b_order;
+
+            MeshNameBar.Content = b_order ? "Name \u2B9D" : "Name \u2B9F";
+
+            LoadData();
+        }
+
+        private void ExpandBtn_Click(object sender, RoutedEventArgs e)
+        {
+            b_fullpath = !b_fullpath;
+
+            ExpandBtn.Content = b_fullpath ? "-" : "+";
+            ExpandBtn.ToolTip = b_fullpath ? "Condense path" : "Expand path";
+
+            LoadData();
         }
     }
 }

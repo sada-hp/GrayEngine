@@ -1,0 +1,5 @@
+// Microsoft Visual C++ generated resource script.
+//
+#include "resource.h"
+
+APP_ICON ICON "D:\\GrEngine\\GrayEngine\\other\\Content\\GrayMan.ico"

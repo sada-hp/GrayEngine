@@ -754,6 +754,7 @@ namespace GrEngine_Vulkan
 		DrawableObj* ref_obj = &object;
 		VulkanAPI* inst = this;
 		std::map<int, std::future<void>> mat_map;
+		std::map<std::string, int> proc_map;
 		std::string temp_str = "";
 		int mat_index = 0;
 
@@ -769,10 +770,16 @@ namespace GrEngine_Vulkan
 				}
 				else
 				{
+					if (mat_map[proc_map[temp_str]].valid()) //the file might be currently in use, so check for it
+					{
+						mat_map[proc_map[temp_str]].wait();
+					}
+
 					mat_map[mat_index] = std::async(std::launch::async, [temp_str, ref_obj, mat_index, inst]()
 						{
 							inst->loadTexture(temp_str.c_str(), ref_obj, mat_index);
 						});
+					
 					temp_str = "";
 					mat_index++;
 					continue;
