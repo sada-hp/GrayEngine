@@ -77,6 +77,9 @@
     <Reference Include="WindowsFormsIntegration" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="BrowserItem.xaml.cs">
+      <DependentUpon>BrowserItem.xaml</DependentUpon>
+    </Compile>
     <Compile Include="EditorWindow.cs" />
     <Compile Include="MaterialInput.xaml.cs">
       <DependentUpon>MaterialInput.xaml</DependentUpon>
@@ -97,6 +100,10 @@
     <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
+    <Page Include="BrowserItem.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
     <Page Include="MainView.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>

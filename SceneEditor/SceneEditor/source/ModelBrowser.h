@@ -38,6 +38,9 @@ namespace GrEngine
             case 0x1203: //Close model browser
                 GrEngine::ModelBrowser::createModel((const char*)wParam, (const char*)lParam);
                 break;
+            case 0x1204: //Close model browser
+                Logger::Out((const char*)lParam, OutputColor::Gray, OutputType::Log);
+                break;
             default:
                 return DefWindowProcA(hwnd, msg, wParam, lParam);
             }

@@ -46,7 +46,7 @@
             <ColumnDefinition Name="MainColumn" MinWidth="150" Width="0.3*"/>
             <ColumnDefinition MinWidth="150"/>
         </Grid.ColumnDefinitions>
-        <TabControl Name="TabCtr" Background="#FF343440" Grid.Column="0" BorderBrush="{x:Null}" MinWidth="150">
+        <TabControl Name="TabCtr" Background="#FF343440" Grid.Column="0" BorderBrush="{x:Null}" MinWidth="150" SelectionChanged="TabCtr_SelectionChanged">
             <TabItem Background="{x:Null}" Header="Browse" Foreground="WhiteSmoke" BorderBrush="{x:Null}">
                 <DockPanel Background="#FF353538" LastChildFill="True">
                     <DockPanel DockPanel.Dock="Top" Height="25" LastChildFill="True">
@@ -71,13 +71,34 @@
                                 </Style>
                             </Button.Style>
                         </Button>
-                        <Button Name="MeshNameBar" Content="Name" HorizontalContentAlignment="Left" Foreground="WhiteSmoke" DockPanel.Dock="Left" Height="25" Background="#FF1E1E21" Click="MeshNameBar_Click" Cursor="Hand" ToolTip="Order by">
+                        <Button Name="Id" Content="Id" Width="45" Foreground="WhiteSmoke" DockPanel.Dock="Left" Height="25" Background="#FF1E1E21" Cursor="Hand" ToolTip="Expand path" Click="Id_Click">
                             <Button.Style>
                                 <Style TargetType="{x:Type Button}">
                                     <Setter Property="Template">
                                         <Setter.Value>
                                             <ControlTemplate TargetType="{x:Type Button}">
                                                 <Border Background="{TemplateBinding Background}" BorderThickness="1,1,0,0" BorderBrush="#FFABADB3" Padding="1">
+                                                    <ContentPresenter HorizontalAlignment="left" VerticalAlignment="Center" Margin="10,0,0,2"/>
+                                                </Border>
+                                            </ControlTemplate>
+                                        </Setter.Value>
+                                    </Setter>
+                                    <Style.Triggers>
+                                        <Trigger Property="IsMouseOver" Value="True">
+                                            <Setter Property="Background" Value="{x:Null}"/>
+                                            <Setter Property="Foreground" Value="White"/>
+                                        </Trigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </Button.Style>
+                        </Button>
+                        <Button Name="MeshNameBar" Content="Name" HorizontalContentAlignment="Left" Foreground="WhiteSmoke" DockPanel.Dock="Left" Height="25" Background="#FF1E1E21" Click="MeshNameBar_Click" Cursor="Hand" ToolTip="Order by">
+                            <Button.Style>
+                                <Style TargetType="{x:Type Button}">
+                                    <Setter Property="Template">
+                                        <Setter.Value>
+                                            <ControlTemplate TargetType="{x:Type Button}">
+                                                <Border Background="{TemplateBinding Background}" BorderThickness="0,1,0,0" BorderBrush="#FFABADB3" Padding="1">
                                                     <ContentPresenter HorizontalAlignment="Left" VerticalAlignment="Center" Margin="8,0,0,0"/>
                                                 </Border>
                                             </ControlTemplate>
@@ -93,7 +114,7 @@
                             </Button.Style>
                         </Button>
                     </DockPanel>
-                    <TextBox Text="Search..." Name="SearchBar"  DockPanel.Dock="Bottom" Height="25" BorderThickness="1,1,1,1" BorderBrush="#FFABADB3" Background="#FF232329" Foreground="WhiteSmoke" TextChanged="SearchBar_TextChanged" GotFocus="SearchBar_GotFocus" LostFocus="SearchBar_LostFocus" VerticalContentAlignment="Center" Padding="5,0"/>
+                    <TextBox Text="Search..." Name="SearchBar"  DockPanel.Dock="Bottom" Height="25" BorderThickness="1,1,1,1" BorderBrush="#FFABADB3" Background="#FF232329" Foreground="WhiteSmoke" TextChanged="SearchBar_TextChanged" GotFocus="SearchBar_GotFocus" LostFocus="SearchBar_LostFocus" VerticalContentAlignment="Center" Padding="5,0" TabIndex="1"/>
                     <ListView Name="Browser" Background="#FF242427" Foreground="WhiteSmoke" SelectionChanged="Browser_SelectionChanged">
 
                     </ListView>
@@ -102,8 +123,12 @@
             <TabItem Background="{x:Null}" Header="Create" Foreground="WhiteSmoke" BorderBrush="{x:Null}">
                 <Border Background="#FF353538" BorderThickness="1,1,1,1" BorderBrush="#FFABADB3" Padding="1,1,1,1">
                     <DockPanel Background="#FF242427">
-                        <Button Name="BtnCreate" Height="25" Content="Save preset" Background="#FF5D5D5D" BorderBrush="#FFC8C8C8" BorderThickness="1" Margin="5" Foreground="WhiteSmoke" FontFamily="Lucida Sans Unicode" TextOptions.TextHintingMode="Fixed" Padding="2" Cursor="Hand" Click="BtnCreate_Click" DockPanel.Dock="Bottom"/>
                         <Border DockPanel.Dock="Top" BorderThickness="0,0,0,1" BorderBrush="#FFABADB3" Padding="0,1,0,0" Background="#FF1E1E21">
+                            <Label Content="Id" HorizontalContentAlignment="Center" FontFamily="Lucida Sans Unicode" TextOptions.TextHintingMode="Fixed" Background="{x:Null}" Foreground="WhiteSmoke" Margin="0"/>
+                        </Border>
+                        <TextBox Name="IdBox" IsEnabled="True" Height="25" DockPanel.Dock="Top" Text="Auto" VerticalContentAlignment="Center" HorizontalContentAlignment="Center" TextWrapping="NoWrap" Foreground="#FF8B8B8B" Background="{x:Null}" SelectionBrush="#FF2D6FA6" BorderBrush="{x:Null}" GotFocus="IdBox_GotFocus" TabIndex="2" CaretBrush="#FFB4B4B4"/>
+                        <Button Name="BtnCreate" Height="25" Content="Save preset" Background="#FF5D5D5D" BorderBrush="#FFC8C8C8" BorderThickness="1" Margin="5" Foreground="WhiteSmoke" FontFamily="Lucida Sans Unicode" TextOptions.TextHintingMode="Fixed" Padding="2" Cursor="Hand" Click="BtnCreate_Click" DockPanel.Dock="Bottom"/>
+                        <Border DockPanel.Dock="Top" BorderThickness="0,1,0,1" BorderBrush="#FFABADB3" Padding="0,1,0,0" Background="#FF1E1E21">
                             <Grid Margin="0,0,0,1">
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="20"/>
