@@ -746,7 +746,7 @@ namespace GrEngine_Vulkan
 		Logger::Out("The scene was cleared", OutputColor::Green, OutputType::Log);
 	}
 
-	bool VulkanAPI::loadModel(const char* mesh_path, const char* materials_string, std::string* out_materials_names)
+	bool VulkanAPI::loadModel(const char* mesh_path, std::vector<std::string> textures_vector, std::string* out_materials_names)
 	{
 		auto start = std::chrono::steady_clock::now();
 
@@ -755,36 +755,21 @@ namespace GrEngine_Vulkan
 		VulkanAPI* inst = this;
 		std::map<int, std::future<void>> mat_map;
 		std::map<std::string, int> proc_map;
-		std::string temp_str = "";
 		int mat_index = 0;
 
-		if (materials_string)
+		for (auto texture : textures_vector)
 		{
-			std::string mats = materials_string;
-
-			for (char chr : mats)
+			if (mat_map[proc_map[texture]].valid()) //the file might be currently in use, so check for it
 			{
-				if (chr != '|')
-				{
-					temp_str += chr;
-				}
-				else
-				{
-					if (mat_map[proc_map[temp_str]].valid()) //the file might be currently in use, so check for it
-					{
-						mat_map[proc_map[temp_str]].wait();
-					}
-
-					mat_map[mat_index] = std::async(std::launch::async, [temp_str, ref_obj, mat_index, inst]()
-						{
-							inst->loadTexture(temp_str.c_str(), ref_obj, mat_index);
-						});
-					
-					temp_str = "";
-					mat_index++;
-					continue;
-				}
+				mat_map[proc_map[texture]].wait();
 			}
+
+			mat_map[mat_index] = std::async(std::launch::async, [texture, ref_obj, mat_index, inst]()
+				{
+					inst->loadTexture(texture.c_str(), ref_obj, mat_index);
+				});
+
+			mat_index++;
 		}
 
 		mat_map[mat_index] = std::async(std::launch::async, [mesh_path, ref_obj, out_materials_names, inst]()

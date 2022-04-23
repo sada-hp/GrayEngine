@@ -92,10 +92,33 @@ namespace GrEngine
 
         static void createModel(const char* mesh_path, const char* textures_str = nullptr)
         {
+            std::string temp_str = "";
+            std::vector<std::string> mat_vector;
             std::string materials;
 
             clearViewport();
-            auto res = _instance->loadModel(mesh_path, textures_str, &materials);
+
+            if (textures_str)
+            {
+                std::string mats = textures_str;
+
+                for (char chr : mats)
+                {
+                    if (chr != '|')
+                    {
+                        temp_str += chr;
+                    }
+                    else
+                    {
+                        mat_vector.push_back(temp_str);
+
+                        temp_str = "";
+                        continue;
+                    }
+                }
+            }
+
+            auto res = _instance->loadModel(mesh_path, mat_vector, &materials);
 
             if (res)
                 getEditorUI()->UpdateMaterials((char*)materials.c_str());

@@ -16,7 +16,7 @@ namespace GrEngine
 
 	protected:
 		bool loadImageFromPath(const char* path, int material_index = 0);
-		bool loadModel(const char* mesh_path, const char* textures_str = nullptr, std::string* out_materials = nullptr);
+		bool loadModel(const char* mesh_path, std::vector<std::string> textures_vector, std::string* out_materials = nullptr);
 		void clearScene();
 		void Run();
 		void Stop();

@@ -98,6 +98,16 @@ namespace EditorUI
                         cmd.Parameters.Add("@p2", System.Data.SqlDbType.NVarChar, name.Trim().Length).Value = name;
                         cmd.Parameters.Add("@p3", System.Data.SqlDbType.NVarChar, materials_string.Length).Value = materials_string;
                         cmd.ExecuteNonQuery();
+
+                        for (Int16 itt = 0; itt < Materials.Count; itt++)
+                        {
+                            cmd.Parameters.Clear();
+                            cmd.CommandText = @"INSERT INTO Textures (id, MatInd, TexPath) VALUES (@p1, @p2, @p3)";
+                            cmd.Parameters.Add("@p1", System.Data.SqlDbType.Int).Value = id;
+                            cmd.Parameters.Add("@p2", System.Data.SqlDbType.TinyInt).Value = itt;
+                            cmd.Parameters.Add("@p3", System.Data.SqlDbType.NVarChar, Materials[itt].Length).Value = Materials[itt];
+                            cmd.ExecuteNonQuery();
+                        }
                     }
                     else
                     {
@@ -108,6 +118,13 @@ namespace EditorUI
                             cmd.Prepare();
                             cmd.CommandText = @"UPDATE Models SET Materials = '" + materials_string + "', MESH = '" + name + "' WHERE id = '" + id + "'";
                             cmd.ExecuteNonQuery();
+
+                            for (Int16 itt = 0; itt < Materials.Count; itt++)
+                            {
+                                cmd.Parameters.Clear();
+                                cmd.CommandText = @"UPDATE Textures SET TexPath = '" + Materials[itt] + "' WHERE id = " + id + " AND MatInd = " + itt;
+                                cmd.ExecuteNonQuery();
+                            }
                         }
                     }
 
@@ -270,12 +287,12 @@ namespace EditorUI
         {
             loaded_material = "";
 
-            foreach (string material in Materials.Values)
+            for (int itt = 0; itt < Materials.Count; itt++)
             {
-                if (material != String.Empty)
-                    loaded_material += material + '|';
-                else
-                    loaded_material += missing_texture + '|';
+                if (Materials[itt] == String.Empty)
+                {
+                    Materials[itt] = missing_texture;
+                }
             }
 
             NewDataBaseEntry(loaded_mesh, loaded_material);
@@ -304,15 +321,18 @@ namespace EditorUI
         {
             if (Browser.SelectedItem != null)
             {
+                string materials = String.Empty;
                 string model = (Browser.SelectedItem as BrowserItem).ToolTip.ToString().Trim();
                 string id = (Browser.SelectedItem as BrowserItem).Id_Label.Content.ToString().Trim();
 
-                ConnectDatabase(connection, @"SELECT * FROM Models WHERE Id = " + id + "", out System.Data.SqlClient.SqlConnection sqlConnection, out System.Data.SqlClient.SqlCommand cmd);
+                ConnectDatabase(connection, @"SELECT TexPath FROM Textures WHERE Id = " + id + "", out System.Data.SqlClient.SqlConnection sqlConnection, out System.Data.SqlClient.SqlCommand cmd);
 
                 var reader = cmd.ExecuteReader();
 
-                reader.Read();
-                string materials = reader.GetString(2);
+                while (reader.Read())
+                {
+                    materials += reader.GetString(0) + '|';
+                }
 
                 SendMessage(pOwner, 0x1203, Marshal.StringToHGlobalAnsi(model), Marshal.StringToHGlobalAnsi(materials));
 
@@ -429,16 +449,6 @@ namespace EditorUI
                 default:
                     return "Id ASC";
             }
-        }
-
-        private void IdBox_GotFocus(object sender, RoutedEventArgs e)
-        {
-            //bool isNumeric = int.TryParse(IdBox.Text, out int id);
-
-            //if (!isNumeric)
-            //{
-            //    IdBox.Text = "";
-            //}
         }
 
         private void IdBox_TextInput(object sender, System.Windows.Input.TextCompositionEventArgs e)

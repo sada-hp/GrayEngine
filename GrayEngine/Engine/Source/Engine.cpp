@@ -29,9 +29,9 @@ namespace GrEngine
 		glfwSetWindowShouldClose(pWindow.get()->getWindow(), true);
 	}
 
-	bool Engine::loadModel(const char* mesh_path, const char* textures_str, std::string* out_materials)
+	bool Engine::loadModel(const char* mesh_path, std::vector<std::string> textures_vector, std::string* out_materials)
 	{
-		return pWindow->getRenderer()->loadModel(mesh_path, textures_str, out_materials);
+		return pWindow->getRenderer()->loadModel(mesh_path, textures_vector, out_materials);
 	}
 
 	bool Engine::loadImageFromPath(const char* path, int material_index)

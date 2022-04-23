@@ -17,7 +17,7 @@ namespace GrEngine
 		virtual void destroy() = 0;
 		virtual void drawFrame() = 0;
 		virtual bool loadImage(const char* image_path, int material_index = 0) = 0;
-		virtual bool loadModel(const char* mesh_path, const char* materials_string = nullptr, std::string* out_materials_names = nullptr) = 0;
+		virtual bool loadModel(const char* mesh_path, std::vector<std::string> textures_vector, std::string* out_materials_names = nullptr) = 0;
 		virtual void clearDrawables() = 0;
 		virtual void Update() = 0;
 
