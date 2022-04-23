@@ -30,7 +30,6 @@ namespace EditorUI
         System.Windows.Forms.Panel panel = new System.Windows.Forms.Panel();
         string connection = String.Empty;
         string loaded_mesh = "";
-        string loaded_material = "";
         Dictionary<string, System.Windows.Controls.Control> LoadedAssets = new Dictionary<string, System.Windows.Controls.Control>();
         SortedDictionary<int, string> Materials = new SortedDictionary<int, string>();
         SortType sorting = SortType.ID_ASC;
@@ -74,7 +73,7 @@ namespace EditorUI
             sql_coonection.Open();
         }
 
-        private void NewDataBaseEntry(string name, string materials_string)
+        private void NewDataBaseEntry(string name)
         {
             try
             {
@@ -93,10 +92,9 @@ namespace EditorUI
                         cmd.Prepare();
                         cmd.CommandText = @"SELECT COUNT(*) FROM Models";
                         id = (int)cmd.ExecuteScalar();
-                        cmd.CommandText = @"INSERT INTO Models (id, Mesh, Materials) VALUES (@p1, @p2, @p3)";
+                        cmd.CommandText = @"INSERT INTO Models (id, Mesh) VALUES (@p1, @p2)";
                         cmd.Parameters.Add("@p1", System.Data.SqlDbType.Int).Value = id;
                         cmd.Parameters.Add("@p2", System.Data.SqlDbType.NVarChar, name.Trim().Length).Value = name;
-                        cmd.Parameters.Add("@p3", System.Data.SqlDbType.NVarChar, materials_string.Length).Value = materials_string;
                         cmd.ExecuteNonQuery();
 
                         for (Int16 itt = 0; itt < Materials.Count; itt++)
@@ -116,7 +114,7 @@ namespace EditorUI
                         if (res == MessageBoxResult.Yes)
                         {
                             cmd.Prepare();
-                            cmd.CommandText = @"UPDATE Models SET Materials = '" + materials_string + "', MESH = '" + name + "' WHERE id = '" + id + "'";
+                            cmd.CommandText = @"UPDATE Models SET MESH = '" + name + "' WHERE id = '" + id + "'";
                             cmd.ExecuteNonQuery();
 
                             for (Int16 itt = 0; itt < Materials.Count; itt++)
@@ -231,7 +229,6 @@ namespace EditorUI
             if (openFileDialog.ShowDialog() == System.Windows.Forms.DialogResult.OK)
             {
                 loaded_mesh = openFileDialog.FileName;
-                loaded_material = String.Empty;
                 MeshPath.Text = loaded_mesh;
                 MeshPath.ToolTip = loaded_mesh;
                 IdBox.Text = "Auto";
@@ -254,7 +251,12 @@ namespace EditorUI
 
             int mat_index = 0;
             string[] material_names = string_names.Split('\\');
-            string[] texture_names = loaded_material.Split('|');
+
+            bool isNumeric = int.TryParse(IdBox.Text, out int id);
+            if (!isNumeric) id = -1;
+
+            ConnectDatabase(connection, @"SELECT TexPath FROM Textures WHERE Id = " + id + "", out System.Data.SqlClient.SqlConnection sqlConnection, out System.Data.SqlClient.SqlCommand cmd);
+            var reader = cmd.ExecuteReader();
 
             foreach (string material_name in material_names)
             {
@@ -265,11 +267,11 @@ namespace EditorUI
                     material_panel.NameTextBlock.Text = material_name;
                     System.Windows.Controls.DockPanel.SetDock(material_panel, System.Windows.Controls.Dock.Top);
 
-                    if (mat_index < texture_names.Length && texture_names[mat_index] != "")
+                    if (reader.Read())
                     {
-                        Materials.Add(mat_index, texture_names[mat_index]);
-                        material_panel.MaterialPath.Text = texture_names[mat_index];
-                        material_panel.MaterialPath.ToolTip = texture_names[mat_index];
+                        Materials.Add(mat_index, reader.GetString(0));
+                        material_panel.MaterialPath.Text = reader.GetString(0);
+                        material_panel.MaterialPath.ToolTip = reader.GetString(0);
                     }
                     else
                         Materials.Add(mat_index, missing_texture);
@@ -285,8 +287,6 @@ namespace EditorUI
 
         private void BtnCreate_Click(object sender, RoutedEventArgs e)
         {
-            loaded_material = "";
-
             for (int itt = 0; itt < Materials.Count; itt++)
             {
                 if (Materials[itt] == String.Empty)
@@ -295,7 +295,7 @@ namespace EditorUI
                 }
             }
 
-            NewDataBaseEntry(loaded_mesh, loaded_material);
+            NewDataBaseEntry(loaded_mesh);
 
             Browser.SelectedIndex = LoadedAssets.Keys.ToList().IndexOf(loaded_mesh);
         }
@@ -338,7 +338,6 @@ namespace EditorUI
 
                 IdBox.Text = id;
                 loaded_mesh = model;
-                loaded_material = materials;
                 MeshPath.Text = loaded_mesh;
                 MeshPath.ToolTip = loaded_mesh;
 
