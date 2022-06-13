@@ -9,7 +9,7 @@ namespace GrEngine
     class Application : public Engine
     {
         static Application* _instance;
-        EditorUI wpfUI;
+        EditorUI editorUI;
         std::string log_path;
     public:
         static LRESULT CALLBACK HostWindowProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) //Background Win32 is used to receive messages from WPF front-end window
@@ -24,7 +24,7 @@ namespace GrEngine
             case WM_DESTROY:
                 break;
             case WM_SIZE:
-                GrEngine::Application::updateWpfWnd();
+                GrEngine::Application::redrawDesiger();
                 break;
                 /*Messages received from the C# WPF front-end part of the editor*/
             case 0x1200: //Load obj file callback
@@ -87,7 +87,7 @@ namespace GrEngine
                 {
                     if (para.size() > 0)
                     {
-                        _instance->wpfUI.UpdateFramecounter((float)para[0]);
+                        _instance->editorUI.UpdateFramecounter((float)para[0]);
                     }
                         
                 });
@@ -102,11 +102,11 @@ namespace GrEngine
             TerminateLiraries();
         }
 
-        static void InitializeInAppLogger()
+        static void initAppLogger()
         {
             EventListener::pushEvent(EventType::Log, [](std::vector<double> para)
                 {
-                    Application::UpdateAppLogger(para);
+                    Application::pushToAppLogger(para);
                 }
             );
         }
@@ -123,7 +123,7 @@ namespace GrEngine
 
         static EditorUI* getEditorUI()
         {
-            return &_instance->wpfUI;
+            return &_instance->editorUI;
         };
 
         static void loadModel(const char* mesh_path)
@@ -141,12 +141,12 @@ namespace GrEngine
             _instance->clearScene();
         }
 
-        static HWND getGLFW_HWND()
+        static HWND getViewportHWND()
         {
-            return reinterpret_cast<HWND>(_instance->getWndNative());
+            return reinterpret_cast<HWND>(_instance->getNativeWindow());
         }
 
-        static void updateWpfWnd()
+        static void redrawDesiger()
         {
             if (getEditorUI()->wpf_hwnd != nullptr)
             {
@@ -167,7 +167,7 @@ namespace GrEngine
             getEditorUI()->EnableUIWindow();
         }
 
-        static void UpdateAppLogger(std::vector<double> para)
+        static void pushToAppLogger(std::vector<double> para)
         {
             std::fstream log_file;
             std::string message = "";
@@ -187,7 +187,7 @@ namespace GrEngine
 
             log_file.close();
 
-            _instance->wpfUI.UpdateLogger(msg);
+            _instance->editorUI.UpdateLogger(msg);
 
             delete[] msg;
         }

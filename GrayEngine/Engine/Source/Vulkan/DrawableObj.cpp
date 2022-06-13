@@ -19,8 +19,8 @@ namespace GrEngine_Vulkan
 		p_Owner = owner;
 		object_texture.resize(TEXTURE_ARRAY_SIZE);
 
-		VulkanAPI::createVkBuffer(device, allocator, object_mesh.vertices.data(), sizeof(object_mesh.vertices[0]) * object_mesh.vertices.size(), VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, &vertexBuffer);
-		VulkanAPI::createVkBuffer(device, allocator, object_mesh.indices.data(), sizeof(object_mesh.indices[0]) * object_mesh.indices.size(), VK_BUFFER_USAGE_INDEX_BUFFER_BIT, &indexBuffer);
+		VulkanAPI::m_createVkBuffer(device, allocator, object_mesh.vertices.data(), sizeof(object_mesh.vertices[0]) * object_mesh.vertices.size(), VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, &vertexBuffer);
+		VulkanAPI::m_createVkBuffer(device, allocator, object_mesh.indices.data(), sizeof(object_mesh.indices[0]) * object_mesh.indices.size(), VK_BUFFER_USAGE_INDEX_BUFFER_BIT, &indexBuffer);
 
 		createDescriptorLayout(device);
 		createDescriptorPool(device);
@@ -37,12 +37,12 @@ namespace GrEngine_Vulkan
 		vkDestroyDescriptorPool(device, descriptorPool, NULL);
 		vkDestroyDescriptorSetLayout(device, descriptorSetLayout, NULL);
 
-		VulkanAPI::destroyShaderBuffer(device, allocator, &indexBuffer);
-		VulkanAPI::destroyShaderBuffer(device, allocator, &vertexBuffer);
+		VulkanAPI::m_destroyShaderBuffer(device, allocator, &indexBuffer);
+		VulkanAPI::m_destroyShaderBuffer(device, allocator, &vertexBuffer);
 
 		for (int ind = 0; ind < object_texture.size(); ind++)
 		{
-			VulkanAPI::destroyTexture(device, allocator, &object_texture[ind]);
+			VulkanAPI::m_destroyTexture(device, allocator, &object_texture[ind]);
 		}
 
 		this->~DrawableObj();
@@ -85,7 +85,7 @@ namespace GrEngine_Vulkan
 	{
 		for (int ind = 0; ind < object_texture.size(); ind++)
 		{
-			VulkanAPI::destroyTexture(device, allocator, &object_texture[ind]);
+			VulkanAPI::m_destroyTexture(device, allocator, &object_texture[ind]);
 		}
 
 		object_texture.clear();
@@ -155,7 +155,7 @@ namespace GrEngine_Vulkan
 		std::vector<char> vertShaderCode = GrEngine::Renderer::readFile(solution_path + "Shaders//vert.spv");
 		std::vector<char> fragShaderCode = GrEngine::Renderer::readFile(solution_path + "Shaders//frag.spv");
 
-		VkShaderModule shaders[2] = { VulkanAPI::createShaderModule(device, vertShaderCode) , VulkanAPI::createShaderModule(device, fragShaderCode) };
+		VkShaderModule shaders[2] = { VulkanAPI::m_createShaderModule(device, vertShaderCode) , VulkanAPI::m_createShaderModule(device, fragShaderCode) };
 
 		VkPipelineShaderStageCreateInfo vertShaderStageInfo{};
 		vertShaderStageInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;

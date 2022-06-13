@@ -21,7 +21,7 @@ namespace GrEngine
 		void Run();
 		void Stop();
 		void TerminateLiraries();
-		void* getWndNative() { return pWindow.get()->getNativePlatformWND(); };
+		inline void* getNativeWindow() { return pWindow->getNativeWindow(); };
 	private:
 		std::unique_ptr<AppWindow> pWindow;
 	};

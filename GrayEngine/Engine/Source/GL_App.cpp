@@ -1,5 +1,5 @@
 #include <pch.h>
-#include "WinApp.h"
+#include "GL_App.h"
 #define GLFW_EXPOSE_NATIVE_WIN32
 #include <glfw/glfw3native.h>
 
@@ -8,20 +8,20 @@ namespace GrEngine
 {
 	AppWindow* AppWindow::Init(const AppParameters& Properties)
 	{
-		return new WinApp(Properties);
+		return new GL_APP(Properties);
 	}
 
-	WinApp::WinApp(const AppParameters& Properties)
+	GL_APP::GL_APP(const AppParameters& Properties)
 	{
 		StartUp(Properties);
 	}
 
-	WinApp::~WinApp()
+	GL_APP::~GL_APP()
 	{
 		ShutDown();
 	}
 
-	void WinApp::StartUp(const AppParameters& Properties)
+	void GL_APP::StartUp(const AppParameters& Properties)
 	{
 		pAppRenderer = new GrEngine_Vulkan::VulkanAPI();
 
@@ -64,7 +64,7 @@ namespace GrEngine
 		time = glfwGetTime();
 	}
 
-	void WinApp::ShutDown()
+	void GL_APP::ShutDown()
 	{
 		Logger::Out("Shutting down the engine", OutputColor::Gray, OutputType::Log);
 		if (pAppRenderer)
@@ -78,7 +78,7 @@ namespace GrEngine
 		}
 	}
 
-	void WinApp::MaximizeGLFW(bool state)
+	void GL_APP::MaximizeWindow(bool state)
 	{
 		if (state)
 			glfwMaximizeWindow(window);
@@ -86,7 +86,7 @@ namespace GrEngine
 			glfwRestoreWindow(window);
 	}
 
-	void WinApp::MinimizeGLFW(bool state)
+	void GL_APP::MinimizeWindow(bool state)
 	{
 		if (state)
 			glfwIconifyWindow(window);
@@ -94,7 +94,7 @@ namespace GrEngine
 			glfwRestoreWindow(window);
 	}
 
-	void WinApp::OnStep()
+	void GL_APP::OnStep()
 	{
 
 		glfwPollEvents();
@@ -121,13 +121,13 @@ namespace GrEngine
 	}
 
 
-	void WinApp::SetVSync(bool state)
+	void GL_APP::SetVSync(bool state)
 	{
 		glfwSwapInterval((int)state);
 		Logger::Out("VSync is now set to %d", OutputColor::Green, OutputType::Log, state);
 	}
 
-	void WinApp::SetUpEvents(GLFWwindow* target)
+	void GL_APP::SetUpEvents(GLFWwindow* target)
 	{
 		glfwSetWindowSizeCallback(target, [](GLFWwindow* win, int width, int height)
 		{

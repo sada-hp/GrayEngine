@@ -7,8 +7,6 @@
 
 class EditorUI
 {
-
-
 	HMODULE dotNetGUILibrary;
 	WNDCLASSEX HostWindowClass;
 

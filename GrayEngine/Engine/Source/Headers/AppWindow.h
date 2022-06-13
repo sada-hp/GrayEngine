@@ -39,11 +39,11 @@ namespace GrEngine
 
 		inline Renderer* getRenderer() { return props.p_Renderer; };
 
-		inline void* getNativePlatformWND() { return nativeWindow; };
+		inline void* getNativeWindow() { return nativeWindow; };
 
-		virtual void MaximizeGLFW(bool state) = 0;
+		virtual void MaximizeWindow(bool state) = 0;
 
-		virtual void MinimizeGLFW(bool state) = 0;
+		virtual void MinimizeWindow(bool state) = 0;
 
 	protected:
 		AppParameters props;

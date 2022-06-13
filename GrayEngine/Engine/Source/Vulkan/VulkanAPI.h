@@ -38,15 +38,21 @@ namespace GrEngine_Vulkan
 		inline VmaAllocator getMemAllocator() { return memAllocator; };
 		inline VkRenderPass getRenderPass() { return renderPass; };
 		bool updateDrawables(uint32_t index);
-		static VkShaderModule createShaderModule(VkDevice device, const std::vector<char>& code);
 		bool loadModel(const char* mesh_path, std::vector<std::string> textures_vector, std::string* out_materials_names = nullptr) override;
 		bool loadImage(const char* image_path, int material_index = 0) override;
 		void clearDrawables() override;
-		static bool createVkBuffer(VkDevice device, VmaAllocator allocator, const void* bufData, uint32_t dataSize, VkBufferUsageFlags usage, ShaderBuffer* shader);
-		static void destroyShaderBuffer(VkDevice device, VmaAllocator allocator, ShaderBuffer* shaderBuf);
-		static void destroyTexture(VkDevice device, VmaAllocator allocator, Texture* texture);
+
+		static VkShaderModule m_createShaderModule(VkDevice device, const std::vector<char>& code);
+		static bool m_createVkBuffer(VkDevice device, VmaAllocator allocator, const void* bufData, uint32_t dataSize, VkBufferUsageFlags usage, ShaderBuffer* shader);
+		static void m_destroyShaderBuffer(VkDevice device, VmaAllocator allocator, ShaderBuffer* shaderBuf);
+		static void m_destroyTexture(VkDevice device, VmaAllocator allocator, Texture* texture);
 
 		void Update() override;
+
+	protected:
+		bool allocateCommandBuffer(VkCommandBuffer* cmd, uint32_t count = 0);
+		bool beginCommandBuffer(VkCommandBuffer cmd, VkCommandBufferUsageFlags usage);
+		bool freeCommandBuffer(VkCommandBuffer commandBuffer);
 
 	private:
 		GLFWwindow* pParentWindow;
@@ -77,7 +83,7 @@ namespace GrEngine_Vulkan
 		std::vector<DrawableObj> drawables;
 
 		bool loadMesh(const char* mesh_path, DrawableObj* target, std::string* out_materials = nullptr);
-		bool loadTexture(const char* texture_path, DrawableObj* target, int material_index = 0);
+		bool loadTexture(const char* texture_path, DrawableObj* target, std::vector<int> material_indices);
 
 		bool createVKInstance();
 		bool createMemoryAllocator();
@@ -103,8 +109,6 @@ namespace GrEngine_Vulkan
 		void recreateSwapChain();
 		void cleanupSwapChain();
 
-		VkCommandBuffer beginSingleTimeCommands();
-		void endSingleTimeCommands(VkCommandBuffer commandBuffer);
 		void transitionImageLayout(VkImage image, VkFormat format, VkImageLayout oldLayout, VkImageLayout newLayout);
 		void copyBufferToImage(VkBuffer buffer, VkImage image, uint32_t width, uint32_t height);
 

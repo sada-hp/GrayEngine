@@ -17,9 +17,9 @@ int main(int argc, char** argv)
     GrEngine::Application* app = new GrEngine::Application();
 
     app->getEditorUI()->InitUI(GrEngine::Application::HostWindowProc, MAIN_WIN_CLASSNAME, VIEWPORT_EDITOR);
-    app->getEditorUI()->SetViewportHWND(app->getGLFW_HWND(), VIEWPORT_EDITOR);
+    app->getEditorUI()->SetViewportHWND(app->getViewportHWND(), VIEWPORT_EDITOR);
 	
-	app->InitializeInAppLogger();
+	app->initAppLogger();
     app->StartEngine();
     delete app;
 

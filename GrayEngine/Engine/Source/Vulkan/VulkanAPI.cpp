@@ -524,20 +524,6 @@ namespace GrEngine_Vulkan
 		return true;
 	}
 
-	VkShaderModule VulkanAPI::createShaderModule(VkDevice device, const std::vector<char>& code)
-	{
-		VkShaderModuleCreateInfo createInfo{};
-		createInfo.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
-		createInfo.codeSize = code.size();
-		createInfo.pCode = reinterpret_cast<const uint32_t*>(code.data());
-
-		VkShaderModule shaderModule;
-		if (vkCreateShaderModule(device, &createInfo, nullptr, &shaderModule) != VK_SUCCESS)
-			throw std::runtime_error("Failed to create shader module!");
-
-		return shaderModule;
-	}
-
 	bool VulkanAPI::createRenderPass()
 	{
 		VkAttachmentDescription depth_attachment{};
@@ -652,17 +638,7 @@ namespace GrEngine_Vulkan
 	bool VulkanAPI::createCommandBuffers()
 	{
 		commandBuffers.resize(swapChainFramebuffers.size());
-
-		VkCommandBufferAllocateInfo allocInfo{};
-		allocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
-		allocInfo.commandPool = commandPool;
-		allocInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
-		allocInfo.commandBufferCount = (uint32_t)commandBuffers.size();
-
-		if (vkAllocateCommandBuffers(logicalDevice, &allocInfo, commandBuffers.data()) != VK_SUCCESS)
-			return false;
-
-		return true;
+		return allocateCommandBuffer(commandBuffers.data(), commandBuffers.size());
 	}
 
 	bool VulkanAPI::createSemaphores()
@@ -753,35 +729,35 @@ namespace GrEngine_Vulkan
 		DrawableObj object;
 		DrawableObj* ref_obj = &object;
 		VulkanAPI* inst = this;
-		std::map<int, std::future<void>> mat_map;
-		std::map<std::string, int> proc_map;
-		int mat_index = 0;
+		std::map<int, std::future<void>> processes_map;
+		std::map<std::string, std::vector<int>> materials_map;
 
-		for (auto texture : textures_vector)
-		{
-			if (mat_map[proc_map[texture]].valid()) //the file might be currently in use, so check for it
-			{
-				mat_map[proc_map[texture]].wait();
-			}
-
-			mat_map[mat_index] = std::async(std::launch::async, [texture, ref_obj, mat_index, inst]()
-				{
-					inst->loadTexture(texture.c_str(), ref_obj, mat_index);
-				});
-
-			mat_index++;
-		}
-
-		mat_map[mat_index] = std::async(std::launch::async, [mesh_path, ref_obj, out_materials_names, inst]()
+		processes_map[textures_vector.size()] = std::async(std::launch::async, [mesh_path, ref_obj, out_materials_names, inst]()
 			{
 				inst->loadMesh(mesh_path, ref_obj, out_materials_names);
 			});
 
-		for (int ind = 0; ind < mat_map.size(); ind++)
+		for (int ind = 0; ind < textures_vector.size(); ind++)
 		{
-			if (mat_map[ind].valid())
+			materials_map[textures_vector[ind]].push_back(ind);
+		}
+
+		for (int mat_index = 0; mat_index < textures_vector.size(); mat_index++)
+		{
+			std::string  texture = textures_vector[mat_index];
+			std::vector<int> material_indices = materials_map[texture];
+
+			processes_map[mat_index] = std::async(std::launch::async, [texture, ref_obj, mat_index, inst, material_indices]()
+				{
+					inst->loadTexture(texture.c_str(), ref_obj, material_indices);
+				});
+		}
+
+		for (int ind = 0; ind < processes_map.size(); ind++)
+		{
+			if (processes_map[ind].valid())
 			{
-				mat_map[ind].wait();
+				processes_map[ind].wait();
 			}
 		}
 
@@ -866,15 +842,17 @@ namespace GrEngine_Vulkan
 
 	bool VulkanAPI::loadImage(const char* image_path, int material_index)
 	{
+		std::vector<int> mat;
+		mat.push_back(material_index);
 		auto object = &drawables.back();
 
-		loadTexture(image_path, object, material_index);
+		loadTexture(image_path, object, mat);
 		object->updateObject(logicalDevice);
 
 		return true;
 	}
 
-	bool VulkanAPI::loadTexture(const char* texture_path, DrawableObj* target, int material_index)
+	bool VulkanAPI::loadTexture(const char* texture_path, DrawableObj* target, std::vector<int> material_indices)
 	{
 		ShaderBuffer stagingBuffer;
 		Texture new_texture;
@@ -889,7 +867,7 @@ namespace GrEngine_Vulkan
 			return false;
 		}
 
-		createVkBuffer(logicalDevice, memAllocator, pixels, texWidth * texHeight * 4, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, &stagingBuffer);
+		m_createVkBuffer(logicalDevice, memAllocator, pixels, texWidth * texHeight * sizeof(int), VK_BUFFER_USAGE_TRANSFER_SRC_BIT, &stagingBuffer);
 
 		stbi_image_free(pixels);
 
@@ -920,7 +898,7 @@ namespace GrEngine_Vulkan
 		copyBufferToImage(stagingBuffer.Buffer, new_texture.newImage.allocatedImage, static_cast<uint32_t>(texWidth), static_cast<uint32_t>(texHeight));
 		transitionImageLayout(new_texture.newImage.allocatedImage, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
 
-		destroyShaderBuffer(logicalDevice, memAllocator, &stagingBuffer);
+		m_destroyShaderBuffer(logicalDevice, memAllocator, &stagingBuffer);
 
 		VkImageViewCreateInfo viewInfo{};
 		viewInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
@@ -959,36 +937,43 @@ namespace GrEngine_Vulkan
 		if (target->object_texture.size() < TEXTURE_ARRAY_SIZE)
 			target->object_texture.resize(TEXTURE_ARRAY_SIZE);
 
-		new_texture.texture_path = texture_path;
-		destroyTexture(logicalDevice, memAllocator, &target->object_texture[material_index]);
-		target->object_texture[material_index] = new_texture;
+		for (int index : material_indices)
+		{
+			if (target->object_texture[index].newImage.allocatedImage != nullptr)
+			{
+				m_destroyTexture(logicalDevice, memAllocator, &target->object_texture[index]);
+			}
+			new_texture.texture_path = texture_path;
+			target->object_texture[index] = new_texture;
+		}
 
 		return true;
 	}
 
-	VkCommandBuffer VulkanAPI::beginSingleTimeCommands() 
+	bool VulkanAPI::allocateCommandBuffer(VkCommandBuffer* cmd, uint32_t count)
 	{
-		VkCommandBufferAllocateInfo allocInfo{};
-		allocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
-		allocInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
-		allocInfo.commandPool = commandPool;
-		allocInfo.commandBufferCount = 1;
+		VkCommandBufferAllocateInfo cmdInfo = {};
+		cmdInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
+		cmdInfo.pNext = NULL;
+		cmdInfo.commandPool = commandPool;
+		cmdInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
+		cmdInfo.commandBufferCount = count == 0 ? (uint32_t)sizeof(&cmd) / sizeof(VkCommandBuffer) : count;
 
-		VkCommandBuffer commandBuffer;
-		vkAllocateCommandBuffers(logicalDevice, &allocInfo, &commandBuffer);
-
-		VkCommandBufferBeginInfo beginInfo{};
-		beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
-		beginInfo.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
-
-		vkBeginCommandBuffer(commandBuffer, &beginInfo);
-
-		return commandBuffer;
+		return vkAllocateCommandBuffers(logicalDevice, &cmdInfo, cmd) == VK_SUCCESS;
 	}
 
-	void VulkanAPI::endSingleTimeCommands(VkCommandBuffer commandBuffer)
+	bool VulkanAPI::beginCommandBuffer(VkCommandBuffer cmd, VkCommandBufferUsageFlags usage)
 	{
-		vkEndCommandBuffer(commandBuffer);
+		VkCommandBufferBeginInfo beginInfo{};
+		beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+		beginInfo.flags = usage;
+
+		return vkBeginCommandBuffer(cmd, &beginInfo) == VK_SUCCESS;
+	}
+
+	bool VulkanAPI::freeCommandBuffer(VkCommandBuffer commandBuffer)
+	{
+		if (vkEndCommandBuffer(commandBuffer) != VK_SUCCESS) return false;
 
 		VkSubmitInfo submitInfo{};
 		submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
@@ -999,11 +984,15 @@ namespace GrEngine_Vulkan
 		vkQueueWaitIdle(graphicsQueue);
 
 		vkFreeCommandBuffers(logicalDevice, commandPool, 1, &commandBuffer);
+
+		return true;
 	}
 
 	void VulkanAPI::transitionImageLayout(VkImage image, VkFormat format, VkImageLayout oldLayout, VkImageLayout newLayout)
 	{
-		VkCommandBuffer commandBuffer = beginSingleTimeCommands();
+		VkCommandBuffer commandBuffer;
+		allocateCommandBuffer(&commandBuffer);
+		beginCommandBuffer(commandBuffer, VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT);
 
 		VkImageMemoryBarrier barrier{};
 		barrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
@@ -1041,12 +1030,14 @@ namespace GrEngine_Vulkan
 
 		vkCmdPipelineBarrier(commandBuffer, sourceStage, destinationStage, 0, 0, nullptr, 0, nullptr, 1, &barrier);
 
-		endSingleTimeCommands(commandBuffer);
+		freeCommandBuffer(commandBuffer);
 	}
 
 	void VulkanAPI::copyBufferToImage(VkBuffer buffer, VkImage image, uint32_t width, uint32_t height)
 	{
-		VkCommandBuffer commandBuffer = beginSingleTimeCommands();
+		VkCommandBuffer commandBuffer;
+		allocateCommandBuffer(&commandBuffer);
+		beginCommandBuffer(commandBuffer, VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT);
 
 		VkBufferImageCopy region{};
 		region.bufferOffset = 0;
@@ -1067,10 +1058,26 @@ namespace GrEngine_Vulkan
 
 		vkCmdCopyBufferToImage(commandBuffer, buffer, image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &region);
 
-		endSingleTimeCommands(commandBuffer);
+		freeCommandBuffer(commandBuffer);
 	}
 
-	bool VulkanAPI::createVkBuffer(VkDevice device, VmaAllocator allocator, const void* bufData, uint32_t dataSize, VkBufferUsageFlags usage, ShaderBuffer* shaderBuffer)
+#pragma region Static functions
+
+	VkShaderModule VulkanAPI::m_createShaderModule(VkDevice device, const std::vector<char>& code)
+	{
+		VkShaderModuleCreateInfo createInfo{};
+		createInfo.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
+		createInfo.codeSize = code.size();
+		createInfo.pCode = reinterpret_cast<const uint32_t*>(code.data());
+
+		VkShaderModule shaderModule;
+		if (vkCreateShaderModule(device, &createInfo, nullptr, &shaderModule) != VK_SUCCESS)
+			throw std::runtime_error("Failed to create shader module!");
+
+		return shaderModule;
+	}
+
+	bool VulkanAPI::m_createVkBuffer(VkDevice device, VmaAllocator allocator, const void* bufData, uint32_t dataSize, VkBufferUsageFlags usage, ShaderBuffer* shaderBuffer)
 	{
 		VkBufferCreateInfo bufferCreateInfo{};
 		bufferCreateInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
@@ -1102,17 +1109,19 @@ namespace GrEngine_Vulkan
 		return true;
 	}
 
-	void VulkanAPI::destroyShaderBuffer(VkDevice device, VmaAllocator allocator, ShaderBuffer* shader)
+	void VulkanAPI::m_destroyShaderBuffer(VkDevice device, VmaAllocator allocator, ShaderBuffer* shader)
 	{
 		vkFlushMappedMemoryRanges(device, 1, &(shader->MappedMemoryRange));
 		vkDestroyBuffer(device, shader->Buffer, NULL);
 		vmaFreeMemory(allocator, shader->Allocation);
 	}
 
-	void VulkanAPI::destroyTexture(VkDevice device, VmaAllocator allocator, Texture* texture)
+	void VulkanAPI::m_destroyTexture(VkDevice device, VmaAllocator allocator, Texture* texture)
 	{
 		vkDestroySampler(device, texture->textureSampler, NULL);
 		vkDestroyImageView(device, texture->textureImageView, NULL);
 		vmaDestroyImage(allocator, texture->newImage.allocatedImage, texture->newImage.allocation);
 	}
+
+#pragma endregion
 }

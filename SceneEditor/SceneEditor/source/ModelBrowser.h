@@ -8,12 +8,10 @@ namespace GrEngine
     class ModelBrowser : public Engine
     {
         static ModelBrowser* _instance;
-        EditorUI wpfUI;
+        EditorUI editorUI;
 
         static LRESULT CALLBACK HostWindowProcBrowser(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) //Background Win32 is used to receive messages from WPF front-end window
         {
-            const char* mod = (const char*)wParam;
-            const char* mat = (const char*)lParam;
             switch (msg)
             {
             case WM_CLOSE:
@@ -23,7 +21,7 @@ namespace GrEngine
             case WM_DESTROY:
                 break;
             case WM_SIZE:
-                GrEngine::ModelBrowser::updateWpfWnd();
+                GrEngine::ModelBrowser::redrawDesigner();
                 break;
                 /*Messages received from the C# WPF front-end part of the editor*/
             case 0x1200: //Load obj file callback
@@ -82,7 +80,7 @@ namespace GrEngine
 
         static EditorUI* getEditorUI()
         {
-            return &_instance->wpfUI;
+            return &_instance->editorUI;
         }
 
         static void uploadTexture(const char* image_path, int material_index)
@@ -110,9 +108,7 @@ namespace GrEngine
                     }
                     else
                     {
-                        mat_vector.push_back(temp_str);
-
-                        temp_str = "";
+                        mat_vector.push_back(temp_str = "");
                         continue;
                     }
                 }
@@ -129,12 +125,12 @@ namespace GrEngine
             _instance->clearScene();
         }
 
-        static HWND getGLFW_HWND()
+        static HWND getViewportHWND()
         {
-            return reinterpret_cast<HWND>(_instance->getWndNative());
+            return reinterpret_cast<HWND>(_instance->getNativeWindow());
         }
 
-        static void updateWpfWnd()
+        static void redrawDesigner()
         {
             if (getEditorUI()->wpf_hwnd != nullptr)
             {
@@ -148,7 +144,7 @@ namespace GrEngine
         static void initModelBrowser()
         {
             getEditorUI()->InitUI(HostWindowProcBrowser, MODEL_BROWSER_CLASSNAME, VIEWPORT_MODEL_BROWSER);
-            getEditorUI()->SetViewportHWND(getGLFW_HWND(), 1);
+            getEditorUI()->SetViewportHWND(getViewportHWND(), 1);
         }
 
         static void closeBrowser()

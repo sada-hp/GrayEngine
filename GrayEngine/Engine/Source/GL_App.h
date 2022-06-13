@@ -12,17 +12,17 @@ namespace GrEngine
 		Middle = 2
 	};
 
-	class WinApp : public AppWindow
+	class GL_APP : public AppWindow
 	{
 	public:
 
-		WinApp(const AppParameters& Properties);
-		~WinApp();
+		GL_APP(const AppParameters& Properties);
+		~GL_APP();
 
 		void OnStep() override;
 		void SetVSync(bool state) override;
-		void MaximizeGLFW(bool state) override;
-		void MinimizeGLFW(bool state) override;
+		void MaximizeWindow(bool state) override;
+		void MinimizeWindow(bool state) override;
 
 		inline AppParameters* WindowProperties() override { return &props; };
 	private:

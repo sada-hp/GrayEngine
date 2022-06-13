@@ -16,7 +16,7 @@
     <ClInclude Include="Engine\Source\Headers\GrayEngine.h" />
     <ClInclude Include="Engine\Source\Headers\Logger.h" />
     <ClInclude Include="Engine\Source\Headers\AppWindow.h" />
-    <ClInclude Include="Engine\Source\WinApp.h" />
+    <ClInclude Include="Engine\Source\GL_App.h" />
     <ClInclude Include="pch.h" />
     <ClInclude Include="Engine\Source\Headers\EventListener.h" />
     <ClInclude Include="Engine\Source\Vulkan\DrawableObj.h" />
@@ -25,7 +25,7 @@
     <ClInclude Include="Engine\Source\Headers\Core.h" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="Engine\Source\WinApp.cpp" />
+    <ClCompile Include="Engine\Source\GL_App.cpp" />
     <ClCompile Include="pch.cpp" />
     <ClCompile Include="Engine\Source\Engine.cpp" />
     <ClCompile Include="Engine\Source\Vulkan\DrawableObj.cpp" />
