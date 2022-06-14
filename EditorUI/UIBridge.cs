@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Windows.Interop;
-using RGiesecke.DllExport;
 using System.Threading;
 using System.Runtime.InteropServices;
 using System.Windows;

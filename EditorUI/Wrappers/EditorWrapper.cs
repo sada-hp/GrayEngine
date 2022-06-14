@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Windows.Interop;
-using RGiesecke.DllExport;
 using System.Threading;
 using System.Runtime.InteropServices;
 using System.Windows;
@@ -15,13 +14,12 @@ namespace EditorUI.Wrappers
             {
                 if (ui_handle == IntPtr.Zero)
                 {
-                    ui_window = new MainView(owner)
-                    { Opacity = 0, Width = 0, Height = 0 };
-                    ui_window.Show();
+                    (ui_window = new MainView(owner)
+                    { Opacity = 0, Width = 1280, Height = 720 }).Show();
                     ui_handle = new WindowInteropHelper(ui_window).Handle;
                 }
                 System.Windows.Threading.Dispatcher.Run();
-            });
+            }); 
             ui_thread.SetApartmentState(ApartmentState.STA); // STA Thread Initialization
             ui_thread.Start();
 

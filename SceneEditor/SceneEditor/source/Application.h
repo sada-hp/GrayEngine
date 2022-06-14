@@ -87,7 +87,7 @@ namespace GrEngine
                 {
                     if (para.size() > 0)
                     {
-                        _instance->editorUI.UpdateFramecounter((float)para[0]);
+                        //_instance->editorUI.UpdateFramecounter((float)para[0]);
                     }
                         
                 });
@@ -187,7 +187,7 @@ namespace GrEngine
 
             log_file.close();
 
-            _instance->editorUI.UpdateLogger(msg);
+            //_instance->editorUI.UpdateLogger(msg);
 
             delete[] msg;
         }
