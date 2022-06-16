@@ -11,17 +11,26 @@ GrEngine::ModelBrowser* GrEngine::ModelBrowser::_instance = nullptr;
 
 int main(int argc, char** argv)
 {
-    Logger::ShowConsole(false);
     Logger::Out("--------------- Starting the engine ---------------", OutputColor::Gray, OutputType::Log);
-
+    Logger::ShowConsole(false);
     GrEngine::Application* app = new GrEngine::Application();
 
-    app->getEditorUI()->InitUI(GrEngine::Application::HostWindowProc, MAIN_WIN_CLASSNAME, VIEWPORT_EDITOR);
-    app->getEditorUI()->SetViewportHWND(app->getViewportHWND(), VIEWPORT_EDITOR);
-	
-	app->initAppLogger();
-    app->StartEngine();
-    delete app;
+    try
+    {
+        app->getEditorUI()->InitUI(GrEngine::Application::HostWindowProc, MAIN_WIN_CLASSNAME, VIEWPORT_EDITOR);
+        app->getEditorUI()->SetViewportHWND(app->getViewportHWND(), VIEWPORT_EDITOR);
 
-    return 0;
+        app->initAppLogger();
+        app->StartEngine();
+        delete app;
+
+        return 0;
+    }
+    catch (const char* msg)
+    {
+        Logger::Out(msg, OutputColor::Red, OutputType::Error);
+        delete app;
+
+        return 1;
+    }
 }

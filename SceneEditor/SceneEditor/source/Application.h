@@ -87,7 +87,7 @@ namespace GrEngine
                 {
                     if (para.size() > 0)
                     {
-                        //_instance->editorUI.UpdateFramecounter((float)para[0]);
+                        _instance->editorUI.UpdateFramecounter((float)para[0]);
                     }
                         
                 });
@@ -133,7 +133,7 @@ namespace GrEngine
 
         static void uploadTexture(const char* image_path)
         {
-            //_instance->loadImageFromPath(image_path);
+            _instance->loadImageFromPath(image_path);
         }
 
         static void clearViewport()
@@ -187,7 +187,7 @@ namespace GrEngine
 
             log_file.close();
 
-            //_instance->editorUI.UpdateLogger(msg);
+            _instance->editorUI.UpdateLogger(msg);
 
             delete[] msg;
         }

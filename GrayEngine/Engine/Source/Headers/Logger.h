@@ -41,11 +41,11 @@ public:
 		printf("%s\n", msg.c_str());
 
 		std::vector<double> para{};
-
 		for (char letter : msg)
 		{
 			para.push_back(letter);
 		}
+
 		EventListener::registerEvent(EventType::Log, para);
 	}
 

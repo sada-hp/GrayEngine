@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.InteropServices;
 using System.Windows;
+using System.Diagnostics;
 
 enum SortType
 {
@@ -28,13 +29,15 @@ namespace EditorUI
         IntPtr pOwner;
         IntPtr child_hwnd;
         System.Windows.Forms.Panel panel = new System.Windows.Forms.Panel();
-        string connection = String.Empty;
         string loaded_mesh = "";
         Dictionary<string, System.Windows.Controls.Control> LoadedAssets = new Dictionary<string, System.Windows.Controls.Control>();
         SortedDictionary<int, string> Materials = new SortedDictionary<int, string>();
         SortType sorting = SortType.ID_ASC;
         bool b_fullpath = false;
         string missing_texture = System.IO.Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location) + @"\Content\Editor\MissingTexture.png";
+        bool is_default_name = true;
+        string default_name = "";
+        string content_folder = System.IO.Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location) + @"\Content\";
 
         public ModelBrowser(IntPtr p)
         {
@@ -47,12 +50,10 @@ namespace EditorUI
             panel.Margin = new System.Windows.Forms.Padding(0);
             panel.BorderStyle = System.Windows.Forms.BorderStyle.None;
             FormHost.Child = panel;
-            IdBox.AddHandler(System.Windows.Controls.TextBox.TextInputEvent,  new System.Windows.Input.TextCompositionEventHandler(IdBox_TextInput), true);
+            IdBox.AddHandler(System.Windows.Controls.TextBox.TextInputEvent, new System.Windows.Input.TextCompositionEventHandler(IdBox_TextInput), true);
+            RefreshButton.Content = "\u21BA";
 
-            connection = @"Data Source=(LocalDB)\MSSQLLocalDB;AttachDbFilename=" + System.IO.Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location) + @"\Database\Assets_models.mdf;Integrated Security=True";
             LoadData();
-
-            Id.Content = "Id \u2B9F";
         }
 
         public void ParentRender(IntPtr child)
@@ -62,130 +63,51 @@ namespace EditorUI
             UpdateChildPosition();
         }
 
-        private void ConnectDatabase(string connection_string, string command_string, out System.Data.SqlClient.SqlConnection sql_coonection, out System.Data.SqlClient.SqlCommand sql_command)
-        {
-            sql_coonection = new System.Data.SqlClient.SqlConnection(connection_string);
-            sql_command = new System.Data.SqlClient.SqlCommand();
-            sql_command.CommandType = System.Data.CommandType.Text;
-            sql_command.CommandText = command_string;
-            sql_command.Connection = sql_coonection;
-
-            sql_coonection.Open();
-        }
-
-        private void NewDataBaseEntry(string name)
-        {
-            try
-            {
-                if (name != "") //TBD: existence check
-                {
-                    bool isNumeric = int.TryParse(IdBox.Text, out int id);
-
-                    if (!isNumeric) id = -1;
-
-                    ConnectDatabase(connection, "SELECT COUNT(*) FROM Models WHERE Id = " + id + "", out System.Data.SqlClient.SqlConnection sqlConnection, out System.Data.SqlClient.SqlCommand cmd);
-                  
-                    int count = (int)cmd.ExecuteScalar();
-
-                    if (count == 0)
-                    {
-                        cmd.Prepare();
-                        cmd.CommandText = @"SELECT COUNT(*) FROM Models";
-                        id = (int)cmd.ExecuteScalar();
-                        cmd.CommandText = @"INSERT INTO Models (id, Mesh) VALUES (@p1, @p2)";
-                        cmd.Parameters.Add("@p1", System.Data.SqlDbType.Int).Value = id;
-                        cmd.Parameters.Add("@p2", System.Data.SqlDbType.NVarChar, name.Trim().Length).Value = name;
-                        cmd.ExecuteNonQuery();
-
-                        for (Int16 itt = 0; itt < Materials.Count; itt++)
-                        {
-                            cmd.Parameters.Clear();
-                            cmd.CommandText = @"INSERT INTO Textures (id, MatInd, TexPath) VALUES (@p1, @p2, @p3)";
-                            cmd.Parameters.Add("@p1", System.Data.SqlDbType.Int).Value = id;
-                            cmd.Parameters.Add("@p2", System.Data.SqlDbType.TinyInt).Value = itt;
-                            cmd.Parameters.Add("@p3", System.Data.SqlDbType.NVarChar, Materials[itt].Length).Value = Materials[itt];
-                            cmd.ExecuteNonQuery();
-                        }
-                    }
-                    else
-                    {
-                        System.Windows.MessageBoxButton buttons = System.Windows.MessageBoxButton.YesNo;
-                        var res = System.Windows.MessageBox.Show("Entry already exists. Override?", "Warning", buttons, System.Windows.MessageBoxImage.Question);
-                        if (res == MessageBoxResult.Yes)
-                        {
-                            cmd.Prepare();
-                            cmd.CommandText = @"UPDATE Models SET MESH = '" + name + "' WHERE id = '" + id + "'";
-                            cmd.ExecuteNonQuery();
-
-                            for (Int16 itt = 0; itt < Materials.Count; itt++)
-                            {
-                                cmd.Parameters.Clear();
-                                cmd.CommandText = @"UPDATE Textures SET TexPath = '" + Materials[itt] + "' WHERE id = " + id + " AND MatInd = " + itt;
-                                cmd.ExecuteNonQuery();
-                            }
-                        }
-                    }
-
-                    sqlConnection.Close();
-                    SendMessage(pOwner, 0x1204, IntPtr.Zero, Marshal.StringToHGlobalAnsi("New database entry"));
-                }
-                else
-                {
-                    SendMessage(pOwner, 0x1204, IntPtr.Zero, Marshal.StringToHGlobalAnsi("Emty mesh file was provided to database!"));
-                }
-
-                LoadData();
-            }
-            catch (Exception e)
-            {
-                SendMessage(pOwner, 0x1204, IntPtr.Zero, Marshal.StringToHGlobalAnsi("Exception occured : " + e.Message));
-            }
-        }
-
         private void LoadData()
         {
             try
             {
+                string[] models_files = System.IO.Directory.GetFiles(content_folder, "*.gmf", System.IO.SearchOption.AllDirectories);
+
                 ClearBrowser();
-
-                string filter = SearchBar.Text.Replace("Search...", String.Empty);
-
-                ConnectDatabase(connection, "SELECT * FROM Models WHERE Mesh LIKE '%" + filter + "%' ORDER BY " + GetSortString(), out System.Data.SqlClient.SqlConnection sqlConnection, out System.Data.SqlClient.SqlCommand cmd);
-
-                var reader = cmd.ExecuteReader();
-
-                while (reader.Read())
+                foreach (string model_file in models_files)
                 {
-                    BrowserItem item;
-                    string name = reader.GetString(1);
-                    string[] name_cut = name.Split('\\');
-
-                    if (!b_fullpath)
+                    if (model_file.ToLower().Contains(SearchBar.Text.ToLower()) || SearchBar.Text == "" || SearchBar.Text == "Search...")
                     {
+                        BrowserItem item;
+                        string[] name_cut = model_file.Split('\\');
 
-                        item = new BrowserItem(Convert.ToString(reader.GetInt32(0)), "...\\" + name_cut[name_cut.Length - 2] + '\\' + name_cut[name_cut.Length - 1]);
-                    }
-                    else
-                    {
-                        item = new BrowserItem(Convert.ToString(reader.GetInt32(0)), name);
-                    }
+                        if (!b_fullpath)
+                        {
 
-                    item.Padding = new System.Windows.Thickness(5);
-                    item.ToolTip = name;
+                            item = new BrowserItem("...\\" + name_cut[name_cut.Length - 2] + '\\' + name_cut[name_cut.Length - 1]);
+                        }
+                        else
+                        {
+                            item = new BrowserItem(model_file);
+                        }
 
-                    if (!LoadedAssets.ContainsKey(name))
-                    {
-                        LoadedAssets.Add(name, item);
-                        Browser.Items.Add(item);
+                        item.Padding = new System.Windows.Thickness(5);
+                        item.ToolTip = model_file;
+
+                        if (!LoadedAssets.ContainsKey(model_file))
+                        {
+                            LoadedAssets.Add(model_file, item);
+                            Browser.Items.Add(item);
+                        }
                     }
                 }
-
-                sqlConnection.Close();
             }
             catch (Exception e)
             {
-                SendMessage(pOwner, 0x1204, IntPtr.Zero, Marshal.StringToHGlobalAnsi("Exception occured : " + e.Message));
+                SendMessage(pOwner, 0x1204, IntPtr.Zero, Marshal.StringToHGlobalAnsi("Exception occured in " + new StackFrame(1, true).GetMethod().Name + ": " + e.Message));
+                SendMessage(pOwner, 0x0010, IntPtr.Zero, IntPtr.Zero);
             }
+        }
+
+        internal void LoadDataAsync()
+        {
+            LoadData();
         }
 
         private void ClearBrowser()
@@ -199,14 +121,6 @@ namespace EditorUI
             }
         }
 
-        private void ClearDataBase()
-        {
-            ConnectDatabase(connection, @"TRUNCATE TABLE Models", out System.Data.SqlClient.SqlConnection sqlConnection, out System.Data.SqlClient.SqlCommand cmd);
-
-            cmd.ExecuteNonQuery();
-            sqlConnection.Close();
-        }
-
         public void UpdateChildPosition()
         {
             if (child_hwnd != null)
@@ -217,7 +131,6 @@ namespace EditorUI
 
         private void MdlBrowser_Closing(object sender, System.ComponentModel.CancelEventArgs e)
         {
-            //ClearDataBase(); //To Be Removed
         }
 
         private void BtnLoadMdl_Click(object sender, RoutedEventArgs e)
@@ -225,13 +138,18 @@ namespace EditorUI
             System.Windows.Forms.OpenFileDialog openFileDialog = new System.Windows.Forms.OpenFileDialog();
             openFileDialog.Filter = "obj files (*.obj)|*.obj";
             openFileDialog.FilterIndex = 1;
+            openFileDialog.InitialDirectory = content_folder;
             openFileDialog.RestoreDirectory = true;
+
             if (openFileDialog.ShowDialog() == System.Windows.Forms.DialogResult.OK)
             {
+                Materials.Clear();
                 loaded_mesh = openFileDialog.FileName;
                 MeshPath.Text = loaded_mesh;
                 MeshPath.ToolTip = loaded_mesh;
-                IdBox.Text = "Auto";
+                default_name = openFileDialog.SafeFileName.Split('.')[0];
+                is_default_name = true;
+                IdBox.Text = default_name;
 
                 SendMessage(pOwner, 0x1200, IntPtr.Zero, Marshal.StringToHGlobalAnsi(openFileDialog.FileName));
             }
@@ -247,7 +165,6 @@ namespace EditorUI
         internal void AddMaterialToTheTable(string string_names)
         {
             MaterialsPanel.Children.Clear();
-            Materials.Clear();
 
             int mat_index = 0;
             string[] material_names = string_names.Split('\\');
@@ -255,49 +172,60 @@ namespace EditorUI
             bool isNumeric = int.TryParse(IdBox.Text, out int id);
             if (!isNumeric) id = -1;
 
-            ConnectDatabase(connection, @"SELECT TexPath FROM Textures WHERE Id = " + id + "", out System.Data.SqlClient.SqlConnection sqlConnection, out System.Data.SqlClient.SqlCommand cmd);
-            var reader = cmd.ExecuteReader();
-
             foreach (string material_name in material_names)
             {
                 if (material_name != String.Empty)
                 {
-                    MaterialInput material_panel = new MaterialInput(pOwner);
-
-                    material_panel.NameTextBlock.Text = material_name;
-                    System.Windows.Controls.DockPanel.SetDock(material_panel, System.Windows.Controls.Dock.Top);
-
-                    if (reader.Read())
+                    if (!Materials.ContainsKey(mat_index))
                     {
-                        Materials.Add(mat_index, reader.GetString(0));
-                        material_panel.MaterialPath.Text = reader.GetString(0);
-                        material_panel.MaterialPath.ToolTip = reader.GetString(0);
-                    }
-                    else
                         Materials.Add(mat_index, missing_texture);
+                        SendMessage(pOwner, 0x1202, (IntPtr)mat_index, Marshal.StringToHGlobalAnsi(Materials[mat_index]));
+                    }
 
-                    SendMessage(pOwner, 0x1202, (IntPtr)mat_index, Marshal.StringToHGlobalAnsi(Materials[mat_index]));
+                    MaterialInput material_panel = new MaterialInput(pOwner);
+                    material_panel.NameTextBlock.Text = material_name;
+                    material_panel.MaterialPath.Text = Materials[mat_index];
+                    material_panel.MaterialPath.ToolTip = Materials[mat_index];
                     material_panel.event_load_material += LoadMaterial;
                     material_panel.material_index = mat_index++;
-
                     MaterialsPanel.Children.Add(material_panel);
+                    System.Windows.Controls.DockPanel.SetDock(material_panel, System.Windows.Controls.Dock.Top);
                 }
             }
         }
 
         private void BtnCreate_Click(object sender, RoutedEventArgs e)
         {
-            for (int itt = 0; itt < Materials.Count; itt++)
+            string path = loaded_mesh;
+
+            for (int i = loaded_mesh.Length - 1; i > 0; i--)
             {
-                if (Materials[itt] == String.Empty)
+                if (loaded_mesh[i] != '\\')
                 {
-                    Materials[itt] = missing_texture;
+                    continue;
+                }
+                else
+                {
+                    path = loaded_mesh.Substring(0, i) + '\\';
+                    break;
                 }
             }
 
-            NewDataBaseEntry(loaded_mesh);
+            /*GrayEngine model file*/
+            string currentfile = "<mesh>" + loaded_mesh + "<|mesh>";
+            System.IO.FileStream model_file = new System.IO.FileStream(path + IdBox.Text + ".gmf", System.IO.FileMode.Create);
+            model_file.Write(System.Text.Encoding.ASCII.GetBytes(currentfile), 0, System.Text.Encoding.ASCII.GetBytes(currentfile).Length);
 
-            Browser.SelectedIndex = LoadedAssets.Keys.ToList().IndexOf(loaded_mesh);
+            for (int itt = 0; itt < Materials.Count; itt++)
+            {
+                currentfile = "<texture>" + Materials[itt] + "<|texture>";
+                model_file.Write(System.Text.Encoding.ASCII.GetBytes(currentfile), 0, System.Text.Encoding.ASCII.GetBytes(currentfile).Length);
+            }
+            model_file.Close();
+
+            LoadData();
+            if (LoadedAssets.ContainsKey(loaded_mesh))
+                Browser.SelectedIndex = LoadedAssets.Keys.ToList().IndexOf(loaded_mesh);
         }
 
         private void LoadMaterial(object sender, EventArgs e)
@@ -305,7 +233,9 @@ namespace EditorUI
             System.Windows.Forms.OpenFileDialog openFileDialog = new System.Windows.Forms.OpenFileDialog();
             openFileDialog.Filter = "png files (*.png)|*.png";
             openFileDialog.FilterIndex = 1;
+            openFileDialog.InitialDirectory = content_folder;
             openFileDialog.RestoreDirectory = true;
+
             if (openFileDialog.ShowDialog() == System.Windows.Forms.DialogResult.OK)
             {
                 SendMessage(pOwner, 0x1202, (IntPtr)((MaterialInput)sender).material_index, Marshal.StringToHGlobalAnsi(openFileDialog.FileName));
@@ -319,29 +249,71 @@ namespace EditorUI
 
         private void Browser_SelectionChanged(object sender, System.Windows.Controls.SelectionChangedEventArgs e)
         {
-            if (Browser.SelectedItem != null)
+            try
             {
-                string materials = String.Empty;
-                string model = (Browser.SelectedItem as BrowserItem).ToolTip.ToString().Trim();
-                string id = (Browser.SelectedItem as BrowserItem).Id_Label.Content.ToString().Trim();
+                if (Browser.SelectedIndex < 0) return;
 
-                ConnectDatabase(connection, @"SELECT TexPath FROM Textures WHERE Id = " + id + "", out System.Data.SqlClient.SqlConnection sqlConnection, out System.Data.SqlClient.SqlCommand cmd);
+                System.IO.FileStream io_file = new System.IO.FileStream(((BrowserItem)Browser.SelectedItem).ToolTip.ToString(), System.IO.FileMode.Open, System.IO.FileAccess.Read);
+                System.Threading.CancellationTokenSource source = new System.Threading.CancellationTokenSource();
 
-                var reader = cmd.ExecuteReader();
+                byte[] buffer = new byte[io_file.Length];
+                io_file.Read(buffer, 0, (int)io_file.Length);
+                string file_path = String.Empty;
+                string file_type = String.Empty;
+                bool comma = false;
+                string cur_mesh = String.Empty;
+                string cur_texs = String.Empty;
+                string[] name_cut = io_file.Name.Split('\\');
+                Materials.Clear();
 
-                while (reader.Read())
+                foreach (char chr in buffer)
                 {
-                    materials += reader.GetString(0) + '|';
+                    if (chr == '<')
+                    {
+                        if (file_path != String.Empty)
+                        {
+                            if (file_type == "<mesh>")
+                            {
+                                cur_mesh = file_path;
+                            }
+                            else if (file_type == "<texture>")
+                            {
+                                cur_texs += file_path + '|';
+                                Materials.Add(Materials.Count, file_path);
+                            }
+                        }
+
+                        file_type = String.Empty;
+                        file_path = string.Empty;
+                        comma = true;
+                        file_type += chr;
+                    }
+                    else if (chr == '>')
+                    {
+                        file_type += chr;
+                        comma = false;
+                    }
+                    else if (comma)
+                    {
+                        file_type += chr;
+                    }
+                    else
+                    {
+                        file_path += chr;
+                    }
                 }
+                io_file.Close();
 
-                SendMessage(pOwner, 0x1203, Marshal.StringToHGlobalAnsi(model), Marshal.StringToHGlobalAnsi(materials));
-
-                IdBox.Text = id;
-                loaded_mesh = model;
+                SendMessage(pOwner, 0x1203, Marshal.StringToHGlobalAnsi(cur_mesh), Marshal.StringToHGlobalAnsi(cur_texs));
+                IdBox.Text = name_cut[name_cut.Length - 1].Split('.')[0];
+                loaded_mesh = cur_mesh;
                 MeshPath.Text = loaded_mesh;
                 MeshPath.ToolTip = loaded_mesh;
-
-                sqlConnection.Close();
+            }
+            catch (Exception exc)
+            {
+                SendMessage(pOwner, 0x1204, IntPtr.Zero, Marshal.StringToHGlobalAnsi("Exception occured in " + new StackFrame(1, true).GetMethod().Name + ": " + exc.Message));
+                SendMessage(pOwner, 0x0010, IntPtr.Zero, IntPtr.Zero);
             }
         }
 
@@ -394,7 +366,6 @@ namespace EditorUI
                 default:
                     sorting = SortType.NAME_ASC;
                     MeshNameBar.Content = "Name \u2B9F";
-                    Id.Content = "Id";
                     break;
             }
 
@@ -407,28 +378,6 @@ namespace EditorUI
 
             ExpandBtn.Content = b_fullpath ? "-" : "+";
             ExpandBtn.ToolTip = b_fullpath ? "Condense path" : "Expand path";
-
-            LoadData();
-        }
-
-        private void Id_Click(object sender, RoutedEventArgs e)
-        {
-            switch (sorting)
-            {
-                case SortType.ID_ASC:
-                    sorting = SortType.ID_DESC;
-                    Id.Content = "Id \u2B9D";
-                    break;
-                case SortType.ID_DESC:
-                    sorting = SortType.ID_ASC;
-                    Id.Content = "Id \u2B9F";
-                    break;
-                default:
-                    sorting = SortType.ID_ASC;
-                    Id.Content = "Id \u2B9F";
-                    MeshNameBar.Content = "Name";
-                    break;
-            }
 
             LoadData();
         }
@@ -452,25 +401,42 @@ namespace EditorUI
 
         private void IdBox_TextInput(object sender, System.Windows.Input.TextCompositionEventArgs e)
         {
+            string restriction = @"#%&{}\\<>*?/ $!':@+`|=" + '"';
             ((System.Windows.Controls.TextBox)sender).Undo();
 
-            bool isNumeric = int.TryParse(e.Text, out int id);
             
-            
-            if (isNumeric)
+            if (!restriction.Contains(e.Text))
             {
-                if (((System.Windows.Controls.TextBox)sender).Text == "Auto")
-                {
-                    ((System.Windows.Controls.TextBox)sender).Text = "";
-                }
-
                 ((System.Windows.Controls.TextBox)sender).Text += e.Text;
             }
+
+            is_default_name = false;
         }
 
         private void TabCtr_SelectionChanged(object sender, System.Windows.Controls.SelectionChangedEventArgs e)
         {
             ((System.Windows.Controls.Control)sender).Focus();
+        }
+
+        private void IdBox_GotFocus(object sender, RoutedEventArgs e)
+        {
+            if (is_default_name)
+            {
+                ((System.Windows.Controls.TextBox)sender).Text = String.Empty;
+            }
+        }
+
+        private void IdBox_LostFocus(object sender, RoutedEventArgs e)
+        {
+            if (is_default_name)
+            {
+                ((System.Windows.Controls.TextBox)sender).Text = default_name;
+            }
+        }
+
+        private void Button_Click(object sender, RoutedEventArgs e)
+        {
+            LoadData();
         }
     }
 }

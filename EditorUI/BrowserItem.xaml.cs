@@ -19,10 +19,9 @@ namespace EditorUI
     /// </summary>
     public partial class BrowserItem : UserControl
     {
-        public BrowserItem(string id, string mesh_path)
+        public BrowserItem(string mesh_path)
         {
             InitializeComponent();
-            Id_Label.Content = id;
             Mesh_Label.Content = mesh_path;
         }
     }

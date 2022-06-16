@@ -10,7 +10,8 @@ namespace GrEngine
         static ModelBrowser* _instance;
         EditorUI editorUI;
 
-        static LRESULT CALLBACK HostWindowProcBrowser(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) //Background Win32 is used to receive messages from WPF front-end window
+        /*Background Win32 is used to receive messages from WPF front-end window*/
+        static LRESULT CALLBACK HostWindowProcBrowser(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
         {
             switch (msg)
             {
@@ -33,10 +34,10 @@ namespace GrEngine
             case 0x1202: //Upload texture file callback
                 GrEngine::ModelBrowser::uploadTexture((const char*)lParam, (int)wParam);
                 break;
-            case 0x1203: //Close model browser
+            case 0x1203: //Create model using raw files
                 GrEngine::ModelBrowser::createModel((const char*)wParam, (const char*)lParam);
                 break;
-            case 0x1204: //Close model browser
+            case 0x1204: //Push into logger
                 Logger::Out((const char*)lParam, OutputColor::Gray, OutputType::Log);
                 break;
             default:
@@ -108,7 +109,8 @@ namespace GrEngine
                     }
                     else
                     {
-                        mat_vector.push_back(temp_str = "");
+                        mat_vector.push_back(temp_str);
+                        temp_str = "";
                         continue;
                     }
                 }
