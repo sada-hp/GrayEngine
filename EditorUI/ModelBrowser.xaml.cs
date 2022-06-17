@@ -7,10 +7,8 @@ using System.Diagnostics;
 
 enum SortType
 {
-    ID_ASC = 0,
-    ID_DESC = 1,
-    NAME_ASC = 2,
-    NAME_DESC = 3
+    NAME_ASC = 0,
+    NAME_DESC = 1
 }
 
 namespace EditorUI
@@ -20,24 +18,21 @@ namespace EditorUI
         [DllImport("user32.dll")]
         public static extern int SendMessage(IntPtr hWnd, int wMsg, IntPtr wParam, IntPtr lParam);
         [DllImport("user32.dll")]
-        public static extern int FindWindow(string lpClassName, String lpWindowName);
-        [DllImport("user32.dll")]
         static extern IntPtr SetParent(IntPtr hWndChild, IntPtr hWndNewParent);
         [DllImport("user32.dll")]
         static extern bool SetWindowPos(IntPtr hWnd, IntPtr hWndInsertAfter, int X, int Y, int cx, int cy, uint uFlags);
 
         IntPtr pOwner;
         IntPtr child_hwnd;
-        System.Windows.Forms.Panel panel = new System.Windows.Forms.Panel();
-        string loaded_mesh = "";
-        Dictionary<string, System.Windows.Controls.Control> LoadedAssets = new Dictionary<string, System.Windows.Controls.Control>();
-        SortedDictionary<int, string> Materials = new SortedDictionary<int, string>();
-        SortType sorting = SortType.ID_ASC;
         bool b_fullpath = false;
-        string missing_texture = System.IO.Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location) + @"\Content\Editor\MissingTexture.png";
-        bool is_default_name = true;
+        string loaded_mesh = "";
         string default_name = "";
+        SortType sorting = SortType.NAME_ASC;
+        System.Windows.Forms.Panel panel = new System.Windows.Forms.Panel();
+        SortedDictionary<int, string> Materials = new SortedDictionary<int, string>();
+        SortedDictionary<string, System.Windows.Controls.Control> LoadedAssets = new SortedDictionary<string, System.Windows.Controls.Control>();
         string content_folder = System.IO.Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location) + @"\Content\";
+        string missing_texture = System.IO.Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location) + @"\Content\Editor\MissingTexture.png";
 
         public ModelBrowser(IntPtr p)
         {
@@ -52,7 +47,7 @@ namespace EditorUI
             FormHost.Child = panel;
             IdBox.AddHandler(System.Windows.Controls.TextBox.TextInputEvent, new System.Windows.Input.TextCompositionEventHandler(IdBox_TextInput), true);
             RefreshButton.Content = "\u21BA";
-
+            MeshNameBar.Content = "Name \u2B9F";
             LoadData();
         }
 
@@ -68,9 +63,13 @@ namespace EditorUI
             try
             {
                 string[] models_files = System.IO.Directory.GetFiles(content_folder, "*.gmf", System.IO.SearchOption.AllDirectories);
+                List<string> list_models = models_files.ToList();
+                list_models.Sort();
+                if (sorting == SortType.NAME_ASC)
+                    list_models.Reverse();
 
                 ClearBrowser();
-                foreach (string model_file in models_files)
+                foreach (string model_file in list_models)
                 {
                     if (model_file.ToLower().Contains(SearchBar.Text.ToLower()) || SearchBar.Text == "" || SearchBar.Text == "Search...")
                     {
@@ -137,7 +136,6 @@ namespace EditorUI
         {
             System.Windows.Forms.OpenFileDialog openFileDialog = new System.Windows.Forms.OpenFileDialog();
             openFileDialog.Filter = "obj files (*.obj)|*.obj";
-            openFileDialog.FilterIndex = 1;
             openFileDialog.InitialDirectory = content_folder;
             openFileDialog.RestoreDirectory = true;
 
@@ -148,7 +146,6 @@ namespace EditorUI
                 MeshPath.Text = loaded_mesh;
                 MeshPath.ToolTip = loaded_mesh;
                 default_name = openFileDialog.SafeFileName.Split('.')[0];
-                is_default_name = true;
                 IdBox.Text = default_name;
 
                 SendMessage(pOwner, 0x1200, IntPtr.Zero, Marshal.StringToHGlobalAnsi(openFileDialog.FileName));
@@ -160,6 +157,24 @@ namespace EditorUI
         private void MdlBrowser_SizeChanged(object sender, SizeChangedEventArgs e)
         {
             UpdateChildPosition();
+        }
+
+        private void LoadMaterial(object sender, EventArgs e)
+        {
+            System.Windows.Forms.OpenFileDialog openFileDialog = new System.Windows.Forms.OpenFileDialog();
+            openFileDialog.Filter = "png files (*.png)|*.png";
+            openFileDialog.InitialDirectory = content_folder;
+            openFileDialog.RestoreDirectory = true;
+
+            if (openFileDialog.ShowDialog() == System.Windows.Forms.DialogResult.OK)
+            {
+                SendMessage(pOwner, 0x1202, (IntPtr)((MaterialInput)sender).material_index, Marshal.StringToHGlobalAnsi(openFileDialog.FileName));
+                Materials[((MaterialInput)sender).material_index] = openFileDialog.FileName;
+                ((MaterialInput)sender).MaterialPath.Text = openFileDialog.FileName;
+                ((MaterialInput)sender).MaterialPath.ToolTip = openFileDialog.FileName;
+            }
+
+            GC.Collect();
         }
 
         internal void AddMaterialToTheTable(string string_names)
@@ -228,25 +243,6 @@ namespace EditorUI
                 Browser.SelectedIndex = LoadedAssets.Keys.ToList().IndexOf(loaded_mesh);
         }
 
-        private void LoadMaterial(object sender, EventArgs e)
-        {
-            System.Windows.Forms.OpenFileDialog openFileDialog = new System.Windows.Forms.OpenFileDialog();
-            openFileDialog.Filter = "png files (*.png)|*.png";
-            openFileDialog.FilterIndex = 1;
-            openFileDialog.InitialDirectory = content_folder;
-            openFileDialog.RestoreDirectory = true;
-
-            if (openFileDialog.ShowDialog() == System.Windows.Forms.DialogResult.OK)
-            {
-                SendMessage(pOwner, 0x1202, (IntPtr)((MaterialInput)sender).material_index, Marshal.StringToHGlobalAnsi(openFileDialog.FileName));
-                Materials[((MaterialInput)sender).material_index] = openFileDialog.FileName;
-                ((MaterialInput)sender).MaterialPath.Text = openFileDialog.FileName;
-                ((MaterialInput)sender).MaterialPath.ToolTip = openFileDialog.FileName;
-            }
-
-            GC.Collect();
-        }
-
         private void Browser_SelectionChanged(object sender, System.Windows.Controls.SelectionChangedEventArgs e)
         {
             try
@@ -260,10 +256,9 @@ namespace EditorUI
                 io_file.Read(buffer, 0, (int)io_file.Length);
                 string file_path = String.Empty;
                 string file_type = String.Empty;
-                bool comma = false;
                 string cur_mesh = String.Empty;
                 string cur_texs = String.Empty;
-                string[] name_cut = io_file.Name.Split('\\');
+                bool comma = false;
                 Materials.Clear();
 
                 foreach (char chr in buffer)
@@ -305,7 +300,7 @@ namespace EditorUI
                 io_file.Close();
 
                 SendMessage(pOwner, 0x1203, Marshal.StringToHGlobalAnsi(cur_mesh), Marshal.StringToHGlobalAnsi(cur_texs));
-                IdBox.Text = name_cut[name_cut.Length - 1].Split('.')[0];
+                IdBox.Text = io_file.Name.Split('\\').Last().Split('.')[0];
                 loaded_mesh = cur_mesh;
                 MeshPath.Text = loaded_mesh;
                 MeshPath.ToolTip = loaded_mesh;
@@ -382,26 +377,9 @@ namespace EditorUI
             LoadData();
         }
 
-        string GetSortString()
-        {
-            switch (sorting)
-            {
-                case SortType.ID_ASC:
-                    return "Id ASC";
-                case SortType.ID_DESC:
-                    return "Id DESC";
-                case SortType.NAME_ASC:
-                    return "Mesh ASC";
-                case SortType.NAME_DESC:
-                    return "Mesh DESC";
-                default:
-                    return "Id ASC";
-            }
-        }
-
         private void IdBox_TextInput(object sender, System.Windows.Input.TextCompositionEventArgs e)
         {
-            string restriction = @"#%&{}\\<>*?/ $!':@+`|=" + '"';
+            string restriction = @"#%&{}\\<>*?/ $!':@+`|=." + '"';
             ((System.Windows.Controls.TextBox)sender).Undo();
 
             
@@ -409,8 +387,6 @@ namespace EditorUI
             {
                 ((System.Windows.Controls.TextBox)sender).Text += e.Text;
             }
-
-            is_default_name = false;
         }
 
         private void TabCtr_SelectionChanged(object sender, System.Windows.Controls.SelectionChangedEventArgs e)
@@ -420,7 +396,7 @@ namespace EditorUI
 
         private void IdBox_GotFocus(object sender, RoutedEventArgs e)
         {
-            if (is_default_name)
+            if (IdBox.Text == loaded_mesh.Split('\\').Last().Split('.')[0])
             {
                 ((System.Windows.Controls.TextBox)sender).Text = String.Empty;
             }
@@ -428,7 +404,7 @@ namespace EditorUI
 
         private void IdBox_LostFocus(object sender, RoutedEventArgs e)
         {
-            if (is_default_name)
+            if (IdBox.Text == loaded_mesh.Split('\\').Last().Split('.')[0])
             {
                 ((System.Windows.Controls.TextBox)sender).Text = default_name;
             }
