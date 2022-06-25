@@ -6,6 +6,8 @@
 
 namespace GrEngine
 {
+	typedef void (*InputCallbackFun)();
+
 	struct DllExport AppParameters
 	{
 		const char* Title;
@@ -13,8 +15,9 @@ namespace GrEngine
 		uint32_t Width;
 		uint32_t Height;
 		Renderer* p_Renderer;
+		bool free_mode;
 
-		AppParameters(const char* _Title = "Application", uint32_t _Width = 1280, uint32_t _Height = 720)
+		AppParameters(const char* _Title = "Application", uint32_t _Width = 1280, uint32_t _Height = 720, bool free_mode = false)
 		{
 			Title = _Title;
 			Width = _Width;
@@ -31,6 +34,8 @@ namespace GrEngine
 
 		virtual void SetVSync(bool VsyncState) = 0;
 
+		virtual void ProccessInputs() = 0;
+
 		virtual AppParameters* WindowProperties() = 0;
 
 		static AppWindow* Init(const AppParameters& Properties = AppParameters());
@@ -44,6 +49,12 @@ namespace GrEngine
 		virtual void MaximizeWindow(bool state) = 0;
 
 		virtual void MinimizeWindow(bool state) = 0;
+
+		virtual bool IsKeyDown(int KEY) = 0;
+
+		virtual void AppShowCursor(bool show) { ShowCursor(show); };
+
+		std::vector<InputCallbackFun> inputs_vector;
 
 	protected:
 		AppParameters props;

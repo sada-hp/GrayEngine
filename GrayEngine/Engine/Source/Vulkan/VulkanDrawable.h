@@ -3,24 +3,17 @@
 #include <glm/gtx/hash.hpp>
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
+#include <glm/gtc/quaternion.hpp>
+#include <glm/gtx/quaternion.hpp>
 #include <vk_mem_alloc.h>
+#include "Engine/Source/Headers/Renderer.h"
 
 #define TEXTURE_ARRAY_SIZE 5
 
 namespace GrEngine_Vulkan
 {
-	struct Vertex
+	struct Vertex : public GrEngine::Vertex
 	{
-		bool operator==(const Vertex& other) const
-		{
-			return pos == other.pos && uv == other.uv;
-		}
-
-		glm::vec4 pos;
-		glm::vec4 color;
-		glm::vec2 uv;
-		uint32_t uv_index;
-
 		static VkVertexInputBindingDescription getBindingDescription() {
 			VkVertexInputBindingDescription bindingDescription{};
 			bindingDescription.binding = 0;
@@ -57,12 +50,10 @@ namespace GrEngine_Vulkan
 		}
 	};
 
-	struct Mesh
+	struct Mesh : public GrEngine::Mesh
 	{
 		std::vector<Vertex> vertices;
 		std::vector<uint16_t> indices;
-
-		const char* mesh_path;
 	};
 
 	struct ShaderBuffer
@@ -76,9 +67,9 @@ namespace GrEngine_Vulkan
 	};
 
 	struct UniformBufferObject {
-		glm::mat4 model;
-		glm::mat4 view;
-		glm::mat4 proj;
+		glm::mat4 model{ 1.f };
+		glm::mat4 view{1.f};
+		glm::mat4 proj{ 1.f };
 	};
 
 	struct AllocatedImage {
@@ -86,38 +77,31 @@ namespace GrEngine_Vulkan
 		VmaAllocation allocation;
 	};
 
-	struct Texture
+	struct Texture : public GrEngine::Texture
 	{
 		AllocatedImage newImage;
 		VkImageView textureImageView;
 		VkSampler textureSampler;
-
-		const char* texture_path;
+		uint8_t material_index = 0;
 	};
 }
 
-namespace std {
-	template<> struct hash<GrEngine_Vulkan::Vertex> {
+	template<> struct std::hash<GrEngine_Vulkan::Vertex> {
 		size_t operator()(GrEngine_Vulkan::Vertex const& vertex) const {
-			return ((hash<glm::vec4>()(vertex.pos)) ^ (hash<glm::vec2>()(vertex.uv)) >> 1);
+			return ((std::hash<glm::vec4>()(vertex.pos)) ^ (std::hash<glm::vec2>()(vertex.uv)) >> 1);
 		}
 	};
-}
 
 namespace GrEngine_Vulkan
 {
 
-	class DrawableObj
+	class VulkanDrawable : public GrEngine::DrawableObject
 	{
 	public:
-		DrawableObj();
-		~DrawableObj();
-
 		Mesh object_mesh;
 		std::vector<Texture> object_texture;
-		glm::vec3 bound;
 
-		void initObject(VkDevice device, VmaAllocator allocator, void* owner);
+		void initObject(VkDevice device, VmaAllocator allocator, GrEngine::Renderer* owner);
 		void destroyObject(VkDevice device, VmaAllocator allocator);
 		void updateObject(VkDevice device);
 		void invalidateTexture(VkDevice device, VmaAllocator allocator);
@@ -125,7 +109,7 @@ namespace GrEngine_Vulkan
 		bool recordCommandBuffer(VkDevice device, VkCommandBuffer commandBuffer, VkExtent2D extent);
 
 	private:
-		void* p_Owner;
+		GrEngine::Renderer* p_Owner;
 		VkDescriptorSetLayout descriptorSetLayout;
 		std::vector<VkDescriptorSet> descriptorSets;
 

@@ -11,6 +11,8 @@ namespace GrEngine
         static Application* _instance;
         EditorUI editorUI;
         std::string log_path;
+        bool free_mode = false;
+
     public:
         static LRESULT CALLBACK HostWindowProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) //Background Win32 is used to receive messages from WPF front-end window
         {
@@ -28,7 +30,7 @@ namespace GrEngine
                 break;
                 /*Messages received from the C# WPF front-end part of the editor*/
             case 0x1200: //Load obj file callback
-                GrEngine::Application::loadModel((const char*)lParam);
+                //GrEngine::Application::loadModel((const char*)lParam);
                 break;
             case 0x1201: //Clear viewport callback
                 GrEngine::Application::clearViewport();
@@ -45,7 +47,7 @@ namespace GrEngine
             return 0;
         }
 
-        Application(const AppParameters& Properties = AppParameters())
+        Application(const AppParameters& Properties = AppParameters()) : Engine(Properties)
         {
             if (_instance != nullptr)
                 delete _instance;
@@ -53,48 +55,34 @@ namespace GrEngine
             _instance = this;
             log_path = getExecutablePath() + std::string("grayengine.log");
 
-            EventListener::pushEvent(EventType::MouseClick,[](std::vector<double> para)
-                {
-                    //Logger::Out("MouseClickEvent", OutputColor::Blue, OutputType::Log);
-                });
-            EventListener::pushEvent(EventType::WindowResize, [](std::vector<double> para)
-                {
-                    //Logger::Out("ResizeEvent", OutputColor::Blue, OutputType::Log);
-                });
-            EventListener::pushEvent(EventType::KeyPress, [](std::vector<double> para)
-                {
-                    //Logger::Out("KeyEvent", OutputColor::Blue, OutputType::Log);
-                });
-            EventListener::pushEvent(EventType::Scroll, [](std::vector<double> para)
-                {
-                    //Logger::Out("ScrollEvent", OutputColor::Blue, OutputType::Log);
-                });
-            EventListener::pushEvent(EventType::MouseMove, [](std::vector<double> para)
-                {
-                    //WLogger::Out("CursorMoveEvent %f", OutputColor::Blue, para.back());
-                });
-            EventListener::pushEvent(EventType::WindowClosed, [](std::vector<double> para)
-                {
-                    Logger::Out("Window is now being closed", OutputColor::Gray, OutputType::Log);
-                });
-
-            EventListener::pushEvent("MyEvent", [](std::vector<double> para)
-                {
-                    Logger::Out("Custom Event with a parameter %d", OutputColor::Blue, OutputType::Log, (int)para.front());
-                });
-
             EventListener::pushEvent(EventType::Step, [](std::vector<double> para)
                 {
                     if (para.size() > 0)
                     {
                         _instance->editorUI.UpdateFramecounter((float)para[0]);
                     }
-                        
                 });
 
-            std::vector<double> para = { 1 };
+            EventListener::pushEvent("LoadModel", [](std::vector<double> para)
+                {
+                    std::string model_path = "";
+                    for (auto chr : para)
+                    {
+                        model_path += (char)chr;
+                    }
 
-            EventListener::registerEvent("MyEvent", para);
+                    Application::loadModelFromFile(model_path.c_str());
+                });
+
+            EventListener::pushEvent(EventType::KeyPress, [](std::vector<double> para)
+                {
+                    if (para[0] == GLFW_KEY_ESCAPE && para[2] == GLFW_PRESS)
+                    {
+                        toggle_free_mode();
+                    }
+                });
+
+            _instance->getAppWindow()->inputs_vector.push_back(Inputs);
         }
 
         ~Application()
@@ -126,9 +114,14 @@ namespace GrEngine
             return &_instance->editorUI;
         };
 
-        static void loadModel(const char* mesh_path)
+        static void loadModelFromFile(const char* filepath)
         {
-            //_instance->loadMeshFromPath(mesh_path);
+            std::string mesh_path = "";
+            std::vector<std::string> mat_vector;
+            std::unordered_map<std::string, std::string> materials;
+
+            Renderer::readGMF(filepath, &mesh_path, &mat_vector);
+            auto res = _instance->loadModel(mesh_path.c_str(), mat_vector, &materials);
         }
 
         static void uploadTexture(const char* image_path)
@@ -160,11 +153,81 @@ namespace GrEngine
         static void initModelBrowser()
         {
             getEditorUI()->DisableUIWindow();
-            std::unique_ptr<ModelBrowser> mdlBrowser = std::make_unique<ModelBrowser>();
+            AppParameters props;
+            std::unique_ptr<ModelBrowser> mdlBrowser = std::make_unique<ModelBrowser>(props);
             mdlBrowser->init(mdlBrowser.get());
             mdlBrowser->StartEngine();
             mdlBrowser->KillEngine();
             getEditorUI()->EnableUIWindow();
+        }
+
+        static void toggle_free_mode()
+        {
+            _instance->free_mode = !_instance->free_mode;
+            _instance->getAppWindow()->AppShowCursor(!_instance->free_mode);
+            _instance->getAppWindow()->getRenderer()->viewport_camera.cursor_pos = {960 * !_instance->free_mode, 540 * !_instance->free_mode };
+        }
+
+        static void Inputs()
+        {
+            Renderer* render = _instance->getAppWindow()->getRenderer();
+            GLFWwindow* window = _instance->getAppWindow()->getWindow();
+            POINT cur{ 1,1 };
+            float cameraSpeed = 0.25;
+            glm::vec3 direction{ 0.f };
+            float senstivity = 0.75f;
+
+            if (_instance->getAppWindow()->IsKeyDown(GLFW_KEY_LEFT_SHIFT))
+                cameraSpeed = 0.5f;
+
+            if (_instance->getAppWindow()->IsKeyDown(GLFW_KEY_W))
+                direction.z -= 1;
+            if (_instance->getAppWindow()->IsKeyDown(GLFW_KEY_S))
+                direction.z += 1;
+            if (_instance->getAppWindow()->IsKeyDown(GLFW_KEY_A))
+                direction.x -= 1;
+            if (_instance->getAppWindow()->IsKeyDown(GLFW_KEY_D))
+                direction.x += 1;
+
+            GetCursorPos(&cur);
+            if (_instance->free_mode && render->viewport_camera.cursor_pos != glm::vec2{ 0.f })
+            {
+                if (glm::abs(render->viewport_camera.cursor_pos.x - (float)(cur.x)) > 0.15f)
+                {
+                    render->viewport_camera.cam_rot.x -= (render->viewport_camera.cursor_pos.x - (float)cur.x) * senstivity;
+                }
+                if (glm::abs(render->viewport_camera.cursor_pos.y - (float)cur.y) > 0.15f)
+                {
+                    render->viewport_camera.cam_rot.y -= (render->viewport_camera.cursor_pos.y - (float)cur.y) * senstivity;
+                }
+                SetCursorPos(960, 540);
+            }
+            else if (_instance->free_mode)
+            {
+                render->viewport_camera.cursor_pos = glm::vec2{ 960, 540 };
+                SetCursorPos(960, 540);
+            }
+
+            if (_instance->getAppWindow()->IsKeyDown(GLFW_KEY_UP))
+                render->viewport_camera.cam_rot.x -= 1;
+            if (_instance->getAppWindow()->IsKeyDown(GLFW_KEY_DOWN))
+                render->viewport_camera.cam_rot.x += 1;
+            if (_instance->getAppWindow()->IsKeyDown(GLFW_KEY_RIGHT))
+                render->viewport_camera.cam_rot.y += 1;
+            if (_instance->getAppWindow()->IsKeyDown(GLFW_KEY_LEFT))
+                render->viewport_camera.cam_rot.y -= 1;
+
+            if (render->viewport_camera.cam_rot.y > 89.f)
+                render->viewport_camera.cam_rot.y = 89.f;
+            if (render->viewport_camera.cam_rot.y < -89.f)
+                render->viewport_camera.cam_rot.y = -89.f;
+
+            glm::quat qPitch = glm::angleAxis(glm::radians(render->viewport_camera.cam_rot.y), glm::vec3(1, 0, 0));
+            glm::quat qYaw = glm::angleAxis(glm::radians(render->viewport_camera.cam_rot.x), glm::vec3(0, 1, 0));
+            glm::quat qRoll = glm::angleAxis(glm::radians(render->viewport_camera.cam_rot.z), glm::vec3(0, 0, 1));
+
+            render->viewport_camera.cam_orientation = glm::normalize(qPitch * qYaw * qRoll);
+            render->viewport_camera.cam_pos += (direction * render->viewport_camera.cam_orientation) * cameraSpeed;
         }
 
         static void pushToAppLogger(std::vector<double> para)

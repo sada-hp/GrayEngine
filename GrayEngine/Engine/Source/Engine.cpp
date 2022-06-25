@@ -29,7 +29,7 @@ namespace GrEngine
 		glfwSetWindowShouldClose(pWindow.get()->getWindow(), true);
 	}
 
-	bool Engine::loadModel(const char* mesh_path, std::vector<std::string> textures_vector, std::string* out_materials)
+	bool Engine::loadModel(const char* mesh_path, std::vector<std::string> textures_vector, std::unordered_map<std::string, std::string>* out_materials)
 	{
 		return pWindow->getRenderer()->loadModel(mesh_path, textures_vector, out_materials);
 	}
@@ -53,6 +53,11 @@ namespace GrEngine
 	{
 		Logger::Out("You've just poked an engine", OutputColor::Gray, OutputType::Log);
 		return true;
+	}
+
+	bool Engine::createModel(const char* filepath, const char* mesh_path, std::vector<std::string> textures_vector)
+	{
+		return pWindow->getRenderer()->writeGMF(filepath, mesh_path, textures_vector);
 	}
 
 	std::string Engine::getExecutablePath()

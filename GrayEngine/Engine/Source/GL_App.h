@@ -23,6 +23,9 @@ namespace GrEngine
 		void SetVSync(bool state) override;
 		void MaximizeWindow(bool state) override;
 		void MinimizeWindow(bool state) override;
+		void ProccessInputs() override;
+		bool IsKeyDown(int KEY) override;
+		void AppShowCursor(bool show) override;
 
 		inline AppParameters* WindowProperties() override { return &props; };
 	private:

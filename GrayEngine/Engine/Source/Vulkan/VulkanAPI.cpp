@@ -31,10 +31,10 @@ namespace GrEngine_Vulkan
 		vkDestroyInstance(_vulkan, nullptr);
 	}
 
-	bool VulkanAPI::init(GLFWwindow* window) //Vulkan integration done with a help of vulkan-tutorial.com
+	bool VulkanAPI::init(void* window) //Vulkan integration done with a help of vulkan-tutorial.com
 	{
 		bool res = true;
-		pParentWindow = window;
+		pParentWindow = reinterpret_cast<GLFWwindow*>(window);
 
 		if (!createVKInstance())
 			throw std::runtime_error("Failed to create vulkan instance!");
@@ -722,19 +722,21 @@ namespace GrEngine_Vulkan
 		Logger::Out("The scene was cleared", OutputColor::Green, OutputType::Log);
 	}
 
-	bool VulkanAPI::loadModel(const char* mesh_path, std::vector<std::string> textures_vector, std::string* out_materials_names)
+	bool VulkanAPI::loadModel(const char* mesh_path, std::vector<std::string> textures_vector, std::unordered_map<std::string, std::string>* out_materials_names)
 	{
 		auto start = std::chrono::steady_clock::now();
 
-		DrawableObj object;
-		DrawableObj* ref_obj = &object;
+		VulkanDrawable object;
+		VulkanDrawable* ref_obj = &object;
 		VulkanAPI* inst = this;
+		std::vector<std::string> materials_collection;
+		std::vector<std::string>* out_materials_collection = &materials_collection;
 		std::map<int, std::future<void>> processes_map;
 		std::map<std::string, std::vector<int>> materials_map;
 
-		processes_map[textures_vector.size()] = std::async(std::launch::async, [mesh_path, ref_obj, out_materials_names, inst]()
+		processes_map[textures_vector.size()] = std::async(std::launch::async, [mesh_path, ref_obj, out_materials_collection, inst]()
 			{
-				inst->loadMesh(mesh_path, ref_obj, out_materials_names);
+				inst->loadMesh(mesh_path, ref_obj, out_materials_collection);
 			});
 
 		for (int ind = 0; ind < textures_vector.size(); ind++)
@@ -742,7 +744,7 @@ namespace GrEngine_Vulkan
 			materials_map[textures_vector[ind]].push_back(ind);
 		}
 
-		for (int mat_index = 0; mat_index < textures_vector.size(); mat_index++)
+		for (int mat_index = 0; mat_index < materials_map.size(); mat_index++)
 		{
 			std::string  texture = textures_vector[mat_index];
 			std::vector<int> material_indices = materials_map[texture];
@@ -767,12 +769,22 @@ namespace GrEngine_Vulkan
 		auto end = std::chrono::steady_clock::now();
 		auto time = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
 
-		Logger::Out("Model %s loaded in %d ms", OutputColor::Gray, OutputType::Log, mesh_path, (int)time);
+		if (out_materials_names)
+		{
+			for (int ind = 0; ind < materials_collection.size(); ind++)
+			{
+				if (ind < textures_vector.size())
+					out_materials_names->insert_or_assign(materials_collection[ind], textures_vector[ind]);
+				else
+					out_materials_names->insert_or_assign(materials_collection[ind], "nil");
+			}
+		}
 
+		Logger::Out("Model %s loaded in %d ms", OutputColor::Gray, OutputType::Log, mesh_path, (int)time);
 		return true;
 	}
 
-	bool VulkanAPI::loadMesh(const char* mesh_path, DrawableObj* target, std::string* out_materials)
+	bool VulkanAPI::loadMesh(const char* mesh_path, VulkanDrawable* target, std::vector<std::string>* out_materials)
 	{
 		std::unordered_map<Vertex, uint32_t> uniqueVertices{};
 		Assimp::Importer importer;
@@ -803,10 +815,11 @@ namespace GrEngine_Vulkan
 			{
 				auto coord = model->mMeshes[mesh_ind]->mTextureCoords[0];
 
-				Vertex vertex = { {cur_mesh->mVertices[vert_ind].x, cur_mesh->mVertices[vert_ind].y, cur_mesh->mVertices[vert_ind].z, 1.0f},
-				{1.0f, 1.0f, 1.0f, 1.0f},
-				{coord[vert_ind].x, 1.0f - coord[vert_ind].y},
-				uv_ind };
+				GrEngine_Vulkan::Vertex vertex;
+				vertex.pos = { cur_mesh->mVertices[vert_ind].x, cur_mesh->mVertices[vert_ind].y, cur_mesh->mVertices[vert_ind].z, 1.0f };
+				vertex.uv = { coord[vert_ind].x, 1.0f - coord[vert_ind].y };
+				vertex.uv_index = uv_ind;
+				vertex.color = { 1.0f, 1.0f, 1.0f, 1.0f };
 
 				if (uniqueVertices.count(vertex) == 0) {
 					uniqueVertices[vertex] = static_cast<uint32_t>(target->object_mesh.vertices.size());
@@ -828,11 +841,10 @@ namespace GrEngine_Vulkan
 
 			if (out_materials)
 			{
-				out_materials->append(name.C_Str());
-				out_materials->append("\\");
+				out_materials->push_back(name.C_Str());
 			}
 		}
-		target->bound = {highest_pointx, highest_pointy, highest_pointz};
+		target->setObjectBounds(glm::vec3{highest_pointx, highest_pointy, highest_pointz});
 		target->object_mesh.mesh_path = mesh_path;
 		target->initObject(logicalDevice, memAllocator, this);
 
@@ -848,11 +860,10 @@ namespace GrEngine_Vulkan
 
 		loadTexture(image_path, object, mat);
 		object->updateObject(logicalDevice);
-
 		return true;
 	}
 
-	bool VulkanAPI::loadTexture(const char* texture_path, DrawableObj* target, std::vector<int> material_indices)
+	bool VulkanAPI::loadTexture(const char* texture_path, VulkanDrawable* target, std::vector<int> material_indices)
 	{
 		ShaderBuffer stagingBuffer;
 		Texture new_texture;
@@ -866,87 +877,88 @@ namespace GrEngine_Vulkan
 			Logger::Out("An error occurred while loading the texture: %s", OutputColor::Green, OutputType::Error, texture_path);
 			return false;
 		}
-
-		m_createVkBuffer(logicalDevice, memAllocator, pixels, texWidth * texHeight * sizeof(int), VK_BUFFER_USAGE_TRANSFER_SRC_BIT, &stagingBuffer);
-
-		stbi_image_free(pixels);
-
-		VkExtent3D imageExtent;
-		imageExtent.width = static_cast<uint32_t>(texWidth);
-		imageExtent.height = static_cast<uint32_t>(texHeight);
-		imageExtent.depth = 1;
-
-		VkImageCreateInfo dimg_info{};
-		dimg_info.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
-		dimg_info.pNext = nullptr;
-		dimg_info.imageType = VK_IMAGE_TYPE_2D;
-		dimg_info.format = VK_FORMAT_R8G8B8A8_SRGB;
-		dimg_info.extent = imageExtent;
-		dimg_info.mipLevels = 1;
-		dimg_info.arrayLayers = 1;
-		dimg_info.samples = VK_SAMPLE_COUNT_1_BIT;
-		dimg_info.tiling = VK_IMAGE_TILING_OPTIMAL;
-		dimg_info.usage = VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT;
-
-		VmaAllocationCreateInfo dimg_allocinfo = {};
-		dimg_allocinfo.usage = VMA_MEMORY_USAGE_GPU_ONLY;
-
-		//allocate and create the image
-		vmaCreateImage(memAllocator, &dimg_info, &dimg_allocinfo, &new_texture.newImage.allocatedImage, &new_texture.newImage.allocation, nullptr);
-
-		transitionImageLayout(new_texture.newImage.allocatedImage, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
-		copyBufferToImage(stagingBuffer.Buffer, new_texture.newImage.allocatedImage, static_cast<uint32_t>(texWidth), static_cast<uint32_t>(texHeight));
-		transitionImageLayout(new_texture.newImage.allocatedImage, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
-
-		m_destroyShaderBuffer(logicalDevice, memAllocator, &stagingBuffer);
-
-		VkImageViewCreateInfo viewInfo{};
-		viewInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
-		viewInfo.image = new_texture.newImage.allocatedImage;
-		viewInfo.viewType = VK_IMAGE_VIEW_TYPE_2D;
-		viewInfo.format = VK_FORMAT_R8G8B8A8_SRGB;
-		viewInfo.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-		viewInfo.subresourceRange.baseMipLevel = 0;
-		viewInfo.subresourceRange.levelCount = 1;
-		viewInfo.subresourceRange.baseArrayLayer = 0;
-		viewInfo.subresourceRange.layerCount = 1;
-		vkCreateImageView(logicalDevice, &viewInfo, nullptr, &new_texture.textureImageView);
-
-		VkPhysicalDeviceProperties properties{};
-		vkGetPhysicalDeviceProperties(physicalDevice, &properties);
-
-		VkSamplerCreateInfo samplerInfo{};
-		samplerInfo.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
-		samplerInfo.magFilter = VK_FILTER_LINEAR;
-		samplerInfo.minFilter = VK_FILTER_LINEAR;
-		samplerInfo.addressModeU = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER;
-		samplerInfo.addressModeV = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER;
-		samplerInfo.addressModeW = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER;
-		samplerInfo.anisotropyEnable = VK_TRUE;
-		samplerInfo.maxAnisotropy = properties.limits.maxSamplerAnisotropy;
-		samplerInfo.borderColor = VK_BORDER_COLOR_INT_OPAQUE_BLACK;
-		samplerInfo.unnormalizedCoordinates = VK_FALSE;
-		samplerInfo.compareEnable = VK_FALSE;
-		samplerInfo.compareOp = VK_COMPARE_OP_ALWAYS;
-		samplerInfo.mipmapMode = VK_SAMPLER_MIPMAP_MODE_LINEAR;
-		samplerInfo.mipLodBias = 0.0f;
-		samplerInfo.minLod = 0.0f;
-		samplerInfo.maxLod = 0.0f;
-		vkCreateSampler(logicalDevice, &samplerInfo, nullptr, &new_texture.textureSampler);
-
-		if (target->object_texture.size() < TEXTURE_ARRAY_SIZE)
-			target->object_texture.resize(TEXTURE_ARRAY_SIZE);
-
+		/*Saves laoding same image several times for different surfaces*/
 		for (int index : material_indices)
 		{
-			if (target->object_texture[index].newImage.allocatedImage != nullptr)
+
+			m_createVkBuffer(logicalDevice, memAllocator, pixels, texWidth * texHeight * sizeof(int), VK_BUFFER_USAGE_TRANSFER_SRC_BIT, &stagingBuffer);
+
+			VkExtent3D imageExtent;
+			imageExtent.width = static_cast<uint32_t>(texWidth);
+			imageExtent.height = static_cast<uint32_t>(texHeight);
+			imageExtent.depth = 1;
+
+			VkImageCreateInfo dimg_info{};
+			dimg_info.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
+			dimg_info.pNext = nullptr;
+			dimg_info.imageType = VK_IMAGE_TYPE_2D;
+			dimg_info.format = VK_FORMAT_R8G8B8A8_SRGB;
+			dimg_info.extent = imageExtent;
+			dimg_info.mipLevels = 1;
+			dimg_info.arrayLayers = 1;
+			dimg_info.samples = VK_SAMPLE_COUNT_1_BIT;
+			dimg_info.tiling = VK_IMAGE_TILING_OPTIMAL;
+			dimg_info.usage = VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT;
+
+			VmaAllocationCreateInfo dimg_allocinfo = {};
+			dimg_allocinfo.usage = VMA_MEMORY_USAGE_GPU_ONLY;
+
+			//allocate and create the image
+			vmaCreateImage(memAllocator, &dimg_info, &dimg_allocinfo, &new_texture.newImage.allocatedImage, &new_texture.newImage.allocation, nullptr);
+
+			transitionImageLayout(new_texture.newImage.allocatedImage, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
+			copyBufferToImage(stagingBuffer.Buffer, new_texture.newImage.allocatedImage, static_cast<uint32_t>(texWidth), static_cast<uint32_t>(texHeight));
+			transitionImageLayout(new_texture.newImage.allocatedImage, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+
+			m_destroyShaderBuffer(logicalDevice, memAllocator, &stagingBuffer);
+
+			VkImageViewCreateInfo viewInfo{};
+			viewInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
+			viewInfo.image = new_texture.newImage.allocatedImage;
+			viewInfo.viewType = VK_IMAGE_VIEW_TYPE_2D;
+			viewInfo.format = VK_FORMAT_R8G8B8A8_SRGB;
+			viewInfo.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+			viewInfo.subresourceRange.baseMipLevel = 0;
+			viewInfo.subresourceRange.levelCount = 1;
+			viewInfo.subresourceRange.baseArrayLayer = 0;
+			viewInfo.subresourceRange.layerCount = 1;
+			vkCreateImageView(logicalDevice, &viewInfo, nullptr, &new_texture.textureImageView);
+
+			VkPhysicalDeviceProperties properties{};
+			vkGetPhysicalDeviceProperties(physicalDevice, &properties);
+
+			VkSamplerCreateInfo samplerInfo{};
+			samplerInfo.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
+			samplerInfo.magFilter = VK_FILTER_LINEAR;
+			samplerInfo.minFilter = VK_FILTER_LINEAR;
+			samplerInfo.addressModeU = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER;
+			samplerInfo.addressModeV = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER;
+			samplerInfo.addressModeW = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER;
+			samplerInfo.anisotropyEnable = VK_TRUE;
+			samplerInfo.maxAnisotropy = properties.limits.maxSamplerAnisotropy;
+			samplerInfo.borderColor = VK_BORDER_COLOR_INT_OPAQUE_BLACK;
+			samplerInfo.unnormalizedCoordinates = VK_FALSE;
+			samplerInfo.compareEnable = VK_FALSE;
+			samplerInfo.compareOp = VK_COMPARE_OP_ALWAYS;
+			samplerInfo.mipmapMode = VK_SAMPLER_MIPMAP_MODE_LINEAR;
+			samplerInfo.mipLodBias = 0.0f;
+			samplerInfo.minLod = 0.0f;
+			samplerInfo.maxLod = 0.0f;
+			vkCreateSampler(logicalDevice, &samplerInfo, nullptr, &new_texture.textureSampler);
+
+			if (target->object_texture.size() < TEXTURE_ARRAY_SIZE)
+				target->object_texture.resize(TEXTURE_ARRAY_SIZE);
+
+			if (target->object_texture[index].newImage.allocation != nullptr)
 			{
 				m_destroyTexture(logicalDevice, memAllocator, &target->object_texture[index]);
 			}
 			new_texture.texture_path = texture_path;
 			target->object_texture[index] = new_texture;
+			target->object_texture[index].material_index = index;
 		}
 
+		stbi_image_free(pixels);
 		return true;
 	}
 
@@ -1061,6 +1073,14 @@ namespace GrEngine_Vulkan
 		freeCommandBuffer(commandBuffer);
 	}
 
+	GrEngine::DrawableObject* VulkanAPI::getDrawable() 
+	{ 
+		if (drawables.size() > 0)
+			return &drawables.back();
+		else
+			return NULL;
+	}
+
 #pragma region Static functions
 
 	VkShaderModule VulkanAPI::m_createShaderModule(VkDevice device, const std::vector<char>& code)
@@ -1118,9 +1138,24 @@ namespace GrEngine_Vulkan
 
 	void VulkanAPI::m_destroyTexture(VkDevice device, VmaAllocator allocator, Texture* texture)
 	{
-		vkDestroySampler(device, texture->textureSampler, NULL);
-		vkDestroyImageView(device, texture->textureImageView, NULL);
-		vmaDestroyImage(allocator, texture->newImage.allocatedImage, texture->newImage.allocation);
+		if (texture->textureSampler != VK_NULL_HANDLE)
+		{
+			vkDestroySampler(device, texture->textureSampler, NULL);
+			texture->textureSampler = VK_NULL_HANDLE;
+		}
+		if (texture->textureImageView != VK_NULL_HANDLE)
+		{
+			vkDestroyImageView(device, texture->textureImageView, NULL);
+			texture->textureImageView = VK_NULL_HANDLE;
+		}
+		if (texture->newImage.allocatedImage != VK_NULL_HANDLE)
+		{
+			vmaDestroyImage(allocator, texture->newImage.allocatedImage, texture->newImage.allocation);
+			texture->newImage.allocatedImage = VK_NULL_HANDLE;
+			texture->newImage.allocation = VK_NULL_HANDLE;
+		}
+
+		texture->texture_path = NULL;
 	}
 
 #pragma endregion

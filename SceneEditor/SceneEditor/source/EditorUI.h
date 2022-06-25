@@ -36,7 +36,7 @@ public:
 	typedef void(*UpdateFramecounterFunc)(double);
 	UpdateFramecounterFunc UpdateFramecounter;
 
-	typedef void(*UpdateMaterialsFunc)(char*);
+	typedef void(*UpdateMaterialsFunc)(char*, char*);
 	UpdateMaterialsFunc UpdateMaterials;
 
 	EditorUI()

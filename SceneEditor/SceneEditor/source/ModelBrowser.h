@@ -2,6 +2,7 @@
 #include <GrayEngine.h>
 #include "EditorUI.h"
 #include <chrono>
+#include <glfw/glfw3.h>
 
 namespace GrEngine
 {
@@ -22,23 +23,29 @@ namespace GrEngine
             case WM_DESTROY:
                 break;
             case WM_SIZE:
-                GrEngine::ModelBrowser::redrawDesigner();
+                ModelBrowser::redrawDesigner();
                 break;
                 /*Messages received from the C# WPF front-end part of the editor*/
             case 0x1200: //Load obj file callback
-                GrEngine::ModelBrowser::createModel((const char*)lParam);
+                ModelBrowser::createModelFile((const char*)wParam, (const char*)lParam);
                 break;
             case 0x1201: //Clear viewport callback
-                GrEngine::ModelBrowser::clearViewport();
+                ModelBrowser::clearViewport();
                 break;
             case 0x1202: //Upload texture file callback
-                GrEngine::ModelBrowser::uploadTexture((const char*)lParam, (int)wParam);
+                ModelBrowser::uploadTexture((const char*)lParam, (int)wParam);
                 break;
             case 0x1203: //Create model using raw files
-                GrEngine::ModelBrowser::createModel((const char*)wParam, (const char*)lParam);
+                ModelBrowser::loadModelFromFile((const char*)wParam);
                 break;
             case 0x1204: //Push into logger
                 Logger::Out((const char*)lParam, OutputColor::Gray, OutputType::Log);
+                break;
+            case 0x1205: //Create model using raw files
+                ModelBrowser::loadRawModel((const char*)wParam, (const char*)lParam);
+                break;
+            case 0x1206: //Load model into the scene
+                ModelBrowser::sendToTheScene((const char*)wParam);
                 break;
             default:
                 return DefWindowProcA(hwnd, msg, wParam, lParam);
@@ -47,14 +54,15 @@ namespace GrEngine
         }
 
     public:
-        ModelBrowser(const AppParameters& Properties = AppParameters())
+        ModelBrowser(const AppParameters& Properties = AppParameters()) : Engine(Properties)
         {
-
+            EventListener::blockEvents();
         }
 
         ~ModelBrowser()
         {
             _instance = nullptr;
+            EventListener::blockEvents(true, true);
         }
 
         void init(ModelBrowser* instance)
@@ -67,11 +75,31 @@ namespace GrEngine
 
             _instance = instance;
             initModelBrowser();
+
+            _instance->getAppWindow()->inputs_vector.push_back(Inputs);
         }
 
         static void StartEngine()
         {
             _instance->Run();
+        }
+
+        static void Inputs()
+        {
+            Renderer* render = _instance->getAppWindow()->getRenderer();
+            DrawableObject* drawable = render->getDrawable();
+
+            if (drawable != NULL)
+            {
+                drawable->Rotate(0, 0.75f, 0);
+                render->viewport_camera.cam_orientation = glm::lookAt(glm::vec3(2.f + drawable->getObjectBounds().x, 2.f + drawable->getObjectBounds().y, 2.f + drawable->getObjectBounds().z), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+                render->viewport_camera.cam_pos = glm::vec3(2.f + drawable->getObjectBounds().x, 2.f + drawable->getObjectBounds().y, 2.f + drawable->getObjectBounds().z);
+            }
+            else
+            {
+                render->viewport_camera.cam_orientation = glm::lookAt(glm::vec3(1000.f, 1000.f, 1000.f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+                render->viewport_camera.cam_pos = glm::vec3(1000.f, 1000.f, 1000.f);
+            }
         }
 
         static void KillEngine()
@@ -89,11 +117,88 @@ namespace GrEngine
             _instance->loadImageFromPath(image_path, material_index);
         }
 
-        static void createModel(const char* mesh_path, const char* textures_str = nullptr)
+        static void sendToTheScene(const char* filepath)
+        {
+            std::string path = filepath;
+            std::vector<double> para;
+            for (char chr : path)
+            {
+                para.push_back(chr);
+            }
+            EventListener::blockEvents(true, true);
+            EventListener::registerEvent("LoadModel", para);
+        }
+
+        static void createModelFile(const char* mesh_path, const char* textures_str = nullptr)
         {
             std::string temp_str = "";
             std::vector<std::string> mat_vector;
-            std::string materials;
+            std::string mesh = "";
+            std::string file = "";
+
+            if (textures_str)
+            {
+                std::string mats = textures_str;
+
+                for (char chr : mats)
+                {
+                    if (chr != '|')
+                    {
+                        temp_str += chr;
+                    }
+                    else
+                    {
+                        mat_vector.push_back(temp_str);
+                        temp_str = "";
+                        continue;
+                    }
+                }
+            }
+
+            for (char chr : std::string(mesh_path))
+            {
+                if (chr != '|')
+                {
+                    temp_str += chr;
+                }
+                else
+                {
+                    file = temp_str;
+                    temp_str = "";
+                }
+                mesh = temp_str;
+            }
+
+            _instance->createModel(file.c_str(), mesh.c_str(), mat_vector);
+        }
+
+        static void loadModelFromFile(const char* filepath)
+        {
+            std::string mesh_path = "";
+            std::vector<std::string> mat_vector;
+            std::unordered_map<std::string, std::string> materials;
+
+            clearViewport();
+            Renderer::readGMF(filepath, &mesh_path, &mat_vector);
+
+            auto res = _instance->loadModel(mesh_path.c_str(), mat_vector, &materials);
+            std::string out_materials;
+            std::string out_textures;
+            for (auto pair : materials)
+            {
+                out_materials += pair.first + "|";
+                out_textures += pair.second + "|";
+            }
+
+            if (res)
+                getEditorUI()->UpdateMaterials((char*)out_materials.c_str(), (char*)out_textures.c_str());
+        }
+
+        static void loadRawModel(const char* mesh_path, const char* textures_str = nullptr)
+        {
+            std::string temp_str = "";
+            std::vector<std::string> mat_vector;
+            std::unordered_map<std::string, std::string> materials;
 
             clearViewport();
 
@@ -117,9 +222,16 @@ namespace GrEngine
             }
 
             auto res = _instance->loadModel(mesh_path, mat_vector, &materials);
+            std::string out_materials;
+            std::string out_textures;
+            for (auto pair : materials)
+            {
+                out_materials += pair.first + "|";
+                out_textures += pair.second + "|";
+            }
 
             if (res)
-                getEditorUI()->UpdateMaterials((char*)materials.c_str());
+                getEditorUI()->UpdateMaterials((char*)out_materials.c_str(), (char*)out_textures.c_str());
         }
 
         static void clearViewport()

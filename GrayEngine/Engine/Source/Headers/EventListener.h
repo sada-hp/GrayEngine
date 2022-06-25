@@ -71,11 +71,13 @@ public:
 
 	static void pushEvent(const EventType& event, EventCallbackFun event_function)
 	{
-		GetListener()->observers_engine[event].push_back(std::forward<EventCallbackFun>(event_function));
+		if (GetListener()->bAllowEvents)
+			GetListener()->observers_engine[event].push_back(std::forward<EventCallbackFun>(event_function));
 	}
 	static void pushEvent(const char* event_name, EventCallbackFun event_function)
 	{
-		GetListener()->observers_custom[event_name].push_back(std::forward<EventCallbackFun>(event_function));
+		if (GetListener()->bAllowCustomEvents)
+			GetListener()->observers_custom[event_name].push_back(std::forward<EventCallbackFun>(event_function));
 	}
 
 	static void blockEvents(bool engineEventsEnabled = false, bool customEventsEnabled = false)
@@ -103,6 +105,8 @@ public:
 
 	static void registerEvent(const char* name, const std::vector<double> para)
 	{
+		if (!GetListener()->bAllowCustomEvents) return;
+
 		EventBase event;
 		event.type = EventType::Custom;
 		event.name = name;
@@ -113,6 +117,8 @@ public:
 
 	static void registerEvent(const EventType& type, const std::vector<double> para)
 	{
+		if (!GetListener()->bAllowEvents) return;
+
 		if (type == EventType::Custom)
 			throw std::runtime_error("Use const char* to define custom event!");
 		else
@@ -123,6 +129,11 @@ public:
 		event.para = para;
 
 		GetListener()->EventQueue.push(event);
+	}
+
+	static void clearEventQueue()
+	{
+		GetListener()->EventQueue.empty();
 	}
 private:
 	std::map<EventType, std::vector<EventCallbackFun>> observers_engine;

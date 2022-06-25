@@ -1,25 +1,26 @@
 #pragma once
-#include <pch.h>
-#include <glfw/glfw3.h>
-#include "Engine/Source/Headers/Core.h"
+#include "Camera.h"
+#include "DrawableObject.h"
 
 namespace GrEngine
 {
-	class Renderer
+	class DllExport Renderer
 	{
 	public:
 		bool Initialized = false;
+		Camera viewport_camera;
 
 		Renderer() {};
 		virtual ~Renderer() {};
 
-		virtual bool init(GLFWwindow* window) = 0;
+		virtual bool init(void* window) = 0;
 		virtual void destroy() = 0;
 		virtual void drawFrame() = 0;
 		virtual bool loadImage(const char* image_path, int material_index = 0) = 0;
-		virtual bool loadModel(const char* mesh_path, std::vector<std::string> textures_vector, std::string* out_materials_names = nullptr) = 0;
+		virtual bool loadModel(const char* mesh_path, std::vector<std::string> textures_vector, std::unordered_map<std::string, std::string>* out_materials_names = nullptr) = 0;
 		virtual void clearDrawables() = 0;
 		virtual void Update() = 0;
+		virtual DrawableObject* getDrawable() = 0;
 
 		static std::string getExecutablePath()
 		{
@@ -56,6 +57,79 @@ namespace GrEngine
 			file.close();
 
 			return buffer;
+		}
+
+		static bool readGMF(const std::string& filepath, std::string* mesh, std::vector<std::string>* textures)
+		{
+			auto buffer = Renderer::readFile(filepath);
+
+			if (buffer.size() == 0)
+				return false;
+
+			std::string temp_str = "";
+			bool is_mesh = false;
+
+			if (buffer.size() == 0)
+				return false;
+
+			for (char chr : buffer)
+			{
+				if (chr == '<')
+				{
+					if (temp_str != "")
+					{
+						if (is_mesh)
+						{
+							mesh->append(temp_str);;
+						}
+						else
+						{
+							textures->push_back(temp_str);
+						}
+
+						temp_str = "";
+					}
+
+					temp_str += chr;
+				}
+				else if (chr == '>')
+				{
+					if (temp_str + chr == "<mesh>")
+					{
+						is_mesh = true;
+					}
+					else if (temp_str + chr == "<texture>")
+					{
+						is_mesh = false;
+					}
+
+					temp_str = "";
+				}
+				else
+				{
+					temp_str += chr;
+				}
+			}
+
+			return true;
+		}
+
+		static bool writeGMF(const std::string& filepath, const std::string& mesh_path, const std::vector<std::string> textures_vector)
+		{
+			std::fstream new_file;
+			new_file.open(filepath, std::fstream::out | std::ios::trunc);
+
+			if (!new_file)
+				return false;
+
+			new_file << "<mesh>" << mesh_path << "<|mesh>";
+			for (auto tex : textures_vector)
+			{
+				new_file << "<texture>" << tex << "<|texture>";
+			}
+			new_file.close();
+
+			return true;
 		}
 	};
 }

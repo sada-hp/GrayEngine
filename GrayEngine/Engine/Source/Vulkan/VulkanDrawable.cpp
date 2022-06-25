@@ -1,20 +1,10 @@
 #include <pch.h>
-#include "DrawableObj.h"
+#include "VulkanDrawable.h"
 #include "VulkanAPI.h"
 
 namespace GrEngine_Vulkan
 {
-	DrawableObj::DrawableObj()
-	{
-
-	}
-
-	DrawableObj::~DrawableObj()
-	{
-
-	}
-
-	void DrawableObj::initObject(VkDevice device, VmaAllocator allocator, void* owner)
+	void VulkanDrawable::initObject(VkDevice device, VmaAllocator allocator, GrEngine::Renderer* owner)
 	{
 		p_Owner = owner;
 		object_texture.resize(TEXTURE_ARRAY_SIZE);
@@ -29,7 +19,7 @@ namespace GrEngine_Vulkan
 		createGraphicsPipeline(device);
 	}
 
-	void DrawableObj::destroyObject(VkDevice device, VmaAllocator allocator)
+	void VulkanDrawable::destroyObject(VkDevice device, VmaAllocator allocator)
 	{
 		vkDestroyPipeline(device, graphicsPipeline, NULL);
 		vkDestroyPipelineLayout(device, pipelineLayout, NULL);
@@ -42,13 +32,14 @@ namespace GrEngine_Vulkan
 
 		for (int ind = 0; ind < object_texture.size(); ind++)
 		{
-			VulkanAPI::m_destroyTexture(device, allocator, &object_texture[ind]);
+			if (object_texture[ind].newImage.allocation != VK_NULL_HANDLE)
+				VulkanAPI::m_destroyTexture(device, allocator, &object_texture[ind]);
 		}
 
-		this->~DrawableObj();
+		this->~VulkanDrawable();
 	}
 
-	void DrawableObj::updateObject(VkDevice device)
+	void VulkanDrawable::updateObject(VkDevice device)
 	{
 		VkDescriptorImageInfo imageInfo[TEXTURE_ARRAY_SIZE];
 		for (int ind = 0; ind < TEXTURE_ARRAY_SIZE; ind++)
@@ -81,7 +72,7 @@ namespace GrEngine_Vulkan
 		vkUpdateDescriptorSets(device, 1, &writes, 0, NULL);
 	}
 
-	void DrawableObj::invalidateTexture(VkDevice device, VmaAllocator allocator)
+	void VulkanDrawable::invalidateTexture(VkDevice device, VmaAllocator allocator)
 	{
 		for (int ind = 0; ind < object_texture.size(); ind++)
 		{
@@ -91,7 +82,7 @@ namespace GrEngine_Vulkan
 		object_texture.clear();
 	}
 
-	bool DrawableObj::createPipelineLayout(VkDevice device)
+	bool VulkanDrawable::createPipelineLayout(VkDevice device)
 	{
 		VkPushConstantRange pushConstant;
 		pushConstant.offset = 0;
@@ -110,7 +101,7 @@ namespace GrEngine_Vulkan
 		return vkCreatePipelineLayout(device, &pipelineLayoutInfo, NULL, &pipelineLayout) == VK_SUCCESS;
 	}
 
-	bool DrawableObj::recordCommandBuffer(VkDevice device, VkCommandBuffer commandBuffer, VkExtent2D extent)
+	bool VulkanDrawable::recordCommandBuffer(VkDevice device, VkCommandBuffer commandBuffer, VkExtent2D extent)
 	{
 		vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, graphicsPipeline);
 
@@ -131,16 +122,11 @@ namespace GrEngine_Vulkan
 		return true;
 	}
 
-	bool DrawableObj::pushConstants(VkDevice devicce, VkCommandBuffer cmd, VkExtent2D extent)
+	bool VulkanDrawable::pushConstants(VkDevice devicce, VkCommandBuffer cmd, VkExtent2D extent)
 	{
-		static auto startTime = std::chrono::high_resolution_clock::now();
-
-		auto currentTime = std::chrono::high_resolution_clock::now();
-		float time = std::chrono::duration<float, std::chrono::seconds::period>(currentTime - startTime).count();
-
-		ubo.model = glm::rotate(glm::mat4(1.0f), time * glm::radians(30.0f), glm::vec3(0.0f, 0.0f, 1.0f));
-		ubo.view = glm::lookAt(glm::vec3(bound.x + 1.f, bound.y + 1.5f, bound.z + 1.f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f));
-		ubo.proj = glm::perspective(glm::radians(45.0f), (float)extent.width / (float)extent.height, 0.1f, 10.0f);
+		ubo.model = glm::translate(glm::mat4_cast(obj_orientation), glm::vec3{ 0.f });
+		ubo.view = glm::translate(glm::mat4_cast(p_Owner->viewport_camera.cam_orientation), -p_Owner->viewport_camera.cam_pos);
+		ubo.proj = glm::perspective(glm::radians(60.0f), (float)extent.width / (float)extent.height, 0.1f, 100.0f); //fov, aspect ratio, near clipping plane, far clipping plane
 		ubo.proj[1][1] *= -1;
 
 		vkCmdPushConstants(cmd, pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(UniformBufferObject), &ubo);
@@ -148,7 +134,7 @@ namespace GrEngine_Vulkan
 		return true;
 	}
 
-	bool DrawableObj::createGraphicsPipeline(VkDevice device)
+	bool VulkanDrawable::createGraphicsPipeline(VkDevice device)
 	{
 		std::string solution_path = GrEngine::Renderer::getExecutablePath();
 
@@ -283,7 +269,7 @@ namespace GrEngine_Vulkan
 		return true;
 	}
 
-	bool DrawableObj::createDescriptorLayout(VkDevice device)
+	bool VulkanDrawable::createDescriptorLayout(VkDevice device)
 	{
 		VkDescriptorSetLayoutBinding descriptorBindings{};
 		descriptorBindings.binding = 1; // DESCRIPTOR_SET_BINDING_INDEX
@@ -301,7 +287,7 @@ namespace GrEngine_Vulkan
 		return vkCreateDescriptorSetLayout(device, &descriptorLayout, NULL, &descriptorSetLayout) == VK_SUCCESS;
 	}
 
-	bool DrawableObj::createDescriptorPool(VkDevice device)
+	bool VulkanDrawable::createDescriptorPool(VkDevice device)
 	{
 		VkDescriptorPoolSize descriptorTypePool;
 		descriptorTypePool.type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
@@ -317,7 +303,7 @@ namespace GrEngine_Vulkan
 		return vkCreateDescriptorPool(device, &createInfo, NULL, &descriptorPool) == VK_SUCCESS;
 	}
 
-	bool DrawableObj::createDescriptorSet(VkDevice device)
+	bool VulkanDrawable::createDescriptorSet(VkDevice device)
 	{
 		VkDescriptorSetAllocateInfo descriptorAllocInfo{};
 		descriptorAllocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;

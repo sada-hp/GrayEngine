@@ -3,7 +3,7 @@
 #include <glm/glm.hpp>
 #include <vk_mem_alloc.h>
 #include <stb_image.h>
-#include "DrawableObj.h"
+#include "VulkanDrawable.h"
 #include "Engine/Source/Headers/Logger.h"
 #include "Engine/Source/Headers/Renderer.h"
 
@@ -29,7 +29,7 @@ namespace GrEngine_Vulkan
 	class VulkanAPI : public GrEngine::Renderer
 	{
 	public:
-		bool init(GLFWwindow* window) override;
+		bool init(void* window) override;
 		void destroy() override;
 		void drawFrame() override;
 		VkDevice logicalDevice;
@@ -38,7 +38,7 @@ namespace GrEngine_Vulkan
 		inline VmaAllocator getMemAllocator() { return memAllocator; };
 		inline VkRenderPass getRenderPass() { return renderPass; };
 		bool updateDrawables(uint32_t index);
-		bool loadModel(const char* mesh_path, std::vector<std::string> textures_vector, std::string* out_materials_names = nullptr) override;
+		bool loadModel(const char* mesh_path, std::vector<std::string> textures_vector, std::unordered_map<std::string, std::string>* out_materials_names = nullptr) override;
 		bool loadImage(const char* image_path, int material_index = 0) override;
 		void clearDrawables() override;
 
@@ -48,6 +48,7 @@ namespace GrEngine_Vulkan
 		static void m_destroyTexture(VkDevice device, VmaAllocator allocator, Texture* texture);
 
 		void Update() override;
+		GrEngine::DrawableObject* getDrawable() override;
 
 	protected:
 		bool allocateCommandBuffer(VkCommandBuffer* cmd, uint32_t count = 0);
@@ -80,10 +81,10 @@ namespace GrEngine_Vulkan
 
 		VkMemoryRequirements memRequirements;
 
-		std::vector<DrawableObj> drawables;
+		std::vector<VulkanDrawable> drawables;
 
-		bool loadMesh(const char* mesh_path, DrawableObj* target, std::string* out_materials = nullptr);
-		bool loadTexture(const char* texture_path, DrawableObj* target, std::vector<int> material_indices);
+		bool loadMesh(const char* mesh_path, VulkanDrawable* target, std::vector<std::string>* out_materials = nullptr);
+		bool loadTexture(const char* texture_path, VulkanDrawable* target, std::vector<int> material_indices);
 
 		bool createVKInstance();
 		bool createMemoryAllocator();

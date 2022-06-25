@@ -96,10 +96,10 @@ namespace GrEngine
 
 	void GL_APP::OnStep()
 	{
-
+		std::future<void> engine_events = std::async(std::launch::async, []() {EventListener::pollEngineEvents(); });
 		glfwPollEvents();
 		pAppRenderer->drawFrame();
-		EventListener::pollEngineEvents();
+		ProccessInputs();
 		glfwSwapBuffers(window);
 
 		double currentTime = glfwGetTime();
@@ -125,6 +125,28 @@ namespace GrEngine
 	{
 		glfwSwapInterval((int)state);
 		Logger::Out("VSync is now set to %d", OutputColor::Green, OutputType::Log, state);
+	}
+
+	void GL_APP::ProccessInputs()
+	{
+		for (auto input : inputs_vector)
+		{
+			input();
+		}
+	}
+
+	bool GL_APP::IsKeyDown(int KEY)
+	{
+		return glfwGetKey(window, KEY) == GLFW_PRESS;
+	}
+
+	void GL_APP::AppShowCursor(bool show)
+	{
+		ShowCursor(show);
+		if (show)
+			glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
+		else
+			glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_HIDDEN);
 	}
 
 	void GL_APP::SetUpEvents(GLFWwindow* target)

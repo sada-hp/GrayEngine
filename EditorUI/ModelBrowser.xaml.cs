@@ -21,6 +21,8 @@ namespace EditorUI
         static extern IntPtr SetParent(IntPtr hWndChild, IntPtr hWndNewParent);
         [DllImport("user32.dll")]
         static extern bool SetWindowPos(IntPtr hWnd, IntPtr hWndInsertAfter, int X, int Y, int cx, int cy, uint uFlags);
+        [DllImport("GrayEngine.dll", CallingConvention = CallingConvention.Cdecl)]
+        static extern bool loadModel(IntPtr mesh_path, IntPtr textures_path, IntPtr out_materials_names);
 
         IntPtr pOwner;
         IntPtr child_hwnd;
@@ -93,6 +95,7 @@ namespace EditorUI
                         {
                             LoadedAssets.Add(model_file, item);
                             Browser.Items.Add(item);
+                            item.MainControl.AddHandler(System.Windows.Controls.Label.MouseDoubleClickEvent, new System.Windows.Input.MouseButtonEventHandler(BrowserItem_DoubleClick));
                         }
                     }
                 }
@@ -148,7 +151,7 @@ namespace EditorUI
                 default_name = openFileDialog.SafeFileName.Split('.')[0];
                 IdBox.Text = default_name;
 
-                SendMessage(pOwner, 0x1200, IntPtr.Zero, Marshal.StringToHGlobalAnsi(openFileDialog.FileName));
+                SendMessage(pOwner, 0x1205, Marshal.StringToHGlobalAnsi(openFileDialog.FileName), IntPtr.Zero);
             }
 
             GC.Collect();
@@ -177,24 +180,37 @@ namespace EditorUI
             GC.Collect();
         }
 
-        internal void AddMaterialToTheTable(string string_names)
+        internal void AddMaterialToTheTable(string material_names, string texture_names)
         {
             MaterialsPanel.Children.Clear();
 
             int mat_index = 0;
-            string[] material_names = string_names.Split('\\');
+            string[] materials = material_names.Split('|');
+            string[] textures = texture_names.Split('|');
 
-            bool isNumeric = int.TryParse(IdBox.Text, out int id);
-            if (!isNumeric) id = -1;
-
-            foreach (string material_name in material_names)
+            foreach (string material_name in materials)
             {
                 if (material_name != String.Empty)
                 {
                     if (!Materials.ContainsKey(mat_index))
                     {
-                        Materials.Add(mat_index, missing_texture);
-                        SendMessage(pOwner, 0x1202, (IntPtr)mat_index, Marshal.StringToHGlobalAnsi(Materials[mat_index]));
+                        if (textures[mat_index] != "nil")
+                            Materials.Add(mat_index, textures[mat_index]);
+                        else
+                        {
+                            Materials.Add(mat_index, missing_texture);
+                            SendMessage(pOwner, 0x1202, (IntPtr)mat_index, Marshal.StringToHGlobalAnsi(missing_texture));
+                        }
+                    }
+                    else
+                    {
+                        if (textures[mat_index] != "nil")
+                            Materials[mat_index] = textures[mat_index];
+                        else
+                        {
+                            Materials[mat_index] = missing_texture;
+                            SendMessage(pOwner, 0x1202, (IntPtr)mat_index, Marshal.StringToHGlobalAnsi(missing_texture));
+                        }
                     }
 
                     MaterialInput material_panel = new MaterialInput(pOwner);
@@ -211,36 +227,14 @@ namespace EditorUI
 
         private void BtnCreate_Click(object sender, RoutedEventArgs e)
         {
-            string path = loaded_mesh;
-
-            for (int i = loaded_mesh.Length - 1; i > 0; i--)
+            string material_string = "";
+            foreach (var texture in Materials.Values)
             {
-                if (loaded_mesh[i] != '\\')
-                {
-                    continue;
-                }
-                else
-                {
-                    path = loaded_mesh.Substring(0, i) + '\\';
-                    break;
-                }
+                material_string += texture + "|";
             }
 
-            /*GrayEngine model file*/
-            string currentfile = "<mesh>" + loaded_mesh + "<|mesh>";
-            System.IO.FileStream model_file = new System.IO.FileStream(path + IdBox.Text + ".gmf", System.IO.FileMode.Create);
-            model_file.Write(System.Text.Encoding.ASCII.GetBytes(currentfile), 0, System.Text.Encoding.ASCII.GetBytes(currentfile).Length);
-
-            for (int itt = 0; itt < Materials.Count; itt++)
-            {
-                currentfile = "<texture>" + Materials[itt] + "<|texture>";
-                model_file.Write(System.Text.Encoding.ASCII.GetBytes(currentfile), 0, System.Text.Encoding.ASCII.GetBytes(currentfile).Length);
-            }
-            model_file.Close();
-
+            SendMessage(pOwner, 0x1200, Marshal.StringToHGlobalAnsi(loaded_mesh.Substring(0, loaded_mesh.LastIndexOf('\\')) + '\\' + IdBox.Text + ".gmf" + "|" + loaded_mesh), Marshal.StringToHGlobalAnsi(material_string));
             LoadData();
-            if (LoadedAssets.ContainsKey(loaded_mesh))
-                Browser.SelectedIndex = LoadedAssets.Keys.ToList().IndexOf(loaded_mesh);
         }
 
         private void Browser_SelectionChanged(object sender, System.Windows.Controls.SelectionChangedEventArgs e)
@@ -249,59 +243,9 @@ namespace EditorUI
             {
                 if (Browser.SelectedIndex < 0) return;
 
-                System.IO.FileStream io_file = new System.IO.FileStream(((BrowserItem)Browser.SelectedItem).ToolTip.ToString(), System.IO.FileMode.Open, System.IO.FileAccess.Read);
-                System.Threading.CancellationTokenSource source = new System.Threading.CancellationTokenSource();
-
-                byte[] buffer = new byte[io_file.Length];
-                io_file.Read(buffer, 0, (int)io_file.Length);
-                string file_path = String.Empty;
-                string file_type = String.Empty;
-                string cur_mesh = String.Empty;
-                string cur_texs = String.Empty;
-                bool comma = false;
-                Materials.Clear();
-
-                foreach (char chr in buffer)
-                {
-                    if (chr == '<')
-                    {
-                        if (file_path != String.Empty)
-                        {
-                            if (file_type == "<mesh>")
-                            {
-                                cur_mesh = file_path;
-                            }
-                            else if (file_type == "<texture>")
-                            {
-                                cur_texs += file_path + '|';
-                                Materials.Add(Materials.Count, file_path);
-                            }
-                        }
-
-                        file_type = String.Empty;
-                        file_path = string.Empty;
-                        comma = true;
-                        file_type += chr;
-                    }
-                    else if (chr == '>')
-                    {
-                        file_type += chr;
-                        comma = false;
-                    }
-                    else if (comma)
-                    {
-                        file_type += chr;
-                    }
-                    else
-                    {
-                        file_path += chr;
-                    }
-                }
-                io_file.Close();
-
-                SendMessage(pOwner, 0x1203, Marshal.StringToHGlobalAnsi(cur_mesh), Marshal.StringToHGlobalAnsi(cur_texs));
-                IdBox.Text = io_file.Name.Split('\\').Last().Split('.')[0];
-                loaded_mesh = cur_mesh;
+                SendMessage(pOwner, 0x1203, Marshal.StringToHGlobalAnsi(((BrowserItem)Browser.SelectedItem).ToolTip.ToString()), IntPtr.Zero);
+                IdBox.Text = ((BrowserItem)Browser.SelectedItem).ToolTip.ToString().Split('\\').Last().Split('.')[0];
+                loaded_mesh = ((BrowserItem)Browser.SelectedItem).ToolTip.ToString();
                 MeshPath.Text = loaded_mesh;
                 MeshPath.ToolTip = loaded_mesh;
             }
@@ -413,6 +357,12 @@ namespace EditorUI
         private void Button_Click(object sender, RoutedEventArgs e)
         {
             LoadData();
+        }
+
+        private void BrowserItem_DoubleClick(object sender, System.Windows.Input.MouseButtonEventArgs e)
+        {
+            SendMessage(pOwner, 0x1206, Marshal.StringToHGlobalAnsi(((BrowserItem)Browser.SelectedItem).ToolTip.ToString()), IntPtr.Zero);
+            SendMessage(pOwner, 0x0010, IntPtr.Zero, IntPtr.Zero);
         }
     }
 }

@@ -19,7 +19,7 @@
                 <Button x:Name="ClearButton" Content="Clear scene" Background="#FF5D5D5D" BorderBrush="#FFC8C8C8" BorderThickness="1" Margin="5" Foreground="White" FontFamily="Lucida Sans Unicode" TextOptions.TextHintingMode="Fixed" Padding="2" Cursor="Hand" Click="ClearButton_Click"/>
                 <Button x:Name="BrowserButton" Content="Model browser" Background="#FF5D5D5D" BorderBrush="#FFC8C8C8" BorderThickness="1" Margin="5" Foreground="White" FontFamily="Lucida Sans Unicode" TextOptions.TextHintingMode="Fixed" Padding="2" Cursor="Hand" Click="BrowserButton_Click"/>
             </StackPanel>
-            <DockPanel Height="120" VerticalAlignment="Top" DockPanel.Dock="Bottom" LastChildFill="True" Background="#FF353538" Margin="0">
+            <DockPanel Name="LogPanel" Height="120" VerticalAlignment="Top" DockPanel.Dock="Bottom" LastChildFill="True" Background="#FF353538" Margin="0">
                 <TextBox x:Name="OutputConsole" TextWrapping="Wrap" Foreground="#FFB9B9B9" Background="#FF262629" SelectionBrush="#FF8A9299" Padding="5" Margin="2" VerticalScrollBarVisibility="Auto" BorderThickness="0" IsReadOnly="True" HorizontalScrollBarVisibility="Auto" DockPanel.Dock="Top"/>
             </DockPanel>
             <WindowsFormsHost x:Name="FormHost" Background="Black" SizeChanged="FormHost_SizeChanged" DockPanel.Dock="Top" Margin="5"/>
