@@ -844,7 +844,7 @@ namespace GrEngine_Vulkan
 				out_materials->push_back(name.C_Str());
 			}
 		}
-		target->setObjectBounds(glm::vec3{highest_pointx, highest_pointy, highest_pointz});
+		target->SetObjectBounds(glm::vec3{highest_pointx, highest_pointy, highest_pointz});
 		target->object_mesh.mesh_path = mesh_path;
 		target->initObject(logicalDevice, memAllocator, this);
 

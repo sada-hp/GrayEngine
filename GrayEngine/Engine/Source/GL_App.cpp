@@ -98,8 +98,8 @@ namespace GrEngine
 	{
 		std::future<void> engine_events = std::async(std::launch::async, []() {EventListener::pollEngineEvents(); });
 		glfwPollEvents();
-		pAppRenderer->drawFrame();
 		ProccessInputs();
+		pAppRenderer->drawFrame();
 		glfwSwapBuffers(window);
 
 		double currentTime = glfwGetTime();

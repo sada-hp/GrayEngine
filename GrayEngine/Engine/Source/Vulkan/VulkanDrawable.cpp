@@ -125,7 +125,7 @@ namespace GrEngine_Vulkan
 	bool VulkanDrawable::pushConstants(VkDevice devicce, VkCommandBuffer cmd, VkExtent2D extent)
 	{
 		ubo.model = glm::translate(glm::mat4_cast(obj_orientation), glm::vec3{ 0.f });
-		ubo.view = glm::translate(glm::mat4_cast(p_Owner->viewport_camera.cam_orientation), -p_Owner->viewport_camera.cam_pos);
+		ubo.view = glm::translate(glm::mat4_cast(p_Owner->getActiveViewport()->GetCameraOrientation()), -p_Owner->getActiveViewport()->GetCameraPosition());
 		ubo.proj = glm::perspective(glm::radians(60.0f), (float)extent.width / (float)extent.height, 0.1f, 100.0f); //fov, aspect ratio, near clipping plane, far clipping plane
 		ubo.proj[1][1] *= -1;
 

@@ -12,6 +12,7 @@ namespace GrEngine
         EditorUI editorUI;
         std::string log_path;
         bool free_mode = false;
+        glm::vec2 old_cursor_pos;
 
     public:
         static LRESULT CALLBACK HostWindowProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) //Background Win32 is used to receive messages from WPF front-end window
@@ -82,6 +83,7 @@ namespace GrEngine
                     }
                 });
 
+            _instance->getAppWindow()->getRenderer()->getActiveViewport()->LockAxes(0, 0, 89, -89, 0, 0);
             _instance->getAppWindow()->inputs_vector.push_back(Inputs);
         }
 
@@ -165,16 +167,18 @@ namespace GrEngine
         {
             _instance->free_mode = !_instance->free_mode;
             _instance->getAppWindow()->AppShowCursor(!_instance->free_mode);
-            _instance->getAppWindow()->getRenderer()->viewport_camera.cursor_pos = {960 * !_instance->free_mode, 540 * !_instance->free_mode };
+            _instance->old_cursor_pos = {960 * !_instance->free_mode, 540 * !_instance->free_mode };
         }
 
         static void Inputs()
         {
             Renderer* render = _instance->getAppWindow()->getRenderer();
             GLFWwindow* window = _instance->getAppWindow()->getWindow();
+            Camera* camera = render->getActiveViewport();
             POINT cur{ 1,1 };
             float cameraSpeed = 0.25;
             glm::vec3 direction{ 0.f };
+            glm::vec3 orientation{ 0.f };
             float senstivity = 0.75f;
 
             if (_instance->getAppWindow()->IsKeyDown(GLFW_KEY_LEFT_SHIFT))
@@ -190,44 +194,35 @@ namespace GrEngine
                 direction.x += 1;
 
             GetCursorPos(&cur);
-            if (_instance->free_mode && render->viewport_camera.cursor_pos != glm::vec2{ 0.f })
+            if (_instance->free_mode && _instance->old_cursor_pos != glm::vec2{ 0.f })
             {
-                if (glm::abs(render->viewport_camera.cursor_pos.x - (float)(cur.x)) > 0.15f)
+                if (glm::abs(_instance->old_cursor_pos.x - (float)(cur.x)) > 0.15f)
                 {
-                    render->viewport_camera.cam_rot.x -= (render->viewport_camera.cursor_pos.x - (float)cur.x) * senstivity;
+                    orientation.x -= (_instance->old_cursor_pos.x - (float)cur.x)* senstivity;
                 }
-                if (glm::abs(render->viewport_camera.cursor_pos.y - (float)cur.y) > 0.15f)
+                if (glm::abs(_instance->old_cursor_pos.y - (float)cur.y) > 0.15f)
                 {
-                    render->viewport_camera.cam_rot.y -= (render->viewport_camera.cursor_pos.y - (float)cur.y) * senstivity;
+                    orientation.y -= (_instance->old_cursor_pos.y - (float)cur.y) * senstivity;
                 }
                 SetCursorPos(960, 540);
             }
             else if (_instance->free_mode)
             {
-                render->viewport_camera.cursor_pos = glm::vec2{ 960, 540 };
+                _instance->old_cursor_pos = glm::vec2{ 960, 540 };
                 SetCursorPos(960, 540);
             }
 
             if (_instance->getAppWindow()->IsKeyDown(GLFW_KEY_UP))
-                render->viewport_camera.cam_rot.x -= 1;
+                orientation.y -= 1;
             if (_instance->getAppWindow()->IsKeyDown(GLFW_KEY_DOWN))
-                render->viewport_camera.cam_rot.x += 1;
+                orientation.y += 1;
             if (_instance->getAppWindow()->IsKeyDown(GLFW_KEY_RIGHT))
-                render->viewport_camera.cam_rot.y += 1;
+                orientation.x += 1;
             if (_instance->getAppWindow()->IsKeyDown(GLFW_KEY_LEFT))
-                render->viewport_camera.cam_rot.y -= 1;
+                orientation.x -= 1;
 
-            if (render->viewport_camera.cam_rot.y > 89.f)
-                render->viewport_camera.cam_rot.y = 89.f;
-            if (render->viewport_camera.cam_rot.y < -89.f)
-                render->viewport_camera.cam_rot.y = -89.f;
-
-            glm::quat qPitch = glm::angleAxis(glm::radians(render->viewport_camera.cam_rot.y), glm::vec3(1, 0, 0));
-            glm::quat qYaw = glm::angleAxis(glm::radians(render->viewport_camera.cam_rot.x), glm::vec3(0, 1, 0));
-            glm::quat qRoll = glm::angleAxis(glm::radians(render->viewport_camera.cam_rot.z), glm::vec3(0, 0, 1));
-
-            render->viewport_camera.cam_orientation = glm::normalize(qPitch * qYaw * qRoll);
-            render->viewport_camera.cam_pos += (direction * render->viewport_camera.cam_orientation) * cameraSpeed;
+            camera->Rotate(orientation);
+            camera->MoveCamera((direction * camera->GetOrientation()) * cameraSpeed);
         }
 
         static void pushToAppLogger(std::vector<double> para)

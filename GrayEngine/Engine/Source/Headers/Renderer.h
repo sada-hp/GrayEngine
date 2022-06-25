@@ -21,6 +21,7 @@ namespace GrEngine
 		virtual void clearDrawables() = 0;
 		virtual void Update() = 0;
 		virtual DrawableObject* getDrawable() = 0;
+		inline Camera* getActiveViewport() { return &viewport_camera; };
 
 		static std::string getExecutablePath()
 		{

@@ -88,17 +88,18 @@ namespace GrEngine
         {
             Renderer* render = _instance->getAppWindow()->getRenderer();
             DrawableObject* drawable = render->getDrawable();
+            Camera* camera = render->getActiveViewport();
 
             if (drawable != NULL)
             {
-                drawable->Rotate(0, 0.75f, 0);
-                render->viewport_camera.cam_orientation = glm::lookAt(glm::vec3(2.f + drawable->getObjectBounds().x, 2.f + drawable->getObjectBounds().y, 2.f + drawable->getObjectBounds().z), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f));
-                render->viewport_camera.cam_pos = glm::vec3(2.f + drawable->getObjectBounds().x, 2.f + drawable->getObjectBounds().y, 2.f + drawable->getObjectBounds().z);
+                drawable->Rotate(0.75f, 0.f, 0);
+                camera->SetRotation(glm::lookAt(glm::vec3(2.f + drawable->getObjectBounds().x, 2.f + drawable->getObjectBounds().y, 2.f + drawable->getObjectBounds().z), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f)));
+                camera->PositionCameraAt(glm::vec3(2.f + drawable->getObjectBounds().x, 2.f + drawable->getObjectBounds().y, 2.f + drawable->getObjectBounds().z));
             }
             else
             {
-                render->viewport_camera.cam_orientation = glm::lookAt(glm::vec3(1000.f, 1000.f, 1000.f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f));
-                render->viewport_camera.cam_pos = glm::vec3(1000.f, 1000.f, 1000.f);
+                camera->SetRotation(glm::lookAt(glm::vec3(1000.f, 1000.f, 1000.f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f)));
+                camera->PositionCameraAt(glm::vec3(1000.f, 1000.f, 1000.f));
             }
         }
 
