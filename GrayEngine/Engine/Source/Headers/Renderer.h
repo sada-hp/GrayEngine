@@ -29,7 +29,7 @@ namespace GrEngine
 			GetModuleFileNameA(NULL, rawPathName, MAX_PATH);
 
 			std::string solution_path = rawPathName;
-			for (int ind = solution_path.length(); ind > 0; ind--)
+			for (size_t ind = solution_path.length(); ind > 0; ind--)
 			{
 				if (solution_path[ind] != '\\')
 				{

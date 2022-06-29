@@ -54,9 +54,14 @@ namespace GrEngine
 
 		virtual void AppShowCursor(bool show) { ShowCursor(show); };
 
-		std::vector<InputCallbackFun> inputs_vector;
+		void AddInputProccess(InputCallbackFun lambda)
+		{
+			inputs_vector.push_back(lambda);
+		}
+
 
 	protected:
+		std::vector<InputCallbackFun> inputs_vector;
 		AppParameters props;
 		GLFWwindow* window;
 		void* nativeWindow;

@@ -59,7 +59,7 @@ namespace GrEngine_Vulkan
 		}
 
 		VkWriteDescriptorSet writes{};
-		//memset(&writes, 0, sizeof(writes));
+		memset(&writes, 0, sizeof(writes));
 
 		writes.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
 		writes.dstSet = descriptorSets[0];
@@ -118,19 +118,19 @@ namespace GrEngine_Vulkan
 
 		//vkCmdDraw(commandBuffer, static_cast<uint32_t>(object_mesh.vertices.size()), 1, 0, 0);
 		vkCmdDrawIndexed(commandBuffer, static_cast<uint32_t>(object_mesh.indices.size()), 1, 0, 0, 0);
-
 		return true;
 	}
 
 	bool VulkanDrawable::pushConstants(VkDevice devicce, VkCommandBuffer cmd, VkExtent2D extent)
 	{
-		ubo.model = glm::translate(glm::mat4_cast(obj_orientation), glm::vec3{ 0.f });
-		ubo.view = glm::translate(glm::mat4_cast(p_Owner->getActiveViewport()->GetCameraOrientation()), -p_Owner->getActiveViewport()->GetCameraPosition());
+		/*orientation relative to the position in a 3D space (?)*/
+		ubo.model = glm::translate(glm::mat4_cast(GetObjectOrientation()), GetObjectPosition());
+		/*Math for Game Programmers: Understanding Homogeneous Coordinates GDC 2015*/
+		ubo.view = glm::translate(glm::mat4_cast(p_Owner->getActiveViewport()->UpdateCameraOrientation(0.2)), -p_Owner->getActiveViewport()->UpdateCameraPosition(0.65)); // [ix iy iz w1( = 0)]-direction [jx jy jz w2( = 0)]-direction [kx ky kz w3( = 0)]-direction [tx ty tz w ( = 1)]-position
 		ubo.proj = glm::perspective(glm::radians(60.0f), (float)extent.width / (float)extent.height, 0.1f, 100.0f); //fov, aspect ratio, near clipping plane, far clipping plane
-		ubo.proj[1][1] *= -1;
+		ubo.proj[1][1] *= -1; //reverse Y coordinate
 
 		vkCmdPushConstants(cmd, pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(UniformBufferObject), &ubo);
-
 		return true;
 	}
 
@@ -324,7 +324,7 @@ namespace GrEngine_Vulkan
 		vkAllocateDescriptorSets(device, &descriptorAllocInfo, descriptorSets.data());
 
 		VkWriteDescriptorSet writes{};
-		//memset(&writes, 0, sizeof(writes));
+		memset(&writes, 0, sizeof(writes));
 
 		writes.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
 		writes.dstSet = descriptorSets[0];

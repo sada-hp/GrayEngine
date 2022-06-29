@@ -84,7 +84,7 @@ namespace GrEngine
                 });
 
             _instance->getAppWindow()->getRenderer()->getActiveViewport()->LockAxes(0, 0, 89, -89, 0, 0);
-            _instance->getAppWindow()->inputs_vector.push_back(Inputs);
+            _instance->getAppWindow()->AddInputProccess(Inputs);
         }
 
         ~Application()
@@ -167,7 +167,8 @@ namespace GrEngine
         {
             _instance->free_mode = !_instance->free_mode;
             _instance->getAppWindow()->AppShowCursor(!_instance->free_mode);
-            _instance->old_cursor_pos = {960 * !_instance->free_mode, 540 * !_instance->free_mode };
+            _instance->old_cursor_pos = {960 * _instance->free_mode, 540 * _instance->free_mode };
+            SetCursorPos(960, 540);
         }
 
         static void Inputs()
@@ -196,11 +197,11 @@ namespace GrEngine
             GetCursorPos(&cur);
             if (_instance->free_mode && _instance->old_cursor_pos != glm::vec2{ 0.f })
             {
-                if (glm::abs(_instance->old_cursor_pos.x - (float)(cur.x)) > 0.15f)
+                if (glm::abs(_instance->old_cursor_pos.x - (float)(cur.x)) > 0.55f)
                 {
                     orientation.x -= (_instance->old_cursor_pos.x - (float)cur.x)* senstivity;
                 }
-                if (glm::abs(_instance->old_cursor_pos.y - (float)cur.y) > 0.15f)
+                if (glm::abs(_instance->old_cursor_pos.y - (float)cur.y) > 0.55f)
                 {
                     orientation.y -= (_instance->old_cursor_pos.y - (float)cur.y) * senstivity;
                 }
@@ -222,7 +223,7 @@ namespace GrEngine
                 orientation.x -= 1;
 
             camera->Rotate(orientation);
-            camera->MoveCamera((direction * camera->GetOrientation()) * cameraSpeed);
+            camera->MoveCamera((direction * camera->GetCameraOrientation()) * cameraSpeed);
         }
 
         static void pushToAppLogger(std::vector<double> para)

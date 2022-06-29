@@ -1099,6 +1099,11 @@ namespace GrEngine_Vulkan
 
 	bool VulkanAPI::m_createVkBuffer(VkDevice device, VmaAllocator allocator, const void* bufData, uint32_t dataSize, VkBufferUsageFlags usage, ShaderBuffer* shaderBuffer)
 	{
+		/*this function may be called in async manner, so we must check if allocator is currently free, otherwise wait until its free*/
+		static bool is_in_use;
+		while (is_in_use) {};
+		is_in_use = true;
+
 		VkBufferCreateInfo bufferCreateInfo{};
 		bufferCreateInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
 		bufferCreateInfo.size = dataSize;
@@ -1125,6 +1130,7 @@ namespace GrEngine_Vulkan
 		shaderBuffer->MappedMemoryRange.memory = reinterpret_cast<VkDeviceMemory>(shaderBuffer->Allocation);
 		shaderBuffer->MappedMemoryRange.offset = 0;
 		shaderBuffer->MappedMemoryRange.size = dataSize;
+		is_in_use = false;
 
 		return true;
 	}

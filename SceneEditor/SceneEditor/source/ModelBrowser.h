@@ -76,7 +76,7 @@ namespace GrEngine
             _instance = instance;
             initModelBrowser();
 
-            _instance->getAppWindow()->inputs_vector.push_back(Inputs);
+            _instance->getAppWindow()->AddInputProccess(Inputs);
         }
 
         static void StartEngine()
@@ -93,8 +93,8 @@ namespace GrEngine
             if (drawable != NULL)
             {
                 drawable->Rotate(0.75f, 0.f, 0);
-                camera->SetRotation(glm::lookAt(glm::vec3(2.f + drawable->getObjectBounds().x, 2.f + drawable->getObjectBounds().y, 2.f + drawable->getObjectBounds().z), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f)));
-                camera->PositionCameraAt(glm::vec3(2.f + drawable->getObjectBounds().x, 2.f + drawable->getObjectBounds().y, 2.f + drawable->getObjectBounds().z));
+                camera->SetRotation(glm::lookAt(glm::vec3(2.f + drawable->GetObjectBounds().x, 2.f + drawable->GetObjectBounds().y, 2.f + drawable->GetObjectBounds().z), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f)));
+                camera->PositionCameraAt(glm::vec3(2.f + drawable->GetObjectBounds().x, 2.f + drawable->GetObjectBounds().y, 2.f + drawable->GetObjectBounds().z));
             }
             else
             {

@@ -83,7 +83,7 @@ namespace GrEngine
 			obj_orientation = angle;
 		}
 
-		glm::vec3& getObjectBounds()
+		glm::vec3& GetObjectBounds()
 		{
 			return bound;
 		}
@@ -97,8 +97,35 @@ namespace GrEngine
 		{
 			bound = new_bounds;
 		}
-	protected:
+
+		void MoveObjectBy(float x, float y, float z)
+		{
+			object_position += glm::vec3(x, y, z);
+		}
+
+		void MoveObjectBy(glm::vec3 vector)
+		{
+			object_position += vector;
+		}
+
+		void PositionObjectAt(float x, float y, float z)
+		{
+			object_position = glm::vec3(x, y, z);
+		}
+
+		void PositionObjectAt(glm::vec3 position)
+		{
+			object_position = position;
+		}
+
+		glm::vec3& GetObjectPosition()
+		{
+			return object_position;
+		}
+
+	private:
 		glm::quat obj_orientation = { 0.f, 0.f, 0.f, 0.f };
+		glm::vec3 object_position = { 0.f, 0.f, 0.f };
 		glm::vec3 pitch_yaw_roll = { 0.f, 0.f, 0.f };
 		glm::vec3 bound = { 0.f, 0.f, 0.f };
 	};

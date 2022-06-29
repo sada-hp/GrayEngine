@@ -96,9 +96,9 @@ namespace GrEngine
 
 	void GL_APP::OnStep()
 	{
-		std::future<void> engine_events = std::async(std::launch::async, []() {EventListener::pollEngineEvents(); });
-		glfwPollEvents();
+		EventListener::pollEngineEvents();
 		ProccessInputs();
+		glfwPollEvents();
 		pAppRenderer->drawFrame();
 		glfwSwapBuffers(window);
 
