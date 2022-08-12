@@ -21,7 +21,7 @@ typedef void (*EventCallbackFun)(std::vector<double>);
 class DllExport EventListener //event observer pattern
 {
 protected:
-	static std::unique_ptr<EventListener> _instance;
+	static std::unique_ptr<EventListener> global_listener;
 	bool bAllowEvents = true;
 	bool bAllowCustomEvents = true;
 
@@ -54,9 +54,12 @@ protected:
 		}
 	}
 
-	/*Defined in Singletons.cpp*/
-	static EventListener* GetListener();
-	/*Defined in Singletons.cpp*/
+	inline static EventListener* GetListener() //Singleton
+	{
+		if (global_listener == nullptr)
+			global_listener = std::make_unique<EventListener>();
+		return EventListener::global_listener.get();
+	}
 
 public:
 	EventListener()

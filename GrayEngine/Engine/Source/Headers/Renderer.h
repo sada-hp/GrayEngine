@@ -7,6 +7,7 @@ namespace GrEngine
 	class DllExport Renderer
 	{
 	public:
+		double delta_time = 0;
 		bool Initialized = false;
 		Camera viewport_camera;
 

@@ -177,13 +177,13 @@ namespace GrEngine
             GLFWwindow* window = _instance->getAppWindow()->getWindow();
             Camera* camera = render->getActiveViewport();
             POINT cur{ 1,1 };
-            float cameraSpeed = 0.25;
+            float cameraSpeed = 10;
             glm::vec3 direction{ 0.f };
             glm::vec3 orientation{ 0.f };
             float senstivity = 0.75f;
 
             if (_instance->getAppWindow()->IsKeyDown(GLFW_KEY_LEFT_SHIFT))
-                cameraSpeed = 0.5f;
+                cameraSpeed = cameraSpeed * 4;
 
             if (_instance->getAppWindow()->IsKeyDown(GLFW_KEY_W))
                 direction.z -= 1;
@@ -223,7 +223,7 @@ namespace GrEngine
                 orientation.x -= 1;
 
             camera->Rotate(orientation);
-            camera->MoveCamera((direction * camera->GetCameraOrientation()) * cameraSpeed);
+            camera->MoveObject((direction * camera->GetObjectOrientation()) * cameraSpeed);
         }
 
         static void pushToAppLogger(std::vector<double> para)

@@ -2,7 +2,7 @@
 #include "GL_App.h"
 #define GLFW_EXPOSE_NATIVE_WIN32
 #include <glfw/glfw3native.h>
-
+#include "Headers/Entity.h"
 
 namespace GrEngine
 {
@@ -103,21 +103,11 @@ namespace GrEngine
 		glfwSwapBuffers(window);
 
 		double currentTime = glfwGetTime();
-		frames++;
 
-		if (currentTime - time >= 1.0) 
-		{
-			std::vector<double> para{ (float)frames, time };
-			EventListener::registerEvent(EventType::Step, para);
-
-			frames = 0;
-			time += 1.0;
-		}
-		else
-		{
-			std::vector<double> para{  };
-			EventListener::registerEvent(EventType::Step, para);
-		}
+		Globals::delta_time = (currentTime - time);
+		std::vector<double> para{ 1/ Globals::delta_time, time };
+		EventListener::registerEvent(EventType::Step, para);
+		time = currentTime;
 	}
 
 

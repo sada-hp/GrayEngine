@@ -3,4 +3,4 @@
 #include "resource.h"
 
 //APP_ICON ICON "D:\\GrEngine\\GrayEngine\\other\\Content\\GrayMan.ico"
-APP_ICON ICON "C:\\GrayEngine\\other\\Content\\GrayMan.ico"
+//APP_ICON ICON "C:\\GrayEngine\\other\\Content\\GrayMan.ico"

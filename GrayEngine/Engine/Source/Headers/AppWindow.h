@@ -2,7 +2,7 @@
 #include <glfw/glfw3.h>
 #include "Engine/Source/Headers/Core.h"
 #include "EventListener.h"
-#include "Headers/Renderer.h"
+#include "Renderer.h"
 
 namespace GrEngine
 {
@@ -58,7 +58,6 @@ namespace GrEngine
 		{
 			inputs_vector.push_back(lambda);
 		}
-
 
 	protected:
 		std::vector<InputCallbackFun> inputs_vector;

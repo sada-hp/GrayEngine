@@ -92,14 +92,14 @@ namespace GrEngine
 
             if (drawable != NULL)
             {
-                drawable->Rotate(0.75f, 0.f, 0);
+                drawable->Rotate(45.f, 0.f, 0);
                 camera->SetRotation(glm::lookAt(glm::vec3(2.f + drawable->GetObjectBounds().x, 2.f + drawable->GetObjectBounds().y, 2.f + drawable->GetObjectBounds().z), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f)));
-                camera->PositionCameraAt(glm::vec3(2.f + drawable->GetObjectBounds().x, 2.f + drawable->GetObjectBounds().y, 2.f + drawable->GetObjectBounds().z));
+                camera->PositionObjectAt(glm::vec3(2.f + drawable->GetObjectBounds().x, 2.f + drawable->GetObjectBounds().y, 2.f + drawable->GetObjectBounds().z));
             }
             else
             {
                 camera->SetRotation(glm::lookAt(glm::vec3(1000.f, 1000.f, 1000.f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f)));
-                camera->PositionCameraAt(glm::vec3(1000.f, 1000.f, 1000.f));
+                camera->PositionObjectAt(glm::vec3(1000.f, 1000.f, 1000.f));
             }
         }
 

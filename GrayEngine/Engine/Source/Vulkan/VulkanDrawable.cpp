@@ -109,6 +109,8 @@ namespace GrEngine_Vulkan
 		vkCmdBindVertexBuffers(commandBuffer, 0, 1, &vertexBuffer.Buffer, offsets);
 		vkCmdBindIndexBuffer(commandBuffer, indexBuffer.Buffer, 0, VK_INDEX_TYPE_UINT16);
 
+		UpdateObjectPosition();
+		UpdateObjectOrientation(1);
 		pushConstants(device, commandBuffer, extent);
 
 		for (int ind = 0; ind < descriptorSets.size(); ind++)
@@ -126,7 +128,7 @@ namespace GrEngine_Vulkan
 		/*orientation relative to the position in a 3D space (?)*/
 		ubo.model = glm::translate(glm::mat4_cast(GetObjectOrientation()), GetObjectPosition());
 		/*Math for Game Programmers: Understanding Homogeneous Coordinates GDC 2015*/
-		ubo.view = glm::translate(glm::mat4_cast(p_Owner->getActiveViewport()->UpdateCameraOrientation(0.2)), -p_Owner->getActiveViewport()->UpdateCameraPosition(0.65)); // [ix iy iz w1( = 0)]-direction [jx jy jz w2( = 0)]-direction [kx ky kz w3( = 0)]-direction [tx ty tz w ( = 1)]-position
+		ubo.view = glm::translate(glm::mat4_cast(p_Owner->getActiveViewport()->UpdateObjectOrientation(0.2)), -p_Owner->getActiveViewport()->UpdateObjectPosition(0.65)); // [ix iy iz w1( = 0)]-direction [jx jy jz w2( = 0)]-direction [kx ky kz w3( = 0)]-direction [tx ty tz w ( = 1)]-position
 		ubo.proj = glm::perspective(glm::radians(60.0f), (float)extent.width / (float)extent.height, 0.1f, 100.0f); //fov, aspect ratio, near clipping plane, far clipping plane
 		ubo.proj[1][1] *= -1; //reverse Y coordinate
 

@@ -15,6 +15,7 @@
     <ClInclude Include="Engine\Source\Headers\Camera.h" />
     <ClInclude Include="Engine\Source\Headers\Core.h" />
     <ClInclude Include="Engine\Source\Headers\DrawableObject.h" />
+    <ClInclude Include="Engine\Source\Headers\Entity.h" />
     <ClInclude Include="Engine\Source\Headers\Renderer.h" />
     <ClInclude Include="Engine\Source\Vulkan\VulkanDrawable.h" />
     <ClInclude Include="Engine\Source\Vulkan\VulkanAPI.h" />
@@ -27,7 +28,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Engine\Source\Engine.cpp" />
-    <ClCompile Include="Engine\Source\Headers\Singletons.cpp" />
+    <ClCompile Include="Engine\Source\Headers\Globals.cpp" />
     <ClCompile Include="Engine\Source\Vulkan\VulkanDrawable.cpp" />
     <ClCompile Include="Engine\Source\Vulkan\VulkanAPI.cpp" />
     <ClCompile Include="Engine\Source\GL_App.cpp" />
