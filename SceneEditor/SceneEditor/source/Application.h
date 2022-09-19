@@ -85,6 +85,7 @@ namespace GrEngine
 
             _instance->getAppWindow()->getRenderer()->getActiveViewport()->LockAxes(0, 0, 89, -89, 0, 0);
             _instance->getAppWindow()->AddInputProccess(Inputs);
+            _instance->getAppWindow()->getRenderer()->ShowGrid();
         }
 
         ~Application()
@@ -122,7 +123,7 @@ namespace GrEngine
             std::vector<std::string> mat_vector;
             std::unordered_map<std::string, std::string> materials;
 
-            Renderer::readGMF(filepath, &mesh_path, &mat_vector);
+            Globals::readGMF(filepath, &mesh_path, &mat_vector);
             auto res = _instance->loadModel(mesh_path.c_str(), mat_vector, &materials);
         }
 

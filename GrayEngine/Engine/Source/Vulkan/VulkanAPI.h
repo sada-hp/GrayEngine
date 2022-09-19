@@ -41,6 +41,7 @@ namespace GrEngine_Vulkan
 		bool loadModel(const char* mesh_path, std::vector<std::string> textures_vector, std::unordered_map<std::string, std::string>* out_materials_names = nullptr) override;
 		bool loadImage(const char* image_path, int material_index = 0) override;
 		void clearDrawables() override;
+		void ShowGrid() override;
 
 		static VkShaderModule m_createShaderModule(VkDevice device, const std::vector<char>& code);
 		static bool m_createVkBuffer(VkDevice device, VmaAllocator allocator, const void* bufData, uint32_t dataSize, VkBufferUsageFlags usage, ShaderBuffer* shader);
@@ -60,6 +61,9 @@ namespace GrEngine_Vulkan
 		VmaAllocator memAllocator;
 
 		VkInstance _vulkan;
+		VulkanDrawable grid;
+		VulkanDrawable background;
+
 		VkPhysicalDeviceProperties deviceProps;
 		VkQueue presentQueue;
 		VkSurfaceKHR surface;

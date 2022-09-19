@@ -56,13 +56,11 @@ namespace GrEngine
     public:
         ModelBrowser(const AppParameters& Properties = AppParameters()) : Engine(Properties)
         {
-            EventListener::blockEvents();
         }
 
         ~ModelBrowser()
         {
             _instance = nullptr;
-            EventListener::blockEvents(true, true);
         }
 
         void init(ModelBrowser* instance)
@@ -86,15 +84,20 @@ namespace GrEngine
 
         static void Inputs()
         {
+            static float rotation = 0;
             Renderer* render = _instance->getAppWindow()->getRenderer();
             DrawableObject* drawable = render->getDrawable();
             Camera* camera = render->getActiveViewport();
 
             if (drawable != NULL)
             {
-                drawable->Rotate(45.f, 0.f, 0);
-                camera->SetRotation(glm::lookAt(glm::vec3(2.f + drawable->GetObjectBounds().x, 2.f + drawable->GetObjectBounds().y, 2.f + drawable->GetObjectBounds().z), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f)));
-                camera->PositionObjectAt(glm::vec3(2.f + drawable->GetObjectBounds().x, 2.f + drawable->GetObjectBounds().y, 2.f + drawable->GetObjectBounds().z));
+                glm::vec3 axis = glm::vec3(2.f + drawable->GetObjectBounds().x, 2.f + drawable->GetObjectBounds().y, 2.f + drawable->GetObjectBounds().z);
+
+                rotation += GrEngine::Globals::delta_time;
+                axis = glm::vec3(axis.z * glm::cos(rotation) + axis.x * glm::sin(rotation), axis.y, axis.z * glm::sin(rotation) - axis.x * glm::cos(rotation));
+
+                camera->SetRotation(glm::lookAt(axis, glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f)));
+                camera->PositionObjectAt(axis);
             }
             else
             {
@@ -180,7 +183,7 @@ namespace GrEngine
             std::unordered_map<std::string, std::string> materials;
 
             clearViewport();
-            Renderer::readGMF(filepath, &mesh_path, &mat_vector);
+            Globals::readGMF(filepath, &mesh_path, &mat_vector);
 
             auto res = _instance->loadModel(mesh_path.c_str(), mat_vector, &materials);
             std::string out_materials;

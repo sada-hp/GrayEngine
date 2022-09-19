@@ -1,12 +1,18 @@
 #pragma once
-#include "Core.h"
+#include <glm/glm.hpp>
+#include <glm/gtc/quaternion.hpp>
+#include "Engine/Source/Globals.h"
 
 namespace GrEngine
 {
-	class Entity
+	class DllExport Entity
 	{
 	public:
-		Entity() {};
+
+		Entity() 
+		{
+			id = rand(); //TBD
+		};
 		virtual ~Entity() {};
 
 		virtual void Rotate(const float& pitch, const float& yaw, const float& roll)
@@ -106,11 +112,15 @@ namespace GrEngine
 			return obj_orientation;
 		}
 
+		inline UINT GetEntityID() { return id; };
+
 	protected:
 		glm::quat obj_orientation = { 0.f, 0.f, 0.f, 0.f };
 		glm::quat obj_orientation_target = { 0.f, 0.f, 0.f, 0.f };
 		glm::vec3 object_position = { 0.f, 0.f, 0.f };
 		glm::vec3 object_position_target = { 0.f, 0.f, 0.f };
 		glm::vec3 pitch_yaw_roll = { 0.f, 0.f, 0.f };
+	private:
+		UINT id;
 	};
 }

@@ -57,11 +57,11 @@ namespace GrEngine
 
 	bool Engine::createModel(const char* filepath, const char* mesh_path, std::vector<std::string> textures_vector)
 	{
-		return pWindow->getRenderer()->writeGMF(filepath, mesh_path, textures_vector);
+		return Globals::writeGMF(filepath, mesh_path, textures_vector);
 	}
 
 	std::string Engine::getExecutablePath()
 	{
-		return Renderer::getExecutablePath();
+		return Globals::getExecutablePath();
 	}
 }

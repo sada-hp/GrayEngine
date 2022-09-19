@@ -23,9 +23,10 @@
     <ClInclude Include="Engine\Source\Vulkan\VulkanAPI.h" />
     <ClInclude Include="Engine\Source\Headers\Renderer.h" />
     <ClInclude Include="Engine\Source\Headers\Core.h" />
-    <ClInclude Include="Engine\Source\Headers\DrawableObject.h" />
-    <ClInclude Include="Engine\Source\Headers\Camera.h" />
+    <ClInclude Include="Engine\Entities\DrawableObject.h" />
+    <ClInclude Include="Engine\Entities\Camera.h" />
     <ClInclude Include="Engine\Source\Headers\Entity.h" />
+    <ClInclude Include="Engine\Source\Globals.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Engine\Source\GL_App.cpp" />
@@ -33,15 +34,11 @@
     <ClCompile Include="Engine\Source\Engine.cpp" />
     <ClCompile Include="Engine\Source\Vulkan\VulkanDrawable.cpp" />
     <ClCompile Include="Engine\Source\Vulkan\VulkanAPI.cpp" />
-    <ClCompile Include="Engine\Source\Headers\Globals.cpp" />
+    <ClCompile Include="Engine\Source\Globals.cpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Engine\Source\Libs\lib-vc2019\glfw3.dll" />
     <None Include="Engine\Source\Vulkan\Shaders\Compiler.bat" />
-    <None Include="Engine\Source\Vulkan\Shaders\frag.spv" />
-    <None Include="Engine\Source\Vulkan\Shaders\shader.frag" />
-    <None Include="Engine\Source\Vulkan\Shaders\shader.vert" />
-    <None Include="Engine\Source\Vulkan\Shaders\vert.spv" />
   </ItemGroup>
   <ItemGroup>
     <Library Include="Engine\Source\Libs\lib-vc2019\glfw3.lib" />

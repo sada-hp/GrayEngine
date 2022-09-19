@@ -2,7 +2,6 @@
 #include "GL_App.h"
 #define GLFW_EXPOSE_NATIVE_WIN32
 #include <glfw/glfw3native.h>
-#include "Headers/Entity.h"
 
 namespace GrEngine
 {

@@ -82,7 +82,7 @@ namespace GrEngine_Vulkan
 		AllocatedImage newImage;
 		VkImageView textureImageView;
 		VkSampler textureSampler;
-		uint8_t material_index = 0;
+		int8_t material_index = -1;
 	};
 }
 
@@ -100,15 +100,18 @@ namespace GrEngine_Vulkan
 	public:
 		Mesh object_mesh;
 		std::vector<Texture> object_texture;
+		const char* shader_path = "Shaders//default";
+		float near_plane = 0.1;
+		float far_plane = 100;
 
-		void initObject(VkDevice device, VmaAllocator allocator, GrEngine::Renderer* owner);
+		virtual void initObject(VkDevice device, VmaAllocator allocator, GrEngine::Renderer* owner);
 		void destroyObject(VkDevice device, VmaAllocator allocator);
 		void updateObject(VkDevice device);
 		void invalidateTexture(VkDevice device, VmaAllocator allocator);
 		bool pushConstants(VkDevice devicce, VkCommandBuffer cmd, VkExtent2D extent);
 		bool recordCommandBuffer(VkDevice device, VkCommandBuffer commandBuffer, VkExtent2D extent);
 
-	private:
+	protected:
 		GrEngine::Renderer* p_Owner;
 		VkDescriptorSetLayout descriptorSetLayout;
 		std::vector<VkDescriptorSet> descriptorSets;

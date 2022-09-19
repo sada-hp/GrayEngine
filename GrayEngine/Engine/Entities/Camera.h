@@ -1,7 +1,7 @@
 #pragma once
 #include <glm/glm.hpp>
 #include <glm/gtc/quaternion.hpp>
-#include "Entity.h"
+#include "Engine/Source/Headers/Entity.h"
 
 namespace GrEngine
 {
@@ -36,6 +36,13 @@ namespace GrEngine
 			glm::quat qYaw = glm::angleAxis(glm::radians(pitch_yaw_roll.x), glm::vec3(0, 1, 0));
 			glm::quat qRoll = glm::angleAxis(glm::radians(pitch_yaw_roll.z), glm::vec3(0, 0, 1));
 			obj_orientation_target = glm::normalize(qPitch * qYaw * qRoll);
+		}
+
+		 void Rotate(const glm::quat& angle)
+		{
+			pitch_yaw_roll += glm::eulerAngles(angle) * glm::vec3(Globals::delta_time, Globals::delta_time, Globals::delta_time);
+			checkBorders();
+			obj_orientation_target += angle;
 		}
 
 		void LockAxes(float pitch_up, float pitch_low, float yaw_up, float yaw_low, float roll_up, float roll_low)

@@ -94,5 +94,10 @@ namespace EditorUI
         {
             FrameBlock.Text = "FPS : " + frames.ToString("0.0");
         }
+
+        private void EntityButton_Click(object sender, RoutedEventArgs e)
+        {
+
+        }
     }
 }

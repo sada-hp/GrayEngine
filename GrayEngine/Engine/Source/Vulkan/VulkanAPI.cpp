@@ -21,6 +21,8 @@ namespace GrEngine_Vulkan
 		vkQueueWaitIdle(graphicsQueue);
 
 		clearDrawables();
+		grid.destroyObject(logicalDevice, memAllocator);
+		background.destroyObject(logicalDevice, memAllocator);
 		cleanupSwapChain();
 		vkDestroySemaphore(logicalDevice, renderFinishedSemaphore, nullptr);
 		vkDestroySemaphore(logicalDevice, imageAvailableSemaphore, nullptr);
@@ -91,9 +93,48 @@ namespace GrEngine_Vulkan
 		if ((res = createSemaphores() & res) == false)
 			Logger::Out("[Vk] Failed to create semaphores", OutputColor::Red, OutputType::Error);
 
+		GrEngine_Vulkan::Vertex vertex{};
+		vertex.pos = { 1, 0, 1, 1.0f };
+		vertex.uv = { 1.f, 1.0f };
+		vertex.color = { 1.f, 1.f, 1.f, 1.f };
+
+		GrEngine_Vulkan::Vertex vertex2{};
+		vertex2.pos = { -1, 0, -1, 1.0f };
+		vertex2.uv = { 0.f, 0.0f };
+		vertex2.color = { 1.f, 1.f, 1.f, 1.f };
+
+		GrEngine_Vulkan::Vertex vertex3{};
+		vertex3.pos = { -1, 0 , 1, 1.0f };
+		vertex3.uv = { 0.f, 1.f };
+		vertex3.color = {1.f, 1.f, 1.f, 1.f};
+
+		GrEngine_Vulkan::Vertex vertex4{};
+		vertex4.pos = { 1, 0, -1, 1.0f };
+		vertex4.uv = { 1.f, 0.0f };
+		vertex4.color = { 1.f, 1.f, 1.f, 1.f };
+		background.object_mesh.vertices = { vertex, vertex2, vertex3, vertex4 };
+		background.object_mesh.indices = { 0, 1, 2, 0, 3, 1 };
+		background.shader_path = "Shaders//background";
+
+
+
+		grid.object_mesh.vertices = { vertex, vertex2, vertex3, vertex4 };
+		grid.object_mesh.indices = { 0, 1, 2, 0, 3, 1 };
+		grid.shader_path = "Shaders//grid";
+		grid.far_plane = 10000.f;
+		loadTexture("D:\\GrEngine\\GrayEngine\\bin\\Debug-x64\\SceneEditor\\Content\\TestTex.png", &background, { 0 });
+
+		grid.initObject(logicalDevice, memAllocator, this);
+		background.initObject(logicalDevice, memAllocator, this);
+
+
 		vkDeviceWaitIdle(logicalDevice);
 
 		return Initialized = res;
+	}
+
+	void VulkanAPI::ShowGrid()
+	{
 	}
 
 	void VulkanAPI::drawFrame()
@@ -185,10 +226,14 @@ namespace GrEngine_Vulkan
 		scissor.extent = swapChainExtent;
 		vkCmdSetScissor(commandBuffers[index], 0, 1, &scissor);
 
+		background.recordCommandBuffer(logicalDevice, commandBuffers[index], swapChainExtent);
+
 		for (auto object : drawables)
 		{
 			object.recordCommandBuffer(logicalDevice, commandBuffers[index], swapChainExtent);
 		}
+
+		grid.recordCommandBuffer(logicalDevice, commandBuffers[index], swapChainExtent);
 
 		vkCmdEndRenderPass(commandBuffers[index]);
 
@@ -717,7 +762,7 @@ namespace GrEngine_Vulkan
 		{
 			drawables[ind].destroyObject(logicalDevice, memAllocator);
 		}
-
+		
 		drawables.clear();
 		Logger::Out("The scene was cleared", OutputColor::Green, OutputType::Log);
 	}
@@ -821,7 +866,8 @@ namespace GrEngine_Vulkan
 				vertex.uv_index = uv_ind;
 				vertex.color = { 1.0f, 1.0f, 1.0f, 1.0f };
 
-				if (uniqueVertices.count(vertex) == 0) {
+				if (uniqueVertices.count(vertex) == 0) 
+				{
 					uniqueVertices[vertex] = static_cast<uint32_t>(target->object_mesh.vertices.size());
 					target->object_mesh.vertices.push_back(vertex);
 				}

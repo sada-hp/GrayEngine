@@ -110,7 +110,7 @@ namespace GrEngine_Vulkan
 		vkCmdBindIndexBuffer(commandBuffer, indexBuffer.Buffer, 0, VK_INDEX_TYPE_UINT16);
 
 		UpdateObjectPosition();
-		UpdateObjectOrientation(1);
+		UpdateObjectOrientation();
 		pushConstants(device, commandBuffer, extent);
 
 		for (int ind = 0; ind < descriptorSets.size(); ind++)
@@ -129,7 +129,7 @@ namespace GrEngine_Vulkan
 		ubo.model = glm::translate(glm::mat4_cast(GetObjectOrientation()), GetObjectPosition());
 		/*Math for Game Programmers: Understanding Homogeneous Coordinates GDC 2015*/
 		ubo.view = glm::translate(glm::mat4_cast(p_Owner->getActiveViewport()->UpdateObjectOrientation(0.2)), -p_Owner->getActiveViewport()->UpdateObjectPosition(0.65)); // [ix iy iz w1( = 0)]-direction [jx jy jz w2( = 0)]-direction [kx ky kz w3( = 0)]-direction [tx ty tz w ( = 1)]-position
-		ubo.proj = glm::perspective(glm::radians(60.0f), (float)extent.width / (float)extent.height, 0.1f, 100.0f); //fov, aspect ratio, near clipping plane, far clipping plane
+		ubo.proj = glm::perspective(glm::radians(60.0f), (float)extent.width / (float)extent.height, near_plane, far_plane); //fov, aspect ratio, near clipping plane, far clipping plane
 		ubo.proj[1][1] *= -1; //reverse Y coordinate
 
 		vkCmdPushConstants(cmd, pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(UniformBufferObject), &ubo);
@@ -138,10 +138,10 @@ namespace GrEngine_Vulkan
 
 	bool VulkanDrawable::createGraphicsPipeline(VkDevice device)
 	{
-		std::string solution_path = GrEngine::Renderer::getExecutablePath();
+		std::string solution_path = GrEngine::Globals::getExecutablePath();
 
-		std::vector<char> vertShaderCode = GrEngine::Renderer::readFile(solution_path + "Shaders//vert.spv");
-		std::vector<char> fragShaderCode = GrEngine::Renderer::readFile(solution_path + "Shaders//frag.spv");
+		std::vector<char> vertShaderCode = GrEngine::Globals::readFile(solution_path + shader_path + "_vert.spv");
+		std::vector<char> fragShaderCode = GrEngine::Globals::readFile(solution_path + shader_path + "_frag.spv");
 
 		VkShaderModule shaders[2] = { VulkanAPI::m_createShaderModule(device, vertShaderCode) , VulkanAPI::m_createShaderModule(device, fragShaderCode) };
 
