@@ -146,6 +146,7 @@ namespace GrEngine_Vulkan
 		uint32_t imageIndex = 0;
 		vkAcquireNextImageKHR(logicalDevice, swapChain, UINT64_MAX, imageAvailableSemaphore, VK_NULL_HANDLE, &imageIndex);
 		updateDrawables(imageIndex);
+		//ClickCheck();
 
 		VkSubmitInfo submitInfo{};
 		submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
@@ -184,6 +185,55 @@ namespace GrEngine_Vulkan
 		presentInfo.pResults = nullptr; // Optional
 
 		vkQueuePresentKHR(presentQueue, &presentInfo);
+	}
+
+	void VulkanAPI::ClickCheck()
+	{
+
+		VkImage img = swapChainImages[0];
+		VmaAllocation alloc;
+		VkExtent3D imageExtent;
+		VkBuffer buf;
+
+		VkBufferCreateInfo bufferCreateInfo{};
+		bufferCreateInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
+		bufferCreateInfo.size = sizeof(VkImage);
+		bufferCreateInfo.usage = VK_BUFFER_USAGE_STORAGE_BUFFER_BIT;
+		bufferCreateInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+		bufferCreateInfo.queueFamilyIndexCount = 0;
+		bufferCreateInfo.pQueueFamilyIndices = NULL;
+
+		VmaAllocationCreateInfo vmaallocInfo = {};
+		vmaallocInfo.usage = VMA_MEMORY_USAGE_CPU_TO_GPU;
+		vmaallocInfo.preferredFlags = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
+
+		vmaCreateBuffer(memAllocator, &bufferCreateInfo, &vmaallocInfo, &buf, &alloc, nullptr);
+
+		imageExtent.width = static_cast<uint32_t>(swapChainExtent.width);
+		imageExtent.height = static_cast<uint32_t>(swapChainExtent.height);
+		imageExtent.depth = 1;
+
+		VkImageCreateInfo dimg_info{};
+		dimg_info.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
+		dimg_info.pNext = nullptr;
+		dimg_info.imageType = VK_IMAGE_TYPE_2D;
+		dimg_info.format = VK_FORMAT_R8G8B8A8_SRGB;
+		dimg_info.extent = imageExtent;
+		dimg_info.mipLevels = 1;
+		dimg_info.arrayLayers = 1;
+		dimg_info.samples = VK_SAMPLE_COUNT_1_BIT;
+		dimg_info.tiling = VK_IMAGE_TILING_OPTIMAL;
+		dimg_info.usage = VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT;
+
+		VmaAllocationCreateInfo dimg_allocinfo = {};
+		dimg_allocinfo.usage = VMA_MEMORY_USAGE_CPU_ONLY;
+
+		//allocate and create the image
+		vmaCreateImage(memAllocator, &dimg_info, &dimg_allocinfo, &img, &alloc, nullptr);
+
+		//transitionImageLayout(img, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
+		copyImageToBuffer(buf, img, static_cast<uint32_t>(swapChainExtent.width), static_cast<uint32_t>(swapChainExtent.height));
+		//transitionImageLayout(img, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
 	}
 
 	bool VulkanAPI::updateDrawables(uint32_t index)
@@ -226,11 +276,19 @@ namespace GrEngine_Vulkan
 		scissor.extent = swapChainExtent;
 		vkCmdSetScissor(commandBuffers[index], 0, 1, &scissor);
 
-		background.recordCommandBuffer(logicalDevice, commandBuffers[index], swapChainExtent);
+		//background.recordCommandBuffer(logicalDevice, commandBuffers[index], swapChainExtent);
 
-		for (auto object : drawables)
+		//for (auto object : drawables)
+		//{
+		//	object.recordCommandBuffer(logicalDevice, commandBuffers[index], swapChainExtent);
+		//}
+
+		for (auto object : entities)
 		{
-			object.recordCommandBuffer(logicalDevice, commandBuffers[index], swapChainExtent);
+			if (object.second->GetEntityType() == "VulkanDrawable")
+			{
+				dynamic_cast<VulkanDrawable*>(object.second)->recordCommandBuffer(logicalDevice, commandBuffers[index], swapChainExtent);
+			}
 		}
 
 		grid.recordCommandBuffer(logicalDevice, commandBuffers[index], swapChainExtent);
@@ -758,9 +816,21 @@ namespace GrEngine_Vulkan
 		vkDeviceWaitIdle(logicalDevice);
 		vkQueueWaitIdle(graphicsQueue);
 
-		for (int ind = 0; ind < drawables.size(); ind++)
+		if (entities.size() == 0)
 		{
-			drawables[ind].destroyObject(logicalDevice, memAllocator);
+			for (int ind = 0; ind < drawables.size(); ind++)
+			{
+				drawables[ind].destroyObject(logicalDevice, memAllocator);
+			}
+		}
+
+		for (auto object : entities)
+		{
+			if (object.second->GetEntityType() == "VulkanDrawable")
+			{
+				dynamic_cast<VulkanDrawable*>(object.second)->destroyObject(logicalDevice, memAllocator);
+				delete object.second;
+			}
 		}
 		
 		drawables.clear();
@@ -770,9 +840,22 @@ namespace GrEngine_Vulkan
 	bool VulkanAPI::loadModel(const char* mesh_path, std::vector<std::string> textures_vector, std::unordered_map<std::string, std::string>* out_materials_names)
 	{
 		auto start = std::chrono::steady_clock::now();
-
 		VulkanDrawable object;
-		VulkanDrawable* ref_obj = &object;
+		object.initObject(logicalDevice, memAllocator, this);
+		VulkanDrawable* ref_obj;
+		if (entities.size() > 0)
+		{
+			ref_obj = dynamic_cast<VulkanDrawable*>(entities[selected_entity]);
+			ref_obj->invalidateTexture(logicalDevice, memAllocator);
+			ref_obj->object_mesh.indices = {};
+			ref_obj->object_mesh.vertices = {};
+			ref_obj->object_mesh.mesh_path = "";
+		}
+		else
+		{
+			ref_obj = &object;
+		}
+
 		VulkanAPI* inst = this;
 		std::vector<std::string> materials_collection;
 		std::vector<std::string>* out_materials_collection = &materials_collection;
@@ -808,8 +891,8 @@ namespace GrEngine_Vulkan
 			}
 		}
 
-		ref_obj->updateObject(logicalDevice);
-		drawables.push_back(object);
+		ref_obj->updateObject(logicalDevice, memAllocator);
+		drawables.push_back(*ref_obj);
 
 		auto end = std::chrono::steady_clock::now();
 		auto time = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
@@ -892,7 +975,7 @@ namespace GrEngine_Vulkan
 		}
 		target->SetObjectBounds(glm::vec3{highest_pointx, highest_pointy, highest_pointz});
 		target->object_mesh.mesh_path = mesh_path;
-		target->initObject(logicalDevice, memAllocator, this);
+		target->updateObject(logicalDevice, memAllocator);
 
 		Logger::Out("Mesh %c%s%c was loaded succesfully", OutputColor::Green, OutputType::Log, '"', mesh_path, '"');
 		return true;
@@ -905,7 +988,7 @@ namespace GrEngine_Vulkan
 		auto object = &drawables.back();
 
 		loadTexture(image_path, object, mat);
-		object->updateObject(logicalDevice);
+		object->updateObject(logicalDevice, memAllocator);
 		return true;
 	}
 
@@ -1119,6 +1202,34 @@ namespace GrEngine_Vulkan
 		freeCommandBuffer(commandBuffer);
 	}
 
+	void VulkanAPI::copyImageToBuffer(VkBuffer buffer, VkImage image, uint32_t width, uint32_t height)
+	{
+		VkCommandBuffer commandBuffer;
+		allocateCommandBuffer(&commandBuffer);
+		beginCommandBuffer(commandBuffer, VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT);
+
+		VkBufferImageCopy region{};
+		region.bufferOffset = 0;
+		region.bufferRowLength = 0;
+		region.bufferImageHeight = 0;
+
+		region.imageSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+		region.imageSubresource.mipLevel = 0;
+		region.imageSubresource.baseArrayLayer = 0;
+		region.imageSubresource.layerCount = 1;
+
+		region.imageOffset = { 0, 0, 0 };
+		region.imageExtent = {
+			width,
+			height,
+			1
+		};
+
+		vkCmdCopyImageToBuffer(commandBuffer,  image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, buffer, 1, &region);
+
+		freeCommandBuffer(commandBuffer);
+	}
+
 	GrEngine::DrawableObject* VulkanAPI::getDrawable() 
 	{ 
 		if (drawables.size() > 0)
@@ -1160,6 +1271,7 @@ namespace GrEngine_Vulkan
 
 		VmaAllocationCreateInfo vmaallocInfo = {};
 		vmaallocInfo.usage = VMA_MEMORY_USAGE_CPU_TO_GPU;
+		vmaallocInfo.preferredFlags = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
 
 		vmaCreateBuffer(allocator, &bufferCreateInfo, &vmaallocInfo, &shaderBuffer->Buffer, &shaderBuffer->Allocation, nullptr);
 		vkGetBufferMemoryRequirements(device, shaderBuffer->Buffer, &shaderBuffer->MemoryRequirements);
@@ -1176,6 +1288,8 @@ namespace GrEngine_Vulkan
 		shaderBuffer->MappedMemoryRange.memory = reinterpret_cast<VkDeviceMemory>(shaderBuffer->Allocation);
 		shaderBuffer->MappedMemoryRange.offset = 0;
 		shaderBuffer->MappedMemoryRange.size = dataSize;
+		shaderBuffer->initialized = true;
+
 		is_in_use = false;
 
 		return true;
@@ -1183,9 +1297,14 @@ namespace GrEngine_Vulkan
 
 	void VulkanAPI::m_destroyShaderBuffer(VkDevice device, VmaAllocator allocator, ShaderBuffer* shader)
 	{
-		vkFlushMappedMemoryRanges(device, 1, &(shader->MappedMemoryRange));
-		vkDestroyBuffer(device, shader->Buffer, NULL);
-		vmaFreeMemory(allocator, shader->Allocation);
+		if (shader->initialized != false)
+		{
+			vkFlushMappedMemoryRanges(device, 1, &(shader->MappedMemoryRange));
+			vkDestroyBuffer(device, shader->Buffer, NULL);
+			vmaFreeMemory(allocator, shader->Allocation);
+		}
+
+		shader->initialized = false;
 	}
 
 	void VulkanAPI::m_destroyTexture(VkDevice device, VmaAllocator allocator, Texture* texture)
@@ -1211,4 +1330,17 @@ namespace GrEngine_Vulkan
 	}
 
 #pragma endregion
+
+	void VulkanAPI::addDummy(GrEngine::EntityInfo* out_entity)
+	{
+		GrEngine::Entity* ent = new VulkanDrawable(); //DANGEROUS, ADD DELETE
+		dynamic_cast<VulkanDrawable*>(ent)->initObject(logicalDevice, memAllocator, this);
+		std::string new_name = std::string("Entity") + std::to_string(entities.size()+1);
+		ent->UpdateNameTag(new_name.c_str());
+		entities[ent->GetEntityInfo().EntityID] = ent;
+
+		GrEngine::EntityInfo copy = ent->GetEntityInfo();
+		out_entity->EntityID = copy.EntityID;
+		out_entity->EntityName = copy.EntityName;
+	}
 }

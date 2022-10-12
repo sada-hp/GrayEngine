@@ -64,6 +64,8 @@ namespace GrEngine_Vulkan
 		VkMappedMemoryRange MappedMemoryRange;
 		uint8_t* pData;
 		VmaAllocation Allocation;
+
+		bool initialized = false;
 	};
 
 	struct UniformBufferObject {
@@ -102,11 +104,11 @@ namespace GrEngine_Vulkan
 		std::vector<Texture> object_texture;
 		const char* shader_path = "Shaders//default";
 		float near_plane = 0.1;
-		float far_plane = 100;
+		float far_plane = 1000;
 
-		virtual void initObject(VkDevice device, VmaAllocator allocator, GrEngine::Renderer* owner);
+		void initObject(VkDevice device, VmaAllocator allocator, GrEngine::Renderer* owner);
 		void destroyObject(VkDevice device, VmaAllocator allocator);
-		void updateObject(VkDevice device);
+		void updateObject(VkDevice device, VmaAllocator allocator);
 		void invalidateTexture(VkDevice device, VmaAllocator allocator);
 		bool pushConstants(VkDevice devicce, VkCommandBuffer cmd, VkExtent2D extent);
 		bool recordCommandBuffer(VkDevice device, VkCommandBuffer commandBuffer, VkExtent2D extent);

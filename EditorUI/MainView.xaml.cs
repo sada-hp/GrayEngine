@@ -6,9 +6,29 @@ using System.Windows;
 using System.Runtime.InteropServices;
 using System.Windows.Interop;
 using System.Windows.Forms;
+using System.Threading;
 
 namespace EditorUI
 {
+    struct EntityProps
+    {
+        public uint ID;
+        public string Name;
+
+        public EntityProps(uint id, string name)
+        {
+            ID = id;
+            Name = name;
+        }
+    };
+    
+    interface PropertyControl
+    {
+        string Contents { get; set; }
+
+        void ChangeColors(System.Windows.Media.Brush background, System.Windows.Media.Brush foreground);
+    }
+
     public partial class MainView : Window, EditorWindow
     {
         [DllImport("user32.dll")]
@@ -97,7 +117,93 @@ namespace EditorUI
 
         private void EntityButton_Click(object sender, RoutedEventArgs e)
         {
-
+            SendMessage(pOwner, 0x1204, IntPtr.Zero, IntPtr.Zero);
         }
-    }
+
+        internal void UpdateEntity(int ID, string name)
+        {
+            EntityItem button = new EntityItem(ID);
+            button.Content = name;
+            button.Background = null;
+            button.Foreground = new System.Windows.Media.SolidColorBrush(System.Windows.Media.Colors.WhiteSmoke);
+            EntitiesList.Items.Add(button);
+        }
+
+        internal void UpdateProperties(Dictionary<string, object> properties, Dictionary<string, Type> types, Dictionary<string, string> events, Dictionary<string, string> handlers)
+        {
+            PropertiesCollection.Items.Clear();
+
+            foreach (var pair in properties)
+            {
+                PropertyItem item = new PropertyItem();
+                var control = Activator.CreateInstance(types[pair.Key]);
+                item.PName.Content = pair.Key;
+                ((PropertyControl)control).Contents = pair.Value.ToString();
+
+                ((PropertyControl)control).ChangeColors(null, new System.Windows.Media.SolidColorBrush(System.Windows.Media.Colors.WhiteSmoke));
+                ((System.Windows.Controls.Control)control).HorizontalAlignment = System.Windows.HorizontalAlignment.Stretch;
+
+                if (events.ContainsKey(pair.Key))
+                {
+                    var method = events[pair.Key];
+
+                    var event_type = control.GetType().GetEvent(method);
+                    try
+                    {
+                        Delegate d = Delegate.CreateDelegate(event_type.EventHandlerType, this, handlers[pair.Key]);
+                        event_type.AddEventHandler(control, d);
+
+                    }
+                    catch (Exception e)
+                    {
+                        SendMessage(pOwner, 0x1119, Marshal.StringToHGlobalAnsi(e.Message), IntPtr.Zero);
+                    }
+                }
+                System.Windows.Controls.Grid.SetColumn((System.Windows.Controls.Control)control, 1);
+                item.PropGrid.Children.Add((System.Windows.Controls.Control)control);
+                item.HorizontalAlignment = System.Windows.HorizontalAlignment.Stretch;
+                item.Width = PropertiesCollection.ActualWidth;
+                PropertiesCollection.Items.Add(item);
+            }
+        }
+
+        public void LoadModelBrowser(object sender, System.Windows.Input.MouseButtonEventArgs e)
+        {
+            SendMessage(pOwner, 0x1203, IntPtr.Zero, IntPtr.Zero);
+        }
+
+        private void UpdateObjectPosition(object sender)
+        {
+            var coords = (sender as _3VectorControl).Contents.Split(':');
+            SendMessage(pOwner, 0x1206, Marshal.StringToHGlobalAnsi("posx"), Marshal.StringToHGlobalAnsi(coords[0]));
+        }
+
+        internal void RetrieveEntityInfo(int ID, string name, float posx, float posy, float posz)
+        {
+            Dictionary<string, object> properties = new Dictionary<string, object>();
+            Dictionary<string, Type> types = new Dictionary<string, Type>();
+            Dictionary<string, string> events = new Dictionary<string, string>();
+            Dictionary<string, string> handlers = new Dictionary<string, string>();
+
+            properties.Add("EntityName", name);
+            properties.Add("EntityID", ID);
+            properties.Add("Drawable", "None");
+            properties.Add("Position", posx.ToString() + ":" + posy.ToString() + ":" + posz.ToString());
+            types.Add("EntityName", typeof(LabelControl));
+            types.Add("EntityID", typeof(LabelControl));
+            types.Add("Drawable", typeof(LabelControl));
+            types.Add("Position", typeof(_3VectorControl));
+            events.Add("Drawable", "MouseDoubleClick");
+            events.Add("Position", "VectorPropertyChanged");
+            handlers.Add("Drawable", "LoadModelBrowser");
+            handlers.Add("Position", "UpdateObjectPosition");
+
+            UpdateProperties(properties, types, events, handlers);
+        }
+
+        private void EntitiesList_SelectionChanged(object sender, System.Windows.Controls.SelectionChangedEventArgs e)
+        {
+            SendMessage(pOwner, 0x1205, (IntPtr)(e.AddedItems[0] as EntityItem).ID, IntPtr.Zero);
+        }
+    };
 }

@@ -7,10 +7,14 @@ namespace GrEngine_Vulkan
 	void VulkanDrawable::initObject(VkDevice device, VmaAllocator allocator, GrEngine::Renderer* owner)
 	{
 		p_Owner = owner;
+		Type = "VulkanDrawable";
 		object_texture.resize(TEXTURE_ARRAY_SIZE);
 
-		VulkanAPI::m_createVkBuffer(device, allocator, object_mesh.vertices.data(), sizeof(object_mesh.vertices[0]) * object_mesh.vertices.size(), VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, &vertexBuffer);
-		VulkanAPI::m_createVkBuffer(device, allocator, object_mesh.indices.data(), sizeof(object_mesh.indices[0]) * object_mesh.indices.size(), VK_BUFFER_USAGE_INDEX_BUFFER_BIT, &indexBuffer);
+		if (object_mesh.vertices.size() > 0)
+		{
+			VulkanAPI::m_createVkBuffer(device, allocator, object_mesh.vertices.data(), sizeof(object_mesh.vertices[0]) * object_mesh.vertices.size(), VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, &vertexBuffer);
+			VulkanAPI::m_createVkBuffer(device, allocator, object_mesh.indices.data(), sizeof(object_mesh.indices[0]) * object_mesh.indices.size(), VK_BUFFER_USAGE_INDEX_BUFFER_BIT, &indexBuffer);
+		}
 
 		createDescriptorLayout(device);
 		createDescriptorPool(device);
@@ -39,7 +43,7 @@ namespace GrEngine_Vulkan
 		this->~VulkanDrawable();
 	}
 
-	void VulkanDrawable::updateObject(VkDevice device)
+	void VulkanDrawable::updateObject(VkDevice device, VmaAllocator allocator)
 	{
 		VkDescriptorImageInfo imageInfo[TEXTURE_ARRAY_SIZE];
 		for (int ind = 0; ind < TEXTURE_ARRAY_SIZE; ind++)
@@ -70,6 +74,11 @@ namespace GrEngine_Vulkan
 		writes.pImageInfo = imageInfo;
 
 		vkUpdateDescriptorSets(device, 1, &writes, 0, NULL);
+
+		VulkanAPI::m_destroyShaderBuffer(device, allocator, &indexBuffer);
+		VulkanAPI::m_destroyShaderBuffer(device, allocator, &vertexBuffer);
+		VulkanAPI::m_createVkBuffer(device, allocator, object_mesh.vertices.data(), sizeof(object_mesh.vertices[0]) * object_mesh.vertices.size(), VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, &vertexBuffer);
+		VulkanAPI::m_createVkBuffer(device, allocator, object_mesh.indices.data(), sizeof(object_mesh.indices[0]) * object_mesh.indices.size(), VK_BUFFER_USAGE_INDEX_BUFFER_BIT, &indexBuffer);
 	}
 
 	void VulkanDrawable::invalidateTexture(VkDevice device, VmaAllocator allocator)
@@ -103,24 +112,29 @@ namespace GrEngine_Vulkan
 
 	bool VulkanDrawable::recordCommandBuffer(VkDevice device, VkCommandBuffer commandBuffer, VkExtent2D extent)
 	{
-		vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, graphicsPipeline);
-
-		VkDeviceSize offsets[] = { 0 };
-		vkCmdBindVertexBuffers(commandBuffer, 0, 1, &vertexBuffer.Buffer, offsets);
-		vkCmdBindIndexBuffer(commandBuffer, indexBuffer.Buffer, 0, VK_INDEX_TYPE_UINT16);
-
-		UpdateObjectPosition();
-		UpdateObjectOrientation();
-		pushConstants(device, commandBuffer, extent);
-
-		for (int ind = 0; ind < descriptorSets.size(); ind++)
+		if (vertexBuffer.initialized == true)
 		{
-			vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout, 0, 1, &descriptorSets[ind], 0, NULL);
+			vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, graphicsPipeline);
+
+			VkDeviceSize offsets[] = { 0 };
+			vkCmdBindVertexBuffers(commandBuffer, 0, 1, &vertexBuffer.Buffer, offsets);
+			vkCmdBindIndexBuffer(commandBuffer, indexBuffer.Buffer, 0, VK_INDEX_TYPE_UINT16);
+
+			UpdateObjectPosition();
+			UpdateObjectOrientation();
+			pushConstants(device, commandBuffer, extent);
+
+			for (int ind = 0; ind < descriptorSets.size(); ind++)
+			{
+				vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout, 0, 1, &descriptorSets[ind], 0, NULL);
+			}
+
+			//vkCmdDraw(commandBuffer, static_cast<uint32_t>(object_mesh.vertices.size()), 1, 0, 0);
+			vkCmdDrawIndexed(commandBuffer, static_cast<uint32_t>(object_mesh.indices.size()), 1, 0, 0, 0);
+			return true;
 		}
 
-		//vkCmdDraw(commandBuffer, static_cast<uint32_t>(object_mesh.vertices.size()), 1, 0, 0);
-		vkCmdDrawIndexed(commandBuffer, static_cast<uint32_t>(object_mesh.indices.size()), 1, 0, 0, 0);
-		return true;
+		return false;
 	}
 
 	bool VulkanDrawable::pushConstants(VkDevice devicce, VkCommandBuffer cmd, VkExtent2D extent)

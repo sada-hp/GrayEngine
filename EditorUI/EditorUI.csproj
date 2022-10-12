@@ -81,15 +81,27 @@
     <Reference Include="WindowsFormsIntegration" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="3VectorControl.xaml.cs">
+      <DependentUpon>3VectorControl.xaml</DependentUpon>
+    </Compile>
     <Compile Include="BrowserItem.xaml.cs">
       <DependentUpon>BrowserItem.xaml</DependentUpon>
     </Compile>
     <Compile Include="EditorWindow.cs" />
+    <Compile Include="EntityItem.xaml.cs">
+      <DependentUpon>EntityItem.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="LabelControl.xaml.cs">
+      <DependentUpon>LabelControl.xaml</DependentUpon>
+    </Compile>
     <Compile Include="MaterialInput.xaml.cs">
       <DependentUpon>MaterialInput.xaml</DependentUpon>
     </Compile>
     <Compile Include="ModelBrowser.xaml.cs">
       <DependentUpon>ModelBrowser.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="PropertyItem.xaml.cs">
+      <DependentUpon>PropertyItem.xaml</DependentUpon>
     </Compile>
     <Compile Include="UIBridge.cs" />
     <Compile Include="MainView.xaml.cs">
@@ -104,7 +116,19 @@
     <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
+    <Page Include="3VectorControl.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
     <Page Include="BrowserItem.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="EntityItem.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="LabelControl.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>
@@ -117,6 +141,10 @@
       <Generator>MSBuild:Compile</Generator>
     </Page>
     <Page Include="ModelBrowser.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="PropertyItem.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>

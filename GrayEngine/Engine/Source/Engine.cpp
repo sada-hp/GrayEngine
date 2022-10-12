@@ -60,6 +60,11 @@ namespace GrEngine
 		return Globals::writeGMF(filepath, mesh_path, textures_vector);
 	}
 
+	void Engine::addDummy(EntityInfo* out_entity)
+	{
+		pWindow->getRenderer()->addDummy(out_entity);
+	}
+
 	std::string Engine::getExecutablePath()
 	{
 		return Globals::getExecutablePath();

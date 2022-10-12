@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Data;
@@ -15,15 +16,13 @@ using System.Windows.Shapes;
 namespace EditorUI
 {
     /// <summary>
-    /// Логика взаимодействия для BrowserItem.xaml
+    /// Логика взаимодействия для PropertyItem.xaml
     /// </summary>
-    public partial class BrowserItem : UserControl
+    public partial class PropertyItem : UserControl
     {
-        public string mesh_path = "";
-        public BrowserItem(string mesh_path)
+        public PropertyItem()
         {
             InitializeComponent();
-            Mesh_Label.Content = mesh_path;
         }
     }
 }

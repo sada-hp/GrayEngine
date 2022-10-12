@@ -1,6 +1,7 @@
 #pragma once
 #include "Engine/Entities/Camera.h"
 #include "Engine/Entities/DrawableObject.h"
+#include "Engine/Source/Headers/Entity.h"
 
 namespace GrEngine
 {
@@ -10,6 +11,7 @@ namespace GrEngine
 		double delta_time = 0;
 		bool Initialized = false;
 		Camera viewport_camera;
+		std::map<int, Entity*> entities;
 
 		Renderer() {};
 		virtual ~Renderer() {};
@@ -20,9 +22,15 @@ namespace GrEngine
 		virtual bool loadImage(const char* image_path, int material_index = 0) = 0;
 		virtual bool loadModel(const char* mesh_path, std::vector<std::string> textures_vector, std::unordered_map<std::string, std::string>* out_materials_names = nullptr) = 0;
 		virtual void clearDrawables() = 0;
+		virtual void addDummy(EntityInfo* out_entity = nullptr) = 0;
 		virtual void Update() = 0;
 		virtual void ShowGrid() = 0;
 		virtual DrawableObject* getDrawable() = 0;
 		inline Camera* getActiveViewport() { return &viewport_camera; };
+		inline EntityInfo getEntityInfo(int ID) { return entities[ID]->GetEntityInfo(); };
+		inline Entity* selectEntity(int ID) { selected_entity = ID; return entities[ID]; };
+
+	protected:
+		int selected_entity = 0;
 	};
 }

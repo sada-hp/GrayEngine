@@ -75,6 +75,42 @@ namespace EditorUI
                 {
                     if (model_file.ToLower().Contains(SearchBar.Text.ToLower()) || SearchBar.Text == "" || SearchBar.Text == "Search...")
                     {
+                        System.IO.FileStream file = new System.IO.FileStream(model_file, System.IO.FileMode.Open);
+                        byte[] byte_array = new byte[file.Length];
+                        file.Read(byte_array, 0, byte_array.Length);
+                        string oper = "";
+                        bool writing = false;
+
+                        foreach (char chr in byte_array)
+                        {
+                            if (chr == '<' && !writing)
+                            {
+                                writing = true;
+                            }
+                            else if (writing && chr != '>' && chr != '<')
+                            {
+                                oper += chr;
+                            }
+                            else if (chr == '>' && writing)
+                            {
+                                if (oper == "mesh")
+                                {
+                                    oper = "";
+                                }
+                                else
+                                {
+                                    writing = false;
+                                    oper = "";
+                                }
+                            }
+                            else if (chr == '<' && writing)
+                            {
+                                writing = false;
+                                break;
+                            }
+                        }
+                        file.Close();
+
                         BrowserItem item;
                         string[] name_cut = model_file.Split('\\');
 
@@ -90,6 +126,7 @@ namespace EditorUI
 
                         item.Padding = new System.Windows.Thickness(5);
                         item.ToolTip = model_file;
+                        item.mesh_path = oper;
 
                         if (!LoadedAssets.ContainsKey(model_file))
                         {
@@ -246,8 +283,8 @@ namespace EditorUI
                 SendMessage(pOwner, 0x1203, Marshal.StringToHGlobalAnsi(((BrowserItem)Browser.SelectedItem).ToolTip.ToString()), IntPtr.Zero);
                 IdBox.Text = ((BrowserItem)Browser.SelectedItem).ToolTip.ToString().Split('\\').Last().Split('.')[0];
                 loaded_mesh = ((BrowserItem)Browser.SelectedItem).ToolTip.ToString();
-                MeshPath.Text = loaded_mesh;
-                MeshPath.ToolTip = loaded_mesh;
+                MeshPath.Text = ((BrowserItem)Browser.SelectedItem).mesh_path;
+                MeshPath.ToolTip = ((BrowserItem)Browser.SelectedItem).mesh_path;
             }
             catch (Exception exc)
             {

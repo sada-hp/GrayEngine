@@ -30,6 +30,9 @@ namespace GrEngine
                 GrEngine::Application::redrawDesiger();
                 break;
                 /*Messages received from the C# WPF front-end part of the editor*/
+            case 0x1119:
+                GrEngine::Application::LogMessage((const char*)wParam);
+                break;
             case 0x1200: //Load obj file callback
                 //GrEngine::Application::loadModel((const char*)lParam);
                 break;
@@ -41,6 +44,15 @@ namespace GrEngine
                 break;
             case 0x1203: //Open the model browser
                 GrEngine::Application::initModelBrowser();
+                break;
+            case 0x1204: //Add entity
+                GrEngine::Application::addEntity();
+                break;
+            case 0x1205: //Retrieve entity info
+                GrEngine::Application::retrieveEntityInfo((int)wParam);
+                break;
+            case 0x1206: //Retrieve entity info
+                GrEngine::Application::updateEntity((const char*)wParam, (int)lParam);
                 break;
             default:
                 return DefWindowProcA(hwnd, msg, wParam, lParam);
@@ -100,6 +112,11 @@ namespace GrEngine
                     Application::pushToAppLogger(para);
                 }
             );
+        }
+
+        static void LogMessage(const char* msg)
+        {
+            Logger::Out(msg, OutputColor::Blue, OutputType::Log);
         }
 
         static void StartEngine()
@@ -170,6 +187,56 @@ namespace GrEngine
             _instance->getAppWindow()->AppShowCursor(!_instance->free_mode);
             _instance->old_cursor_pos = {960 * _instance->free_mode, 540 * _instance->free_mode };
             SetCursorPos(960, 540);
+        }
+
+        static void addEntity()
+        {
+            EntityInfo ent;
+
+            _instance->addDummy(&ent);
+
+            char* msg = new char[ent.EntityName.size() + 1];
+            int i = 0;
+            for (char letter : ent.EntityName)
+            {
+                msg[i++] = (int)letter;
+            }
+            msg[i] = '\0';
+
+            getEditorUI()->UpdateEntity(ent.EntityID, msg);
+        }
+
+        static void retrieveEntityInfo(int ID)
+        {
+            EntityInfo info = _instance->getAppWindow()->getRenderer()->getEntityInfo(ID);
+            char* msg = new char[info.EntityName.size() + 1];
+            int i = 0;
+            for (char letter : info.EntityName)
+            {
+                msg[i++] = (int)letter;
+            }
+            msg[i] = '\0';
+
+            getEditorUI()->SendEntityInfo(info.EntityID, msg, info.Position.x, info.Position.y, info.Position.z);
+            _instance->getAppWindow()->getRenderer()->selectEntity(ID);
+        }
+
+        static void updateEntity(const char* property, int ID)
+        {
+            //float val = std::stof(value);
+
+            if (property == "xpos")
+            {
+                _instance->getAppWindow()->getRenderer()->selectEntity(ID)->PositionObjectAt();
+            }
+            else if (property == "ypos")
+            {
+
+            }
+            else if (property == "zpos")
+            {
+
+            }
         }
 
         static void Inputs()

@@ -84,5 +84,23 @@ namespace EditorUI
                 ((ModelBrowser)wrappers[1].ui_window).AddMaterialToTheTable(input1, input2);
             }));
         }
+
+        [DllExport]
+        public static void UpdateEntity(IntPtr id, IntPtr name)
+        {
+            wrappers[0].ui_window.Dispatcher.BeginInvoke((Action)(() =>
+            {
+                ((MainView)wrappers[0].ui_window).UpdateEntity((int)id, Marshal.PtrToStringAnsi(name));
+            }));
+        }
+
+        [DllExport]
+        public static void RetrieveEntityInfo(IntPtr id, IntPtr name, float X, float Y, float Z)
+        {
+            wrappers[0].ui_window.Dispatcher.BeginInvoke((Action)(() =>
+            {
+                ((MainView)wrappers[0].ui_window).RetrieveEntityInfo((int)id, Marshal.PtrToStringAnsi(name), X, Y, Z);
+            }));
+        }
     }
 }

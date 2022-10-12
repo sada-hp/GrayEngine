@@ -26,3 +26,4 @@
 #include <mutex>
 #include <functional>
 #include <future>
+#include <typeinfo>

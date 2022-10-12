@@ -39,6 +39,7 @@ namespace GrEngine_Vulkan
 		inline VkRenderPass getRenderPass() { return renderPass; };
 		bool updateDrawables(uint32_t index);
 		bool loadModel(const char* mesh_path, std::vector<std::string> textures_vector, std::unordered_map<std::string, std::string>* out_materials_names = nullptr) override;
+		void addDummy(GrEngine::EntityInfo* out_entity = nullptr) override;
 		bool loadImage(const char* image_path, int material_index = 0) override;
 		void clearDrawables() override;
 		void ShowGrid() override;
@@ -63,6 +64,7 @@ namespace GrEngine_Vulkan
 		VkInstance _vulkan;
 		VulkanDrawable grid;
 		VulkanDrawable background;
+		ShaderBuffer scene_test;
 
 		VkPhysicalDeviceProperties deviceProps;
 		VkQueue presentQueue;
@@ -89,6 +91,7 @@ namespace GrEngine_Vulkan
 
 		bool loadMesh(const char* mesh_path, VulkanDrawable* target, std::vector<std::string>* out_materials = nullptr);
 		bool loadTexture(const char* texture_path, VulkanDrawable* target, std::vector<int> material_indices);
+		void ClickCheck();
 
 		bool createVKInstance();
 		bool createMemoryAllocator();
@@ -116,6 +119,7 @@ namespace GrEngine_Vulkan
 
 		void transitionImageLayout(VkImage image, VkFormat format, VkImageLayout oldLayout, VkImageLayout newLayout);
 		void copyBufferToImage(VkBuffer buffer, VkImage image, uint32_t width, uint32_t height);
+		void copyImageToBuffer(VkBuffer buffer, VkImage image, uint32_t width, uint32_t height);
 
 		VkImageView depthImageView;
 		AllocatedImage depthImage;

@@ -5,6 +5,13 @@
 
 namespace GrEngine
 {
+	struct EntityInfo
+	{
+		std::string EntityName;
+		UINT EntityID;
+		glm::vec3 Position;
+	};
+
 	class DllExport Entity
 	{
 	public:
@@ -112,7 +119,17 @@ namespace GrEngine
 			return obj_orientation;
 		}
 
-		inline UINT GetEntityID() { return id; };
+		inline EntityInfo GetEntityInfo()
+		{
+			EntityInfo info{ name, id, object_position };
+			return info;
+		};
+
+		inline void UpdateNameTag(std::string new_name) { name = new_name; }
+
+		inline std::string GetEntityNameTag() { return name; };
+
+		inline std::string GetEntityType() { return Type; };
 
 	protected:
 		glm::quat obj_orientation = { 0.f, 0.f, 0.f, 0.f };
@@ -120,7 +137,9 @@ namespace GrEngine
 		glm::vec3 object_position = { 0.f, 0.f, 0.f };
 		glm::vec3 object_position_target = { 0.f, 0.f, 0.f };
 		glm::vec3 pitch_yaw_roll = { 0.f, 0.f, 0.f };
+		std::string Type = "Entity";
 	private:
 		UINT id;
+		std::string name = "ent";
 	};
 }

@@ -23,6 +23,7 @@ namespace GrEngine
 		void Stop();
 		void TerminateLiraries();
 		inline void* getNativeWindow() { return pWindow->getNativeWindow(); };
+		void addDummy(EntityInfo* out_entity = nullptr);
 	private:
 		std::unique_ptr<AppWindow> pWindow;
 	};

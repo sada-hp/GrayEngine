@@ -15,15 +15,34 @@
             <TextBlock Name="FrameBlock" Text="0,0" Foreground="WhiteSmoke"/>
         </Menu>
         <DockPanel Background="#FF292A30" LastChildFill="True">
-            <StackPanel Width="132" Background="#FF353538" Margin="0">
-                <Button x:Name="ClearButton" Content="Clear scene" Background="#FF5D5D5D" BorderBrush="#FFC8C8C8" BorderThickness="1" Margin="5" Foreground="White" FontFamily="Lucida Sans Unicode" TextOptions.TextHintingMode="Fixed" Padding="2" Cursor="Hand" Click="ClearButton_Click"/>
-                <Button x:Name="BrowserButton" Content="Model browser" Background="#FF5D5D5D" BorderBrush="#FFC8C8C8" BorderThickness="1" Margin="5" Foreground="White" FontFamily="Lucida Sans Unicode" TextOptions.TextHintingMode="Fixed" Padding="2" Cursor="Hand" Click="BrowserButton_Click"/>
-                <Button x:Name="EntityButton" Content="Add entity" Background="#FF5D5D5D" BorderBrush="#FFC8C8C8" BorderThickness="1" Margin="5" Foreground="White" FontFamily="Lucida Sans Unicode" TextOptions.TextHintingMode="Fixed" Padding="2" Cursor="Hand" Click="EntityButton_Click"/>
-            </StackPanel>
-            <DockPanel Name="LogPanel" Height="120" VerticalAlignment="Top" DockPanel.Dock="Bottom" LastChildFill="True" Background="#FF353538" Margin="0">
-                <TextBox x:Name="OutputConsole" TextWrapping="Wrap" Foreground="#FFB9B9B9" Background="#FF262629" SelectionBrush="#FF8A9299" Padding="5" Margin="2" VerticalScrollBarVisibility="Auto" BorderThickness="0" IsReadOnly="True" HorizontalScrollBarVisibility="Auto" DockPanel.Dock="Top"/>
-            </DockPanel>
-            <WindowsFormsHost x:Name="FormHost" Background="Black" SizeChanged="FormHost_SizeChanged" DockPanel.Dock="Top" Margin="5"/>
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="15*"/>
+                    <ColumnDefinition Width="70*"/>
+                    <ColumnDefinition Width="15*"/>
+                </Grid.ColumnDefinitions>
+                <DockPanel Grid.Column="0">
+                    <StackPanel Background="#FF353538" Margin="0" DockPanel.Dock="Top">
+                        <Button x:Name="ClearButton" Content="Clear scene" Background="#FF5D5D5D" BorderBrush="#FFC8C8C8" BorderThickness="1" Margin="5" Foreground="White" FontFamily="Lucida Sans Unicode" TextOptions.TextHintingMode="Fixed" Padding="2" Cursor="Hand" Click="ClearButton_Click"/>
+                        <!--<Button x:Name="BrowserButton" Content="Model browser" Background="#FF5D5D5D" BorderBrush="#FFC8C8C8" BorderThickness="1" Margin="5" Foreground="White" FontFamily="Lucida Sans Unicode" TextOptions.TextHintingMode="Fixed" Padding="2" Cursor="Hand" Click="BrowserButton_Click"/>-->
+                        <Button x:Name="EntityButton" Content="Add entity" Background="#FF5D5D5D" BorderBrush="#FFC8C8C8" BorderThickness="1" Margin="5" Foreground="White" FontFamily="Lucida Sans Unicode" TextOptions.TextHintingMode="Fixed" Padding="2" Cursor="Hand" Click="EntityButton_Click"/>
+                    </StackPanel>
+                    <ListBox Name="EntitiesList" Background="#FF242427" Margin="5, 5, 5, 5" SelectionChanged="EntitiesList_SelectionChanged">
+                    
+                    </ListBox>
+                </DockPanel>
+                <Grid Grid.Column="1">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="75*"/>
+                        <RowDefinition Height="25*"/>
+                    </Grid.RowDefinitions>
+                    <WindowsFormsHost x:Name="FormHost" Background="Black" SizeChanged="FormHost_SizeChanged" DockPanel.Dock="Top" Margin="5" Grid.Row="0"/>
+                    <TextBox x:Name="OutputConsole" TextWrapping="Wrap" Foreground="#FFB9B9B9" Background="#FF262629" SelectionBrush="#FF8A9299" Padding="5" Margin="2" VerticalScrollBarVisibility="Auto" BorderThickness="0" IsReadOnly="True" HorizontalScrollBarVisibility="Auto" Grid.Row="1"/>
+                </Grid>
+                <ListBox Name="PropertiesCollection" Grid.Column="2" Background="#FF242427" Margin="5, 5, 5, 5">
+                    
+                </ListBox>
+            </Grid>
         </DockPanel>
     </DockPanel>
 

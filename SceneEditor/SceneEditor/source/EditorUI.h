@@ -39,6 +39,12 @@ public:
 	typedef void(*UpdateMaterialsFunc)(char*, char*);
 	UpdateMaterialsFunc UpdateMaterials;
 
+	typedef void(*UpdateEntityFunc)(int, char*);
+	UpdateEntityFunc UpdateEntity;
+
+	typedef void(*RetrieveInfoFunc)(int, char*, float, float, float);
+	RetrieveInfoFunc SendEntityInfo;
+
 	EditorUI()
 	{
 		dotNetGUILibrary = LoadLibraryA("EditorUI.dll");
@@ -50,6 +56,8 @@ public:
 		SetViewportPosition = (SetChildPositionFunc)GetProcAddress(dotNetGUILibrary, "UpdateChildPosition");
 		UpdateFramecounter = (UpdateFramecounterFunc)GetProcAddress(dotNetGUILibrary, "UpdateFrameCounter");
 		UpdateMaterials = (UpdateMaterialsFunc)GetProcAddress(dotNetGUILibrary, "PassMaterialString");
+		UpdateEntity = (UpdateEntityFunc)GetProcAddress(dotNetGUILibrary, "UpdateEntity");
+		SendEntityInfo = (RetrieveInfoFunc)GetProcAddress(dotNetGUILibrary, "RetrieveEntityInfo");
 	};
 
 	~EditorUI()
