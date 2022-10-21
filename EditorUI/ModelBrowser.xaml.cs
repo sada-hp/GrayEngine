@@ -21,8 +21,12 @@ namespace EditorUI
         static extern IntPtr SetParent(IntPtr hWndChild, IntPtr hWndNewParent);
         [DllImport("user32.dll")]
         static extern bool SetWindowPos(IntPtr hWnd, IntPtr hWndInsertAfter, int X, int Y, int cx, int cy, uint uFlags);
-        [DllImport("GrayEngine.dll", CallingConvention = CallingConvention.Cdecl)]
-        static extern bool loadModel(IntPtr mesh_path, IntPtr textures_path, IntPtr out_materials_names);
+        [DllImport("SceneEditor.dll", CallingConvention = CallingConvention.Cdecl)]
+        static extern bool MB_LoadModelFile(IntPtr mesh_path);
+        [DllImport("SceneEditor.dll", CallingConvention = CallingConvention.Cdecl)]
+        static extern bool MB_AddToTheScene(IntPtr mesh_path);
+        [DllImport("SceneEditor.dll", CallingConvention = CallingConvention.Cdecl)]
+        static extern bool MB_Close();
 
         IntPtr pOwner;
         IntPtr child_hwnd;
@@ -139,7 +143,7 @@ namespace EditorUI
             }
             catch (Exception e)
             {
-                SendMessage(pOwner, 0x1204, IntPtr.Zero, Marshal.StringToHGlobalAnsi("Exception occured in " + new StackFrame(1, true).GetMethod().Name + ": " + e.Message));
+                UIBridge.LogMessage(Marshal.StringToHGlobalAnsi("Exception occured in " + new StackFrame(1, true).GetMethod().Name + ": " + e.Message));
                 SendMessage(pOwner, 0x0010, IntPtr.Zero, IntPtr.Zero);
             }
         }
@@ -280,7 +284,8 @@ namespace EditorUI
             {
                 if (Browser.SelectedIndex < 0) return;
 
-                SendMessage(pOwner, 0x1203, Marshal.StringToHGlobalAnsi(((BrowserItem)Browser.SelectedItem).ToolTip.ToString()), IntPtr.Zero);
+                //SendMessage(pOwner, 0x1203, Marshal.StringToHGlobalAnsi(((BrowserItem)Browser.SelectedItem).ToolTip.ToString()), IntPtr.Zero);
+                MB_LoadModelFile(Marshal.StringToHGlobalAnsi(((BrowserItem)Browser.SelectedItem).ToolTip.ToString()));
                 IdBox.Text = ((BrowserItem)Browser.SelectedItem).ToolTip.ToString().Split('\\').Last().Split('.')[0];
                 loaded_mesh = ((BrowserItem)Browser.SelectedItem).ToolTip.ToString();
                 MeshPath.Text = ((BrowserItem)Browser.SelectedItem).mesh_path;
@@ -398,7 +403,7 @@ namespace EditorUI
 
         private void BrowserItem_DoubleClick(object sender, System.Windows.Input.MouseButtonEventArgs e)
         {
-            SendMessage(pOwner, 0x1206, Marshal.StringToHGlobalAnsi(((BrowserItem)Browser.SelectedItem).ToolTip.ToString()), IntPtr.Zero);
+            MB_AddToTheScene(Marshal.StringToHGlobalAnsi(((BrowserItem)Browser.SelectedItem).ToolTip.ToString()));
             SendMessage(pOwner, 0x0010, IntPtr.Zero, IntPtr.Zero);
         }
     }

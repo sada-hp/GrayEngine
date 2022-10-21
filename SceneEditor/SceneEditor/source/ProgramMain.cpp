@@ -1,15 +1,9 @@
-#define MAIN_WIN_CLASSNAME "CppMAppHostWinClass"
-#define MODEL_BROWSER_CLASSNAME "CppModelBrowserHostWin"
-
-#pragma once
-#include "EditorUI.h"
-#include "Application.h"
-#include "ModelBrowser.h"
+#include "ProgramMain.h"
 
 GrEngine::Application* GrEngine::Application::_instance = nullptr;
 GrEngine::ModelBrowser* GrEngine::ModelBrowser::_instance = nullptr;
 
-int main(int argc, char** argv)
+int SceneEditor::EntryPoint()
 {
     Logger::Out("--------------- Starting the engine ---------------", OutputColor::Gray, OutputType::Log);
     Logger::ShowConsole(false);
@@ -24,7 +18,7 @@ int main(int argc, char** argv)
         app->StartEngine();
         delete app;
 
-        return 0;
+        return 10;
     }
     catch (const char* msg)
     {

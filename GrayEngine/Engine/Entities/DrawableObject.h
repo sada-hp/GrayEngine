@@ -15,6 +15,16 @@ namespace GrEngine
 		glm::vec4 color;
 		glm::vec2 uv;
 		uint32_t uv_index;
+		uint32_t uses_texture;
+
+		Vertex(glm::vec4 position, glm::vec4 vertexcolor, glm::vec2 uv_coordinates, uint32_t material_index = 0, BOOL use_texture = 0)
+		{
+			pos = position;
+			color = vertexcolor;
+			uv = uv_coordinates;
+			uv_index = material_index;
+			uses_texture = use_texture;
+		}
 
 		bool operator==(const Vertex& other) const
 		{

@@ -1,4 +1,5 @@
 #pragma once
+#include <SceneEditor.h>
 #include <GrayEngine.h>
 #include "EditorUI.h"
 #include "ModelBrowser.h"
@@ -52,7 +53,7 @@ namespace GrEngine
                 GrEngine::Application::retrieveEntityInfo((int)wParam);
                 break;
             case 0x1206: //Retrieve entity info
-                GrEngine::Application::updateEntity((const char*)wParam, (int)lParam);
+                //GrEngine::Application::updateEntity((const char*)wParam, (int)lParam);
                 break;
             default:
                 return DefWindowProcA(hwnd, msg, wParam, lParam);
@@ -172,6 +173,7 @@ namespace GrEngine
 
         static void initModelBrowser()
         {
+            _instance->isPaused = true;
             getEditorUI()->DisableUIWindow();
             AppParameters props;
             std::unique_ptr<ModelBrowser> mdlBrowser = std::make_unique<ModelBrowser>(props);
@@ -179,13 +181,15 @@ namespace GrEngine
             mdlBrowser->StartEngine();
             mdlBrowser->KillEngine();
             getEditorUI()->EnableUIWindow();
+            EventListener::clearEventQueue();
+            _instance->isPaused = false;
         }
 
         static void toggle_free_mode()
         {
             _instance->free_mode = !_instance->free_mode;
             _instance->getAppWindow()->AppShowCursor(!_instance->free_mode);
-            _instance->old_cursor_pos = {960 * _instance->free_mode, 540 * _instance->free_mode };
+            _instance->old_cursor_pos = { 960 * _instance->free_mode, 540 * _instance->free_mode };
             SetCursorPos(960, 540);
         }
 
@@ -221,24 +225,6 @@ namespace GrEngine
             _instance->getAppWindow()->getRenderer()->selectEntity(ID);
         }
 
-        static void updateEntity(const char* property, int ID)
-        {
-            //float val = std::stof(value);
-
-            if (property == "xpos")
-            {
-                _instance->getAppWindow()->getRenderer()->selectEntity(ID)->PositionObjectAt();
-            }
-            else if (property == "ypos")
-            {
-
-            }
-            else if (property == "zpos")
-            {
-
-            }
-        }
-
         static void Inputs()
         {
             Renderer* render = _instance->getAppWindow()->getRenderer();
@@ -267,7 +253,7 @@ namespace GrEngine
             {
                 if (glm::abs(_instance->old_cursor_pos.x - (float)(cur.x)) > 0.55f)
                 {
-                    orientation.x -= (_instance->old_cursor_pos.x - (float)cur.x)* senstivity;
+                    orientation.x -= (_instance->old_cursor_pos.x - (float)cur.x) * senstivity;
                 }
                 if (glm::abs(_instance->old_cursor_pos.y - (float)cur.y) > 0.55f)
                 {
@@ -317,6 +303,50 @@ namespace GrEngine
             _instance->editorUI.UpdateLogger(msg);
 
             delete[] msg;
+        }
+
+        static void updateEntity(int ID, std::string selected_property, std::string value)
+        {
+            if (selected_property == "position")
+            {
+                Entity* selection = _instance->getAppWindow()->getRenderer()->selectEntity(ID);
+                auto input = GrEngine::Globals::SeparateString(value, ':');
+                std::vector<float> coords;
+
+                for (int ind = 0; ind < input.size(); ind++)
+                {
+                    try
+                    {
+                        coords.push_back(std::stof(input[ind]));
+                    }
+                    catch (...)
+                    {
+                        coords.push_back(selection->GetObjectPosition()[ind]);
+                    }
+                }
+
+                selection->PositionObjectAt(coords[0], coords[1], coords[2]);
+            }
+            else if (selected_property == "orientation")
+            {
+                Entity* selection = _instance->getAppWindow()->getRenderer()->selectEntity(ID);
+                auto input = GrEngine::Globals::SeparateString(value, ':');
+                std::vector<float> coords;
+
+                for (int ind = 0; ind < input.size(); ind++)
+                {
+                    try
+                    {
+                        coords.push_back(std::stof(input[ind]));
+                    }
+                    catch (...)
+                    {
+                        coords.push_back(selection->GetObjectPosition()[ind]);
+                    }
+                }
+
+                selection->SetRotation(coords[0], coords[1], coords[2]);
+            }
         }
     };
 }

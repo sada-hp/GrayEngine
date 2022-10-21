@@ -24,6 +24,7 @@ namespace EditorUI
     public partial class LabelControl : UserControl, PropertyControl
     {
         string prop_content = "";
+        int entity_id;
 
         public string Contents
         {
@@ -32,6 +33,15 @@ namespace EditorUI
             {
                 prop_content = value;
                 ContentLabel.Content = prop_content;
+            }
+        }
+
+        public int ID
+        {
+            get => entity_id;
+            set
+            {
+                entity_id = value;
             }
         }
 

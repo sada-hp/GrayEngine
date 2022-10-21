@@ -19,6 +19,7 @@ namespace EditorUI
     public partial class _3VectorControl : UserControl, PropertyControl
     {
         string prop_content = "";
+        int entity_id;
         public event DummyEvent VectorPropertyChanged;
 
         public string Contents
@@ -31,6 +32,15 @@ namespace EditorUI
                 XBox.Text = coords[0];
                 YBox.Text = coords[1];
                 ZBox.Text = coords[2];
+            }
+        }
+
+        public int ID
+        {
+            get => entity_id;
+            set
+            {
+                entity_id = value;
             }
         }
 

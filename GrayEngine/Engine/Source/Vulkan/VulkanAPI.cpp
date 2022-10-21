@@ -93,25 +93,26 @@ namespace GrEngine_Vulkan
 		if ((res = createSemaphores() & res) == false)
 			Logger::Out("[Vk] Failed to create semaphores", OutputColor::Red, OutputType::Error);
 
-		GrEngine_Vulkan::Vertex vertex{};
-		vertex.pos = { 1, 0, 1, 1.0f };
-		vertex.uv = { 1.f, 1.0f };
-		vertex.color = { 1.f, 1.f, 1.f, 1.f };
+		GrEngine_Vulkan::Vertex vertex{
+		{{ 1, 0, 1, 1.0f },
+		{ 1.f, 1.f, 1.f, 1.f },
+		{ 1.f, 1.0f }}};
 
-		GrEngine_Vulkan::Vertex vertex2{};
-		vertex2.pos = { -1, 0, -1, 1.0f };
-		vertex2.uv = { 0.f, 0.0f };
-		vertex2.color = { 1.f, 1.f, 1.f, 1.f };
+		GrEngine_Vulkan::Vertex vertex2{
+		{{ -1, 0, -1, 1.0f },
+		{ 1.f, 1.f, 1.f, 1.f },
+		{ 0.f, 0.0f }}};
 
-		GrEngine_Vulkan::Vertex vertex3{};
-		vertex3.pos = { -1, 0 , 1, 1.0f };
-		vertex3.uv = { 0.f, 1.f };
-		vertex3.color = {1.f, 1.f, 1.f, 1.f};
+		GrEngine_Vulkan::Vertex vertex3{
+		{{ -1, 0 , 1, 1.0f },
+		{1.f, 1.f, 1.f, 1.f},
+		{ 0.f, 1.f }}};
 
-		GrEngine_Vulkan::Vertex vertex4{};
-		vertex4.pos = { 1, 0, -1, 1.0f };
-		vertex4.uv = { 1.f, 0.0f };
-		vertex4.color = { 1.f, 1.f, 1.f, 1.f };
+		GrEngine_Vulkan::Vertex vertex4{
+		{{ 1, 0, -1, 1.0f },
+		{ 1.f, 1.f, 1.f, 1.f },
+		{ 1.f, 0.0f }}};
+
 		background.object_mesh.vertices = { vertex, vertex2, vertex3, vertex4 };
 		background.object_mesh.indices = { 0, 1, 2, 0, 3, 1 };
 		background.shader_path = "Shaders//background";
@@ -816,14 +817,6 @@ namespace GrEngine_Vulkan
 		vkDeviceWaitIdle(logicalDevice);
 		vkQueueWaitIdle(graphicsQueue);
 
-		if (entities.size() == 0)
-		{
-			for (int ind = 0; ind < drawables.size(); ind++)
-			{
-				drawables[ind].destroyObject(logicalDevice, memAllocator);
-			}
-		}
-
 		for (auto object : entities)
 		{
 			if (object.second->GetEntityType() == "VulkanDrawable")
@@ -834,14 +827,13 @@ namespace GrEngine_Vulkan
 		}
 		
 		drawables.clear();
+		entities.clear();
 		Logger::Out("The scene was cleared", OutputColor::Green, OutputType::Log);
 	}
 
 	bool VulkanAPI::loadModel(const char* mesh_path, std::vector<std::string> textures_vector, std::unordered_map<std::string, std::string>* out_materials_names)
 	{
 		auto start = std::chrono::steady_clock::now();
-		VulkanDrawable object;
-		object.initObject(logicalDevice, memAllocator, this);
 		VulkanDrawable* ref_obj;
 		if (entities.size() > 0)
 		{
@@ -853,7 +845,7 @@ namespace GrEngine_Vulkan
 		}
 		else
 		{
-			ref_obj = &object;
+			return false;
 		}
 
 		VulkanAPI* inst = this;
@@ -943,11 +935,13 @@ namespace GrEngine_Vulkan
 			{
 				auto coord = model->mMeshes[mesh_ind]->mTextureCoords[0];
 
-				GrEngine_Vulkan::Vertex vertex;
-				vertex.pos = { cur_mesh->mVertices[vert_ind].x, cur_mesh->mVertices[vert_ind].y, cur_mesh->mVertices[vert_ind].z, 1.0f };
-				vertex.uv = { coord[vert_ind].x, 1.0f - coord[vert_ind].y };
-				vertex.uv_index = uv_ind;
-				vertex.color = { 1.0f, 1.0f, 1.0f, 1.0f };
+				GrEngine_Vulkan::Vertex vertex{{
+				{ cur_mesh->mVertices[vert_ind].x, cur_mesh->mVertices[vert_ind].y, cur_mesh->mVertices[vert_ind].z, 1.0f },
+				{ 1.0f, 1.0f, 1.0f, 1.0f },
+				{ coord[vert_ind].x, 1.0f - coord[vert_ind].y },
+				(uint32_t)uv_ind,
+				TRUE}};
+
 
 				if (uniqueVertices.count(vertex) == 0) 
 				{
@@ -975,7 +969,6 @@ namespace GrEngine_Vulkan
 		}
 		target->SetObjectBounds(glm::vec3{highest_pointx, highest_pointy, highest_pointz});
 		target->object_mesh.mesh_path = mesh_path;
-		target->updateObject(logicalDevice, memAllocator);
 
 		Logger::Out("Mesh %c%s%c was loaded succesfully", OutputColor::Green, OutputType::Log, '"', mesh_path, '"');
 		return true;
@@ -988,7 +981,6 @@ namespace GrEngine_Vulkan
 		auto object = &drawables.back();
 
 		loadTexture(image_path, object, mat);
-		object->updateObject(logicalDevice, memAllocator);
 		return true;
 	}
 

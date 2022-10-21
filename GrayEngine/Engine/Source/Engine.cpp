@@ -18,7 +18,8 @@ namespace GrEngine
 	{
 		while (!glfwWindowShouldClose(pWindow.get()->getWindow()))
 		{
-			pWindow->OnStep();
+			if (!isPaused)
+				pWindow->OnStep();
 		}
 
 		pWindow->~AppWindow();

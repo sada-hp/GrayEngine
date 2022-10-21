@@ -25,7 +25,7 @@ namespace EditorUI
     interface PropertyControl
     {
         string Contents { get; set; }
-
+        int ID { get; set; }
         void ChangeColors(System.Windows.Media.Brush background, System.Windows.Media.Brush foreground);
     }
 
@@ -79,14 +79,8 @@ namespace EditorUI
             if (res == MessageBoxResult.Yes)
             {
                 SendMessage(pOwner, 0x1201, IntPtr.Zero, IntPtr.Zero);
+                EntitiesList.Items.Clear();
             }
-        }
-
-        private void BrowserButton_Click(object sender, RoutedEventArgs e)
-        {
-            SendMessage(pOwner, 0x1203, IntPtr.Zero, IntPtr.Zero);
-
-            GC.Collect();
         }
 
         internal void PushIntoLogger(string input)
@@ -117,7 +111,7 @@ namespace EditorUI
 
         private void EntityButton_Click(object sender, RoutedEventArgs e)
         {
-            SendMessage(pOwner, 0x1204, IntPtr.Zero, IntPtr.Zero);
+            UIBridge.AddEntity();
         }
 
         internal void UpdateEntity(int ID, string name)
@@ -141,6 +135,7 @@ namespace EditorUI
                 ((PropertyControl)control).Contents = pair.Value.ToString();
 
                 ((PropertyControl)control).ChangeColors(null, new System.Windows.Media.SolidColorBrush(System.Windows.Media.Colors.WhiteSmoke));
+                ((PropertyControl)control).ID = (int)properties["EntityID"];
                 ((System.Windows.Controls.Control)control).HorizontalAlignment = System.Windows.HorizontalAlignment.Stretch;
 
                 if (events.ContainsKey(pair.Key))
@@ -170,35 +165,51 @@ namespace EditorUI
         public void LoadModelBrowser(object sender, System.Windows.Input.MouseButtonEventArgs e)
         {
             SendMessage(pOwner, 0x1203, IntPtr.Zero, IntPtr.Zero);
+            //UIBridge.InitModelBrowser();
         }
 
         private void UpdateObjectPosition(object sender)
         {
-            var coords = (sender as _3VectorControl).Contents.Split(':');
-            SendMessage(pOwner, 0x1206, Marshal.StringToHGlobalAnsi("posx"), Marshal.StringToHGlobalAnsi(coords[0]));
+            UIBridge.UpdateEntityProperty(((PropertyControl)sender).ID, Marshal.StringToHGlobalAnsi("position"), Marshal.StringToHGlobalAnsi(((PropertyControl)sender).Contents));
+        }
+
+        private void UpdateObjectOrientation(object sender)
+        {
+            UIBridge.UpdateEntityProperty(((PropertyControl)sender).ID, Marshal.StringToHGlobalAnsi("orientation"), Marshal.StringToHGlobalAnsi(((PropertyControl)sender).Contents));
         }
 
         internal void RetrieveEntityInfo(int ID, string name, float posx, float posy, float posz)
         {
-            Dictionary<string, object> properties = new Dictionary<string, object>();
-            Dictionary<string, Type> types = new Dictionary<string, Type>();
-            Dictionary<string, string> events = new Dictionary<string, string>();
-            Dictionary<string, string> handlers = new Dictionary<string, string>();
+            try
+            {
+                Dictionary<string, object> properties = new Dictionary<string, object>();
+                Dictionary<string, Type> types = new Dictionary<string, Type>();
+                Dictionary<string, string> events = new Dictionary<string, string>();
+                Dictionary<string, string> handlers = new Dictionary<string, string>();
 
-            properties.Add("EntityName", name);
-            properties.Add("EntityID", ID);
-            properties.Add("Drawable", "None");
-            properties.Add("Position", posx.ToString() + ":" + posy.ToString() + ":" + posz.ToString());
-            types.Add("EntityName", typeof(LabelControl));
-            types.Add("EntityID", typeof(LabelControl));
-            types.Add("Drawable", typeof(LabelControl));
-            types.Add("Position", typeof(_3VectorControl));
-            events.Add("Drawable", "MouseDoubleClick");
-            events.Add("Position", "VectorPropertyChanged");
-            handlers.Add("Drawable", "LoadModelBrowser");
-            handlers.Add("Position", "UpdateObjectPosition");
+                properties.Add("EntityName", name);
+                properties.Add("EntityID", ID);
+                properties.Add("Drawable", "None");
+                properties.Add("Position", posx.ToString() + ":" + posy.ToString() + ":" + posz.ToString());
+                properties.Add("Orientation", posx.ToString() + ":" + posy.ToString() + ":" + posz.ToString());
+                types.Add("EntityName", typeof(LabelControl));
+                types.Add("EntityID", typeof(LabelControl));
+                types.Add("Drawable", typeof(LabelControl));
+                types.Add("Position", typeof(_3VectorControl));
+                types.Add("Orientation", typeof(_3VectorControl));
+                events.Add("Drawable", "MouseDoubleClick");
+                events.Add("Position", "VectorPropertyChanged");
+                events.Add("Orientation", "VectorPropertyChanged");
+                handlers.Add("Drawable", "LoadModelBrowser");
+                handlers.Add("Position", "UpdateObjectPosition");
+                handlers.Add("Orientation", "UpdateObjectOrientation");
 
-            UpdateProperties(properties, types, events, handlers);
+                UpdateProperties(properties, types, events, handlers);
+            }
+            catch (Exception e)
+            {
+                SendMessage(pOwner, 0x1119, Marshal.StringToHGlobalAnsi(e.Message), IntPtr.Zero);
+            }
         }
 
         private void EntitiesList_SelectionChanged(object sender, System.Windows.Controls.SelectionChangedEventArgs e)

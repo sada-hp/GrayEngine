@@ -117,5 +117,26 @@ namespace GrEngine
 
 			return true;
 		}
+
+		static std::vector<std::string> SeparateString(std::string target, char separator)
+		{
+			std::vector<std::string> result;
+			std::string temp = "";
+			for (auto chr : target)
+			{
+				if (chr != separator)
+				{
+					temp += chr;
+				}
+				else
+				{
+					result.push_back(temp);
+					temp = "";
+				}
+			}
+			if (temp != "") result.push_back(temp);
+
+			return result;
+		}
 	};
 }

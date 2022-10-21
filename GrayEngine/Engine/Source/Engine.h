@@ -13,6 +13,7 @@ namespace GrEngine
 		static bool PokeIt();
 		std::string getExecutablePath();
 		inline AppWindow* getAppWindow() { return pWindow.get(); };
+		bool isPaused = false;
 
 	protected:
 		bool loadImageFromPath(const char* path, int material_index = 0);

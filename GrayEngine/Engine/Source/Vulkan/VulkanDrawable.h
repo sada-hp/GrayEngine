@@ -23,8 +23,8 @@ namespace GrEngine_Vulkan
 			return bindingDescription;
 		}
 
-		static std::array<VkVertexInputAttributeDescription, 4> getAttributeDescriptions() {
-			std::array<VkVertexInputAttributeDescription, 4> attributeDescriptions{};
+		static std::array<VkVertexInputAttributeDescription, 5> getAttributeDescriptions() {
+			std::array<VkVertexInputAttributeDescription, 5> attributeDescriptions{};
 
 			attributeDescriptions[0].binding = 0;
 			attributeDescriptions[0].location = 0;
@@ -46,14 +46,35 @@ namespace GrEngine_Vulkan
 			attributeDescriptions[3].format = VK_FORMAT_R32_UINT;
 			attributeDescriptions[3].offset = offsetof(Vertex, uv_index);
 
+			attributeDescriptions[4].binding = 0;
+			attributeDescriptions[4].location = 4;
+			attributeDescriptions[4].format = VK_FORMAT_R32_UINT;
+			attributeDescriptions[4].offset = offsetof(Vertex, uses_texture);
+
 			return attributeDescriptions;
 		}
 	};
 
 	struct Mesh : public GrEngine::Mesh
 	{
-		std::vector<Vertex> vertices;
-		std::vector<uint16_t> indices;
+		std::vector<Vertex> vertices = {
+			{{{ 0.25, 0.25, 0.25, 1.0f },{ 0.f, 1.f, 0.f, 1.f },{ 1.f, 1.0f }}},
+			{{{ -0.25, 0.25, -0.25, 1.0f },{ 0.f, 1.f, 0.f, 1.f },{ 0.f, 0.0f }}},
+			{{{ -0.25, 0.25 , 0.25, 1.0f },{0.f, 1.f, 0.f, 1.f},{ 0.f, 1.f }}},
+			{{{ 0.25, 0.25, -0.25, 1.0f },{ 0.f, 1.f, 0.f, 1.f },{ 1.f, 0.0f }}},
+
+			{{{ 0.25, -0.25, 0.25, 1.0f },{ 0.f, 1.f, 0.f, 1.f },{ 1.f, 1.0f }}},
+			{{{ -0.25, -0.25, -0.25, 1.0f },{ 0.f, 1.f, 0.f, 1.f },{ 0.f, 0.0f }}},
+			{{{ -0.25, -0.25 , 0.25, 1.0f },{0.f, 1.f, 0.f, 1.f},{ 0.f, 1.f }}},
+			{{{ 0.25, -0.25, -0.25, 1.0f },{ 0.f, 1.f, 0.f, 1.f },{ 1.f, 0.0f }}}
+		};;
+		std::vector<uint16_t> indices = { 0, 1, 2, 0, 3, 1,
+			4, 5, 6, 4, 7, 5,
+			0, 2, 6, 0, 4, 6,
+			0, 3, 4, 3, 7, 4,
+			1, 3, 7, 1, 5, 7,
+			1, 2, 6, 1, 5, 6,
+		};
 	};
 
 	struct ShaderBuffer

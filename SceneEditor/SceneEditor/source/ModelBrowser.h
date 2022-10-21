@@ -17,7 +17,7 @@ namespace GrEngine
             switch (msg)
             {
             case WM_CLOSE:
-                GrEngine::ModelBrowser::closeBrowser();
+                ModelBrowser::closeBrowser();
                 DestroyWindow(hwnd);
                 break;
             case WM_DESTROY:
@@ -37,9 +37,6 @@ namespace GrEngine
                 break;
             case 0x1203: //Create model using raw files
                 ModelBrowser::loadModelFromFile((const char*)wParam);
-                break;
-            case 0x1204: //Push into logger
-                Logger::Out((const char*)lParam, OutputColor::Gray, OutputType::Log);
                 break;
             case 0x1205: //Create model using raw files
                 ModelBrowser::loadRawModel((const char*)wParam, (const char*)lParam);
@@ -182,8 +179,12 @@ namespace GrEngine
             std::vector<std::string> mat_vector;
             std::unordered_map<std::string, std::string> materials;
 
-            clearViewport();
             Globals::readGMF(filepath, &mesh_path, &mat_vector);
+
+            clearViewport();
+            EntityInfo info;
+            _instance->addDummy(&info);
+            _instance->getAppWindow()->getRenderer()->selectEntity(info.EntityID);
 
             auto res = _instance->loadModel(mesh_path.c_str(), mat_vector, &materials);
             std::string out_materials;
@@ -267,8 +268,8 @@ namespace GrEngine
 
         static void closeBrowser()
         {
-            KillEngine();
             getEditorUI()->destroyUI(VIEWPORT_MODEL_BROWSER);
+            KillEngine();
         }
     };
 }

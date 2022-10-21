@@ -36,8 +36,7 @@ namespace GrEngine_Vulkan
 
 		for (int ind = 0; ind < object_texture.size(); ind++)
 		{
-			if (object_texture[ind].newImage.allocation != VK_NULL_HANDLE)
-				VulkanAPI::m_destroyTexture(device, allocator, &object_texture[ind]);
+			VulkanAPI::m_destroyTexture(device, allocator, &object_texture[ind]);
 		}
 
 		this->~VulkanDrawable();
@@ -140,7 +139,8 @@ namespace GrEngine_Vulkan
 	bool VulkanDrawable::pushConstants(VkDevice devicce, VkCommandBuffer cmd, VkExtent2D extent)
 	{
 		/*orientation relative to the position in a 3D space (?)*/
-		ubo.model = glm::translate(glm::mat4_cast(GetObjectOrientation()), GetObjectPosition());
+		//ubo.model = glm::translate(glm::mat4_cast(GetObjectOrientation()), GetObjectPosition());
+		ubo.model = glm::translate(glm::mat4(1.f), GetObjectPosition()) * glm::mat4_cast(GetObjectOrientation());
 		/*Math for Game Programmers: Understanding Homogeneous Coordinates GDC 2015*/
 		ubo.view = glm::translate(glm::mat4_cast(p_Owner->getActiveViewport()->UpdateObjectOrientation(0.2)), -p_Owner->getActiveViewport()->UpdateObjectPosition(0.65)); // [ix iy iz w1( = 0)]-direction [jx jy jz w2( = 0)]-direction [kx ky kz w3( = 0)]-direction [tx ty tz w ( = 1)]-position
 		ubo.proj = glm::perspective(glm::radians(60.0f), (float)extent.width / (float)extent.height, near_plane, far_plane); //fov, aspect ratio, near clipping plane, far clipping plane

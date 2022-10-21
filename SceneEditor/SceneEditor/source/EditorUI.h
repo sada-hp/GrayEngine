@@ -1,4 +1,5 @@
 #pragma once
+#include "EditorCore.h"
 #include <GrayEngine.h>
 #include <resource.h>
 

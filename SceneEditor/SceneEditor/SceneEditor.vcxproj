@@ -15,19 +15,19 @@
     <Keyword>Win32Proj</Keyword>
     <ProjectGuid>{D9ED61A8-C9F0-4357-BB30-9042089714DB}</ProjectGuid>
     <RootNamespace>SampleProject</RootNamespace>
-    <WindowsTargetPlatformVersion>10.0.19041.0</WindowsTargetPlatformVersion>
+    <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
     <ProjectName>SceneEditor</ProjectName>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
-    <ConfigurationType>Application</ConfigurationType>
+    <ConfigurationType>DynamicLibrary</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
     <PlatformToolset>v142</PlatformToolset>
     <CharacterSet>MultiByte</CharacterSet>
     <UseOfMfc>false</UseOfMfc>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
-    <ConfigurationType>Application</ConfigurationType>
+    <ConfigurationType>DynamicLibrary</ConfigurationType>
     <UseDebugLibraries>false</UseDebugLibraries>
     <PlatformToolset>v142</PlatformToolset>
     <WholeProgramOptimization>true</WholeProgramOptimization>
@@ -63,12 +63,15 @@
       <ConformanceMode>true</ConformanceMode>
       <AdditionalIncludeDirectories>$(SolutionDir)\SceneEditor\SceneEditor\;$(SolutionDir)\GrayEngine;$(SolutionDir)\GrayEngine\Engine\Source\Headers\;$(SolutionDir)GrayEngine\Engine\Source\Libs\IncludeVK;$(SolutionDir)GrayEngine\Engine\Source\Libs\includeGL;$(SolutionDir)GrayEngine\Engine\Source\Libs\IncludeAssimp;$(SolutionDir)GrayEngine\Engine\Source\Libs\glm;$(SolutionDir)GrayEngine\Engine\Source\Libs\TexLoader;$(SolutionDir)GrayEngine\Engine\Source\Libs\VkMemAlloc</AdditionalIncludeDirectories>
       <LanguageStandard>stdcpp20</LanguageStandard>
-      <PreprocessorDefinitions>SOLUTION_DIR=R"($(SolutionDir))";%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>ExportDll;SOLUTION_DIR=R"($(SolutionDir))";%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
     </Link>
+    <PostBuildEvent>
+      <Command>copy "$(SolutionDir)\bin\$(Configuration)-$(Platform)\$(ProjectName)\SceneEditor.dll" "$(SolutionDir)\bin\$(Configuration)-$(Platform)\WorldEditorApp\"</Command>
+    </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <ClCompile>
@@ -79,7 +82,7 @@
       <ConformanceMode>true</ConformanceMode>
       <AdditionalIncludeDirectories>$(SolutionDir)\SceneEditor\SceneEditor\;$(SolutionDir)\GrayEngine;$(SolutionDir)\GrayEngine\Engine\Source\Headers\;$(SolutionDir)GrayEngine\Engine\Source\Libs\IncludeVK;$(SolutionDir)GrayEngine\Engine\Source\Libs\includeGL;$(SolutionDir)GrayEngine\Engine\Source\Libs\IncludeAssimp;$(SolutionDir)GrayEngine\Engine\Source\Libs\glm;$(SolutionDir)GrayEngine\Engine\Source\Libs\TexLoader;$(SolutionDir)GrayEngine\Engine\Source\Libs\VkMemAlloc</AdditionalIncludeDirectories>
       <LanguageStandard>stdcpp20</LanguageStandard>
-      <PreprocessorDefinitions>SOLUTION_DIR=R"($(SolutionDir))";%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>ExportDll;SOLUTION_DIR=R"($(SolutionDir))";%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -87,6 +90,9 @@
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
     </Link>
+    <PostBuildEvent>
+      <Command>copy "$(SolutionDir)\bin\$(Configuration)-$(Platform)\$(ProjectName)\SceneEditor.dll" "$(SolutionDir)\bin\$(Configuration)-$(Platform)\WorldEditorApp\"</Command>
+    </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\GrayEngine\GrayEngine.vcxproj">
@@ -95,12 +101,17 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="source\ProgramMain.cpp" />
+    <ClCompile Include="source\UIBridge.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="source\EditorCore.h" />
+    <ClInclude Include="source\ProgramMain.h" />
     <ClInclude Include="resource.h" />
     <ClInclude Include="source\Application.h" />
     <ClInclude Include="source\EditorUI.h" />
     <ClInclude Include="source\ModelBrowser.h" />
+    <ClInclude Include="SceneEditor.h" />
+    <ClInclude Include="source\UIBridge.h" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="SceneEditor.rc" />

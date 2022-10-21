@@ -9,6 +9,18 @@ namespace EditorUI
 {
     public class UIBridge
     {
+        [DllImport("SceneEditor.dll", CallingConvention = CallingConvention.Cdecl)]
+        public static extern void AddEntity();
+
+        [DllImport("SceneEditor.dll", CallingConvention = CallingConvention.Cdecl)]
+        public static extern void LogMessage(IntPtr msg);
+
+        [DllImport("SceneEditor.dll", CallingConvention = CallingConvention.Cdecl)]
+        public static extern void InitModelBrowser();
+
+        [DllImport("SceneEditor.dll", CallingConvention = CallingConvention.Cdecl)]
+        public static extern void UpdateEntityProperty(int ID, IntPtr property, IntPtr value);
+
         public static Wrapper[] wrappers = new Wrapper[2];
 
         [DllExport]
@@ -19,6 +31,8 @@ namespace EditorUI
                 wrappers[0] = new EditorWrapper();
                 wrappers[1] = new ModelBrowserWrapper();
             }
+
+            LogMessage(Marshal.StringToHGlobalAnsi("User interface initialized"));
 
             return wrappers[index].CreateWrapper(owner);
         }
