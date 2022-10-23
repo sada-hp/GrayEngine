@@ -177,11 +177,12 @@ namespace GrEngine
             getEditorUI()->DisableUIWindow();
             AppParameters props;
             std::unique_ptr<ModelBrowser> mdlBrowser = std::make_unique<ModelBrowser>(props);
+            EventListener::blockEvents();
             mdlBrowser->init(mdlBrowser.get());
             mdlBrowser->StartEngine();
             mdlBrowser->KillEngine();
+            EventListener::blockEvents(true, true);
             getEditorUI()->EnableUIWindow();
-            EventListener::clearEventQueue();
             _instance->isPaused = false;
         }
 
@@ -346,6 +347,11 @@ namespace GrEngine
                 }
 
                 selection->SetRotation(coords[0], coords[1], coords[2]);
+            }
+            else if (selected_property == "name")
+            {
+                Entity* selection = _instance->getAppWindow()->getRenderer()->selectEntity(ID);
+                selection->UpdateNameTag(value);
             }
         }
     };

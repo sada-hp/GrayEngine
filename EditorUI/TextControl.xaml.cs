@@ -8,31 +8,28 @@ using System.Windows.Controls;
 using System.Windows.Data;
 using System.Windows.Documents;
 using System.Windows.Input;
-using System.Threading;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
-using System.Runtime.InteropServices;
-
 
 namespace EditorUI
 {
     /// <summary>
-    /// Логика взаимодействия для LabelControl.xaml
+    /// Логика взаимодействия для TextElement.xaml
     /// </summary>
-    public partial class LabelControl : UserControl, PropertyControl
+    public partial class TextControl : UserControl, PropertyControl
     {
         string prop_content = "";
         int entity_id;
-        public event DummyEvent TextBoxTextChanged;
+
         public string Contents
         {
             get => prop_content;
             set
             {
                 prop_content = value;
-                ContentLabel.Text = prop_content;
+                ContentLabel.Content = prop_content;
             }
         }
 
@@ -50,21 +47,9 @@ namespace EditorUI
             ContentLabel.Background = background;
             ContentLabel.Foreground = foreground;
         }
-
-        public LabelControl()
+        public TextControl()
         {
             InitializeComponent();
-            TextBoxTextChanged += Test;
-        }
-
-        private void Test(object sender)
-        {
-        }
-
-        private void ContentLabel_TextInput(object sender, TextChangedEventArgs e)
-        {
-            Contents = ContentLabel.Text;
-            TextBoxTextChanged.Invoke(this);
         }
     }
 }

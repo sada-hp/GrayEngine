@@ -25,6 +25,7 @@ namespace EditorUI
         {
             get => EntityID;
         }
+
         public EntityItem(int id)
         {
             EntityID = id;

@@ -103,6 +103,7 @@ public:
 			GetListener()->EventQueue.pop();
 		}
 
+		clearEventQueue();
 		return true;
 	}
 

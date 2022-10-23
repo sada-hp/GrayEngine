@@ -88,6 +88,7 @@ namespace GrEngine_Vulkan
 		}
 
 		object_texture.clear();
+		object_texture.resize(TEXTURE_ARRAY_SIZE);
 	}
 
 	bool VulkanDrawable::createPipelineLayout(VkDevice device)
@@ -139,7 +140,6 @@ namespace GrEngine_Vulkan
 	bool VulkanDrawable::pushConstants(VkDevice devicce, VkCommandBuffer cmd, VkExtent2D extent)
 	{
 		/*orientation relative to the position in a 3D space (?)*/
-		//ubo.model = glm::translate(glm::mat4_cast(GetObjectOrientation()), GetObjectPosition());
 		ubo.model = glm::translate(glm::mat4(1.f), GetObjectPosition()) * glm::mat4_cast(GetObjectOrientation());
 		/*Math for Game Programmers: Understanding Homogeneous Coordinates GDC 2015*/
 		ubo.view = glm::translate(glm::mat4_cast(p_Owner->getActiveViewport()->UpdateObjectOrientation(0.2)), -p_Owner->getActiveViewport()->UpdateObjectPosition(0.65)); // [ix iy iz w1( = 0)]-direction [jx jy jz w2( = 0)]-direction [kx ky kz w3( = 0)]-direction [tx ty tz w ( = 1)]-position

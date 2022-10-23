@@ -10,6 +10,7 @@ namespace GrEngine
     {
         static ModelBrowser* _instance;
         EditorUI editorUI;
+        EntityInfo dummy_entity;
 
         /*Background Win32 is used to receive messages from WPF front-end window*/
         static LRESULT CALLBACK HostWindowProcBrowser(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
@@ -71,6 +72,8 @@ namespace GrEngine
             _instance = instance;
             initModelBrowser();
 
+            _instance->addDummy(&dummy_entity);
+            _instance->getAppWindow()->getRenderer()->selectEntity(dummy_entity.EntityID);
             _instance->getAppWindow()->AddInputProccess(Inputs);
         }
 
@@ -83,7 +86,7 @@ namespace GrEngine
         {
             static float rotation = 0;
             Renderer* render = _instance->getAppWindow()->getRenderer();
-            DrawableObject* drawable = render->getDrawable();
+            DrawableObject* drawable = (DrawableObject*)render->selectEntity(_instance->dummy_entity.EntityID);
             Camera* camera = render->getActiveViewport();
 
             if (drawable != NULL)
@@ -181,11 +184,6 @@ namespace GrEngine
 
             Globals::readGMF(filepath, &mesh_path, &mat_vector);
 
-            clearViewport();
-            EntityInfo info;
-            _instance->addDummy(&info);
-            _instance->getAppWindow()->getRenderer()->selectEntity(info.EntityID);
-
             auto res = _instance->loadModel(mesh_path.c_str(), mat_vector, &materials);
             std::string out_materials;
             std::string out_textures;
@@ -204,8 +202,6 @@ namespace GrEngine
             std::string temp_str = "";
             std::vector<std::string> mat_vector;
             std::unordered_map<std::string, std::string> materials;
-
-            clearViewport();
 
             if (textures_str)
             {

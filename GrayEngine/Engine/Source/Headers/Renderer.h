@@ -25,10 +25,9 @@ namespace GrEngine
 		virtual void addDummy(EntityInfo* out_entity = nullptr) = 0;
 		virtual void Update() = 0;
 		virtual void ShowGrid() = 0;
-		virtual DrawableObject* getDrawable() = 0;
 		inline Camera* getActiveViewport() { return &viewport_camera; };
 		inline EntityInfo getEntityInfo(int ID) { return entities[ID]->GetEntityInfo(); };
-		inline Entity* selectEntity(int ID) { selected_entity = ID; return entities[ID]; };
+		virtual Entity* selectEntity(int ID) { selected_entity = ID; return entities[ID]; };
 
 	protected:
 		int selected_entity = 0;

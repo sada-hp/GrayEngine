@@ -7,6 +7,7 @@ using System.Runtime.InteropServices;
 using System.Windows.Interop;
 using System.Windows.Forms;
 using System.Threading;
+using System.Collections.ObjectModel;
 
 namespace EditorUI
 {
@@ -44,6 +45,7 @@ namespace EditorUI
         public Form viewport = new Form();
         IntPtr child_hwnd;
         System.Windows.Forms.Panel panel = new System.Windows.Forms.Panel();
+        ObservableCollection<object> entities = new ObservableCollection<object>();
 
         public MainView()
         {
@@ -66,6 +68,7 @@ namespace EditorUI
             panel.BorderStyle = BorderStyle.None;
             panel.Margin = new System.Windows.Forms.Padding(0);
             FormHost.Child = panel;
+            EntitiesList.ItemsSource = entities;
         }
 
         private void FormHost_SizeChanged(object sender, SizeChangedEventArgs e)
@@ -79,7 +82,7 @@ namespace EditorUI
             if (res == MessageBoxResult.Yes)
             {
                 SendMessage(pOwner, 0x1201, IntPtr.Zero, IntPtr.Zero);
-                EntitiesList.Items.Clear();
+                entities.Clear();
             }
         }
 
@@ -116,11 +119,19 @@ namespace EditorUI
 
         internal void UpdateEntity(int ID, string name)
         {
-            EntityItem button = new EntityItem(ID);
-            button.Content = name;
-            button.Background = null;
-            button.Foreground = new System.Windows.Media.SolidColorBrush(System.Windows.Media.Colors.WhiteSmoke);
-            EntitiesList.Items.Add(button);
+            var item = entities.Where(x => (x as EntityItem).ID == ID);
+            if (item.Count() == 0)
+            {
+                EntityItem button = new EntityItem(ID);
+                button.Content = name;
+                button.Background = null;
+                button.Foreground = new System.Windows.Media.SolidColorBrush(System.Windows.Media.Colors.WhiteSmoke);
+                entities.Add(button);
+            }
+            else
+            {
+                (item.First() as EntityItem).Content = name;
+            }
         }
 
         internal void UpdateProperties(Dictionary<string, object> properties, Dictionary<string, Type> types, Dictionary<string, string> events, Dictionary<string, string> handlers)
@@ -151,7 +162,7 @@ namespace EditorUI
                     }
                     catch (Exception e)
                     {
-                        SendMessage(pOwner, 0x1119, Marshal.StringToHGlobalAnsi(e.Message), IntPtr.Zero);
+                        UIBridge.LogMessage(Marshal.StringToHGlobalAnsi(e.Message));
                     }
                 }
                 System.Windows.Controls.Grid.SetColumn((System.Windows.Controls.Control)control, 1);
@@ -178,6 +189,19 @@ namespace EditorUI
             UIBridge.UpdateEntityProperty(((PropertyControl)sender).ID, Marshal.StringToHGlobalAnsi("orientation"), Marshal.StringToHGlobalAnsi(((PropertyControl)sender).Contents));
         }
 
+        private void UpdateObjectName(object sender)
+        {
+            try
+            {
+                UIBridge.UpdateEntityProperty(((PropertyControl)sender).ID, Marshal.StringToHGlobalAnsi("name"), Marshal.StringToHGlobalAnsi(((PropertyControl)sender).Contents));
+                UpdateEntity(((PropertyControl)sender).ID, ((PropertyControl)sender).Contents);
+            }
+            catch (Exception e)
+            {
+                UIBridge.LogMessage(Marshal.StringToHGlobalAnsi(e.Message));
+            }
+        }
+
         internal void RetrieveEntityInfo(int ID, string name, float posx, float posy, float posz)
         {
             try
@@ -193,13 +217,15 @@ namespace EditorUI
                 properties.Add("Position", posx.ToString() + ":" + posy.ToString() + ":" + posz.ToString());
                 properties.Add("Orientation", posx.ToString() + ":" + posy.ToString() + ":" + posz.ToString());
                 types.Add("EntityName", typeof(LabelControl));
-                types.Add("EntityID", typeof(LabelControl));
-                types.Add("Drawable", typeof(LabelControl));
+                types.Add("EntityID", typeof(TextControl));
+                types.Add("Drawable", typeof(TextControl));
                 types.Add("Position", typeof(_3VectorControl));
                 types.Add("Orientation", typeof(_3VectorControl));
+                events.Add("EntityName", "TextBoxTextChanged");
                 events.Add("Drawable", "MouseDoubleClick");
                 events.Add("Position", "VectorPropertyChanged");
                 events.Add("Orientation", "VectorPropertyChanged");
+                handlers.Add("EntityName", "UpdateObjectName");
                 handlers.Add("Drawable", "LoadModelBrowser");
                 handlers.Add("Position", "UpdateObjectPosition");
                 handlers.Add("Orientation", "UpdateObjectOrientation");
@@ -214,7 +240,15 @@ namespace EditorUI
 
         private void EntitiesList_SelectionChanged(object sender, System.Windows.Controls.SelectionChangedEventArgs e)
         {
-            SendMessage(pOwner, 0x1205, (IntPtr)(e.AddedItems[0] as EntityItem).ID, IntPtr.Zero);
+            try
+            {
+                if (e.AddedItems.Count > 0)
+                    SendMessage(pOwner, 0x1205, (IntPtr)(e.AddedItems[0] as EntityItem).ID, IntPtr.Zero);
+            }
+            catch (Exception ee)
+            {
+                UIBridge.LogMessage(Marshal.StringToHGlobalAnsi(ee.Message));
+            }
         }
     };
 }
