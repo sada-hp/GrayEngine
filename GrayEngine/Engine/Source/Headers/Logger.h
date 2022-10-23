@@ -19,6 +19,13 @@ static enum class OutputType
 	Warning
 };
 
+static enum class MessageMode
+{
+	Allow,
+	Block,
+	GetValue
+};
+
 class DllExport Logger
 {
 public:
@@ -26,6 +33,8 @@ public:
 	template<typename ... Args>
 	static void Out(const char* message, OutputColor color, OutputType type, const Args&... values)
 	{
+		if (!AllowMessages(MessageMode::GetValue)) return;
+
 		auto time_local = GetTime();
 		SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), static_cast<WORD>(color));
 
@@ -54,6 +63,24 @@ public:
 		ShowWindow(GetConsoleWindow(), show);
 	}
 
+	static bool AllowMessages(MessageMode logMode)
+	{
+		static bool isAllowed;
+		switch (logMode)
+		{
+			case (MessageMode::Allow):
+				isAllowed = true;
+				return isAllowed;
+			case (MessageMode::Block):
+				isAllowed = false;
+				return isAllowed;
+			case (MessageMode::GetValue):
+				return isAllowed;
+			default:
+				isAllowed = true;
+				return isAllowed;
+		}
+	}
 private:
 
 	static struct tm GetTime()

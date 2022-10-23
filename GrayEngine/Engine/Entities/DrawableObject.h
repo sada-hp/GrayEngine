@@ -54,7 +54,18 @@ namespace GrEngine
 			bound = new_bounds;
 		}
 
+		bool& IsVisible()
+		{
+			return visibility;
+		}
+
+		void SetVisisibility(bool value)
+		{
+			visibility = value;
+		}
+
 	private:
 		glm::vec3 bound = { 0.f, 0.f, 0.f };
+		bool visibility = true;
 	};
 }

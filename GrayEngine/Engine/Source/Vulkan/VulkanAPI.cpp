@@ -230,7 +230,7 @@ namespace GrEngine_Vulkan
 
 		for (auto object : entities)
 		{
-			if (object.second->GetEntityType() == "VulkanDrawable")
+			if (object.second->GetEntityType() == "VulkanDrawable" && dynamic_cast<VulkanDrawable*>(object.second)->IsVisible())
 			{
 				dynamic_cast<VulkanDrawable*>(object.second)->recordCommandBuffer(logicalDevice, commandBuffers[index], swapChainExtent);
 			}
@@ -782,6 +782,7 @@ namespace GrEngine_Vulkan
 		if (entities.size() > 0)
 		{
 			ref_obj = dynamic_cast<VulkanDrawable*>(entities[selected_entity]);
+			ref_obj->SetVisisibility(false);
 			ref_obj->invalidateTexture(logicalDevice, memAllocator);
 			ref_obj->object_mesh.indices = {};
 			ref_obj->object_mesh.vertices = {};
@@ -828,6 +829,7 @@ namespace GrEngine_Vulkan
 		}
 
 		ref_obj->updateObject(logicalDevice, memAllocator);
+		ref_obj->SetVisisibility(true);
 
 		auto end = std::chrono::steady_clock::now();
 		auto time = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();

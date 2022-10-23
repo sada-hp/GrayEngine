@@ -173,15 +173,17 @@ namespace GrEngine
 
         static void initModelBrowser()
         {
+            Logger::AllowMessages(MessageMode::Block);
+            EventListener::blockEvents();
             _instance->isPaused = true;
             getEditorUI()->DisableUIWindow();
             AppParameters props;
             std::unique_ptr<ModelBrowser> mdlBrowser = std::make_unique<ModelBrowser>(props);
-            EventListener::blockEvents();
             mdlBrowser->init(mdlBrowser.get());
             mdlBrowser->StartEngine();
             mdlBrowser->KillEngine();
             EventListener::blockEvents(true, true);
+            Logger::AllowMessages(MessageMode::Allow);
             getEditorUI()->EnableUIWindow();
             _instance->isPaused = false;
         }

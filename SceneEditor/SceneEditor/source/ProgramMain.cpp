@@ -5,6 +5,7 @@ GrEngine::ModelBrowser* GrEngine::ModelBrowser::_instance = nullptr;
 
 int SceneEditor::EntryPoint()
 {
+    Logger::AllowMessages(MessageMode::Allow);
     Logger::Out("--------------- Starting the engine ---------------", OutputColor::Gray, OutputType::Log);
     Logger::ShowConsole(false);
     GrEngine::Application* app = new GrEngine::Application();
