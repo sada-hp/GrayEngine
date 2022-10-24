@@ -933,6 +933,8 @@ namespace GrEngine_Vulkan
 
 	bool VulkanAPI::loadTexture(const char* texture_path, VulkanDrawable* target, std::vector<int> material_indices)
 	{
+		vkQueueWaitIdle(graphicsQueue);
+
 		ShaderBuffer stagingBuffer;
 		Texture new_texture;
 
