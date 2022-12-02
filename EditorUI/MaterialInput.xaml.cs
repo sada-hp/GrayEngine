@@ -12,16 +12,12 @@ namespace EditorUI
 {
     public partial class MaterialInput : System.Windows.Controls.UserControl
     {
-        [DllImport("user32.dll")]
-        public static extern int SendMessage(IntPtr hWnd, int wMsg, IntPtr wParam, IntPtr lParam);
 
-        IntPtr pOwner;
         public int material_index;
 
         public event EventHandler event_load_material;
-        public MaterialInput(IntPtr p)
+        public MaterialInput()
         {
-            pOwner = p;
             InitializeComponent();
         }
 

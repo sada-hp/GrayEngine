@@ -13,7 +13,6 @@ namespace GrEngine
 		static bool PokeIt();
 		std::string getExecutablePath();
 		inline AppWindow* getAppWindow() { return pWindow.get(); };
-		bool isPaused = false;
 
 	protected:
 		bool loadImageFromPath(const char* path, int material_index = 0);
@@ -25,7 +24,11 @@ namespace GrEngine
 		void TerminateLiraries();
 		inline void* getNativeWindow() { return pWindow->getNativeWindow(); };
 		void addDummy(EntityInfo* out_entity = nullptr);
+		void Pause();
+		void Unpause();
+		void loadSkybox(const char* East, const char* West, const char* Top, const char* Bottom, const char* North, const char* South);
 	private:
 		std::unique_ptr<AppWindow> pWindow;
+		bool isPaused = false;
 	};
 }

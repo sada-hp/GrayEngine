@@ -50,7 +50,7 @@ namespace GrEngine
                 GrEngine::Application::addEntity();
                 break;
             case 0x1205: //Retrieve entity info
-                GrEngine::Application::retrieveEntityInfo((int)wParam);
+                GrEngine::Application::getEntityInfo((int)wParam);
                 break;
             case 0x1206: //Retrieve entity info
                 //GrEngine::Application::updateEntity((const char*)wParam, (int)lParam);
@@ -98,7 +98,10 @@ namespace GrEngine
 
             _instance->getAppWindow()->getRenderer()->getActiveViewport()->LockAxes(0, 0, 89, -89, 0, 0);
             _instance->getAppWindow()->AddInputProccess(Inputs);
-            _instance->getAppWindow()->getRenderer()->ShowGrid();
+
+            _instance->getEditorUI()->InitUI(VIEWPORT_EDITOR);
+            _instance->getEditorUI()->SetViewportHWND(_instance->getViewportHWND(), VIEWPORT_EDITOR);
+            _instance->initAppLogger();
         }
 
         ~Application()
@@ -122,6 +125,7 @@ namespace GrEngine
 
         static void StartEngine()
         {
+            _instance->getEditorUI()->ShowScene();
             _instance->Run();
         }
 
@@ -152,7 +156,9 @@ namespace GrEngine
 
         static void clearViewport()
         {
+            _instance->Pause();
             _instance->clearScene();
+            _instance->Unpause();
         }
 
         static HWND getViewportHWND()
@@ -164,28 +170,28 @@ namespace GrEngine
         {
             if (getEditorUI()->wpf_hwnd != nullptr)
             {
-                RECT hwin_rect;
-                GetClientRect(getEditorUI()->cpphwin_hwnd, &hwin_rect);
-                MoveWindow(getEditorUI()->wpf_hwnd, 0, 0, hwin_rect.right - hwin_rect.left, hwin_rect.bottom - hwin_rect.top, TRUE);
                 GrEngine::Application::getEditorUI()->SetViewportPosition(VIEWPORT_EDITOR);
             }
         }
 
         static void initModelBrowser()
         {
+            EnableWindow(getEditorUI()->wpf_hwnd, FALSE);
+            _instance->Pause();
             Logger::AllowMessages(MessageMode::Block);
             EventListener::blockEvents();
-            _instance->isPaused = true;
-            getEditorUI()->DisableUIWindow();
             AppParameters props;
-            std::unique_ptr<ModelBrowser> mdlBrowser = std::make_unique<ModelBrowser>(props);
-            mdlBrowser->init(mdlBrowser.get());
+            ModelBrowser* mdlBrowser = new ModelBrowser(props);
+            mdlBrowser->init(mdlBrowser);
+            SetForegroundWindow(mdlBrowser->getEditorUI()->wpf_hwnd);
             mdlBrowser->StartEngine();
             mdlBrowser->KillEngine();
+            delete mdlBrowser;
             EventListener::blockEvents(true, true);
             Logger::AllowMessages(MessageMode::Allow);
-            getEditorUI()->EnableUIWindow();
-            _instance->isPaused = false;
+            _instance->Unpause();
+            EnableWindow(getEditorUI()->wpf_hwnd, TRUE);
+            SetForegroundWindow(getEditorUI()->wpf_hwnd);
         }
 
         static void toggle_free_mode()
@@ -198,33 +204,21 @@ namespace GrEngine
 
         static void addEntity()
         {
-            EntityInfo ent;
+            EntityInfo info;
+            _instance->addDummy(&info);
 
-            _instance->addDummy(&ent);
-
-            char* msg = new char[ent.EntityName.size() + 1];
-            int i = 0;
-            for (char letter : ent.EntityName)
-            {
-                msg[i++] = (int)letter;
-            }
-            msg[i] = '\0';
-
-            getEditorUI()->UpdateEntity(ent.EntityID, msg);
+            getEditorUI()->UpdateEntity(info.EntityID, Globals::StringToCharArray(info.EntityName));
         }
 
-        static void retrieveEntityInfo(int ID)
+        static void getEntityInfo(int ID)
         {
             EntityInfo info = _instance->getAppWindow()->getRenderer()->getEntityInfo(ID);
-            char* msg = new char[info.EntityName.size() + 1];
-            int i = 0;
-            for (char letter : info.EntityName)
-            {
-                msg[i++] = (int)letter;
-            }
-            msg[i] = '\0';
 
-            getEditorUI()->SendEntityInfo(info.EntityID, msg, info.Position.x, info.Position.y, info.Position.z);
+            getEditorUI()->SendEntityInfo(info.EntityID, Globals::StringToCharArray(info.EntityName), 
+                Globals::StringToCharArray(Globals::FloatToString(info.Position.x, 2) + ":" + Globals::FloatToString(info.Position.y, 2) + ":" + Globals::FloatToString(info.Position.z, 2)),
+                Globals::StringToCharArray(Globals::FloatToString(info.Orientation.x, 2) + ":" + Globals::FloatToString(info.Orientation.y, 2) + ":" + Globals::FloatToString(info.Orientation.z, 2)),
+                Globals::StringToCharArray(Globals::FloatToString(info.Scale.x, 2) + ":" + Globals::FloatToString(info.Scale.y, 2) + ":" + Globals::FloatToString(info.Scale.z, 2))
+            );
             _instance->getAppWindow()->getRenderer()->selectEntity(ID);
         }
 
@@ -286,7 +280,6 @@ namespace GrEngine
         static void pushToAppLogger(std::vector<double> para)
         {
             std::fstream log_file;
-            std::string message = "";
             char* msg = new char[para.size() + 2];
             int i = 0;
             for (char letter : para)
@@ -355,6 +348,31 @@ namespace GrEngine
                 Entity* selection = _instance->getAppWindow()->getRenderer()->selectEntity(ID);
                 selection->UpdateNameTag(value);
             }
+            else if (selected_property == "scale")
+            {
+                Entity* selection = _instance->getAppWindow()->getRenderer()->selectEntity(ID);
+                auto input = GrEngine::Globals::SeparateString(value, ':');
+                std::vector<float> coords;
+
+                for (int ind = 0; ind < input.size(); ind++)
+                {
+                    try
+                    {
+                        coords.push_back(std::stof(input[ind]));
+                    }
+                    catch (...)
+                    {
+                        coords.push_back(selection->GetObjectPosition()[ind]);
+                    }
+                }
+
+                selection->SetObjectScale(coords[0], coords[1], coords[2]);
+            }
+        }
+
+        static void UpdateSkybox(const char* East, const char* West, const char* Top, const char* Bottom, const char* North, const char* South)
+        {
+            _instance->loadSkybox(East, West, Top, Bottom, North, South);
         }
     };
 }

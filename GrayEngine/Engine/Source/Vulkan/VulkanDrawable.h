@@ -8,8 +8,6 @@
 #include <vk_mem_alloc.h>
 #include "Engine/Source/Headers/Renderer.h"
 
-#define TEXTURE_ARRAY_SIZE 5
-
 namespace GrEngine_Vulkan
 {
 	struct Vertex : public GrEngine::Vertex
@@ -67,7 +65,7 @@ namespace GrEngine_Vulkan
 			{{{ -0.25, -0.25, -0.25, 1.0f },{ 0.f, 1.f, 0.f, 1.f },{ 0.f, 0.0f }}},
 			{{{ -0.25, -0.25 , 0.25, 1.0f },{0.f, 1.f, 0.f, 1.f},{ 0.f, 1.f }}},
 			{{{ 0.25, -0.25, -0.25, 1.0f },{ 0.f, 1.f, 0.f, 1.f },{ 1.f, 0.0f }}}
-		};;
+		};
 		std::vector<uint16_t> indices = { 0, 1, 2, 0, 3, 1,
 			4, 5, 6, 4, 7, 5,
 			0, 2, 6, 0, 4, 6,
@@ -93,6 +91,7 @@ namespace GrEngine_Vulkan
 		glm::mat4 model{ 1.f };
 		glm::mat4 view{1.f};
 		glm::mat4 proj{ 1.f };
+		glm::vec3 scale = { 1.f, 1.f, 1.f };
 	};
 
 	struct AllocatedImage {
@@ -122,7 +121,7 @@ namespace GrEngine_Vulkan
 	{
 	public:
 		Mesh object_mesh;
-		std::vector<Texture> object_texture;
+		Texture object_texture;
 		const char* shader_path = "Shaders//default";
 		float near_plane = 0.1;
 		float far_plane = 1000;
@@ -151,7 +150,7 @@ namespace GrEngine_Vulkan
 		bool createDescriptorLayout(VkDevice device);
 		bool createDescriptorPool(VkDevice device);
 		bool createPipelineLayout(VkDevice device);
-		bool createDescriptorSet(VkDevice device);
+		bool createDescriptorSet(VkDevice device, VmaAllocator allocator);
 		bool createGraphicsPipeline(VkDevice device);
 	};
 }

@@ -9,22 +9,10 @@ namespace EditorUI
 {
     public class UIBridge
     {
-        [DllImport("SceneEditor.dll", CallingConvention = CallingConvention.Cdecl)]
-        public static extern void AddEntity();
-
-        [DllImport("SceneEditor.dll", CallingConvention = CallingConvention.Cdecl)]
-        public static extern void LogMessage(IntPtr msg);
-
-        [DllImport("SceneEditor.dll", CallingConvention = CallingConvention.Cdecl)]
-        public static extern void InitModelBrowser();
-
-        [DllImport("SceneEditor.dll", CallingConvention = CallingConvention.Cdecl)]
-        public static extern void UpdateEntityProperty(int ID, IntPtr property, IntPtr value);
-
         public static Wrapper[] wrappers = new Wrapper[2];
 
         [DllExport]
-        public static IntPtr CreateUserInterface(IntPtr owner, uint index)
+        public static IntPtr CreateUserInterface(uint index)
         {
             if (wrappers[0] == null)
             {
@@ -32,9 +20,7 @@ namespace EditorUI
                 wrappers[1] = new ModelBrowserWrapper();
             }
 
-            LogMessage(Marshal.StringToHGlobalAnsi("User interface initialized"));
-
-            return wrappers[index].CreateWrapper(owner);
+            return wrappers[index].CreateWrapper();
         }
 
         [DllExport]
@@ -109,11 +95,11 @@ namespace EditorUI
         }
 
         [DllExport]
-        public static void RetrieveEntityInfo(IntPtr id, IntPtr name, float X, float Y, float Z)
+        public static void RetrieveEntityInfo(IntPtr id, IntPtr name, IntPtr position, IntPtr orientation, IntPtr scale)
         {
             wrappers[0].ui_window.Dispatcher.BeginInvoke((Action)(() =>
             {
-                ((MainView)wrappers[0].ui_window).RetrieveEntityInfo((int)id, Marshal.PtrToStringAnsi(name), X, Y, Z);
+                ((MainView)wrappers[0].ui_window).RetrieveEntityInfo((int)id, Marshal.PtrToStringAnsi(name), Marshal.PtrToStringAnsi(position), Marshal.PtrToStringAnsi(orientation), Marshal.PtrToStringAnsi(scale));
             }));
         }
     }

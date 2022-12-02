@@ -8,7 +8,6 @@ namespace GrEngine_Vulkan
 	{
 		p_Owner = owner;
 		Type = "VulkanDrawable";
-		object_texture.resize(TEXTURE_ARRAY_SIZE);
 
 		if (object_mesh.vertices.size() > 0)
 		{
@@ -18,7 +17,7 @@ namespace GrEngine_Vulkan
 
 		createDescriptorLayout(device);
 		createDescriptorPool(device);
-		createDescriptorSet(device);
+		createDescriptorSet(device, allocator);
 		createPipelineLayout(device);
 		createGraphicsPipeline(device);
 	}
@@ -28,67 +27,39 @@ namespace GrEngine_Vulkan
 		vkDestroyPipeline(device, graphicsPipeline, NULL);
 		vkDestroyPipelineLayout(device, pipelineLayout, NULL);
 		vkFreeDescriptorSets(device, descriptorPool, descriptorSets.size(), descriptorSets.data());
-		vkDestroyDescriptorPool(device, descriptorPool, NULL);
-		vkDestroyDescriptorSetLayout(device, descriptorSetLayout, NULL);
 
 		VulkanAPI::m_destroyShaderBuffer(device, allocator, &indexBuffer);
 		VulkanAPI::m_destroyShaderBuffer(device, allocator, &vertexBuffer);
+		VulkanAPI::m_destroyTexture(device, allocator, &object_texture);
 
-		for (int ind = 0; ind < object_texture.size(); ind++)
-		{
-			VulkanAPI::m_destroyTexture(device, allocator, &object_texture[ind]);
-		}
+		vkDestroyDescriptorPool(device, descriptorPool, NULL);
+		vkDestroyDescriptorSetLayout(device, descriptorSetLayout, NULL);
 
 		this->~VulkanDrawable();
 	}
 
 	void VulkanDrawable::updateObject(VkDevice device, VmaAllocator allocator)
 	{
-		VkDescriptorImageInfo imageInfo[TEXTURE_ARRAY_SIZE];
-		for (int ind = 0; ind < TEXTURE_ARRAY_SIZE; ind++)
-		{
-			if (ind < object_texture.size())
-			{
-				imageInfo[ind].imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-				imageInfo[ind].imageView = object_texture[ind].textureImageView;
-				imageInfo[ind].sampler = object_texture[ind].textureSampler;
-			}
-			else
-			{
-				imageInfo[ind].imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-				imageInfo[ind].imageView = nullptr;
-				imageInfo[ind].sampler = nullptr;
-			}
-		}
-
-		VkWriteDescriptorSet writes{};
-		memset(&writes, 0, sizeof(writes));
-
-		writes.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-		writes.dstSet = descriptorSets[0];
-		writes.dstBinding = 1;
-		writes.dstArrayElement = 0;
-		writes.descriptorType = VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE;
-		writes.descriptorCount = TEXTURE_ARRAY_SIZE;
-		writes.pImageInfo = imageInfo;
-
-		vkUpdateDescriptorSets(device, 1, &writes, 0, NULL);
-
 		VulkanAPI::m_destroyShaderBuffer(device, allocator, &indexBuffer);
 		VulkanAPI::m_destroyShaderBuffer(device, allocator, &vertexBuffer);
 		VulkanAPI::m_createVkBuffer(device, allocator, object_mesh.vertices.data(), sizeof(object_mesh.vertices[0]) * object_mesh.vertices.size(), VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, &vertexBuffer);
 		VulkanAPI::m_createVkBuffer(device, allocator, object_mesh.indices.data(), sizeof(object_mesh.indices[0]) * object_mesh.indices.size(), VK_BUFFER_USAGE_INDEX_BUFFER_BIT, &indexBuffer);
+		vkFreeDescriptorSets(device, descriptorPool, descriptorSets.size(), descriptorSets.data());
+		vkDestroyDescriptorPool(device, descriptorPool, NULL);
+		vkDestroyDescriptorSetLayout(device, descriptorSetLayout, NULL);
+		vkDestroyPipeline(device, graphicsPipeline, NULL);
+		vkDestroyPipelineLayout(device, pipelineLayout, NULL);
+
+		createDescriptorLayout(device);
+		createDescriptorPool(device);
+		createDescriptorSet(device, allocator);
+		createPipelineLayout(device);
+		createGraphicsPipeline(device);
 	}
 
 	void VulkanDrawable::invalidateTexture(VkDevice device, VmaAllocator allocator)
 	{
-		for (int ind = 0; ind < object_texture.size(); ind++)
-		{
-			VulkanAPI::m_destroyTexture(device, allocator, &object_texture[ind]);
-		}
-
-		object_texture.clear();
-		object_texture.resize(TEXTURE_ARRAY_SIZE);
+		VulkanAPI::m_destroyTexture(device, allocator, &object_texture);
 	}
 
 	bool VulkanDrawable::createPipelineLayout(VkDevice device)
@@ -145,6 +116,7 @@ namespace GrEngine_Vulkan
 		ubo.view = glm::translate(glm::mat4_cast(p_Owner->getActiveViewport()->UpdateObjectOrientation(0.2)), -p_Owner->getActiveViewport()->UpdateObjectPosition(0.65)); // [ix iy iz w1( = 0)]-direction [jx jy jz w2( = 0)]-direction [kx ky kz w3( = 0)]-direction [tx ty tz w ( = 1)]-position
 		ubo.proj = glm::perspective(glm::radians(60.0f), (float)extent.width / (float)extent.height, near_plane, far_plane); //fov, aspect ratio, near clipping plane, far clipping plane
 		ubo.proj[1][1] *= -1; //reverse Y coordinate
+		ubo.scale = GetObjectScale();
 
 		vkCmdPushConstants(cmd, pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(UniformBufferObject), &ubo);
 		return true;
@@ -289,8 +261,8 @@ namespace GrEngine_Vulkan
 	{
 		VkDescriptorSetLayoutBinding descriptorBindings{};
 		descriptorBindings.binding = 1; // DESCRIPTOR_SET_BINDING_INDEX
-		descriptorBindings.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-		descriptorBindings.descriptorCount = TEXTURE_ARRAY_SIZE;
+		descriptorBindings.descriptorType = VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE;
+		descriptorBindings.descriptorCount = object_texture.texture_path != 0;
 		descriptorBindings.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
 		descriptorBindings.pImmutableSamplers = NULL;
 
@@ -306,20 +278,21 @@ namespace GrEngine_Vulkan
 	bool VulkanDrawable::createDescriptorPool(VkDevice device)
 	{
 		VkDescriptorPoolSize descriptorTypePool;
-		descriptorTypePool.type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-		descriptorTypePool.descriptorCount = TEXTURE_ARRAY_SIZE;
+		descriptorTypePool.type = VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE;
+		descriptorTypePool.descriptorCount = object_texture.texture_path != 0;
 		VkDescriptorPoolCreateInfo createInfo{};
 		createInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
 		createInfo.pNext = nullptr;
 		createInfo.maxSets = 1;
 		createInfo.poolSizeCount = 1;
 		createInfo.pPoolSizes = &descriptorTypePool;
+		createInfo.flags = VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT;
 
 
 		return vkCreateDescriptorPool(device, &createInfo, NULL, &descriptorPool) == VK_SUCCESS;
 	}
 
-	bool VulkanDrawable::createDescriptorSet(VkDevice device)
+	bool VulkanDrawable::createDescriptorSet(VkDevice device, VmaAllocator allocator)
 	{
 		VkDescriptorSetAllocateInfo descriptorAllocInfo{};
 		descriptorAllocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
@@ -328,12 +301,14 @@ namespace GrEngine_Vulkan
 		descriptorAllocInfo.descriptorSetCount = 1;
 		descriptorAllocInfo.pSetLayouts = &descriptorSetLayout;
 
-		VkDescriptorImageInfo imageInfo[TEXTURE_ARRAY_SIZE];
-		for (int ind = 0; ind < TEXTURE_ARRAY_SIZE; ind++)
+		std::vector<VkDescriptorImageInfo> imageInfo;
+		if (object_texture.texture_path != NULL)
 		{
-			imageInfo[ind].imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-			imageInfo[ind].imageView = object_texture[ind].textureImageView;
-			imageInfo[ind].sampler = object_texture[ind].textureSampler;
+			VkDescriptorImageInfo info;
+			info.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+			info.imageView = object_texture.textureImageView;
+			info.sampler = object_texture.textureSampler;
+			imageInfo.push_back(info);
 		}
 
 		descriptorSets.resize(1);
@@ -347,8 +322,11 @@ namespace GrEngine_Vulkan
 		writes.dstBinding = 1;
 		writes.dstArrayElement = 0;
 		writes.descriptorType = VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE;
-		writes.descriptorCount = TEXTURE_ARRAY_SIZE;
-		writes.pImageInfo = imageInfo;
+		writes.descriptorCount = imageInfo.size();
+		writes.pImageInfo = imageInfo.data();
+
+		if (imageInfo.size() == 0) 
+			return true;
 
 		vkUpdateDescriptorSets(device, 1, &writes, 0, NULL);
 

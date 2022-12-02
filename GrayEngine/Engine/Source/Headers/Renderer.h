@@ -24,7 +24,7 @@ namespace GrEngine
 		virtual void clearDrawables() = 0;
 		virtual void addDummy(EntityInfo* out_entity = nullptr) = 0;
 		virtual void Update() = 0;
-		virtual void ShowGrid() = 0;
+		virtual void createSkybox(const char* East, const char* West, const char* Top, const char* Bottom, const char* North, const char* South) = 0;
 		inline Camera* getActiveViewport() { return &viewport_camera; };
 		inline EntityInfo getEntityInfo(int ID) { return entities[ID]->GetEntityInfo(); };
 		virtual Entity* selectEntity(int ID) { selected_entity = ID; return entities[ID]; };

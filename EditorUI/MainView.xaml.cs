@@ -32,6 +32,25 @@ namespace EditorUI
 
     public partial class MainView : Window, EditorWindow
     {
+        [DllImport("SceneEditor.dll", CallingConvention = CallingConvention.Cdecl)]
+        public static extern void AddEntity();
+        [DllImport("SceneEditor.dll", CallingConvention = CallingConvention.Cdecl)]
+        public static extern void GetEntityInfo(IntPtr ID);
+
+        [DllImport("SceneEditor.dll", CallingConvention = CallingConvention.Cdecl)]
+        public static extern void LogMessage(IntPtr msg);
+
+        [DllImport("SceneEditor.dll", CallingConvention = CallingConvention.Cdecl)]
+        public static extern void InitModelBrowser();
+
+        [DllImport("SceneEditor.dll", CallingConvention = CallingConvention.Cdecl)]
+        public static extern void UpdateEntityProperty(int ID, IntPtr property, IntPtr value);
+
+        [DllImport("SceneEditor.dll", CallingConvention = CallingConvention.Cdecl)]
+        public static extern void UpdateSkybox(IntPtr East, IntPtr West, IntPtr Top, IntPtr Bottom, IntPtr North, IntPtr South);
+        [DllImport("SceneEditor.dll", CallingConvention = CallingConvention.Cdecl)]
+        public static extern void App_Close();
+
         [DllImport("user32.dll")]
         public static extern int SendMessage(IntPtr hWnd, int wMsg, IntPtr wParam, IntPtr lParam);
         [DllImport("user32.dll")]
@@ -41,7 +60,6 @@ namespace EditorUI
         [DllImport("user32.dll")]
         static extern bool SetWindowPos(IntPtr hWnd, IntPtr hWndInsertAfter, int X, int Y, int cx, int cy, uint uFlags);
 
-        IntPtr pOwner;
         public Form viewport = new Form();
         IntPtr child_hwnd;
         System.Windows.Forms.Panel panel = new System.Windows.Forms.Panel();
@@ -49,18 +67,6 @@ namespace EditorUI
 
         public MainView()
         {
-            InitializeComponent();
-            panel.CreateControl();
-            panel.Dock = DockStyle.Fill;
-            panel.BackColor = System.Drawing.Color.Black;
-            panel.BorderStyle = BorderStyle.None;
-            panel.Margin = new System.Windows.Forms.Padding(0);
-            FormHost.Child = panel;
-        }
-
-        public MainView(IntPtr p)
-        {
-            pOwner = p;
             InitializeComponent();
             panel.CreateControl();
             panel.Dock = DockStyle.Fill;
@@ -81,8 +87,8 @@ namespace EditorUI
             var res = System.Windows.MessageBox.Show("This action will delete everything\nrelated to the current scene. Continue?", "Are you sure?", buttons, System.Windows.MessageBoxImage.Question);
             if (res == MessageBoxResult.Yes)
             {
-                SendMessage(pOwner, 0x1201, IntPtr.Zero, IntPtr.Zero);
-                entities.Clear();
+                //SendMessage(pOwner, 0x1201, IntPtr.Zero, IntPtr.Zero);
+                //entities.Clear();
             }
         }
 
@@ -114,7 +120,7 @@ namespace EditorUI
 
         private void EntityButton_Click(object sender, RoutedEventArgs e)
         {
-            UIBridge.AddEntity();
+            AddEntity();
         }
 
         internal void UpdateEntity(int ID, string name)
@@ -162,7 +168,7 @@ namespace EditorUI
                     }
                     catch (Exception e)
                     {
-                        UIBridge.LogMessage(Marshal.StringToHGlobalAnsi(e.Message));
+                        LogMessage(Marshal.StringToHGlobalAnsi(e.Message));
                     }
                 }
                 System.Windows.Controls.Grid.SetColumn((System.Windows.Controls.Control)control, 1);
@@ -175,34 +181,38 @@ namespace EditorUI
 
         public void LoadModelBrowser(object sender, System.Windows.Input.MouseButtonEventArgs e)
         {
-            SendMessage(pOwner, 0x1203, IntPtr.Zero, IntPtr.Zero);
-            //UIBridge.InitModelBrowser();
+            InitModelBrowser();
         }
 
         private void UpdateObjectPosition(object sender)
         {
-            UIBridge.UpdateEntityProperty(((PropertyControl)sender).ID, Marshal.StringToHGlobalAnsi("position"), Marshal.StringToHGlobalAnsi(((PropertyControl)sender).Contents));
+            UpdateEntityProperty(((PropertyControl)sender).ID, Marshal.StringToHGlobalAnsi("position"), Marshal.StringToHGlobalAnsi(((PropertyControl)sender).Contents));
         }
 
         private void UpdateObjectOrientation(object sender)
         {
-            UIBridge.UpdateEntityProperty(((PropertyControl)sender).ID, Marshal.StringToHGlobalAnsi("orientation"), Marshal.StringToHGlobalAnsi(((PropertyControl)sender).Contents));
+            UpdateEntityProperty(((PropertyControl)sender).ID, Marshal.StringToHGlobalAnsi("orientation"), Marshal.StringToHGlobalAnsi(((PropertyControl)sender).Contents));
         }
 
         private void UpdateObjectName(object sender)
         {
             try
             {
-                UIBridge.UpdateEntityProperty(((PropertyControl)sender).ID, Marshal.StringToHGlobalAnsi("name"), Marshal.StringToHGlobalAnsi(((PropertyControl)sender).Contents));
+                UpdateEntityProperty(((PropertyControl)sender).ID, Marshal.StringToHGlobalAnsi("name"), Marshal.StringToHGlobalAnsi(((PropertyControl)sender).Contents));
                 UpdateEntity(((PropertyControl)sender).ID, ((PropertyControl)sender).Contents);
             }
             catch (Exception e)
             {
-                UIBridge.LogMessage(Marshal.StringToHGlobalAnsi(e.Message));
+                LogMessage(Marshal.StringToHGlobalAnsi(e.Message));
             }
         }
 
-        internal void RetrieveEntityInfo(int ID, string name, float posx, float posy, float posz)
+        private void UpdateObjectScale(object sender)
+        {
+            UpdateEntityProperty(((PropertyControl)sender).ID, Marshal.StringToHGlobalAnsi("scale"), Marshal.StringToHGlobalAnsi(((PropertyControl)sender).Contents));
+        }
+
+        internal void RetrieveEntityInfo(int ID, string name, string pos, string orient, string scale)
         {
             try
             {
@@ -214,27 +224,31 @@ namespace EditorUI
                 properties.Add("EntityName", name);
                 properties.Add("EntityID", ID);
                 properties.Add("Drawable", "None");
-                properties.Add("Position", posx.ToString() + ":" + posy.ToString() + ":" + posz.ToString());
-                properties.Add("Orientation", posx.ToString() + ":" + posy.ToString() + ":" + posz.ToString());
+                properties.Add("Position", pos);
+                properties.Add("Orientation", orient);
+                properties.Add("Scale", scale);
                 types.Add("EntityName", typeof(LabelControl));
                 types.Add("EntityID", typeof(TextControl));
                 types.Add("Drawable", typeof(TextControl));
                 types.Add("Position", typeof(_3VectorControl));
                 types.Add("Orientation", typeof(_3VectorControl));
+                types.Add("Scale", typeof(_3VectorControl));
                 events.Add("EntityName", "TextBoxTextChanged");
                 events.Add("Drawable", "MouseDoubleClick");
                 events.Add("Position", "VectorPropertyChanged");
                 events.Add("Orientation", "VectorPropertyChanged");
+                events.Add("Scale", "VectorPropertyChanged");
                 handlers.Add("EntityName", "UpdateObjectName");
                 handlers.Add("Drawable", "LoadModelBrowser");
                 handlers.Add("Position", "UpdateObjectPosition");
                 handlers.Add("Orientation", "UpdateObjectOrientation");
+                handlers.Add("Scale", "UpdateObjectScale");
 
                 UpdateProperties(properties, types, events, handlers);
             }
             catch (Exception e)
             {
-                SendMessage(pOwner, 0x1119, Marshal.StringToHGlobalAnsi(e.Message), IntPtr.Zero);
+                LogMessage(Marshal.StringToHGlobalAnsi(e.Message));
             }
         }
 
@@ -243,12 +257,23 @@ namespace EditorUI
             try
             {
                 if (e.AddedItems.Count > 0)
-                    SendMessage(pOwner, 0x1205, (IntPtr)(e.AddedItems[0] as EntityItem).ID, IntPtr.Zero);
+                    GetEntityInfo((IntPtr)(e.AddedItems[0] as EntityItem).ID);
             }
             catch (Exception ee)
             {
-                UIBridge.LogMessage(Marshal.StringToHGlobalAnsi(ee.Message));
+                LogMessage(Marshal.StringToHGlobalAnsi(ee.Message));
             }
+        }
+
+        private void SkyboxSettings_Click(object sender, RoutedEventArgs e)
+        {
+            SkyboxSettings settings = new SkyboxSettings();
+            settings.ShowDialog();
+        }
+
+        private void Window_Closed(object sender, EventArgs e)
+        {
+            App_Close();
         }
     };
 }

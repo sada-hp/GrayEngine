@@ -10,6 +10,8 @@ namespace GrEngine
 		std::string EntityName;
 		UINT EntityID;
 		glm::vec3 Position;
+		glm::vec3 Orientation;
+		glm::vec3 Scale;
 	};
 
 	class DllExport Entity
@@ -119,9 +121,24 @@ namespace GrEngine
 			return obj_orientation;
 		}
 
+		glm::vec3& GetObjectScale()
+		{
+			return scale;
+		}
+
+		void SetObjectScale(glm::vec3 new_scale)
+		{
+			scale = new_scale;
+		}
+
+		void SetObjectScale(float scalex, float scaley, float scalez)
+		{
+			scale = { scalex, scaley, scalez };
+		}
+
 		inline EntityInfo GetEntityInfo()
 		{
-			EntityInfo info{ name, id, object_position };
+			EntityInfo info{ name, id, object_position, {obj_orientation.x, obj_orientation.y, obj_orientation.z}, scale };
 			return info;
 		};
 
@@ -137,6 +154,7 @@ namespace GrEngine
 		glm::vec3 object_position = { 0.f, 0.f, 0.f };
 		glm::vec3 object_position_target = { 0.f, 0.f, 0.f };
 		glm::vec3 pitch_yaw_roll = { 0.f, 0.f, 0.f };
+		glm::vec3 scale = { 1.f, 1.f, 1.f };
 		std::string Type = "Entity";
 	private:
 		UINT id;

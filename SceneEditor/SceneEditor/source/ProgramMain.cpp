@@ -1,7 +1,7 @@
 #include "ProgramMain.h"
 
 GrEngine::Application* GrEngine::Application::_instance = nullptr;
-GrEngine::ModelBrowser* GrEngine::ModelBrowser::_instance = nullptr;
+GrEngine::ModelBrowser* GrEngine::ModelBrowser::_browser = nullptr;
 
 int SceneEditor::EntryPoint()
 {
@@ -12,10 +12,6 @@ int SceneEditor::EntryPoint()
 
     try
     {
-        app->getEditorUI()->InitUI(GrEngine::Application::HostWindowProc, MAIN_WIN_CLASSNAME, VIEWPORT_EDITOR);
-        app->getEditorUI()->SetViewportHWND(app->getViewportHWND(), VIEWPORT_EDITOR);
-
-        app->initAppLogger();
         app->StartEngine();
         delete app;
 

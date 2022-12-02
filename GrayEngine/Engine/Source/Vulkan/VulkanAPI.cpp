@@ -5,6 +5,7 @@
 #define GLM_FORCE_DEPTH_ZERO_TO_ONE
 #define GLM_FORCE_RADIANS
 #define STB_IMAGE_IMPLEMENTATION
+#define STB_IMAGE_RESIZE_IMPLEMENTATION
 #include "VulkanAPI.h"
 #include <assimp/Importer.hpp>
 #include <assimp/scene.h>
@@ -22,10 +23,10 @@ namespace GrEngine_Vulkan
 
 		clearDrawables();
 		grid.destroyObject(logicalDevice, memAllocator);
-		background.destroyObject(logicalDevice, memAllocator);
 		cleanupSwapChain();
 		vkDestroySemaphore(logicalDevice, renderFinishedSemaphore, nullptr);
 		vkDestroySemaphore(logicalDevice, imageAvailableSemaphore, nullptr);
+		vkDestroyFence(logicalDevice, graphicsFence, nullptr);
 		vkDestroyCommandPool(logicalDevice, commandPool, nullptr);
 		vmaDestroyAllocator(memAllocator);
 		vkDestroyDevice(logicalDevice, nullptr);
@@ -75,9 +76,13 @@ namespace GrEngine_Vulkan
 		if ((res = createSwapChain() & res) == false)
 			Logger::Out("[Vk] Failed to create swap chain", OutputColor::Red, OutputType::Error);
 
-		if ((res = createImageViews() & res) == false)
-			Logger::Out("[Vk] Failed to create image views", OutputColor::Red, OutputType::Error);
+		swapChainImageViews.resize(swapChainImages.size());
 
+		for (std::size_t i = 0; i < swapChainImages.size(); i++) {
+			if ((res = createImageViews(swapChainImageFormat, VK_IMAGE_VIEW_TYPE_2D, swapChainImages[i], &swapChainImageViews[i]) & res) == false)
+				Logger::Out("[Vk] Failed to create image views", OutputColor::Red, OutputType::Error);
+		}
+		
 		if ((res = createRenderPass() & res) == false)
 			Logger::Out("[Vk] Failed to create render pass", OutputColor::Red, OutputType::Error);
 
@@ -113,29 +118,43 @@ namespace GrEngine_Vulkan
 		{ 1.f, 1.f, 1.f, 1.f },
 		{ 1.f, 0.0f }}};
 
-		background.object_mesh.vertices = { vertex, vertex2, vertex3, vertex4 };
-		background.object_mesh.indices = { 0, 1, 2, 0, 3, 1 };
-		background.shader_path = "Shaders//background";
-
-
-
 		grid.object_mesh.vertices = { vertex, vertex2, vertex3, vertex4 };
 		grid.object_mesh.indices = { 0, 1, 2, 0, 3, 1 };
 		grid.shader_path = "Shaders//grid";
 		grid.far_plane = 10000.f;
-		//loadTexture("D:\\GrEngine\\GrayEngine\\bin\\Debug-x64\\SceneEditor\\Content\\TestTex.png", &background, { 0 });
 
 		grid.initObject(logicalDevice, memAllocator, this);
-		//background.initObject(logicalDevice, memAllocator, this);
-
 
 		vkDeviceWaitIdle(logicalDevice);
 
 		return Initialized = res;
 	}
 
-	void VulkanAPI::ShowGrid()
+	void VulkanAPI::createSkybox(const char* East, const char* West, const char* Top, const char* Bottom, const char* North, const char* South)
 	{
+		Initialized = false;
+
+		if (sky >= 0)
+		{
+			dynamic_cast<VulkanDrawable*>(entities[sky])->destroyObject(logicalDevice, memAllocator);
+			delete entities[sky];
+			entities.erase(sky);
+			sky = -1;
+		}
+
+		GrEngine::EntityInfo inf;
+		addDummy(&inf);
+		VulkanDrawable* back = dynamic_cast<VulkanDrawable*>(entities[inf.EntityID]);
+		back->shader_path = "Shaders//background";
+		back->invalidateTexture(logicalDevice, memAllocator);
+
+		std::vector<std::string> mat_vector = { East, West, Top, Bottom, North, South };
+		loadTexture(mat_vector, back, VK_IMAGE_VIEW_TYPE_CUBE, VK_IMAGE_TYPE_2D);
+
+		back->updateObject(logicalDevice, memAllocator);
+		sky = inf.EntityID;
+
+		Initialized = true;
 	}
 
 	void VulkanAPI::drawFrame()
@@ -163,6 +182,7 @@ namespace GrEngine_Vulkan
 		submitInfo.pSignalSemaphores = signalSemaphores;
 
 		VkResult res;
+		vkResetFences(logicalDevice, 1, &graphicsFence);
 		res = vkQueueSubmit(graphicsQueue, 1, &submitInfo, graphicsFence);
 
 		if (res == VK_ERROR_DEVICE_LOST)
@@ -226,8 +246,6 @@ namespace GrEngine_Vulkan
 		scissor.extent = swapChainExtent;
 		vkCmdSetScissor(commandBuffers[index], 0, 1, &scissor);
 
-		//background.recordCommandBuffer(logicalDevice, commandBuffers[index], swapChainExtent);
-
 		for (auto object : entities)
 		{
 			if (object.second->GetEntityType() == "VulkanDrawable" && dynamic_cast<VulkanDrawable*>(object.second)->IsVisible())
@@ -282,6 +300,7 @@ namespace GrEngine_Vulkan
 
 	bool VulkanAPI::createVKInstance()
 	{
+#ifndef _DEBUG
 		VkApplicationInfo appInfo{};
 		appInfo.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO;
 		appInfo.pApplicationName = "Gray Engine App";
@@ -303,10 +322,43 @@ namespace GrEngine_Vulkan
 		createInfo.enabledExtensionCount = glfwExtensionCount;
 		createInfo.ppEnabledExtensionNames = glfwExtensions;
 		createInfo.enabledLayerCount = 0;
+#else
+		if (enableValidationLayers && !checkValidationLayerSupport()) {
+			throw std::runtime_error("validation layers requested, but not available!");
+		}
 
-		if (vkCreateInstance(&createInfo, nullptr, &_vulkan) != VK_SUCCESS)
-			return false;
-		return true;
+		VkApplicationInfo appInfo{};
+		appInfo.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO;
+		appInfo.pApplicationName = "Hello Triangle";
+		appInfo.applicationVersion = VK_MAKE_VERSION(1, 0, 0);
+		appInfo.pEngineName = "No Engine";
+		appInfo.engineVersion = VK_MAKE_VERSION(1, 0, 0);
+		appInfo.apiVersion = VK_API_VERSION_1_0;
+
+		VkInstanceCreateInfo createInfo{};
+		createInfo.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
+		createInfo.pApplicationInfo = &appInfo;
+
+		auto extensions = getRequiredExtensions();
+		createInfo.enabledExtensionCount = static_cast<uint32_t>(extensions.size());
+		createInfo.ppEnabledExtensionNames = extensions.data();
+
+		VkDebugUtilsMessengerCreateInfoEXT debugCreateInfo{};
+		if (enableValidationLayers) {
+			createInfo.enabledLayerCount = static_cast<uint32_t>(validationLayers.size());
+			createInfo.ppEnabledLayerNames = validationLayers.data();
+
+			populateDebugMessengerCreateInfo(debugCreateInfo);
+			createInfo.pNext = (VkDebugUtilsMessengerCreateInfoEXT*)&debugCreateInfo;
+		}
+		else {
+			createInfo.enabledLayerCount = 0;
+
+			createInfo.pNext = nullptr;
+		}
+#endif // DEBUG
+
+		return vkCreateInstance(&createInfo, nullptr, &_vulkan) == VK_SUCCESS;
 	}
 
 	bool VulkanAPI::createMemoryAllocator()
@@ -546,30 +598,24 @@ namespace GrEngine_Vulkan
 		return true;
 	}
 
-	bool VulkanAPI::createImageViews()
+	bool VulkanAPI::createImageViews(VkFormat format, VkImageViewType type, VkImage image, VkImageView* target, int array_layers, int base_layer)
 	{
-		swapChainImageViews.resize(swapChainImages.size());
+		VkImageViewCreateInfo createInfo{};
+		createInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
+		createInfo.viewType = type;
+		createInfo.format = format;
+		createInfo.components.r = VK_COMPONENT_SWIZZLE_IDENTITY;
+		createInfo.components.g = VK_COMPONENT_SWIZZLE_IDENTITY;
+		createInfo.components.b = VK_COMPONENT_SWIZZLE_IDENTITY;
+		createInfo.components.a = VK_COMPONENT_SWIZZLE_IDENTITY;
+		createInfo.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+		createInfo.subresourceRange.baseMipLevel = 0;
+		createInfo.subresourceRange.levelCount = 1;
+		createInfo.subresourceRange.baseArrayLayer = base_layer;
+		createInfo.subresourceRange.layerCount = array_layers;
+		createInfo.image = image;
 
-		for (std::size_t i = 0; i < swapChainImages.size(); i++) {
-			VkImageViewCreateInfo createInfo{};
-			createInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
-			createInfo.viewType = VK_IMAGE_VIEW_TYPE_2D;
-			createInfo.format = swapChainImageFormat;
-			createInfo.components.r = VK_COMPONENT_SWIZZLE_IDENTITY;
-			createInfo.components.g = VK_COMPONENT_SWIZZLE_IDENTITY;
-			createInfo.components.b = VK_COMPONENT_SWIZZLE_IDENTITY;
-			createInfo.components.a = VK_COMPONENT_SWIZZLE_IDENTITY;
-			createInfo.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-			createInfo.subresourceRange.baseMipLevel = 0;
-			createInfo.subresourceRange.levelCount = 1;
-			createInfo.subresourceRange.baseArrayLayer = 0;
-			createInfo.subresourceRange.layerCount = 1;
-			createInfo.image = swapChainImages[i];
-
-			if (vkCreateImageView(logicalDevice, &createInfo, nullptr, &swapChainImageViews[i]) != VK_SUCCESS)
-				return false;
-		}
-		return true;
+		return vkCreateImageView(logicalDevice, &createInfo, nullptr, target) == VK_SUCCESS;
 	}
 
 	bool VulkanAPI::createRenderPass()
@@ -675,7 +721,7 @@ namespace GrEngine_Vulkan
 		VkCommandPoolCreateInfo poolInfo{};
 		poolInfo.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
 		poolInfo.queueFamilyIndex = queueFamilyIndices.graphicsFamily.value();
-		poolInfo.flags = 0;
+		poolInfo.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
 
 		if (vkCreateCommandPool(logicalDevice, &poolInfo, nullptr, &commandPool) != VK_SUCCESS)
 			return false;
@@ -715,10 +761,17 @@ namespace GrEngine_Vulkan
 		Initialized == false; //Block rendering for a time it takes to recreate swapchain
 
 		vkDeviceWaitIdle(logicalDevice);
+		vkQueueWaitIdle(graphicsQueue);
 
 		cleanupSwapChain();
 		createSwapChain();
-		createImageViews();
+		
+		swapChainImageViews.resize(swapChainImages.size());
+
+		for (std::size_t i = 0; i < swapChainImages.size(); i++) {
+			createImageViews(swapChainImageFormat, VK_IMAGE_VIEW_TYPE_2D, swapChainImages[i], &swapChainImageViews[i]);
+		}
+
 		createRenderPass();
 		createFramebuffers();
 		createCommandBuffers();
@@ -799,26 +852,15 @@ namespace GrEngine_Vulkan
 		std::map<int, std::future<void>> processes_map;
 		std::map<std::string, std::vector<int>> materials_map;
 
-		processes_map[textures_vector.size()] = std::async(std::launch::async, [mesh_path, ref_obj, out_materials_collection, inst]()
+		processes_map[0] = std::async(std::launch::async, [textures_vector, ref_obj, inst]()
+			{
+				inst->loadTexture(textures_vector, ref_obj, VK_IMAGE_VIEW_TYPE_2D_ARRAY ,VK_IMAGE_TYPE_2D);
+			});
+
+		processes_map[1] = std::async(std::launch::async, [mesh_path, ref_obj, out_materials_collection, inst]()
 			{
 				inst->loadMesh(mesh_path, ref_obj, out_materials_collection);
 			});
-
-		for (int ind = 0; ind < textures_vector.size(); ind++)
-		{
-			materials_map[textures_vector[ind]].push_back(ind);
-		}
-
-		for (int mat_index = 0; mat_index < materials_map.size(); mat_index++)
-		{
-			std::string  texture = textures_vector[mat_index];
-			std::vector<int> material_indices = materials_map[texture];
-
-			processes_map[mat_index] = std::async(std::launch::async, [texture, ref_obj, mat_index, inst, material_indices]()
-				{
-					inst->loadTexture(texture.c_str(), ref_obj, material_indices);
-				});
-		}
 
 		for (int ind = 0; ind < processes_map.size(); ind++)
 		{
@@ -862,11 +904,7 @@ namespace GrEngine_Vulkan
 			Logger::Out("Could not load the mesh %c%s%c!", OutputColor::Red, OutputType::Error, '"', mesh_path, '"');
 			return false;
 		}
-		else if (model->mNumMaterials > TEXTURE_ARRAY_SIZE)
-		{
-			Logger::Out("Max number of supported materials(%d) exceded in the mesh %c%s%c!", OutputColor::Red, OutputType::Error, TEXTURE_ARRAY_SIZE, '"', mesh_path, '"');
-			return false;
-		}
+
 		float highest_pointx = 0.f;
 		float highest_pointy = 0.f;
 		float highest_pointz = 0.f;
@@ -926,106 +964,148 @@ namespace GrEngine_Vulkan
 		mat.push_back(material_index);
 		auto object = entities[selected_entity];
 
-		loadTexture(image_path, (VulkanDrawable*)object, mat);
+		loadTexture({ image_path }, (VulkanDrawable*)object, VK_IMAGE_VIEW_TYPE_2D_ARRAY, VK_IMAGE_TYPE_2D);
 		((VulkanDrawable*)object)->updateObject(logicalDevice, memAllocator);
 		return true;
 	}
 
-	bool VulkanAPI::loadTexture(const char* texture_path, VulkanDrawable* target, std::vector<int> material_indices)
+	bool VulkanAPI::loadTexture(std::vector<std::string> texture_path, VulkanDrawable* target, VkImageViewType type_view, VkImageType type_img)
 	{
 		vkQueueWaitIdle(graphicsQueue);
+
+		if (texture_path.size() == 0) return false;
 
 		ShaderBuffer stagingBuffer;
 		Texture new_texture;
 
-		int texWidth, texHeight, texChannels;
-
-		stbi_uc* pixels = stbi_load(texture_path, &texWidth, &texHeight, &texChannels, STBI_rgb_alpha);
-
-		if (!pixels) 
+		int maxW = 0;
+		int maxH = 0;
+		int channels = 0;
+		for (int i = 0; i < texture_path.size(); i++)
 		{
-			Logger::Out("An error occurred while loading the texture: %s", OutputColor::Green, OutputType::Error, texture_path);
-			return false;
+			int width;
+			int height;
+			
+			stbi_info(texture_path[i].c_str(), &width, &height, &channels);
+
+			maxW = width > maxW || i == 0 ? width : maxW;
+			maxH = height > maxH || i == 0 ? height : maxH;
 		}
-		/*Saves laoding same image several times for different surfaces*/
-		for (int index : material_indices)
+		
+		std::map<int, std::future<void>> processes_map;
+		unsigned char* data = (unsigned char*)malloc(maxW * maxH * channels * texture_path.size());
+
+		//TBD: fix loading same image file on different surfaces
+		for (int i = 0; i < texture_path.size(); i++)
 		{
+			processes_map[i] = std::async(std::launch::async, [texture_path, data, maxW, maxH, i]()
+				{
+					int width;
+					int height;
+					int channels;
+					stbi_uc* pixels = stbi_load(texture_path[i].c_str(), &width, &height, &channels, STBI_rgb_alpha);
 
-			m_createVkBuffer(logicalDevice, memAllocator, pixels, texWidth * texHeight * sizeof(int), VK_BUFFER_USAGE_TRANSFER_SRC_BIT, &stagingBuffer);
+					if (!pixels)
+					{
+						Logger::Out("An error occurred while loading the texture: %s", OutputColor::Green, OutputType::Error, texture_path);
+						free(data);
+						return;
+					}
 
-			VkExtent3D imageExtent;
-			imageExtent.width = static_cast<uint32_t>(texWidth);
-			imageExtent.height = static_cast<uint32_t>(texHeight);
-			imageExtent.depth = 1;
+					uint32_t buf_offset = maxW * maxH * channels * i;
+					if (width < maxW || height < maxH)
+					{
+						auto output = (unsigned char*)malloc(maxW * maxH * channels);
+						stbir_resize_uint8(pixels, width, height, 0, output, maxW, maxH, 0, channels);
+						auto s = sizeof(pixels);
+						memcpy(data + buf_offset, output, maxW * maxH * channels);
+						stbi_image_free(pixels);
+						free(output);
+					}
+					else
+					{
+						memcpy(data + buf_offset, pixels, width * height * channels);
+						stbi_image_free(pixels);
+					}
+				});
+		}
 
-			VkImageCreateInfo dimg_info{};
-			dimg_info.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
-			dimg_info.pNext = nullptr;
-			dimg_info.imageType = VK_IMAGE_TYPE_2D;
-			dimg_info.format = VK_FORMAT_R8G8B8A8_SRGB;
-			dimg_info.extent = imageExtent;
-			dimg_info.mipLevels = 1;
-			dimg_info.arrayLayers = 1;
-			dimg_info.samples = VK_SAMPLE_COUNT_1_BIT;
-			dimg_info.tiling = VK_IMAGE_TILING_OPTIMAL;
-			dimg_info.usage = VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT;
-
-			VmaAllocationCreateInfo dimg_allocinfo = {};
-			dimg_allocinfo.usage = VMA_MEMORY_USAGE_GPU_ONLY;
-
-			//allocate and create the image
-			vmaCreateImage(memAllocator, &dimg_info, &dimg_allocinfo, &new_texture.newImage.allocatedImage, &new_texture.newImage.allocation, nullptr);
-
-			transitionImageLayout(new_texture.newImage.allocatedImage, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
-			copyBufferToImage(stagingBuffer.Buffer, new_texture.newImage.allocatedImage, static_cast<uint32_t>(texWidth), static_cast<uint32_t>(texHeight));
-			transitionImageLayout(new_texture.newImage.allocatedImage, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
-
-			m_destroyShaderBuffer(logicalDevice, memAllocator, &stagingBuffer);
-
-			VkImageViewCreateInfo viewInfo{};
-			viewInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
-			viewInfo.image = new_texture.newImage.allocatedImage;
-			viewInfo.viewType = VK_IMAGE_VIEW_TYPE_2D;
-			viewInfo.format = VK_FORMAT_R8G8B8A8_SRGB;
-			viewInfo.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-			viewInfo.subresourceRange.baseMipLevel = 0;
-			viewInfo.subresourceRange.levelCount = 1;
-			viewInfo.subresourceRange.baseArrayLayer = 0;
-			viewInfo.subresourceRange.layerCount = 1;
-			vkCreateImageView(logicalDevice, &viewInfo, nullptr, &new_texture.textureImageView);
-
-			VkPhysicalDeviceProperties properties{};
-			vkGetPhysicalDeviceProperties(physicalDevice, &properties);
-
-			VkSamplerCreateInfo samplerInfo{};
-			samplerInfo.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
-			samplerInfo.magFilter = VK_FILTER_LINEAR;
-			samplerInfo.minFilter = VK_FILTER_LINEAR;
-			samplerInfo.addressModeU = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER;
-			samplerInfo.addressModeV = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER;
-			samplerInfo.addressModeW = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER;
-			samplerInfo.anisotropyEnable = VK_TRUE;
-			samplerInfo.maxAnisotropy = properties.limits.maxSamplerAnisotropy;
-			samplerInfo.borderColor = VK_BORDER_COLOR_INT_OPAQUE_BLACK;
-			samplerInfo.unnormalizedCoordinates = VK_FALSE;
-			samplerInfo.compareEnable = VK_FALSE;
-			samplerInfo.compareOp = VK_COMPARE_OP_ALWAYS;
-			samplerInfo.mipmapMode = VK_SAMPLER_MIPMAP_MODE_LINEAR;
-			samplerInfo.mipLodBias = 0.0f;
-			samplerInfo.minLod = 0.0f;
-			samplerInfo.maxLod = 0.0f;
-			vkCreateSampler(logicalDevice, &samplerInfo, nullptr, &new_texture.textureSampler);
-				
-			if (target->object_texture[index].newImage.allocation != nullptr)
+		for (int ind = 0; ind < processes_map.size(); ind++)
+		{
+			if (processes_map[ind].valid())
 			{
-				m_destroyTexture(logicalDevice, memAllocator, &target->object_texture[index]);
+				processes_map[ind].wait();
 			}
-			new_texture.texture_path = texture_path;
-			target->object_texture[index] = new_texture;
-			target->object_texture[index].material_index = index;
 		}
 
-		stbi_image_free(pixels);
+		m_createVkBuffer(logicalDevice, memAllocator, data, maxW * maxH * channels * texture_path.size(), VK_BUFFER_USAGE_TRANSFER_SRC_BIT, &stagingBuffer);
+		free(data);
+
+		VkExtent3D imageExtent;
+		imageExtent.width = static_cast<uint32_t>(maxW);
+		imageExtent.height = static_cast<uint32_t>(maxH);
+		imageExtent.depth = 1;
+
+		VkImageCreateInfo dimg_info{};
+		dimg_info.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
+		dimg_info.pNext = nullptr;
+		dimg_info.imageType = type_img;
+		dimg_info.format = VK_FORMAT_R8G8B8A8_SRGB;
+		dimg_info.extent = imageExtent;
+		dimg_info.mipLevels = 1;
+		dimg_info.arrayLayers = 6;
+		dimg_info.samples = VK_SAMPLE_COUNT_1_BIT;
+		dimg_info.tiling = VK_IMAGE_TILING_OPTIMAL;
+		dimg_info.usage = VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT;
+		dimg_info.flags = VK_IMAGE_CREATE_CUBE_COMPATIBLE_BIT;
+
+		VmaAllocationCreateInfo dimg_allocinfo = {};
+		dimg_allocinfo.usage = VMA_MEMORY_USAGE_GPU_ONLY;
+
+		//allocate and create the image
+		vmaCreateImage(memAllocator, &dimg_info, &dimg_allocinfo, &new_texture.newImage.allocatedImage, &new_texture.newImage.allocation, nullptr);
+
+		VkImageSubresourceRange subresourceRange = {};
+		subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+		subresourceRange.baseMipLevel = 0;
+		subresourceRange.levelCount = 1;
+		subresourceRange.layerCount = texture_path.size();
+
+		transitionImageLayout(new_texture.newImage.allocatedImage, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, subresourceRange);
+		copyBufferToImage(stagingBuffer.Buffer, new_texture.newImage.allocatedImage, maxW, maxH, channels, texture_path.size());
+		transitionImageLayout(new_texture.newImage.allocatedImage, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, subresourceRange);
+		createImageViews(VK_FORMAT_R8G8B8A8_SRGB, type_view, new_texture.newImage.allocatedImage, &new_texture.textureImageView, texture_path.size());
+		m_destroyShaderBuffer(logicalDevice, memAllocator, &stagingBuffer);
+
+		VkPhysicalDeviceProperties properties{};
+		vkGetPhysicalDeviceProperties(physicalDevice, &properties);
+
+		VkSamplerCreateInfo samplerInfo{};
+		samplerInfo.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
+		samplerInfo.magFilter = VK_FILTER_LINEAR;
+		samplerInfo.minFilter = VK_FILTER_LINEAR;
+		samplerInfo.addressModeU = VK_SAMPLER_ADDRESS_MODE_REPEAT;
+		samplerInfo.addressModeV = VK_SAMPLER_ADDRESS_MODE_REPEAT;
+		samplerInfo.addressModeW = VK_SAMPLER_ADDRESS_MODE_REPEAT;
+		samplerInfo.anisotropyEnable = VK_TRUE;
+		samplerInfo.maxAnisotropy = properties.limits.maxSamplerAnisotropy;
+		samplerInfo.borderColor = VK_BORDER_COLOR_INT_OPAQUE_BLACK;
+		samplerInfo.unnormalizedCoordinates = VK_FALSE;
+		samplerInfo.compareEnable = VK_FALSE;
+		samplerInfo.compareOp = VK_COMPARE_OP_ALWAYS;
+		samplerInfo.mipmapMode = VK_SAMPLER_MIPMAP_MODE_LINEAR;
+		samplerInfo.mipLodBias = 0.0f;
+		samplerInfo.minLod = 0.0f;
+		samplerInfo.maxLod = 0.0f;
+		vkCreateSampler(logicalDevice, &samplerInfo, nullptr, &new_texture.textureSampler);
+
+		if (target->object_texture.newImage.allocation != nullptr)
+		{
+			m_destroyTexture(logicalDevice, memAllocator, &target->object_texture);
+		}
+		new_texture.texture_path = texture_path[0].c_str();
+		target->object_texture = new_texture;
+
 		return true;
 	}
 
@@ -1043,7 +1123,6 @@ namespace GrEngine_Vulkan
 
 	bool VulkanAPI::beginCommandBuffer(VkCommandBuffer cmd, VkCommandBufferUsageFlags usage)
 	{
-		vkDeviceWaitIdle(logicalDevice);
 		VkCommandBufferBeginInfo beginInfo{};
 		beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
 		beginInfo.flags = usage;
@@ -1053,7 +1132,6 @@ namespace GrEngine_Vulkan
 
 	bool VulkanAPI::freeCommandBuffer(VkCommandBuffer commandBuffer)
 	{
-		vkQueueWaitIdle(graphicsQueue);
 		if (vkEndCommandBuffer(commandBuffer) != VK_SUCCESS) return false;
 
 		VkSubmitInfo submitInfo{};
@@ -1061,6 +1139,7 @@ namespace GrEngine_Vulkan
 		submitInfo.commandBufferCount = 1;
 		submitInfo.pCommandBuffers = &commandBuffer;
 
+		vkResetFences(logicalDevice, 1, &graphicsFence);
 		vkQueueSubmit(graphicsQueue, 1, &submitInfo, graphicsFence);
 		vkQueueWaitIdle(graphicsQueue);
 
@@ -1069,7 +1148,7 @@ namespace GrEngine_Vulkan
 		return true;
 	}
 
-	void VulkanAPI::transitionImageLayout(VkImage image, VkFormat format, VkImageLayout oldLayout, VkImageLayout newLayout)
+	void VulkanAPI::transitionImageLayout(VkImage image, VkFormat format, VkImageLayout oldLayout, VkImageLayout newLayout, VkImageSubresourceRange subres)
 	{
 		VkCommandBuffer commandBuffer;
 		allocateCommandBuffer(&commandBuffer);
@@ -1082,11 +1161,11 @@ namespace GrEngine_Vulkan
 		barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
 		barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
 		barrier.image = image;
-		barrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-		barrier.subresourceRange.baseMipLevel = 0;
-		barrier.subresourceRange.levelCount = 1;
-		barrier.subresourceRange.baseArrayLayer = 0;
-		barrier.subresourceRange.layerCount = 1;
+		barrier.subresourceRange.aspectMask = subres.aspectMask;
+		barrier.subresourceRange.baseMipLevel = subres.baseMipLevel;
+		barrier.subresourceRange.levelCount = subres.levelCount;
+		barrier.subresourceRange.baseArrayLayer = subres.baseArrayLayer;
+		barrier.subresourceRange.layerCount = subres.layerCount;
 
 		VkPipelineStageFlags sourceStage;
 		VkPipelineStageFlags destinationStage;
@@ -1113,58 +1192,38 @@ namespace GrEngine_Vulkan
 		freeCommandBuffer(commandBuffer);
 	}
 
-	void VulkanAPI::copyBufferToImage(VkBuffer buffer, VkImage image, uint32_t width, uint32_t height)
+	void VulkanAPI::copyBufferToImage(VkBuffer buffer, VkImage image, uint32_t width, uint32_t height, uint32_t channels, uint32_t length)
 	{
 		VkCommandBuffer commandBuffer;
 		allocateCommandBuffer(&commandBuffer);
 		beginCommandBuffer(commandBuffer, VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT);
+		std::vector<VkBufferImageCopy> regions;
+		uint32_t offset = 0;
 
-		VkBufferImageCopy region{};
-		region.bufferOffset = 0;
-		region.bufferRowLength = 0;
-		region.bufferImageHeight = 0;
+		for (int i = 0; i < length; i++)
+		{
+			VkBufferImageCopy region{};
+			region.bufferOffset = offset;
 
-		region.imageSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-		region.imageSubresource.mipLevel = 0;
-		region.imageSubresource.baseArrayLayer = 0;
-		region.imageSubresource.layerCount = 1;
+			region.imageSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+			region.imageSubresource.mipLevel = 0;
+			region.imageSubresource.baseArrayLayer = i;
+			region.imageSubresource.layerCount = 1;
 
-		region.imageOffset = { 0, 0, 0 };
-		region.imageExtent = {
-			width,
-			height,
-			1
-		};
+			region.imageOffset = { 0, 0, 0 };
+			region.imageExtent = {
+				width,
+				height,
+				1
+			};
 
-		vkCmdCopyBufferToImage(commandBuffer, buffer, image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &region);
+			regions.push_back(region);
+			offset += width * height * channels;
+		}
 
-		freeCommandBuffer(commandBuffer);
-	}
 
-	void VulkanAPI::copyImageToBuffer(VkBuffer buffer, VkImage image, uint32_t width, uint32_t height)
-	{
-		VkCommandBuffer commandBuffer;
-		allocateCommandBuffer(&commandBuffer);
-		beginCommandBuffer(commandBuffer, VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT);
+		vkCmdCopyBufferToImage(commandBuffer, buffer, image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, regions.size(), regions.data());
 
-		VkBufferImageCopy region{};
-		region.bufferOffset = 0;
-		region.bufferRowLength = 0;
-		region.bufferImageHeight = 0;
-
-		region.imageSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-		region.imageSubresource.mipLevel = 0;
-		region.imageSubresource.baseArrayLayer = 0;
-		region.imageSubresource.layerCount = 1;
-
-		region.imageOffset = { 0, 0, 0 };
-		region.imageExtent = {
-			width,
-			height,
-			1
-		};
-
-		vkCmdCopyImageToBuffer(commandBuffer,  image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, buffer, 1, &region);
 		freeCommandBuffer(commandBuffer);
 	}
 
@@ -1186,7 +1245,6 @@ namespace GrEngine_Vulkan
 
 	bool VulkanAPI::m_createVkBuffer(VkDevice device, VmaAllocator allocator, const void* bufData, uint32_t dataSize, VkBufferUsageFlags usage, ShaderBuffer* shaderBuffer)
 	{
-		vkDeviceWaitIdle(device);
 		/*this function may be called in async manner, so we must check if allocator is currently free, otherwise wait until its free*/
 		static bool is_in_use;
 		while (is_in_use) {};
@@ -1209,7 +1267,7 @@ namespace GrEngine_Vulkan
 
 		vmaMapMemory(allocator, shaderBuffer->Allocation, (void**)&shaderBuffer->pData);
 		memcpy(shaderBuffer->pData, bufData, dataSize);
-		vmaUnmapMemory(allocator, shaderBuffer->Allocation);
+		//vmaUnmapMemory(allocator, shaderBuffer->Allocation);
 
 		shaderBuffer->BufferInfo.buffer = shaderBuffer->Buffer;
 		shaderBuffer->BufferInfo.offset = 0;
@@ -1228,11 +1286,11 @@ namespace GrEngine_Vulkan
 
 	void VulkanAPI::m_destroyShaderBuffer(VkDevice device, VmaAllocator allocator, ShaderBuffer* shader)
 	{
-		vkDeviceWaitIdle(device);
 		if (shader->initialized != false)
 		{
-			vkFlushMappedMemoryRanges(device, 1, &(shader->MappedMemoryRange));
+			//vkFlushMappedMemoryRanges(device, 1, &(shader->MappedMemoryRange));
 			vkDestroyBuffer(device, shader->Buffer, NULL);
+			vmaUnmapMemory(allocator, shader->Allocation);
 			vmaFreeMemory(allocator, shader->Allocation);
 		}
 
@@ -1267,7 +1325,7 @@ namespace GrEngine_Vulkan
 
 	void VulkanAPI::addDummy(GrEngine::EntityInfo* out_entity)
 	{
-		GrEngine::Entity* ent = new VulkanDrawable(); //DANGEROUS, ADD DELETE
+		GrEngine::Entity* ent = new VulkanDrawable();
 		dynamic_cast<VulkanDrawable*>(ent)->initObject(logicalDevice, memAllocator, this);
 		std::string new_name = std::string("Entity") + std::to_string(entities.size()+1);
 		ent->UpdateNameTag(new_name.c_str());

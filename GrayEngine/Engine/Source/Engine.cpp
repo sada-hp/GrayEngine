@@ -70,4 +70,19 @@ namespace GrEngine
 	{
 		return Globals::getExecutablePath();
 	}
+
+	void Engine::Pause()
+	{
+		isPaused = true;
+	}
+
+	void Engine::Unpause()
+	{
+		isPaused = false;
+	}
+
+	void Engine::loadSkybox(const char* East, const char* West, const char* Top, const char* Bottom, const char* North, const char* South)
+	{
+		pWindow->getRenderer()->createSkybox(East, West, Top, Bottom, North, South);
+	}
 }

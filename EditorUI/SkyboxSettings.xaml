@@ -1,0 +1,52 @@
+﻿<Window x:Class="EditorUI.SkyboxSettings"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+             xmlns:local="clr-namespace:EditorUI"
+             mc:Ignorable="d" 
+             d:DesignHeight="450" d:DesignWidth="800" Width="650" Height="450" ResizeMode="NoResize" WindowStartupLocation="CenterScreen" Title="Skybox constructor">
+    <Grid Background="#FF353538">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="80*"/>
+            <RowDefinition Height="20*"/>
+        </Grid.RowDefinitions>
+        <Grid>
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="100"/>
+                <ColumnDefinition Width="100"/>
+                <ColumnDefinition Width="100"/>
+                <ColumnDefinition Width="100"/>
+                <ColumnDefinition Width="*"/>
+            </Grid.ColumnDefinitions>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="*"/>
+                <RowDefinition Height="100"/>
+                <RowDefinition Height="100"/>
+                <RowDefinition Height="100"/>
+            </Grid.RowDefinitions>
+            <Image Name="Preview_North" Grid.Row="1" Grid.Column="3" IsEnabled="False"/>
+            <Image Name="Preview_Top" Grid.Row="2" Grid.Column="3" IsEnabled="False"/>
+            <Image Name="Preview_South" Grid.Row="3" Grid.Column="3" IsEnabled="False"/>
+            <Image Name="Preview_East" Grid.Row="2" Grid.Column="2" IsEnabled="False"/>
+            <Image Name="Preview_West" Grid.Row="2" Grid.Column="4" IsEnabled="False"/>
+            <Image Name="Preview_Bottom" Grid.Row="2" Grid.Column="1" IsEnabled="False"/>
+            <Button Name="North" Content="North" Foreground="White" Grid.Row="1" Grid.Column="3" Cursor="Hand" HorizontalContentAlignment="Center" VerticalContentAlignment="Center" FontSize="20" Background="#FF242427" Click="Load_Click"/>
+            <Button Name="South" Content="South" Foreground="White" Grid.Row="3" Grid.Column="3" Cursor="Hand" HorizontalContentAlignment="Center" VerticalContentAlignment="Center" FontSize="20" Background="#FF242427" Click="Load_Click"/>
+            <Button Name="East" Content="East" Foreground="White" Grid.Row="2" Grid.Column="2" Cursor="Hand" HorizontalContentAlignment="Center" VerticalContentAlignment="Center" FontSize="20" Background="#FF242427" Click="Load_Click" BorderThickness="0,1,1,1"/>
+            <Button Name="West" Content="West" Foreground="White" Grid.Row="2" Grid.Column="4" Cursor="Hand" HorizontalContentAlignment="Center" VerticalContentAlignment="Center" FontSize="20" Background="#FF242427" Click="Load_Click"/>
+            <Button Name="Top" Content="Top" Foreground="White" Grid.Row="2" Grid.Column="3" Cursor="Hand" HorizontalContentAlignment="Center" VerticalContentAlignment="Center" FontSize="20" Background="#FF242427" Click="Load_Click" BorderThickness="0"/>
+            <Button Name="Bottom" Content="Bottom" Foreground="White"  Grid.Row="2" Grid.Column="1" Cursor="Hand" HorizontalContentAlignment="Center" VerticalContentAlignment="Center" FontSize="20" Background="#FF242427" Click="Load_Click"/>
+        </Grid>
+        <Grid Grid.Row="1">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="60*"/>
+                <ColumnDefinition Width="20*"/>
+                <ColumnDefinition Width="20*"/>
+            </Grid.ColumnDefinitions>
+            <Button Content="Apply" Grid.Row="1" Click="Button_Click" Grid.Column="1" Background="#FF5D5D5D" BorderBrush="#FFC8C8C8" BorderThickness="2" Foreground="White" FontFamily="Lucida Sans Unicode" Width="65" Height="35" Cursor="Hand" HorizontalAlignment="Center"/>
+            <Button Name="Cancel" Content="Cancel" Grid.Row="1" Grid.Column="2" Background="#FF5D5D5D" BorderBrush="#FFC8C8C8" BorderThickness="2" Foreground="White" FontFamily="Lucida Sans Unicode" Width="65" Height="35" Cursor="Hand" HorizontalAlignment="Center" Click="Cancel_Click"/>
+        </Grid>
+    </Grid>
+</Window>

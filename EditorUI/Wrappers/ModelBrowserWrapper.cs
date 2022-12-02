@@ -8,13 +8,13 @@ namespace EditorUI.Wrappers
 {
     public class ModelBrowserWrapper : Wrapper
     {
-        public override IntPtr CreateWrapper(IntPtr owner)
+        public override IntPtr CreateWrapper()
         {
             ui_thread = new Thread(() =>
             {
                 if (ui_handle == IntPtr.Zero)
                 {
-                    (ui_window = new ModelBrowser(owner)
+                    (ui_window = new ModelBrowser()
                     { Opacity = 0, Width = 1280, Height = 720 }).Show();
                     ui_handle = new WindowInteropHelper(ui_window).Handle;
                 }

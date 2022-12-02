@@ -106,6 +106,12 @@
     <Compile Include="PropertyItem.xaml.cs">
       <DependentUpon>PropertyItem.xaml</DependentUpon>
     </Compile>
+    <Compile Include="ResourceControl.xaml.cs">
+      <DependentUpon>ResourceControl.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="SkyboxSettings.xaml.cs">
+      <DependentUpon>SkyboxSettings.xaml</DependentUpon>
+    </Compile>
     <Compile Include="TextControl.xaml.cs">
       <DependentUpon>TextControl.xaml</DependentUpon>
     </Compile>
@@ -151,6 +157,14 @@
       <Generator>MSBuild:Compile</Generator>
     </Page>
     <Page Include="PropertyItem.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="ResourceControl.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="SkyboxSettings.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>

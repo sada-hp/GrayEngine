@@ -138,5 +138,28 @@ namespace GrEngine
 
 			return result;
 		}
+
+		static char* StringToCharArray(std::string source)
+		{
+			char* msg = new char[source.size() + 1];
+			int i = 0;
+			for (char letter : source)
+			{
+				msg[i++] = (int)letter;
+			}
+			msg[i] = '\0';
+
+			return msg;
+		}
+
+		static std::string FloatToString(float value, size_t precision)
+		{
+			std::stringstream stream;
+			stream.precision(precision);
+			stream << std::fixed;
+			stream << value;
+
+			return stream.str();
+		}
 	};
 }

@@ -5,12 +5,14 @@
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
              xmlns:local="clr-namespace:EditorUI"
              mc:Ignorable="d" 
-             d:DesignHeight="450" d:DesignWidth="800" ResizeMode="NoResize" WindowStartupLocation="CenterScreen" Background="#FF15161F" Title="Gray Engine: World Editor (WPF)" WindowStyle="ToolWindow">
+             d:DesignHeight="450" d:DesignWidth="800" WindowStartupLocation="CenterScreen" Background="#FF15161F" Title="Gray Engine: World Editor" Closed="Window_Closed">
 
     <DockPanel Background="#FF6D88FF" LastChildFill="True">
         <Menu Height="25" Background="#FF353538" Padding="0,2,0,0" DockPanel.Dock="Top">
             <MenuItem Header="File" Foreground="WhiteSmoke" Margin="0"/>
-            <MenuItem Header="Edit" Foreground="WhiteSmoke" Margin="0"/>
+            <MenuItem Header="Level" Foreground="WhiteSmoke" Margin="0">
+                <MenuItem Name="SkyboxMenu" Header="Skybox" Foreground="Black" Click="SkyboxSettings_Click"></MenuItem>
+            </MenuItem>
             <MenuItem Header="Help" Foreground="WhiteSmoke" Margin="0"/>
             <TextBlock Name="FrameBlock" Text="0,0" Foreground="WhiteSmoke"/>
         </Menu>
@@ -28,7 +30,7 @@
                         <Button x:Name="EntityButton" Content="Add entity" Background="#FF5D5D5D" BorderBrush="#FFC8C8C8" BorderThickness="1" Margin="5" Foreground="White" FontFamily="Lucida Sans Unicode" TextOptions.TextHintingMode="Fixed" Padding="2" Cursor="Hand" Click="EntityButton_Click"/>
                     </StackPanel>
                     <ListBox Name="EntitiesList" Background="#FF242427" Margin="5, 5, 5, 5" SelectionChanged="EntitiesList_SelectionChanged">
-                    
+                        
                     </ListBox>
                 </DockPanel>
                 <Grid Grid.Column="1">

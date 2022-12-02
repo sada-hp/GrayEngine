@@ -3,12 +3,23 @@
 #include <glm/glm.hpp>
 #include <vk_mem_alloc.h>
 #include <stb_image.h>
+#include <stb_image_resize.h>
 #include "VulkanDrawable.h"
 #include "Engine/Source/Headers/Logger.h"
 #include "Engine/Source/Headers/Renderer.h"
 
 namespace GrEngine_Vulkan
 {
+
+#ifdef NDEBUG
+	const bool enableValidationLayers = false;
+#else
+	const bool enableValidationLayers = true;
+#endif
+
+
+
+
 	struct QueueFamilyIndices
 	{
 		std::optional<uint32_t> graphicsFamily;
@@ -42,12 +53,14 @@ namespace GrEngine_Vulkan
 		void addDummy(GrEngine::EntityInfo* out_entity = nullptr) override;
 		bool loadImage(const char* image_path, int material_index = 0) override;
 		void clearDrawables() override;
-		void ShowGrid() override;
+		void createSkybox(const char* East, const char* West, const char* Top, const char* Bottom, const char* North, const char* South) override;
 
 		static VkShaderModule m_createShaderModule(VkDevice device, const std::vector<char>& code);
 		static bool m_createVkBuffer(VkDevice device, VmaAllocator allocator, const void* bufData, uint32_t dataSize, VkBufferUsageFlags usage, ShaderBuffer* shader);
 		static void m_destroyShaderBuffer(VkDevice device, VmaAllocator allocator, ShaderBuffer* shaderBuf);
 		static void m_destroyTexture(VkDevice device, VmaAllocator allocator, Texture* texture);
+		void transitionImageLayout(VkImage image, VkFormat format, VkImageLayout oldLayout, VkImageLayout newLayout, VkImageSubresourceRange subres);
+
 
 		void Update() override;
 
@@ -57,13 +70,12 @@ namespace GrEngine_Vulkan
 		bool freeCommandBuffer(VkCommandBuffer commandBuffer);
 
 	private:
+		int sky = -1;
 		GLFWwindow* pParentWindow;
 		VmaAllocator memAllocator;
 
 		VkInstance _vulkan;
 		VulkanDrawable grid;
-		VulkanDrawable background;
-		ShaderBuffer scene_test;
 
 		VkPhysicalDeviceProperties deviceProps;
 		VkQueue presentQueue;
@@ -89,7 +101,7 @@ namespace GrEngine_Vulkan
 		std::vector<VulkanDrawable> drawables;
 
 		bool loadMesh(const char* mesh_path, VulkanDrawable* target, std::vector<std::string>* out_materials = nullptr);
-		bool loadTexture(const char* texture_path, VulkanDrawable* target, std::vector<int> material_indices);
+		bool loadTexture(std::vector<std::string> texture_path, VulkanDrawable* target, VkImageViewType type_view = VK_IMAGE_VIEW_TYPE_2D, VkImageType type_img = VK_IMAGE_TYPE_2D);
 
 		bool createVKInstance();
 		bool createMemoryAllocator();
@@ -104,7 +116,7 @@ namespace GrEngine_Vulkan
 		VkSurfaceFormatKHR chooseSwapSurfaceFormat(const std::vector<VkSurfaceFormatKHR>& availableFormats);
 
 		bool createSwapChain();
-		bool createImageViews();
+		bool createImageViews(VkFormat format, VkImageViewType type, VkImage image, VkImageView* target, int array_layers = 1, int base_layer = 0);
 
 		bool createRenderPass();
 		bool createFramebuffers();
@@ -115,12 +127,102 @@ namespace GrEngine_Vulkan
 		void recreateSwapChain();
 		void cleanupSwapChain();
 
-		void transitionImageLayout(VkImage image, VkFormat format, VkImageLayout oldLayout, VkImageLayout newLayout);
-		void copyBufferToImage(VkBuffer buffer, VkImage image, uint32_t width, uint32_t height);
-		void copyImageToBuffer(VkBuffer buffer, VkImage image, uint32_t width, uint32_t height);
+		void copyBufferToImage(VkBuffer buffer, VkImage image, uint32_t width, uint32_t height, uint32_t channels, uint32_t length);
 
 		VkImageView depthImageView;
 		AllocatedImage depthImage;
 		VkFormat depthFormat;
+
+
+
+
+
+
+#ifdef _DEBUG
+
+		VkDebugUtilsMessengerEXT debugMessenger;
+		const std::vector<const char*> validationLayers = { "VK_LAYER_KHRONOS_validation" };
+
+		VkResult CreateDebugUtilsMessengerEXT(VkInstance instance, const VkDebugUtilsMessengerCreateInfoEXT* pCreateInfo, const VkAllocationCallbacks* pAllocator, VkDebugUtilsMessengerEXT* pDebugMessenger) {
+			auto func = (PFN_vkCreateDebugUtilsMessengerEXT)vkGetInstanceProcAddr(instance, "vkCreateDebugUtilsMessengerEXT");
+			if (func != nullptr) {
+				return func(instance, pCreateInfo, pAllocator, pDebugMessenger);
+			}
+			else {
+				return VK_ERROR_EXTENSION_NOT_PRESENT;
+			}
+		}
+
+		void DestroyDebugUtilsMessengerEXT(VkInstance instance, VkDebugUtilsMessengerEXT debugMessenger, const VkAllocationCallbacks* pAllocator) {
+			auto func = (PFN_vkDestroyDebugUtilsMessengerEXT)vkGetInstanceProcAddr(instance, "vkDestroyDebugUtilsMessengerEXT");
+			if (func != nullptr) {
+				func(instance, debugMessenger, pAllocator);
+			}
+		}
+
+		void populateDebugMessengerCreateInfo(VkDebugUtilsMessengerCreateInfoEXT& createInfo) {
+			createInfo = {};
+			createInfo.sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT;
+			createInfo.messageSeverity = VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT;
+			createInfo.messageType = VK_DEBUG_UTILS_MESSAGE_TYPE_GENERAL_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT;
+			createInfo.pfnUserCallback = debugCallback;
+		}
+
+		void setupDebugMessenger() {
+			if (!enableValidationLayers) return;
+
+			VkDebugUtilsMessengerCreateInfoEXT createInfo;
+			populateDebugMessengerCreateInfo(createInfo);
+
+			if (CreateDebugUtilsMessengerEXT(_vulkan, &createInfo, nullptr, &debugMessenger) != VK_SUCCESS) {
+				throw std::runtime_error("failed to set up debug messenger!");
+			}
+		}
+
+		std::vector<const char*> getRequiredExtensions() {
+			uint32_t glfwExtensionCount = 0;
+			const char** glfwExtensions;
+			glfwExtensions = glfwGetRequiredInstanceExtensions(&glfwExtensionCount);
+
+			std::vector<const char*> extensions(glfwExtensions, glfwExtensions + glfwExtensionCount);
+
+			if (enableValidationLayers) {
+				extensions.push_back(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
+			}
+
+			return extensions;
+		}
+
+		bool checkValidationLayerSupport() {
+			uint32_t layerCount;
+			vkEnumerateInstanceLayerProperties(&layerCount, nullptr);
+
+			std::vector<VkLayerProperties> availableLayers(layerCount);
+			vkEnumerateInstanceLayerProperties(&layerCount, availableLayers.data());
+
+			for (const char* layerName : validationLayers) {
+				bool layerFound = false;
+
+				for (const auto& layerProperties : availableLayers) {
+					if (strcmp(layerName, layerProperties.layerName) == 0) {
+						layerFound = true;
+						break;
+					}
+				}
+
+				if (!layerFound) {
+					return false;
+				}
+			}
+
+			return true;
+		}
+
+		static VKAPI_ATTR VkBool32 VKAPI_CALL debugCallback(VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity, VkDebugUtilsMessageTypeFlagsEXT messageType, const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData, void* pUserData) {
+			std::cerr << "validation layer: " << pCallbackData->pMessage << std::endl;
+
+			return VK_FALSE;
+		}
+#endif
 	};
 }

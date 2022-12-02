@@ -18,9 +18,6 @@ using System.Runtime.InteropServices;
 
 namespace EditorUI
 {
-    /// <summary>
-    /// Логика взаимодействия для LabelControl.xaml
-    /// </summary>
     public partial class LabelControl : UserControl, PropertyControl
     {
         string prop_content = "";

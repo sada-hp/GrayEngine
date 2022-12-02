@@ -13,7 +13,7 @@ namespace EditorUI.Wrappers
         internal Thread ui_thread;
         internal IntPtr ui_handle;
 
-        public abstract IntPtr CreateWrapper(IntPtr owner);
+        public abstract IntPtr CreateWrapper();
         public void DestroyWrapper()
         {
             ui_window.Dispatcher.BeginInvoke((Action)(() =>

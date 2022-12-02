@@ -9,14 +9,12 @@
 class EditorUI
 {
 	HMODULE dotNetGUILibrary;
-	WNDCLASSEX HostWindowClass;
 
-	typedef LRESULT(*HostProc)(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam);
 public:
-	HWND cpphwin_hwnd; /// Host Window Handle
 	HWND wpf_hwnd; /// WPF Wrapper Handle
+	HWND glfw_hwnd;
 
-	typedef HWND(*CreateUserInterfaceFunc)(HWND, UINT);
+	typedef HWND(*CreateUserInterfaceFunc)(UINT);
 	CreateUserInterfaceFunc CreateUserInterface;
 
 	typedef void(*GetRendererViewportFunc)(HWND, UINT);
@@ -43,7 +41,7 @@ public:
 	typedef void(*UpdateEntityFunc)(int, char*);
 	UpdateEntityFunc UpdateEntity;
 
-	typedef void(*RetrieveInfoFunc)(int, char*, float, float, float);
+	typedef void(*RetrieveInfoFunc)(int, char*, char*, char*, char*);
 	RetrieveInfoFunc SendEntityInfo;
 
 	EditorUI()
@@ -64,66 +62,17 @@ public:
 	~EditorUI()
 	{
 		DestroyWindow(wpf_hwnd);
-		DestroyWindow(cpphwin_hwnd);
 	};
 
-	bool InitUI(HostProc HostWndProc, LPCSTR HostClassName, UINT viewport_index)
+	bool InitUI(UINT viewport_index)
 	{
-		HostWindowClass.cbSize = sizeof(WNDCLASSEX); HostWindowClass.lpfnWndProc = HostWndProc;
-		HostWindowClass.hCursor = LoadCursor(NULL, IDC_ARROW);
-		HostWindowClass.cbClsExtra = 0; HostWindowClass.style = 0;
-		HostWindowClass.cbWndExtra = 0;    HostWindowClass.hInstance = NULL;
-		HostWindowClass.lpszClassName = HostClassName; HostWindowClass.lpszMenuName = NULL;
-		HostWindowClass.hIcon = static_cast<HICON>(LoadImageA(GetModuleHandle(NULL), MAKEINTRESOURCE(APP_ICON), IMAGE_ICON, 256, 256, LR_DEFAULTCOLOR | LR_DEFAULTSIZE));
-
-		auto err = GetLastError();
-		if (!RegisterClassEx(&HostWindowClass))
-		{
-			return false;
-		}
-
-		/// Creating Unmanaged Host Window
-		cpphwin_hwnd = CreateWindowEx(
-			WS_EX_CONTROLPARENT,
-			HostClassName,
-			"Gray Engine: World Editor",
-			WS_OVERLAPPEDWINDOW,
-			CW_USEDEFAULT, CW_USEDEFAULT, 1280, 720,
-			NULL, NULL, NULL, NULL);
-
-		if (cpphwin_hwnd == NULL)
-		{
-			return false;
-		}
-
-		/// Centering Host Window
-		RECT window_r;
-		GetWindowRect(cpphwin_hwnd, &window_r); 
-		int xPos = (GetSystemMetrics(SM_CXSCREEN) - (window_r.right - window_r.left)) / 2;
-		int yPos = (GetSystemMetrics(SM_CYSCREEN) - (window_r.bottom - window_r.top)) / 2;
-		SetWindowPos(cpphwin_hwnd, 0, xPos, yPos, 0, 0, SWP_NOZORDER | SWP_NOSIZE);
-
-		/// Creating .Net GUI
-		wpf_hwnd = CreateUserInterface(cpphwin_hwnd, viewport_index);
-
-		/// Set Thread to STA
+		wpf_hwnd = CreateUserInterface(viewport_index);
 		CoInitializeEx(NULL, COINIT_APARTMENTTHREADED);
 		if (wpf_hwnd != nullptr)
 		{
-			SendMessage(cpphwin_hwnd, WM_SETREDRAW, FALSE, 0);
-			long dwExStyle = GetWindowLong(cpphwin_hwnd, GWL_EXSTYLE);
-			dwExStyle &= ~WS_EX_COMPOSITED;
-			SetWindowLong(cpphwin_hwnd, GWL_EXSTYLE, dwExStyle);
-			SetWindowLong(wpf_hwnd, GWL_STYLE, WS_CHILD | WS_CLIPCHILDREN);
-
-			SetParent(wpf_hwnd, cpphwin_hwnd);
-
-			ShowWindow(wpf_hwnd, SW_SHOW);
 			DisplayUserInterface(viewport_index);
+			SetActiveWindow(wpf_hwnd);
 		}
-
-		ShowWindow(cpphwin_hwnd, SW_SHOW);
-		SetFocus(cpphwin_hwnd);
 
 		return true;
 	}
@@ -132,17 +81,6 @@ public:
 	{
 		DestroyUserInterface(viewport_index);
 		DestroyWindow(wpf_hwnd);
-
-		TCHAR className[MAX_PATH];
-		GetClassName(cpphwin_hwnd, className, MAX_PATH);
-		DestroyWindow(cpphwin_hwnd);
-
-		if (!UnregisterClass(className, NULL))
-		{
-			auto err = GetLastError();
-			Logger::Out("UnregisterClass error: %d", OutputColor::Red, OutputType::Error, err);
-			return false;
-		}
 
 		return true;
 	}
@@ -157,17 +95,11 @@ public:
 		SetWindowLong(child, GWL_STYLE, style);
 
 		ParentRenderer(child, viewport_index);
-		ShowWindow(child, SW_SHOW);
+		glfw_hwnd = child;
 	}
 
-	void EnableUIWindow()
+	void ShowScene()
 	{
-		SetForegroundWindow(cpphwin_hwnd);
-		EnableWindow(cpphwin_hwnd, TRUE);
-	}
-
-	void DisableUIWindow()
-	{
-		EnableWindow(cpphwin_hwnd, FALSE);
+		ShowWindow(glfw_hwnd, SW_SHOW);
 	}
 };

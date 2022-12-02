@@ -63,7 +63,8 @@ namespace GrEngine
 		{
 			visibility = value;
 		}
-
+	protected:
+		
 	private:
 		glm::vec3 bound = { 0.f, 0.f, 0.f };
 		bool visibility = true;
