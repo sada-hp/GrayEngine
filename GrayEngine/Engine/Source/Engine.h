@@ -13,22 +13,28 @@ namespace GrEngine
 		static bool PokeIt();
 		std::string getExecutablePath();
 		inline AppWindow* getAppWindow() { return pWindow.get(); };
-
-	protected:
-		bool loadImageFromPath(const char* path, int material_index = 0);
-		bool createModel(const char* filepath, const char* mesh_path, std::vector<std::string> textures_vector);
-		bool loadModel(const char* mesh_path, std::vector<std::string> textures_vector, std::unordered_map<std::string, std::string>* out_materials = nullptr);
-		void clearScene();
+		EntityInfo AddEntity();
+		void LoadSkybox(const char* East, const char* West, const char* Top, const char* Bottom, const char* North, const char* South);
+		bool LoadObject(const char* mesh_path, std::vector<std::string> textures_vector, std::unordered_map<std::string, std::string>* out_materials = nullptr);
+		bool LoadFromGMF(const char* filepath, std::unordered_map<std::string, std::string>* out_materials = nullptr);
+		bool AssignTextures(std::vector<std::string> textures, Entity* target);
 		void Run();
 		void Stop();
-		void TerminateLiraries();
-		inline void* getNativeWindow() { return pWindow->getNativeWindow(); };
-		void addDummy(EntityInfo* out_entity = nullptr);
 		void Pause();
 		void Unpause();
-		void loadSkybox(const char* East, const char* West, const char* Top, const char* Bottom, const char* North, const char* South);
+
+		static void BindContext(Engine* new_context) { context = new_context; };
+		static Engine* GetContext() { return context; };
+		static bool WriteGMF(const char* filepath, const char* mesh_path, std::vector<std::string> textures_vector);
+
+	protected:
+		void clearScene();
+		void TerminateLiraries();
+		inline void* getNativeWindow() { return pWindow->getNativeWindow(); };
+
 	private:
 		std::unique_ptr<AppWindow> pWindow;
 		bool isPaused = false;
+		static Engine* context;
 	};
 }

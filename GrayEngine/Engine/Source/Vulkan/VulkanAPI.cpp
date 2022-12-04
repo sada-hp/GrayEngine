@@ -142,8 +142,7 @@ namespace GrEngine_Vulkan
 			sky = -1;
 		}
 
-		GrEngine::EntityInfo inf;
-		addDummy(&inf);
+		GrEngine::EntityInfo inf = addEntity();
 		VulkanDrawable* back = dynamic_cast<VulkanDrawable*>(entities[inf.EntityID]);
 		back->shader_path = "Shaders//background";
 		back->invalidateTexture(logicalDevice, memAllocator);
@@ -835,8 +834,6 @@ namespace GrEngine_Vulkan
 		if (entities.size() > 0)
 		{
 			ref_obj = dynamic_cast<VulkanDrawable*>(entities[selected_entity]);
-			ref_obj->SetVisisibility(false);
-			ref_obj->invalidateTexture(logicalDevice, memAllocator);
 			ref_obj->object_mesh.indices = {};
 			ref_obj->object_mesh.vertices = {};
 			ref_obj->object_mesh.mesh_path = "";
@@ -852,12 +849,15 @@ namespace GrEngine_Vulkan
 		std::map<int, std::future<void>> processes_map;
 		std::map<std::string, std::vector<int>> materials_map;
 
-		processes_map[0] = std::async(std::launch::async, [textures_vector, ref_obj, inst]()
-			{
-				inst->loadTexture(textures_vector, ref_obj, VK_IMAGE_VIEW_TYPE_2D_ARRAY ,VK_IMAGE_TYPE_2D);
-			});
+		if (textures_vector.size() > 0)
+		{
+			processes_map[processes_map.size()] = std::async(std::launch::async, [textures_vector, ref_obj, inst]()
+				{
+					inst->loadTexture(textures_vector, ref_obj, VK_IMAGE_VIEW_TYPE_2D_ARRAY, VK_IMAGE_TYPE_2D);
+				});
+		}
 
-		processes_map[1] = std::async(std::launch::async, [mesh_path, ref_obj, out_materials_collection, inst]()
+		processes_map[processes_map.size()] = std::async(std::launch::async, [mesh_path, ref_obj, out_materials_collection, inst]()
 			{
 				inst->loadMesh(mesh_path, ref_obj, out_materials_collection);
 			});
@@ -871,7 +871,6 @@ namespace GrEngine_Vulkan
 		}
 
 		ref_obj->updateObject(logicalDevice, memAllocator);
-		ref_obj->SetVisisibility(true);
 
 		auto end = std::chrono::steady_clock::now();
 		auto time = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
@@ -954,26 +953,21 @@ namespace GrEngine_Vulkan
 		target->SetObjectBounds(glm::vec3{highest_pointx, highest_pointy, highest_pointz});
 		target->object_mesh.mesh_path = mesh_path;
 
-		Logger::Out("Mesh %c%s%c was loaded succesfully", OutputColor::Green, OutputType::Log, '"', mesh_path, '"');
 		return true;
 	}
 
-	bool VulkanAPI::loadImage(const char* image_path, int material_index)
+	bool VulkanAPI::assignTextures(std::vector<std::string> textures, GrEngine::Entity* target)
 	{
-		std::vector<int> mat;
-		mat.push_back(material_index);
-		auto object = entities[selected_entity];
-
-		loadTexture({ image_path }, (VulkanDrawable*)object, VK_IMAGE_VIEW_TYPE_2D_ARRAY, VK_IMAGE_TYPE_2D);
-		((VulkanDrawable*)object)->updateObject(logicalDevice, memAllocator);
+		loadTexture(textures, (VulkanDrawable*)target, VK_IMAGE_VIEW_TYPE_2D_ARRAY, VK_IMAGE_TYPE_2D);
+		dynamic_cast<VulkanDrawable*>(target)->updateObject(logicalDevice, memAllocator);
 		return true;
 	}
 
 	bool VulkanAPI::loadTexture(std::vector<std::string> texture_path, VulkanDrawable* target, VkImageViewType type_view, VkImageType type_img)
 	{
-		vkQueueWaitIdle(graphicsQueue);
-
 		if (texture_path.size() == 0) return false;
+
+		target->invalidateTexture(logicalDevice, memAllocator); //Strip object of its previous texture
 
 		ShaderBuffer stagingBuffer;
 		Texture new_texture;
@@ -1292,6 +1286,7 @@ namespace GrEngine_Vulkan
 			vkDestroyBuffer(device, shader->Buffer, NULL);
 			vmaUnmapMemory(allocator, shader->Allocation);
 			vmaFreeMemory(allocator, shader->Allocation);
+			vmaFlushAllocation(allocator, shader->Allocation, 0, shader->MappedMemoryRange.size);
 		}
 
 		shader->initialized = false;
@@ -1299,8 +1294,17 @@ namespace GrEngine_Vulkan
 
 	void VulkanAPI::m_destroyTexture(VkDevice device, VmaAllocator allocator, Texture* texture)
 	{
-		vkDeviceWaitIdle(device);
+		static bool is_in_use;
+		while (is_in_use) {};
+		is_in_use = true;
 
+		if (texture->newImage.allocatedImage != VK_NULL_HANDLE)
+		{
+			vmaDestroyImage(allocator, texture->newImage.allocatedImage, texture->newImage.allocation);
+			vmaFlushAllocation(allocator, texture->newImage.allocation, 0, sizeof(texture->newImage.allocation));
+			texture->newImage.allocatedImage = VK_NULL_HANDLE;
+			texture->newImage.allocation = VK_NULL_HANDLE;
+		}
 		if (texture->textureSampler != VK_NULL_HANDLE)
 		{
 			vkDestroySampler(device, texture->textureSampler, NULL);
@@ -1311,19 +1315,13 @@ namespace GrEngine_Vulkan
 			vkDestroyImageView(device, texture->textureImageView, NULL);
 			texture->textureImageView = VK_NULL_HANDLE;
 		}
-		if (texture->newImage.allocatedImage != VK_NULL_HANDLE)
-		{
-			vmaDestroyImage(allocator, texture->newImage.allocatedImage, texture->newImage.allocation);
-			texture->newImage.allocatedImage = VK_NULL_HANDLE;
-			texture->newImage.allocation = VK_NULL_HANDLE;
-		}
-
 		texture->texture_path = NULL;
+		is_in_use = false;
 	}
 
 #pragma endregion
 
-	void VulkanAPI::addDummy(GrEngine::EntityInfo* out_entity)
+	GrEngine::EntityInfo VulkanAPI::addEntity()
 	{
 		GrEngine::Entity* ent = new VulkanDrawable();
 		dynamic_cast<VulkanDrawable*>(ent)->initObject(logicalDevice, memAllocator, this);
@@ -1331,8 +1329,6 @@ namespace GrEngine_Vulkan
 		ent->UpdateNameTag(new_name.c_str());
 		entities[ent->GetEntityInfo().EntityID] = ent;
 
-		GrEngine::EntityInfo copy = ent->GetEntityInfo();
-		out_entity->EntityID = copy.EntityID;
-		out_entity->EntityName = copy.EntityName;
+		return ent->GetEntityInfo();
 	}
 }

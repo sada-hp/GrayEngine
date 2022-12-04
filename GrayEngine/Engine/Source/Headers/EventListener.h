@@ -15,7 +15,7 @@ enum class EventType
 	Custom
 };
 
-typedef void (*EventCallbackFun)(std::vector<double>);
+typedef void (*EventCallbackFun)(std::vector<std::any>);
 
 
 class DllExport EventListener //event observer pattern
@@ -29,12 +29,12 @@ protected:
 	{
 		EventType type;
 		const char* name = "";
-		std::vector<double> para;
+		std::vector<std::any> para;
 	};
 
-	static void notify(const EventBase& event, bool enabled = true)
+	static void notify(const EventBase& event)
 	{
-		if (!enabled || (event.type == EventType::WindowResize && GetListener()->resizeEventsCount > 1 && GetListener()->resizeEventsCount--)) return; //Resize event should be notified only about it's latest state
+		if (event.type == EventType::WindowResize && GetListener()->resizeEventsCount > 1 && GetListener()->resizeEventsCount--) return; //Resize event should be notified only about it's latest state
 
 		switch (event.type)
 		{
@@ -83,7 +83,7 @@ public:
 			GetListener()->observers_custom[event_name].push_back(std::forward<EventCallbackFun>(event_function));
 	}
 
-	static void blockEvents(bool engineEventsEnabled = false, bool customEventsEnabled = false)
+	static void setEventsPermissions(bool engineEventsEnabled, bool customEventsEnabled)
 	{
 		GetListener()->bAllowEvents = engineEventsEnabled;
 		GetListener()->bAllowCustomEvents = customEventsEnabled;
@@ -107,7 +107,7 @@ public:
 		return true;
 	}
 
-	static void registerEvent(const char* name, const std::vector<double> para)
+	static void registerEvent(const char* name, std::vector<std::any> para)
 	{
 		if (!GetListener()->bAllowCustomEvents) return;
 
@@ -119,7 +119,7 @@ public:
 		GetListener()->EventQueue.push(event);
 	}
 
-	static void registerEvent(const EventType& type, const std::vector<double> para)
+	static void registerEvent(const EventType& type, std::vector<std::any> para)
 	{
 		if (!GetListener()->bAllowEvents) return;
 
@@ -132,7 +132,7 @@ public:
 		event.type = type;
 		event.para = para;
 
-		GetListener()->EventQueue.push(event);
+		GetListener()->EventQueue.push(event);	
 	}
 
 	static void clearEventQueue()

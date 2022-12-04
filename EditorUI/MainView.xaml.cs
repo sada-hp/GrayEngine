@@ -49,7 +49,7 @@ namespace EditorUI
         [DllImport("SceneEditor.dll", CallingConvention = CallingConvention.Cdecl)]
         public static extern void UpdateSkybox(IntPtr East, IntPtr West, IntPtr Top, IntPtr Bottom, IntPtr North, IntPtr South);
         [DllImport("SceneEditor.dll", CallingConvention = CallingConvention.Cdecl)]
-        public static extern void App_Close();
+        public static extern void CloseContext();
 
         [DllImport("user32.dll")]
         public static extern int SendMessage(IntPtr hWnd, int wMsg, IntPtr wParam, IntPtr lParam);
@@ -273,7 +273,7 @@ namespace EditorUI
 
         private void Window_Closed(object sender, EventArgs e)
         {
-            App_Close();
+            CloseContext();
         }
     };
 }

@@ -24,17 +24,17 @@ namespace EditorUI
         [DllImport("user32.dll")]
         static extern bool SetWindowPos(IntPtr hWnd, IntPtr hWndInsertAfter, int X, int Y, int cx, int cy, uint uFlags);
         [DllImport("SceneEditor.dll", CallingConvention = CallingConvention.Cdecl)]
-        static extern void MB_LoadModelFile(IntPtr mesh_path);
+        static extern void LoadModelFile(IntPtr mesh_path);
         [DllImport("SceneEditor.dll", CallingConvention = CallingConvention.Cdecl)]
-        static extern void MB_LoadTexture(IntPtr image_path, IntPtr material);
+        static extern void AssignTextures(IntPtr image_path);
         [DllImport("SceneEditor.dll", CallingConvention = CallingConvention.Cdecl)]
-        static extern void MB_LoadObjectFile(IntPtr mesh_path);
+        static extern void LoadObject(IntPtr mesh_path, IntPtr tex_path);
         [DllImport("SceneEditor.dll", CallingConvention = CallingConvention.Cdecl)]
-        static extern void MB_AddToTheScene(IntPtr mesh_path);
+        static extern void AddToTheScene(IntPtr mesh_path);
         [DllImport("SceneEditor.dll", CallingConvention = CallingConvention.Cdecl)]
-        static extern void MB_CreateModelFile(IntPtr mesh_path, IntPtr textures);
+        static extern void CreateModelFile(IntPtr mesh_path, IntPtr textures);
         [DllImport("SceneEditor.dll", CallingConvention = CallingConvention.Cdecl)]
-        static extern void MB_Close();
+        static extern void CloseContext();
 
         IntPtr child_hwnd;
         bool b_fullpath = false;
@@ -150,7 +150,7 @@ namespace EditorUI
             catch (Exception e)
             {
                 LogMessage(Marshal.StringToHGlobalAnsi("Exception occured in " + new StackFrame(1, true).GetMethod().Name + ": " + e.Message));
-                MB_Close();
+                CloseContext();
             }
         }
 
@@ -180,7 +180,7 @@ namespace EditorUI
 
         private void MdlBrowser_Closing(object sender, System.ComponentModel.CancelEventArgs e)
         {
-            MB_Close();
+            CloseContext();
         }
 
         private void BtnLoadMdl_Click(object sender, RoutedEventArgs e)
@@ -199,7 +199,7 @@ namespace EditorUI
                 default_name = openFileDialog.SafeFileName.Split('.')[0];
                 IdBox.Text = default_name;
 
-                MB_LoadObjectFile(Marshal.StringToHGlobalAnsi(openFileDialog.FileName));
+                LoadObject(Marshal.StringToHGlobalAnsi(openFileDialog.FileName), Marshal.StringToHGlobalAnsi(missing_texture + '|'));
             }
 
             GC.Collect();
@@ -219,16 +219,17 @@ namespace EditorUI
 
             if (openFileDialog.ShowDialog() == System.Windows.Forms.DialogResult.OK)
             {
-                MB_LoadTexture(Marshal.StringToHGlobalAnsi(openFileDialog.FileName), (IntPtr)((MaterialInput)sender).material_index);
                 Materials[((MaterialInput)sender).material_index] = openFileDialog.FileName;
                 ((MaterialInput)sender).MaterialPath.Text = openFileDialog.FileName;
                 ((MaterialInput)sender).MaterialPath.ToolTip = openFileDialog.FileName;
+
+                AssignTextures(Marshal.StringToHGlobalAnsi(GetTexturesString()));
             }
 
             GC.Collect();
         }
 
-        internal void AddMaterialToTheTable(string material_names, string texture_names)
+        internal void AddMaterialToTheTable(string material_names, string texture_names, int redraw)
         {
             MaterialsPanel.Children.Clear();
 
@@ -247,8 +248,6 @@ namespace EditorUI
                         else
                         {
                             Materials.Add(mat_index, missing_texture);
-                            MB_LoadTexture(Marshal.StringToHGlobalAnsi(missing_texture), (IntPtr)mat_index);
-
                         }
                     }
                     else
@@ -258,7 +257,6 @@ namespace EditorUI
                         else
                         {
                             Materials[mat_index] = missing_texture;
-                            MB_LoadTexture(Marshal.StringToHGlobalAnsi(missing_texture), (IntPtr)mat_index);
                         }
                     }
 
@@ -272,6 +270,19 @@ namespace EditorUI
                     System.Windows.Controls.DockPanel.SetDock(material_panel, System.Windows.Controls.Dock.Top);
                 }
             }
+            if (redraw == 1)
+                AssignTextures(Marshal.StringToHGlobalAnsi(GetTexturesString()));
+        }
+
+        private string GetTexturesString()
+        {
+            string res = "";
+            foreach (var tex in Materials)
+            {
+                res += tex.Value + '|';
+            }
+
+            return res;
         }
 
         private void BtnCreate_Click(object sender, RoutedEventArgs e)
@@ -282,7 +293,7 @@ namespace EditorUI
                 material_string += texture + "|";
             }
 
-            MB_CreateModelFile(Marshal.StringToHGlobalAnsi(loaded_mesh.Substring(0, loaded_mesh.LastIndexOf('\\')) + '\\' + IdBox.Text + ".gmf" + "|" + loaded_mesh), Marshal.StringToHGlobalAnsi(material_string));
+            CreateModelFile(Marshal.StringToHGlobalAnsi(loaded_mesh.Substring(0, loaded_mesh.LastIndexOf('\\')) + '\\' + IdBox.Text + ".gmf" + "|" + loaded_mesh), Marshal.StringToHGlobalAnsi(material_string));
             LoadData();
         }
 
@@ -292,16 +303,16 @@ namespace EditorUI
             {
                 if (Browser.SelectedIndex < 0) return;
 
-                MB_LoadModelFile(Marshal.StringToHGlobalAnsi(((BrowserItem)Browser.SelectedItem).ToolTip.ToString()));
                 IdBox.Text = ((BrowserItem)Browser.SelectedItem).ToolTip.ToString().Split('\\').Last().Split('.')[0];
                 loaded_mesh = ((BrowserItem)Browser.SelectedItem).ToolTip.ToString();
                 MeshPath.Text = ((BrowserItem)Browser.SelectedItem).mesh_path;
                 MeshPath.ToolTip = ((BrowserItem)Browser.SelectedItem).mesh_path;
+                LoadModelFile(Marshal.StringToHGlobalAnsi(((BrowserItem)Browser.SelectedItem).ToolTip.ToString()));
             }
             catch (Exception exc)
             {
                 LogMessage(Marshal.StringToHGlobalAnsi("Exception occured in " + new StackFrame(1, true).GetMethod().Name + ": " + exc.Message));
-                MB_Close();
+                CloseContext();
             }
         }
 
@@ -410,8 +421,8 @@ namespace EditorUI
 
         private void BrowserItem_DoubleClick(object sender, System.Windows.Input.MouseButtonEventArgs e)
         {
-            MB_AddToTheScene(Marshal.StringToHGlobalAnsi(((BrowserItem)Browser.SelectedItem).ToolTip.ToString()));
-            MB_Close();
+            AddToTheScene(Marshal.StringToHGlobalAnsi(((BrowserItem)Browser.SelectedItem).ToolTip.ToString()));
+            Close();
         }
 
         private void MdlBrowser_Closed(object sender, EventArgs e)

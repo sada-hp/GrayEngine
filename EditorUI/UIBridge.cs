@@ -74,14 +74,14 @@ namespace EditorUI
         }
 
         [DllExport]
-        public static void PassMaterialString(IntPtr value1, IntPtr value2)
+        public static void PassMaterialString(IntPtr value1, IntPtr value2, IntPtr redraw)
         {
             var input1 = Marshal.PtrToStringAnsi(value1);
             var input2 = Marshal.PtrToStringAnsi(value2);
 
             wrappers[1].ui_window.Dispatcher.BeginInvoke((Action)(() =>
             {
-                ((ModelBrowser)wrappers[1].ui_window).AddMaterialToTheTable(input1, input2);
+                ((ModelBrowser)wrappers[1].ui_window).AddMaterialToTheTable(input1, input2, (int)redraw);
             }));
         }
 

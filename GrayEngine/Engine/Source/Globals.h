@@ -34,7 +34,10 @@ namespace GrEngine
 			std::ifstream file(filename, std::ios::ate | std::ios::binary);
 
 			if (!file.is_open())
-				throw std::runtime_error("Failed to open file!");
+			{
+				file.close();
+				file.open(filename, std::ios::ate | std::ios::binary);
+			}
 
 			std::size_t fileSize = (std::size_t)file.tellg();
 			std::vector<char> buffer(fileSize);

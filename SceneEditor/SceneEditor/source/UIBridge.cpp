@@ -1,10 +1,5 @@
 #include "UIBridge.h"
 
-void SceneEditor::AddEntity()
-{
-	GrEngine::Application::addEntity();
-}
-
 void SceneEditor::LogMessage(const char* msg)
 {
 	Logger::Out(msg, OutputColor::Blue, OutputType::Log);
@@ -12,56 +7,164 @@ void SceneEditor::LogMessage(const char* msg)
 
 void SceneEditor::InitModelBrowser()
 {
-	GrEngine::Application::initModelBrowser();
+	SceneEditor::GetApplication()->initModelBrowser();
+}
+
+void SceneEditor::AddEntity()
+{
+	GrEngine::EntityInfo inf = SceneEditor::GetApplication()->GetContext()->AddEntity();
+	SceneEditor::GetApplication()->App_UpdateEntity(inf);
 }
 
 void SceneEditor::UpdateEntityProperty(int ID, const char* selected_property, const char* value)
 {
-	GrEngine::Application::updateEntity(ID, selected_property, value);
-}
-
-void SceneEditor::MB_LoadModelFile(const char* model_path)
-{
-	GrEngine::ModelBrowser::loadModelFromFile(model_path);
-}
-
-void SceneEditor::MB_LoadObjectFile(const char* object_path)
-{
-	GrEngine::ModelBrowser::loadRawModel(object_path);
-}
-
-void SceneEditor::MB_CreateModelFile(const char* mesh, const char* textures)
-{
-	GrEngine::ModelBrowser::createModelFile(mesh, textures);
-}
-
-void SceneEditor::MB_LoadTexture(const char* image_path, int index)
-{
-	GrEngine::ModelBrowser::uploadTexture(image_path, index);
-}
-
-void SceneEditor::MB_AddToTheScene(const char* model_path)
-{
-	GrEngine::ModelBrowser::sendToTheScene(model_path);
-}
-
-void SceneEditor::MB_Close()
-{
-	GrEngine::ModelBrowser::closeBrowser();
+	SceneEditor::GetApplication()->updateEntity(ID, selected_property, value);
 }
 
 void SceneEditor::UpdateSkybox(const char* East, const char* West, const char* Top, const char* Bottom, const char* North, const char* South)
 {
-	GrEngine::Application::UpdateSkybox(East, West, Top, Bottom, North, South);
+    GrEngine::Engine::GetContext()->LoadSkybox(East, West, Top, Bottom, North, South);
 }
 
 void SceneEditor::GetEntityInfo(int ID)
 {
-	GrEngine::Application::getEntityInfo(ID);
+	SceneEditor::GetApplication()->getEntityInfo(ID);
 }
 
-void SceneEditor::App_Close()
+void SceneEditor::LoadModelFile(const char* model_path)
 {
-	GrEngine::Application::KillEngine();
-	GrEngine::Application::getEditorUI()->destroyUI(VIEWPORT_EDITOR);
+    std::unordered_map<std::string, std::string> materials;
+    GrEngine::Engine::GetContext()->LoadFromGMF(model_path, &materials);
+
+    std::string out_materials;
+    std::string out_textures;
+    for (auto pair : materials)
+    {
+        out_materials += pair.first + "|";
+        out_textures += pair.second + "|";
+    }
+
+    EventListener::registerEvent("RequireMaterialsUpdate", { out_materials, out_textures, 0 });
+}
+
+void SceneEditor::LoadObject(const char* mesh_path, const char* textures_path)
+{
+    EventListener::clearEventQueue();
+
+    std::string temp_str = "";
+    std::vector<std::string> tex_vector;
+    std::unordered_map<std::string, std::string> materials;
+
+    if (textures_path)
+    {
+        std::string mats = textures_path;
+
+        for (char chr : mats)
+        {
+            if (chr != '|')
+            {
+                temp_str += chr;
+            }
+            else
+            {
+                tex_vector.push_back(temp_str);
+                temp_str = "";
+                continue;
+            }
+        }
+    }
+
+    GrEngine::Engine::GetContext()->LoadObject(mesh_path, tex_vector, &materials);
+
+    std::string out_materials;
+    std::string out_textures;
+    for (auto pair : materials)
+    {
+        out_materials += pair.first + "|";
+        out_textures += pair.second + "|";
+    }
+
+    EventListener::registerEvent("RequireMaterialsUpdate", { out_materials, out_textures, 1});
+}
+
+void SceneEditor::AssignTextures(const char* textures_path)
+{
+    std::string temp_str = "";
+    std::vector<std::string> mat_vector;
+
+    std::string mats = textures_path;
+
+    for (char chr : mats)
+    {
+        if (chr != '|')
+        {
+            temp_str += chr;
+        }
+        else
+        {
+            mat_vector.push_back(temp_str);
+            temp_str = "";
+            continue;
+        }
+    }
+    GrEngine::Engine::GetContext()->AssignTextures(mat_vector, GrEngine::Engine::GetContext()->getAppWindow()->getRenderer()->GetSelectedEntity());
+}
+
+void SceneEditor::CloseContext()
+{
+    GrEngine::Engine::GetContext()->Stop();
+}
+
+void SceneEditor::AddToTheScene(const char* model_path)
+{
+    std::string path = model_path;
+    std::vector<std::any> para;
+    for (char chr : path)
+    {
+        para.push_back(chr);
+    }
+    EventListener::registerEvent("LoadModel", para);
+}
+
+void SceneEditor::CreateModelFile(const char* mesh_path, const char* textures)
+{
+    std::string temp_str = "";
+    std::vector<std::string> mat_vector;
+    std::string mesh = "";
+    std::string file = "";
+
+    if (textures)
+    {
+        std::string mats = textures;
+
+        for (char chr : mats)
+        {
+            if (chr != '|')
+            {
+                temp_str += chr;
+            }
+            else
+            {
+                mat_vector.push_back(temp_str);
+                temp_str = "";
+                continue;
+            }
+        }
+    }
+
+    for (char chr : std::string(mesh_path))
+    {
+        if (chr != '|')
+        {
+            temp_str += chr;
+        }
+        else
+        {
+            file = temp_str;
+            temp_str = "";
+        }
+        mesh = temp_str;
+    }
+
+	GrEngine::Engine::WriteGMF(file.c_str(), mesh.c_str(), mat_vector);
 }

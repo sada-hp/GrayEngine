@@ -4,6 +4,8 @@
 
 namespace GrEngine
 {
+	Engine* Engine::context = nullptr;
+
 	Engine::Engine(const AppParameters& Properties)
 	{
 		pWindow = std::unique_ptr<AppWindow>(AppWindow::Init(Properties));
@@ -30,14 +32,38 @@ namespace GrEngine
 		glfwSetWindowShouldClose(pWindow.get()->getWindow(), true);
 	}
 
-	bool Engine::loadModel(const char* mesh_path, std::vector<std::string> textures_vector, std::unordered_map<std::string, std::string>* out_materials)
+	bool Engine::LoadObject(const char* mesh_path, std::vector<std::string> textures_vector, std::unordered_map<std::string, std::string>* out_materials)
 	{
-		return pWindow->getRenderer()->loadModel(mesh_path, textures_vector, out_materials);
+		Pause();
+
+		bool res = pWindow->getRenderer()->loadModel(mesh_path, textures_vector, out_materials);
+
+		Unpause();
+		return res;
 	}
 
-	bool Engine::loadImageFromPath(const char* path, int material_index)
+	bool Engine::LoadFromGMF(const char* filepath, std::unordered_map<std::string, std::string>* out_materials)
 	{
-		return pWindow->getRenderer()->loadImage(path, material_index);
+		std::string mesh_path = "";
+		std::vector<std::string> mat_vector;
+
+		Globals::readGMF(filepath, &mesh_path, &mat_vector);
+		Pause();
+
+		bool res = LoadObject(mesh_path.c_str(), mat_vector, out_materials);
+
+		Unpause();
+		return res;
+	}
+
+	bool Engine::AssignTextures(std::vector<std::string> textures, Entity* target)
+	{
+		Pause();
+
+		bool res = pWindow->getRenderer()->assignTextures(textures, target);
+
+		Unpause();
+		return res;
 	}
 
 	void Engine::clearScene()
@@ -56,14 +82,14 @@ namespace GrEngine
 		return true;
 	}
 
-	bool Engine::createModel(const char* filepath, const char* mesh_path, std::vector<std::string> textures_vector)
+	bool Engine::WriteGMF(const char* filepath, const char* mesh_path, std::vector<std::string> textures_vector)
 	{
 		return Globals::writeGMF(filepath, mesh_path, textures_vector);
 	}
 
-	void Engine::addDummy(EntityInfo* out_entity)
+	EntityInfo Engine::AddEntity()
 	{
-		pWindow->getRenderer()->addDummy(out_entity);
+		return pWindow->getRenderer()->addEntity();
 	}
 
 	std::string Engine::getExecutablePath()
@@ -81,8 +107,12 @@ namespace GrEngine
 		isPaused = false;
 	}
 
-	void Engine::loadSkybox(const char* East, const char* West, const char* Top, const char* Bottom, const char* North, const char* South)
+	void Engine::LoadSkybox(const char* East, const char* West, const char* Top, const char* Bottom, const char* North, const char* South)
 	{
+		Pause();
+
 		pWindow->getRenderer()->createSkybox(East, West, Top, Bottom, North, South);
+
+		Unpause();
 	}
 }

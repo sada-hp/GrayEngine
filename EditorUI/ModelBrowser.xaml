@@ -5,7 +5,7 @@
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
              xmlns:local="clr-namespace:EditorUI"
              mc:Ignorable="d" 
-             d:DesignHeight="450" d:DesignWidth="800" Title="Gray Engine: Model Browser" WindowStartupLocation="CenterScreen" Closing="MdlBrowser_Closing" SizeChanged="MdlBrowser_SizeChanged" Topmost="True" Closed="MdlBrowser_Closed">
+             d:DesignHeight="450" d:DesignWidth="800" Title="Gray Engine: Model Browser" WindowStartupLocation="CenterScreen" Closing="MdlBrowser_Closing" SizeChanged="MdlBrowser_SizeChanged" Closed="MdlBrowser_Closed">
     <Window.Resources>
         <Style TargetType="{x:Type TabItem}">
             <Setter Property="Template">

@@ -8,48 +8,8 @@ namespace GrEngine
 {
     class ModelBrowser : public Engine
     {
-        static ModelBrowser* _browser;
         EditorUI editorUI;
         EntityInfo dummy_entity;
-
-        /*Background Win32 is used to receive messages from WPF front-end window*/
-        static LRESULT CALLBACK HostWindowProcBrowser(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
-        {
-            switch (msg)
-            {
-            case WM_CLOSE:
-                ModelBrowser::closeBrowser();
-                DestroyWindow(hwnd);
-                break;
-            case WM_DESTROY:
-                break;
-            case WM_SIZE:
-                ModelBrowser::redrawDesigner();
-                break;
-                /*Messages received from the C# WPF front-end part of the editor*/
-            case 0x1200: //Load obj file callback
-                ModelBrowser::createModelFile((const char*)wParam, (const char*)lParam);
-                break;
-            case 0x1201: //Clear viewport callback
-                ModelBrowser::clearViewport();
-                break;
-            case 0x1202: //Upload texture file callback
-                ModelBrowser::uploadTexture((const char*)lParam, (int)wParam);
-                break;
-            case 0x1203: //Create model using raw files
-                ModelBrowser::loadModelFromFile((const char*)wParam);
-                break;
-            case 0x1205: //Create model using raw files
-                ModelBrowser::loadRawModel((const char*)wParam, (const char*)lParam);
-                break;
-            case 0x1206: //Load model into the scene
-                ModelBrowser::sendToTheScene((const char*)wParam);
-                break;
-            default:
-                return DefWindowProcA(hwnd, msg, wParam, lParam);
-            }
-            return 0;
-        }
 
     public:
         ModelBrowser(const AppParameters& Properties = AppParameters()) : Engine(Properties)
@@ -58,36 +18,36 @@ namespace GrEngine
 
         ~ModelBrowser()
         {
-            _browser = nullptr;
+            getEditorUI()->destroyUI(VIEWPORT_MODEL_BROWSER);
         }
 
         void init(ModelBrowser* instance)
         {
-            if (_browser != nullptr)
-            {
-                delete _browser;
-                _browser = nullptr;
-            }
-
-            _browser = instance;
             initModelBrowser();
+            dummy_entity = AddEntity();
+            getAppWindow()->getRenderer()->selectEntity(dummy_entity.EntityID);
+            getAppWindow()->AddInputProccess(Inputs);
 
-            _browser->addDummy(&dummy_entity);
-            _browser->getAppWindow()->getRenderer()->selectEntity(dummy_entity.EntityID);
-            _browser->getAppWindow()->AddInputProccess(Inputs);
+            EventListener::pushEvent("RequireMaterialsUpdate", [](std::vector<std::any> para)
+                {
+                    if (para.size() > 1)
+                    {
+                        dynamic_cast<ModelBrowser*>(GetContext())->getEditorUI()->UpdateMaterials((char*)std::any_cast<std::string>(para[0]).c_str(), (char*)std::any_cast<std::string>(para[1]).c_str(), std::any_cast<int>(para[2]));
+                    }
+                });
         }
 
-        static void StartEngine()
+        void StartEngine()
         {
             getEditorUI()->ShowScene();
-            _browser->Run();
+            Run();
         }
 
         static void Inputs()
         {
             static float rotation = 0;
-            Renderer* render = _browser->getAppWindow()->getRenderer();
-            DrawableObject* drawable = (DrawableObject*)render->selectEntity(_browser->dummy_entity.EntityID);
+            Renderer* render = GetContext()->getAppWindow()->getRenderer();
+            DrawableObject* drawable = (DrawableObject*)render->GetSelectedEntity();
             Camera* camera = render->getActiveViewport();
 
             if (drawable != NULL)
@@ -107,175 +67,29 @@ namespace GrEngine
             }
         }
 
-        static void KillEngine()
+        EditorUI* getEditorUI()
         {
-            _browser->Stop();
+            return &editorUI;
         }
 
-        static EditorUI* getEditorUI()
+        HWND getViewportHWND()
         {
-            return &_browser->editorUI;
+            return reinterpret_cast<HWND>(getNativeWindow());
         }
 
-        static void uploadTexture(const char* image_path, int material_index)
-        {
-            _browser->loadImageFromPath(image_path, material_index);
-        }
-
-        static void sendToTheScene(const char* filepath)
-        {
-            std::string path = filepath;
-            std::vector<double> para;
-            for (char chr : path)
-            {
-                para.push_back(chr);
-            }
-            EventListener::blockEvents(true, true);
-            EventListener::registerEvent("LoadModel", para);
-        }
-
-        static void createModelFile(const char* mesh_path, const char* textures_str = nullptr)
-        {
-            std::string temp_str = "";
-            std::vector<std::string> mat_vector;
-            std::string mesh = "";
-            std::string file = "";
-
-            if (textures_str)
-            {
-                std::string mats = textures_str;
-
-                for (char chr : mats)
-                {
-                    if (chr != '|')
-                    {
-                        temp_str += chr;
-                    }
-                    else
-                    {
-                        mat_vector.push_back(temp_str);
-                        temp_str = "";
-                        continue;
-                    }
-                }
-            }
-
-            for (char chr : std::string(mesh_path))
-            {
-                if (chr != '|')
-                {
-                    temp_str += chr;
-                }
-                else
-                {
-                    file = temp_str;
-                    temp_str = "";
-                }
-                mesh = temp_str;
-            }
-
-            _browser->createModel(file.c_str(), mesh.c_str(), mat_vector);
-        }
-
-        static void loadModelFromFile(const char* filepath)
-        {
-            _browser->Pause(); //Disable rendering for the time it takes to load the model
-
-            std::string mesh_path = "";
-            std::vector<std::string> mat_vector;
-            std::unordered_map<std::string, std::string> materials;
-
-            Globals::readGMF(filepath, &mesh_path, &mat_vector);
-
-            auto res = _browser->loadModel(mesh_path.c_str(), mat_vector, &materials);
-            
-            std::string out_materials;
-            std::string out_textures;
-            for (auto pair : materials)
-            {
-                out_materials += pair.first + "|";
-                out_textures += pair.second + "|";
-            }
-
-            _browser->Unpause(); //Resume rendering
-
-            if (res)
-                getEditorUI()->UpdateMaterials((char*)out_materials.c_str(), (char*)out_textures.c_str());
-        }
-
-        static void loadRawModel(const char* mesh_path, const char* textures_str = nullptr)
-        {
-            _browser->Pause(); //Disable rendering for the time it takes to load the model
-
-            std::string temp_str = "";
-            std::vector<std::string> mat_vector;
-            std::unordered_map<std::string, std::string> materials;
-
-            if (textures_str)
-            {
-                std::string mats = textures_str;
-
-                for (char chr : mats)
-                {
-                    if (chr != '|')
-                    {
-                        temp_str += chr;
-                    }
-                    else
-                    {
-                        mat_vector.push_back(temp_str);
-                        temp_str = "";
-                        continue;
-                    }
-                }
-            }
-
-            auto res = _browser->loadModel(mesh_path, mat_vector, &materials);
-            std::string out_materials;
-            std::string out_textures;
-            for (auto pair : materials)
-            {
-                out_materials += pair.first + "|";
-                out_textures += pair.second + "|";
-            }
-
-            _browser->Unpause(); //Resume rendering
-
-            if (res)
-                getEditorUI()->UpdateMaterials((char*)out_materials.c_str(), (char*)out_textures.c_str());
-        }
-
-        static void clearViewport()
-        {
-            _browser->Pause();
-            _browser->clearScene();
-            _browser->Unpause();
-        }
-
-        static HWND getViewportHWND()
-        {
-            return reinterpret_cast<HWND>(_browser->getNativeWindow());
-        }
-
-        static void redrawDesigner()
+        void redrawDesigner()
         {
             if (getEditorUI()->wpf_hwnd != nullptr)
             {
                 RECT hwin_rect;
-                GrEngine::ModelBrowser::getEditorUI()->SetViewportPosition(VIEWPORT_EDITOR);
+                getEditorUI()->SetViewportPosition(VIEWPORT_EDITOR);
             }
         }
 
-        static void initModelBrowser()
+        void initModelBrowser()
         {
             getEditorUI()->InitUI(VIEWPORT_MODEL_BROWSER);
             getEditorUI()->SetViewportHWND(getViewportHWND(), 1);
-        }
-
-        static void closeBrowser()
-        {
-            getEditorUI()->destroyUI(VIEWPORT_MODEL_BROWSER);
-            KillEngine();
         }
     };
 }

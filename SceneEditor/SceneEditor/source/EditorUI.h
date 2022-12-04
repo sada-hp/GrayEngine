@@ -1,7 +1,6 @@
 #pragma once
 #include "EditorCore.h"
 #include <GrayEngine.h>
-#include <resource.h>
 
 #define VIEWPORT_EDITOR 0
 #define VIEWPORT_MODEL_BROWSER 1
@@ -35,7 +34,7 @@ public:
 	typedef void(*UpdateFramecounterFunc)(double);
 	UpdateFramecounterFunc UpdateFramecounter;
 
-	typedef void(*UpdateMaterialsFunc)(char*, char*);
+	typedef void(*UpdateMaterialsFunc)(char*, char*, int);
 	UpdateMaterialsFunc UpdateMaterials;
 
 	typedef void(*UpdateEntityFunc)(int, char*);
@@ -71,7 +70,7 @@ public:
 		if (wpf_hwnd != nullptr)
 		{
 			DisplayUserInterface(viewport_index);
-			SetActiveWindow(wpf_hwnd);
+			//SetActiveWindow(wpf_hwnd);
 		}
 
 		return true;

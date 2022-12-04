@@ -106,15 +106,11 @@
   <ItemGroup>
     <ClInclude Include="source\EditorCore.h" />
     <ClInclude Include="source\ProgramMain.h" />
-    <ClInclude Include="resource.h" />
     <ClInclude Include="source\Application.h" />
     <ClInclude Include="source\EditorUI.h" />
     <ClInclude Include="source\ModelBrowser.h" />
     <ClInclude Include="SceneEditor.h" />
     <ClInclude Include="source\UIBridge.h" />
-  </ItemGroup>
-  <ItemGroup>
-    <ResourceCompile Include="SceneEditor.rc" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
