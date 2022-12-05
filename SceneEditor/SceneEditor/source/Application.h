@@ -63,12 +63,14 @@ namespace GrEngine
             Logger::AllowMessages(MessageMode::Block);
             AppParameters props;
             ModelBrowser* mdlBrowser = new ModelBrowser(props);
+            EventListener::setEventsPermissions(false, true);
             BindContext(mdlBrowser);
             mdlBrowser->init(mdlBrowser);
             SetForegroundWindow(mdlBrowser->getEditorUI()->wpf_hwnd);
             mdlBrowser->StartEngine();
             mdlBrowser->Stop();
             delete mdlBrowser;
+            EventListener::setEventsPermissions(true, true);
             BindContext(this);
             Logger::AllowMessages(MessageMode::Allow);
             Unpause();

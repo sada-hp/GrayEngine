@@ -44,8 +44,9 @@ namespace EditorUI
         System.Windows.Forms.Panel panel = new System.Windows.Forms.Panel();
         SortedDictionary<int, string> Materials = new SortedDictionary<int, string>();
         SortedDictionary<string, System.Windows.Controls.Control> LoadedAssets = new SortedDictionary<string, System.Windows.Controls.Control>();
-        string content_folder = System.IO.Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location) + @"\Content\";
-        string missing_texture = System.IO.Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location) + @"\Content\Editor\MissingTexture.png";
+        static string distr_location = System.IO.Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location);
+        static string content_folder = distr_location + @"\Content\";
+        static string missing_texture = System.IO.Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location) + @"\Content\Editor\MissingTexture.png";
 
         public ModelBrowser()
         {
@@ -272,6 +273,8 @@ namespace EditorUI
             }
             if (redraw == 1)
                 AssignTextures(Marshal.StringToHGlobalAnsi(GetTexturesString()));
+
+            GC.Collect();
         }
 
         private string GetTexturesString()
@@ -290,10 +293,10 @@ namespace EditorUI
             string material_string = "";
             foreach (var texture in Materials.Values)
             {
-                material_string += texture + "|";
+                material_string += texture.Remove(0, distr_location.Length + 1) + "|";
             }
 
-            CreateModelFile(Marshal.StringToHGlobalAnsi(loaded_mesh.Substring(0, loaded_mesh.LastIndexOf('\\')) + '\\' + IdBox.Text + ".gmf" + "|" + loaded_mesh), Marshal.StringToHGlobalAnsi(material_string));
+            CreateModelFile(Marshal.StringToHGlobalAnsi(loaded_mesh.Substring(0, loaded_mesh.LastIndexOf('\\')) + '\\' + IdBox.Text + ".gmf" + "|" + loaded_mesh.Remove(0, distr_location.Length + 1)), Marshal.StringToHGlobalAnsi(material_string));
             LoadData();
         }
 
@@ -308,6 +311,7 @@ namespace EditorUI
                 MeshPath.Text = ((BrowserItem)Browser.SelectedItem).mesh_path;
                 MeshPath.ToolTip = ((BrowserItem)Browser.SelectedItem).mesh_path;
                 LoadModelFile(Marshal.StringToHGlobalAnsi(((BrowserItem)Browser.SelectedItem).ToolTip.ToString()));
+                GC.Collect();
             }
             catch (Exception exc)
             {

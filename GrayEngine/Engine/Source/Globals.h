@@ -56,6 +56,7 @@ namespace GrEngine
 				return false;
 
 			std::string temp_str = "";
+			std::string distro = getExecutablePath();
 			bool is_mesh = false;
 
 			if (buffer.size() == 0)
@@ -69,11 +70,11 @@ namespace GrEngine
 					{
 						if (is_mesh)
 						{
-							mesh->append(temp_str);;
+							mesh->append(distro + temp_str);;
 						}
 						else
 						{
-							textures->push_back(temp_str);
+							textures->push_back(distro + temp_str);
 						}
 
 						temp_str = "";

@@ -123,6 +123,9 @@ void SceneEditor::AddToTheScene(const char* model_path)
     {
         para.push_back(chr);
     }
+
+    EventListener::clearEventQueue();
+    GrEngine::Engine::GetContext()->Pause();
     EventListener::registerEvent("LoadModel", para);
 }
 

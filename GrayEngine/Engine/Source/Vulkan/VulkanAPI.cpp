@@ -849,13 +849,10 @@ namespace GrEngine_Vulkan
 		std::map<int, std::future<void>> processes_map;
 		std::map<std::string, std::vector<int>> materials_map;
 
-		if (textures_vector.size() > 0)
-		{
-			processes_map[processes_map.size()] = std::async(std::launch::async, [textures_vector, ref_obj, inst]()
-				{
-					inst->loadTexture(textures_vector, ref_obj, VK_IMAGE_VIEW_TYPE_2D_ARRAY, VK_IMAGE_TYPE_2D);
-				});
-		}
+		processes_map[processes_map.size()] = std::async(std::launch::async, [textures_vector, ref_obj, inst]()
+			{
+				inst->loadTexture(textures_vector, ref_obj, VK_IMAGE_VIEW_TYPE_2D_ARRAY, VK_IMAGE_TYPE_2D);
+			});
 
 		processes_map[processes_map.size()] = std::async(std::launch::async, [mesh_path, ref_obj, out_materials_collection, inst]()
 			{
@@ -966,9 +963,7 @@ namespace GrEngine_Vulkan
 	bool VulkanAPI::loadTexture(std::vector<std::string> texture_path, VulkanDrawable* target, VkImageViewType type_view, VkImageType type_img)
 	{
 		if (texture_path.size() == 0) return false;
-
-		target->invalidateTexture(logicalDevice, memAllocator); //Strip object of its previous texture
-
+		
 		ShaderBuffer stagingBuffer;
 		Texture new_texture;
 
@@ -1058,6 +1053,7 @@ namespace GrEngine_Vulkan
 
 		//allocate and create the image
 		vmaCreateImage(memAllocator, &dimg_info, &dimg_allocinfo, &new_texture.newImage.allocatedImage, &new_texture.newImage.allocation, nullptr);
+		//vkCreateImage(logicalDevice, &dimg_info, nullptr, &new_texture.newImage.allocatedImage);
 
 		VkImageSubresourceRange subresourceRange = {};
 		subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
@@ -1093,11 +1089,12 @@ namespace GrEngine_Vulkan
 		samplerInfo.maxLod = 0.0f;
 		vkCreateSampler(logicalDevice, &samplerInfo, nullptr, &new_texture.textureSampler);
 
-		if (target->object_texture.newImage.allocation != nullptr)
+		if (target->object_texture.initialized == true)
 		{
-			m_destroyTexture(logicalDevice, memAllocator, &target->object_texture);
+			target->invalidateTexture(logicalDevice, memAllocator); //Strip object of its previous texture
 		}
 		new_texture.texture_path = texture_path[0].c_str();
+		new_texture.initialized = true;
 		target->object_texture = new_texture;
 
 		return true;
@@ -1298,24 +1295,16 @@ namespace GrEngine_Vulkan
 		while (is_in_use) {};
 		is_in_use = true;
 
-		if (texture->newImage.allocatedImage != VK_NULL_HANDLE)
-		{
-			vmaDestroyImage(allocator, texture->newImage.allocatedImage, texture->newImage.allocation);
-			vmaFlushAllocation(allocator, texture->newImage.allocation, 0, sizeof(texture->newImage.allocation));
-			texture->newImage.allocatedImage = VK_NULL_HANDLE;
-			texture->newImage.allocation = VK_NULL_HANDLE;
-		}
-		if (texture->textureSampler != VK_NULL_HANDLE)
+		if (texture->initialized == true)
 		{
 			vkDestroySampler(device, texture->textureSampler, NULL);
-			texture->textureSampler = VK_NULL_HANDLE;
-		}
-		if (texture->textureImageView != VK_NULL_HANDLE)
-		{
 			vkDestroyImageView(device, texture->textureImageView, NULL);
-			texture->textureImageView = VK_NULL_HANDLE;
+			vmaDestroyImage(allocator, texture->newImage.allocatedImage, texture->newImage.allocation);
+			vmaFlushAllocation(allocator, texture->newImage.allocation, 0, sizeof(texture->newImage.allocation));
+			texture->initialized = false;
+			texture->texture_path = NULL;
 		}
-		texture->texture_path = NULL;
+
 		is_in_use = false;
 	}
 

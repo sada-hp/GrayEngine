@@ -46,14 +46,9 @@ namespace GrEngine
 	{
 		std::string mesh_path = "";
 		std::vector<std::string> mat_vector;
+		if (!Globals::readGMF(filepath, &mesh_path, &mat_vector)) return false;
 
-		Globals::readGMF(filepath, &mesh_path, &mat_vector);
-		Pause();
-
-		bool res = LoadObject(mesh_path.c_str(), mat_vector, out_materials);
-
-		Unpause();
-		return res;
+		return LoadObject(mesh_path.c_str(), mat_vector, out_materials);
 	}
 
 	bool Engine::AssignTextures(std::vector<std::string> textures, Entity* target)

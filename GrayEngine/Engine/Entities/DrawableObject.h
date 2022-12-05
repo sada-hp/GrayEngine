@@ -7,6 +7,7 @@ namespace GrEngine
 	struct Texture
 	{
 		const char* texture_path;
+		bool initialized = false;
 	};
 
 	struct Vertex
