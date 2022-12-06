@@ -50,11 +50,8 @@ namespace EditorUI
         public static extern void UpdateSkybox(IntPtr East, IntPtr West, IntPtr Top, IntPtr Bottom, IntPtr North, IntPtr South);
         [DllImport("SceneEditor.dll", CallingConvention = CallingConvention.Cdecl)]
         public static extern void CloseContext();
-
-        [DllImport("user32.dll")]
-        public static extern int SendMessage(IntPtr hWnd, int wMsg, IntPtr wParam, IntPtr lParam);
-        [DllImport("user32.dll")]
-        public static extern int FindWindow(string lpClassName, String lpWindowName);
+        [DllImport("SceneEditor.dll", CallingConvention = CallingConvention.Cdecl)]
+        public static extern void SaveScreenshot(IntPtr filepath);
         [DllImport("user32.dll")]
         static extern IntPtr SetParent(IntPtr hWndChild, IntPtr hWndNewParent);
         [DllImport("user32.dll")]
@@ -83,12 +80,14 @@ namespace EditorUI
 
         private void ClearButton_Click(object sender, RoutedEventArgs e)
         {
-            System.Windows.MessageBoxButton buttons = System.Windows.MessageBoxButton.YesNo;
-            var res = System.Windows.MessageBox.Show("This action will delete everything\nrelated to the current scene. Continue?", "Are you sure?", buttons, System.Windows.MessageBoxImage.Question);
-            if (res == MessageBoxResult.Yes)
+            SaveFileDialog dlg = new SaveFileDialog();
+            dlg.DefaultExt = ".ppm";
+            dlg.Filter = "ppm files(*.ppm) | *.ppm";
+            DialogResult result = dlg.ShowDialog();
+
+            if (result == System.Windows.Forms.DialogResult.OK && !string.IsNullOrWhiteSpace(dlg.FileName))
             {
-                //SendMessage(pOwner, 0x1201, IntPtr.Zero, IntPtr.Zero);
-                //entities.Clear();
+                SaveScreenshot(Marshal.StringToHGlobalAnsi(dlg.FileName));
             }
         }
 

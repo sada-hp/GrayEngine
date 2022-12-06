@@ -1,1 +1,1 @@
-<mesh>D:\GrEngine\GrayEngine\bin\Debug-x64\WorldEditorApp\Content\Shrek\shrek.obj<|mesh><texture>D:\GrEngine\GrayEngine\bin\Debug-x64\WorldEditorApp\Content\Shrek\ShrekHead_Col.png<|texture><texture>D:\GrEngine\GrayEngine\bin\Debug-x64\WorldEditorApp\Content\Shrek\ShrekBody_Col.png<|texture>
+<mesh>Content\Shrek\shrek.obj<|mesh><texture>Content\Shrek\ShrekHead_Col.png<|texture><texture>Content\Shrek\ShrekBody_Col.png<|texture>

@@ -25,7 +25,7 @@
                 </Grid.ColumnDefinitions>
                 <DockPanel Grid.Column="0">
                     <StackPanel Background="#FF353538" Margin="0" DockPanel.Dock="Top">
-                        <Button x:Name="ClearButton" Content="Clear scene" Background="#FF5D5D5D" BorderBrush="#FFC8C8C8" BorderThickness="1" Margin="5" Foreground="White" FontFamily="Lucida Sans Unicode" TextOptions.TextHintingMode="Fixed" Padding="2" Cursor="Hand" Click="ClearButton_Click"/>
+                        <Button x:Name="ClearButton" Content="Save screenshot" Background="#FF5D5D5D" BorderBrush="#FFC8C8C8" BorderThickness="1" Margin="5" Foreground="White" FontFamily="Lucida Sans Unicode" TextOptions.TextHintingMode="Fixed" Padding="2" Cursor="Hand" Click="ClearButton_Click"/>
                         <!--<Button x:Name="BrowserButton" Content="Model browser" Background="#FF5D5D5D" BorderBrush="#FFC8C8C8" BorderThickness="1" Margin="5" Foreground="White" FontFamily="Lucida Sans Unicode" TextOptions.TextHintingMode="Fixed" Padding="2" Cursor="Hand" Click="BrowserButton_Click"/>-->
                         <Button x:Name="EntityButton" Content="Add entity" Background="#FF5D5D5D" BorderBrush="#FFC8C8C8" BorderThickness="1" Margin="5" Foreground="White" FontFamily="Lucida Sans Unicode" TextOptions.TextHintingMode="Fixed" Padding="2" Cursor="Hand" Click="EntityButton_Click"/>
                     </StackPanel>

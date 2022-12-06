@@ -29,7 +29,7 @@ namespace GrEngine
 		inline EntityInfo getEntityInfo(int ID) { return entities[ID]->GetEntityInfo(); };
 		virtual Entity* selectEntity(int ID) { selected_entity = ID; return entities[ID]; };
 		virtual Entity* GetSelectedEntity() { return entities[selected_entity]; };
-
+		virtual void SaveScreenshot(const char* filepath) = 0;
 	protected:
 		int selected_entity = 0;
 	};

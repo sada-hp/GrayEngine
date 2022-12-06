@@ -22,5 +22,6 @@ namespace SceneEditor
 		ExportDll void __stdcall AddToTheScene(const char* model_path);
 		ExportDll void __stdcall CloseContext();
 		ExportDll void __stdcall CreateModelFile(const char* mesh, const char* textures);
+		ExportDll void __stdcall SaveScreenshot(const char* filepath);
 	}
 }

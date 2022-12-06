@@ -160,10 +160,10 @@ namespace GrEngine_Vulkan
 	{
 		if (!Initialized) return;
 
-		uint32_t imageIndex = 0;
-		vkAcquireNextImageKHR(logicalDevice, swapChain, UINT64_MAX, imageAvailableSemaphore, VK_NULL_HANDLE, &imageIndex);
+		currentImageIndex = 0;
+		vkAcquireNextImageKHR(logicalDevice, swapChain, UINT64_MAX, imageAvailableSemaphore, VK_NULL_HANDLE, &currentImageIndex);
 
-		if (!updateDrawables(imageIndex))
+		if (!updateDrawables(currentImageIndex))
 			throw std::runtime_error("Logical device was lost!");
 
 		VkSubmitInfo submitInfo{};
@@ -175,7 +175,7 @@ namespace GrEngine_Vulkan
 		submitInfo.pWaitSemaphores = waitSemaphores;
 		submitInfo.pWaitDstStageMask = waitStages;
 		submitInfo.commandBufferCount = 1;
-		submitInfo.pCommandBuffers = &commandBuffers[imageIndex];
+		submitInfo.pCommandBuffers = &commandBuffers[currentImageIndex];
 		VkSemaphore signalSemaphores[] = { renderFinishedSemaphore };
 		submitInfo.signalSemaphoreCount = 1;
 		submitInfo.pSignalSemaphores = signalSemaphores;
@@ -199,11 +199,95 @@ namespace GrEngine_Vulkan
 		VkSwapchainKHR swapChains[] = { swapChain };
 		presentInfo.swapchainCount = 1;
 		presentInfo.pSwapchains = swapChains;
-		presentInfo.pImageIndices = &imageIndex;
+		presentInfo.pImageIndices = &currentImageIndex;
 		presentInfo.pResults = nullptr; // Optional
 
 		vkQueuePresentKHR(presentQueue, &presentInfo);
 		vkWaitForFences(logicalDevice, 1, &graphicsFence, TRUE, UINT64_MAX);
+	}
+	void VulkanAPI::SaveScreenshot(const char* filepath)
+	{
+		VkImage srcImage = swapChainImages[currentImageIndex];
+		VkImage dstImage;
+		VkCommandBuffer cmd;
+		VkImageCreateInfo dstInf{};
+		dstInf.imageType = VK_IMAGE_TYPE_2D;
+		dstInf.format = VK_FORMAT_R8G8B8A8_UNORM;
+		dstInf.extent.width = swapChainExtent.width;
+		dstInf.extent.height = swapChainExtent.height;
+		dstInf.extent.depth = 1;
+		dstInf.arrayLayers = 1;
+		dstInf.mipLevels = 1;
+		dstInf.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+		dstInf.samples = VK_SAMPLE_COUNT_1_BIT;
+		dstInf.tiling = VK_IMAGE_TILING_LINEAR;
+		dstInf.usage = VK_IMAGE_USAGE_TRANSFER_DST_BIT;
+		vkCreateImage(logicalDevice, &dstInf, nullptr, &dstImage);
+
+		VkMemoryRequirements memRequirements;
+		VkMemoryAllocateInfo memAllocInfo{};
+		VkDeviceMemory dstImageMemory;
+		vkGetImageMemoryRequirements(logicalDevice, dstImage, &memRequirements);
+		memAllocInfo.allocationSize = memRequirements.size;
+		VmaAllocationCreateInfo allocInfo = {};
+		allocInfo.usage = VMA_MEMORY_USAGE_CPU_ONLY;
+		allocInfo.flags = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
+		vmaFindMemoryTypeIndex(memAllocator, memRequirements.memoryTypeBits, &allocInfo, &memAllocInfo.memoryTypeIndex);
+		vkAllocateMemory(logicalDevice, &memAllocInfo, nullptr, &dstImageMemory);
+		vkBindImageMemory(logicalDevice, dstImage, dstImageMemory, 0);
+
+		allocateCommandBuffer(&cmd);
+		beginCommandBuffer(cmd, VK_COMMAND_BUFFER_USAGE_FLAG_BITS_MAX_ENUM);
+		transitionImageLayout(dstImage, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VkImageSubresourceRange{ VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1 }, cmd);
+		transitionImageLayout(srcImage, VK_IMAGE_LAYOUT_PRESENT_SRC_KHR, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, VkImageSubresourceRange{ VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1 }, cmd);
+
+		VkImageCopy imageCopyRegion{};
+		imageCopyRegion.srcSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+		imageCopyRegion.srcSubresource.layerCount = 1;
+		imageCopyRegion.dstSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+		imageCopyRegion.dstSubresource.layerCount = 1;
+		imageCopyRegion.extent.width = swapChainExtent.width;
+		imageCopyRegion.extent.height = swapChainExtent.height;
+		imageCopyRegion.extent.depth = 1;
+
+		vkCmdCopyImage(cmd, srcImage, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, dstImage, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &imageCopyRegion);
+
+		transitionImageLayout(dstImage, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_GENERAL, VkImageSubresourceRange{ VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1 }, cmd);
+		transitionImageLayout(srcImage, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, VK_IMAGE_LAYOUT_PRESENT_SRC_KHR, VkImageSubresourceRange{ VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1 }, cmd);
+		freeCommandBuffer(cmd);
+
+		VkImageSubresource subResource{ VK_IMAGE_ASPECT_COLOR_BIT, 0, 0 };
+		VkSubresourceLayout subResourceLayout;
+		vkGetImageSubresourceLayout(logicalDevice, dstImage, &subResource, &subResourceLayout);
+
+		std::ofstream file;
+		if (filepath != "")
+		{
+			file.open(filepath, std::ios::out | std::ios::binary);
+			file << "P6\n" << swapChainExtent.width << "\n" << swapChainExtent.height << "\n" << 255 << "\n";
+		}
+		const char* data;
+		vkMapMemory(logicalDevice, dstImageMemory, 0, VK_WHOLE_SIZE, 0, (void**)&data);
+		data += subResourceLayout.offset;
+		for (uint32_t y = 0; y < swapChainExtent.height; y++)
+		{
+			unsigned int* row = (unsigned int*)data;
+			for (uint32_t x = 0; x < swapChainExtent.width; x++)
+			{
+				if (filepath != "")
+				{
+					file.write((char*)row + 2, 1);
+					file.write((char*)row + 1, 1);
+					file.write((char*)row, 1);
+				}
+				row++;
+			}
+			data += subResourceLayout.rowPitch;
+		}
+
+		vkUnmapMemory(logicalDevice, dstImageMemory);
+		vkFreeMemory(logicalDevice, dstImageMemory, nullptr);
+		vkDestroyImage(logicalDevice, dstImage, nullptr);
 	}
 
 	bool VulkanAPI::updateDrawables(uint32_t index)
@@ -230,10 +314,9 @@ namespace GrEngine_Vulkan
 		renderPassInfo.pClearValues = clearValues;
 
 		vkCmdBeginRenderPass(commandBuffers[index], &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
-
 		VkViewport viewport{};
-		viewport.x = 0.0f;
-		viewport.y = 0.0f;
+		viewport.x = 0;
+		viewport.y = 0;
 		viewport.width = (float)swapChainExtent.width;
 		viewport.height = (float)swapChainExtent.height;
 		viewport.minDepth = 0.0f;
@@ -1061,9 +1144,9 @@ namespace GrEngine_Vulkan
 		subresourceRange.levelCount = 1;
 		subresourceRange.layerCount = texture_path.size();
 
-		transitionImageLayout(new_texture.newImage.allocatedImage, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, subresourceRange);
+		transitionImageLayout(new_texture.newImage.allocatedImage, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, subresourceRange);
 		copyBufferToImage(stagingBuffer.Buffer, new_texture.newImage.allocatedImage, maxW, maxH, channels, texture_path.size());
-		transitionImageLayout(new_texture.newImage.allocatedImage, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, subresourceRange);
+		transitionImageLayout(new_texture.newImage.allocatedImage, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, subresourceRange);
 		createImageViews(VK_FORMAT_R8G8B8A8_SRGB, type_view, new_texture.newImage.allocatedImage, &new_texture.textureImageView, texture_path.size());
 		m_destroyShaderBuffer(logicalDevice, memAllocator, &stagingBuffer);
 
@@ -1139,11 +1222,18 @@ namespace GrEngine_Vulkan
 		return true;
 	}
 
-	void VulkanAPI::transitionImageLayout(VkImage image, VkFormat format, VkImageLayout oldLayout, VkImageLayout newLayout, VkImageSubresourceRange subres)
+	void VulkanAPI::transitionImageLayout(VkImage image, VkImageLayout oldLayout, VkImageLayout newLayout, VkImageSubresourceRange subres, VkCommandBuffer cmd)
 	{
 		VkCommandBuffer commandBuffer;
-		allocateCommandBuffer(&commandBuffer);
-		beginCommandBuffer(commandBuffer, VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT);
+		if (cmd == nullptr)
+		{
+			allocateCommandBuffer(&commandBuffer);
+			beginCommandBuffer(commandBuffer, VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT);
+		}
+		else
+		{
+			commandBuffer = cmd;
+		}
 
 		VkImageMemoryBarrier barrier{};
 		barrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
@@ -1175,12 +1265,34 @@ namespace GrEngine_Vulkan
 			sourceStage = VK_PIPELINE_STAGE_TRANSFER_BIT;
 			destinationStage = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
 		}
+		else if (oldLayout == VK_IMAGE_LAYOUT_PRESENT_SRC_KHR && newLayout == VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL) {
+			barrier.srcAccessMask = VK_ACCESS_MEMORY_READ_BIT;
+			barrier.dstAccessMask = VK_ACCESS_TRANSFER_READ_BIT;
+
+			sourceStage = VK_PIPELINE_STAGE_TRANSFER_BIT;
+			destinationStage = VK_PIPELINE_STAGE_TRANSFER_BIT;
+		}
+		else if (oldLayout == VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL && newLayout == VK_IMAGE_LAYOUT_PRESENT_SRC_KHR) {
+			barrier.srcAccessMask = VK_ACCESS_TRANSFER_READ_BIT;
+			barrier.dstAccessMask = VK_ACCESS_MEMORY_READ_BIT;
+
+			sourceStage = VK_PIPELINE_STAGE_TRANSFER_BIT;
+			destinationStage = VK_PIPELINE_STAGE_TRANSFER_BIT;
+		}
+		else if (oldLayout == VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL && newLayout == VK_IMAGE_LAYOUT_GENERAL) {
+			barrier.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
+			barrier.dstAccessMask = VK_ACCESS_MEMORY_READ_BIT;
+
+			sourceStage = VK_PIPELINE_STAGE_TRANSFER_BIT;
+			destinationStage = VK_PIPELINE_STAGE_TRANSFER_BIT;
+		}
 		else {
 			throw std::invalid_argument("unsupported layout transition!");
 		}
 
 		vkCmdPipelineBarrier(commandBuffer, sourceStage, destinationStage, 0, 0, nullptr, 0, nullptr, 1, &barrier);
-		freeCommandBuffer(commandBuffer);
+		if (cmd == nullptr)
+			freeCommandBuffer(commandBuffer);
 	}
 
 	void VulkanAPI::copyBufferToImage(VkBuffer buffer, VkImage image, uint32_t width, uint32_t height, uint32_t channels, uint32_t length)

@@ -67,7 +67,7 @@ namespace SceneEditor
         Logger::Out("--------------- Starting the engine ---------------", OutputColor::Gray, OutputType::Log);
         Logger::ShowConsole(false);
         app = new GrEngine::Application();
-
+        //"D:\\GrEngine\\GrayEngine\\gr.ppm"
         EventListener::pushEvent(EventType::Step, [](std::vector<std::any> para)
             {
                 if (para.size() > 0)

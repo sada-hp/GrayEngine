@@ -171,3 +171,9 @@ void SceneEditor::CreateModelFile(const char* mesh_path, const char* textures)
 
 	GrEngine::Engine::WriteGMF(file.c_str(), mesh.c_str(), mat_vector);
 }
+
+void  SceneEditor::SaveScreenshot(const char* filepath)
+{
+    GrEngine::Engine::GetContext()->getAppWindow()->getRenderer()->SaveScreenshot(filepath);
+    Logger::Out("Screenshot saved at %s", OutputColor::Green, OutputType::Log, filepath);
+}

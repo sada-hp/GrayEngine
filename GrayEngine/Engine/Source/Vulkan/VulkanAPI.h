@@ -59,8 +59,7 @@ namespace GrEngine_Vulkan
 		static bool m_createVkBuffer(VkDevice device, VmaAllocator allocator, const void* bufData, uint32_t dataSize, VkBufferUsageFlags usage, ShaderBuffer* shader);
 		static void m_destroyShaderBuffer(VkDevice device, VmaAllocator allocator, ShaderBuffer* shaderBuf);
 		static void m_destroyTexture(VkDevice device, VmaAllocator allocator, Texture* texture);
-		void transitionImageLayout(VkImage image, VkFormat format, VkImageLayout oldLayout, VkImageLayout newLayout, VkImageSubresourceRange subres);
-
+		void transitionImageLayout(VkImage image, VkImageLayout oldLayout, VkImageLayout newLayout, VkImageSubresourceRange subres, VkCommandBuffer cmd = nullptr);
 
 		void Update() override;
 
@@ -68,6 +67,7 @@ namespace GrEngine_Vulkan
 		bool allocateCommandBuffer(VkCommandBuffer* cmd, uint32_t count = 0);
 		bool beginCommandBuffer(VkCommandBuffer cmd, VkCommandBufferUsageFlags usage);
 		bool freeCommandBuffer(VkCommandBuffer commandBuffer);
+		void SaveScreenshot(const char* filepath);
 
 	private:
 		int sky = -1;
@@ -99,6 +99,7 @@ namespace GrEngine_Vulkan
 		VkMemoryRequirements memRequirements;
 
 		std::vector<VulkanDrawable> drawables;
+		uint32_t currentImageIndex = 0;
 
 		bool loadMesh(const char* mesh_path, VulkanDrawable* target, std::vector<std::string>* out_materials = nullptr);
 		bool loadTexture(std::vector<std::string> texture_path, VulkanDrawable* target, VkImageViewType type_view = VK_IMAGE_VIEW_TYPE_2D, VkImageType type_img = VK_IMAGE_TYPE_2D);
