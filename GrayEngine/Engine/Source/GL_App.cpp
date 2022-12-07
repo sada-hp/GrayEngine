@@ -98,7 +98,7 @@ namespace GrEngine
 		EventListener::pollEngineEvents();
 		ProccessInputs();
 		glfwPollEvents();
-		pAppRenderer->drawFrame();
+		pAppRenderer->RenderFrame();
 		glfwSwapBuffers(window);
 
 		double currentTime = glfwGetTime();

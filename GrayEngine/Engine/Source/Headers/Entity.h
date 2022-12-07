@@ -2,6 +2,7 @@
 #include <glm/glm.hpp>
 #include <glm/gtc/quaternion.hpp>
 #include "Engine/Source/Globals.h"
+#include "Engine/Source/Headers/Logger.h"
 
 namespace GrEngine
 {
@@ -20,7 +21,11 @@ namespace GrEngine
 
 		Entity() 
 		{
-			id = rand(); //TBD
+			char buf[11];
+			char _buf[11];
+			std::snprintf(_buf, sizeof(_buf), "1%03d%03d%03d", std::rand() % 255 + 1, std::rand() % 255 + 1, std::rand() % 255 + 1);
+
+			id = atoi(_buf);
 		};
 		virtual ~Entity() {};
 
@@ -156,8 +161,8 @@ namespace GrEngine
 		glm::vec3 pitch_yaw_roll = { 0.f, 0.f, 0.f };
 		glm::vec3 scale = { 1.f, 1.f, 1.f };
 		std::string Type = "Entity";
-	private:
 		UINT id;
+	private:
 		std::string name = "ent";
 	};
 }

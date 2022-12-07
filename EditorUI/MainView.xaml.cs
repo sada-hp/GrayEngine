@@ -61,6 +61,7 @@ namespace EditorUI
         IntPtr child_hwnd;
         System.Windows.Forms.Panel panel = new System.Windows.Forms.Panel();
         ObservableCollection<object> entities = new ObservableCollection<object>();
+        System.Windows.Controls.ListBoxItem SelectedEntity = new System.Windows.Controls.ListBoxItem();
 
         public MainView()
         {
@@ -261,6 +262,20 @@ namespace EditorUI
             catch (Exception ee)
             {
                 LogMessage(Marshal.StringToHGlobalAnsi(ee.Message));
+            }
+        }
+
+        internal void SelectEntity(int ID)
+        {
+            if (ID == 0) return;
+            
+            for (int i = 0; i < EntitiesList.Items.Count; i++)
+            {
+                if ((EntitiesList.Items.GetItemAt(i) as EntityItem).ID == ID)
+                {
+                    EntitiesList.SelectedItem = EntitiesList.Items.GetItemAt(i);
+                    return;
+                }
             }
         }
 

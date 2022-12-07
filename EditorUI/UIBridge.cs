@@ -102,5 +102,14 @@ namespace EditorUI
                 ((MainView)wrappers[0].ui_window).RetrieveEntityInfo((int)id, Marshal.PtrToStringAnsi(name), Marshal.PtrToStringAnsi(position), Marshal.PtrToStringAnsi(orientation), Marshal.PtrToStringAnsi(scale));
             }));
         }
+
+        [DllExport]
+        public static void SetSelectedEntity(IntPtr id)
+        {
+            wrappers[0].ui_window.Dispatcher.BeginInvoke((Action)(() =>
+            {
+                ((MainView)wrappers[0].ui_window).SelectEntity((int)id);
+            }));
+        }
     }
 }

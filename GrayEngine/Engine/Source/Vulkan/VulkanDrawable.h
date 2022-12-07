@@ -21,8 +21,8 @@ namespace GrEngine_Vulkan
 			return bindingDescription;
 		}
 
-		static std::array<VkVertexInputAttributeDescription, 5> getAttributeDescriptions() {
-			std::array<VkVertexInputAttributeDescription, 5> attributeDescriptions{};
+		static std::array<VkVertexInputAttributeDescription, 6> getAttributeDescriptions() {
+			std::array<VkVertexInputAttributeDescription, 6> attributeDescriptions{};
 
 			attributeDescriptions[0].binding = 0;
 			attributeDescriptions[0].location = 0;
@@ -49,30 +49,19 @@ namespace GrEngine_Vulkan
 			attributeDescriptions[4].format = VK_FORMAT_R32_UINT;
 			attributeDescriptions[4].offset = offsetof(Vertex, uses_texture);
 
+			attributeDescriptions[5].binding = 0;
+			attributeDescriptions[5].location = 5;
+			attributeDescriptions[5].format = VK_FORMAT_R32G32B32_UINT;
+			attributeDescriptions[5].offset = offsetof(Vertex, inID);
+
 			return attributeDescriptions;
 		}
 	};
 
 	struct Mesh : public GrEngine::Mesh
 	{
-		std::vector<Vertex> vertices = {
-			{{{ 0.25, 0.25, 0.25, 1.0f },{ 0.f, 1.f, 0.f, 1.f },{ 1.f, 1.0f }}},
-			{{{ -0.25, 0.25, -0.25, 1.0f },{ 0.f, 1.f, 0.f, 1.f },{ 0.f, 0.0f }}},
-			{{{ -0.25, 0.25 , 0.25, 1.0f },{0.f, 1.f, 0.f, 1.f},{ 0.f, 1.f }}},
-			{{{ 0.25, 0.25, -0.25, 1.0f },{ 0.f, 1.f, 0.f, 1.f },{ 1.f, 0.0f }}},
-
-			{{{ 0.25, -0.25, 0.25, 1.0f },{ 0.f, 1.f, 0.f, 1.f },{ 1.f, 1.0f }}},
-			{{{ -0.25, -0.25, -0.25, 1.0f },{ 0.f, 1.f, 0.f, 1.f },{ 0.f, 0.0f }}},
-			{{{ -0.25, -0.25 , 0.25, 1.0f },{0.f, 1.f, 0.f, 1.f},{ 0.f, 1.f }}},
-			{{{ 0.25, -0.25, -0.25, 1.0f },{ 0.f, 1.f, 0.f, 1.f },{ 1.f, 0.0f }}}
-		};
-		std::vector<uint16_t> indices = { 0, 1, 2, 0, 3, 1,
-			4, 5, 6, 4, 7, 5,
-			0, 2, 6, 0, 4, 6,
-			0, 3, 4, 3, 7, 4,
-			1, 3, 7, 1, 5, 7,
-			1, 2, 6, 1, 5, 6,
-		};
+		std::vector<Vertex> vertices;
+		std::vector<uint16_t> indices;
 	};
 
 	struct ShaderBuffer
@@ -92,6 +81,12 @@ namespace GrEngine_Vulkan
 		glm::mat4 view{1.f};
 		glm::mat4 proj{ 1.f };
 		glm::vec3 scale = { 1.f, 1.f, 1.f };
+	};
+
+	struct PickingBufferObject {
+		uint32_t draw_mode = 0;
+		glm::uvec3 selected_entity{ 0, 0, 0 };
+		uint32_t highlight_enabled = 1;
 	};
 
 	struct AllocatedImage {
@@ -130,8 +125,10 @@ namespace GrEngine_Vulkan
 		void destroyObject(VkDevice device, VmaAllocator allocator);
 		void updateObject(VkDevice device, VmaAllocator allocator);
 		void invalidateTexture(VkDevice device, VmaAllocator allocator);
-		bool pushConstants(VkDevice devicce, VkCommandBuffer cmd, VkExtent2D extent);
-		bool recordCommandBuffer(VkDevice device, VkCommandBuffer commandBuffer, VkExtent2D extent);
+		bool pushConstants(VkDevice devicce, VkCommandBuffer cmd, VkExtent2D extent, UINT32 mode);
+		bool recordCommandBuffer(VkDevice device, VkCommandBuffer commandBuffer, VkExtent2D extent, UINT32 mode);
+		inline glm::uvec3 getColorID() { return colorID; };
+		static PickingBufferObject opo;
 
 	protected:
 		GrEngine::Renderer* p_Owner;

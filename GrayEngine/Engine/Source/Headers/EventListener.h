@@ -12,7 +12,8 @@ enum class EventType
 	WindowClosed,
 	Step,
 	Log,
-	Custom
+	Custom,
+	SelectionChanged
 };
 
 typedef void (*EventCallbackFun)(std::vector<std::any>);

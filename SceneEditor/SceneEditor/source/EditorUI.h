@@ -43,6 +43,9 @@ public:
 	typedef void(*RetrieveInfoFunc)(int, char*, char*, char*, char*);
 	RetrieveInfoFunc SendEntityInfo;
 
+	typedef void(*SelectEntityFunc)(int);
+	SelectEntityFunc SetSelectedEntity;
+
 	EditorUI()
 	{
 		dotNetGUILibrary = LoadLibraryA("EditorUI.dll");
@@ -56,6 +59,7 @@ public:
 		UpdateMaterials = (UpdateMaterialsFunc)GetProcAddress(dotNetGUILibrary, "PassMaterialString");
 		UpdateEntity = (UpdateEntityFunc)GetProcAddress(dotNetGUILibrary, "UpdateEntity");
 		SendEntityInfo = (RetrieveInfoFunc)GetProcAddress(dotNetGUILibrary, "RetrieveEntityInfo");
+		SetSelectedEntity = (SelectEntityFunc)GetProcAddress(dotNetGUILibrary, "SetSelectedEntity");
 	};
 
 	~EditorUI()

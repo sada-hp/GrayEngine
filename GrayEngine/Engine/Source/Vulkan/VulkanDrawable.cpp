@@ -4,10 +4,33 @@
 
 namespace GrEngine_Vulkan
 {
+	PickingBufferObject VulkanDrawable::opo{};
+
 	void VulkanDrawable::initObject(VkDevice device, VmaAllocator allocator, GrEngine::Renderer* owner)
 	{
 		p_Owner = owner;
 		Type = "VulkanDrawable";
+		colorID = { id / 1000000 % 1000, id / 1000 % 1000, id % 1000};
+
+		object_mesh.vertices = {
+			{{{ 0.25, 0.25, 0.25, 1.0f },{ 0.25f,0.9f, 0.25f, 1.f },{ 1.f, 1.0f }, colorID}},
+			{{{ -0.25, 0.25, -0.25, 1.0f },{ 0.25f, 0.9f, 0.25f, 1.f },{ 0.f, 0.0f }, colorID}},
+			{{{ -0.25, 0.25 , 0.25, 1.0f },{0.25f, 0.9f, 0.25f, 1.f},{ 0.f, 1.f }, colorID}},
+			{{{ 0.25, 0.25, -0.25, 1.0f },{ 0.25f, 0.9f, 0.25f, 1.f },{ 1.f, 0.0f }, colorID}},
+
+			{{{ 0.25, -0.25, 0.25, 1.0f },{ 0.25f, 0.9f, 0.25f, 1.f },{ 1.f, 1.0f }, colorID}},
+			{{{ -0.25, -0.25, -0.25, 1.0f },{ 0.25f, 0.9f, 0.25f, 1.f },{ 0.f, 0.0f }, colorID}},
+			{{{ -0.25, -0.25 , 0.25, 1.0f },{0.25f, 0.9f, 0.25f, 1.f},{ 0.f, 1.f }, colorID}},
+			{{{ 0.25, -0.25, -0.25, 1.0f },{ 0.25f, 0.9f, 0.25f, 1.f },{ 1.f, 0.0f }, colorID}}
+		};
+
+		object_mesh.indices = { 0, 1, 2, 0, 3, 1,
+			4, 5, 6, 4, 7, 5,
+			0, 2, 6, 0, 4, 6,
+			0, 3, 4, 3, 7, 4,
+			1, 3, 7, 1, 5, 7,
+			1, 2, 6, 1, 5, 6,
+		};
 
 		if (object_mesh.vertices.size() > 0)
 		{
@@ -69,19 +92,23 @@ namespace GrEngine_Vulkan
 		pushConstant.size = sizeof(UniformBufferObject);
 		pushConstant.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
 
+		VkPushConstantRange pushConstant2;
+		pushConstant2.offset = sizeof(UniformBufferObject);
+		pushConstant2.size = sizeof(PickingBufferObject);
+		pushConstant2.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
+		std::vector<VkPushConstantRange> ranges = {pushConstant, pushConstant2};
+
 		VkPipelineLayoutCreateInfo pipelineLayoutInfo{};
 		pipelineLayoutInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
-		pipelineLayoutInfo.setLayoutCount = 0;
 		pipelineLayoutInfo.setLayoutCount = 1;
-		pipelineLayoutInfo.pSetLayouts = NULL;
 		pipelineLayoutInfo.pSetLayouts = &descriptorSetLayout;
-		pipelineLayoutInfo.pushConstantRangeCount = 1;
-		pipelineLayoutInfo.pPushConstantRanges = &pushConstant;
+		pipelineLayoutInfo.pushConstantRangeCount = 2;
+		pipelineLayoutInfo.pPushConstantRanges = ranges.data();
 
 		return vkCreatePipelineLayout(device, &pipelineLayoutInfo, NULL, &pipelineLayout) == VK_SUCCESS;
 	}
 
-	bool VulkanDrawable::recordCommandBuffer(VkDevice device, VkCommandBuffer commandBuffer, VkExtent2D extent)
+	bool VulkanDrawable::recordCommandBuffer(VkDevice device, VkCommandBuffer commandBuffer, VkExtent2D extent, UINT32 mode)
 	{
 		if (vertexBuffer.initialized == true)
 		{
@@ -93,7 +120,7 @@ namespace GrEngine_Vulkan
 
 			UpdateObjectPosition();
 			UpdateObjectOrientation();
-			pushConstants(device, commandBuffer, extent);
+			pushConstants(device, commandBuffer, extent, mode);
 
 			for (int ind = 0; ind < descriptorSets.size(); ind++)
 			{
@@ -108,7 +135,7 @@ namespace GrEngine_Vulkan
 		return false;
 	}
 
-	bool VulkanDrawable::pushConstants(VkDevice devicce, VkCommandBuffer cmd, VkExtent2D extent)
+	bool VulkanDrawable::pushConstants(VkDevice devicce, VkCommandBuffer cmd, VkExtent2D extent, UINT32 mode)
 	{
 		/*orientation relative to the position in a 3D space (?)*/
 		ubo.model = glm::translate(glm::mat4(1.f), GetObjectPosition()) * glm::mat4_cast(GetObjectOrientation());
@@ -117,8 +144,10 @@ namespace GrEngine_Vulkan
 		ubo.proj = glm::perspective(glm::radians(60.0f), (float)extent.width / (float)extent.height, near_plane, far_plane); //fov, aspect ratio, near clipping plane, far clipping plane
 		ubo.proj[1][1] *= -1; //reverse Y coordinate
 		ubo.scale = GetObjectScale();
-
 		vkCmdPushConstants(cmd, pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(UniformBufferObject), &ubo);
+
+		opo.draw_mode = mode;
+		vkCmdPushConstants(cmd, pipelineLayout, VK_SHADER_STAGE_FRAGMENT_BIT, sizeof(UniformBufferObject), sizeof(PickingBufferObject), &opo);
 		return true;
 	}
 

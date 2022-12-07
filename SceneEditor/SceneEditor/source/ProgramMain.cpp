@@ -67,7 +67,7 @@ namespace SceneEditor
         Logger::Out("--------------- Starting the engine ---------------", OutputColor::Gray, OutputType::Log);
         Logger::ShowConsole(false);
         app = new GrEngine::Application();
-        //"D:\\GrEngine\\GrayEngine\\gr.ppm"
+
         EventListener::pushEvent(EventType::Step, [](std::vector<std::any> para)
             {
                 if (para.size() > 0)
@@ -96,6 +96,14 @@ namespace SceneEditor
                 }
             });
 
+        EventListener::pushEvent(EventType::MouseClick, [](std::vector<std::any> para)
+            {
+                if (std::any_cast<int>(para[3]) == GLFW_RELEASE)
+                {
+                    app->getAppWindow()->getRenderer()->SelectEntityAtCursor();
+                }
+            });
+
         EventListener::pushEvent(EventType::Log, [](std::vector<std::any> para)
             {
                 char* msg = new char[para.size() + 2];
@@ -108,8 +116,13 @@ namespace SceneEditor
                 msg[i] = '\0';
                 app->pushToAppLogger(msg);
                 delete[] msg;
-            }
-        );
+            });
+
+        EventListener::pushEvent(EventType::SelectionChanged, [](std::vector<std::any> para)
+            {
+                int id = std::any_cast<uint32_t>(para[0]);
+                app->getEditorUI()->SetSelectedEntity(id);
+            });
 
         try
         {

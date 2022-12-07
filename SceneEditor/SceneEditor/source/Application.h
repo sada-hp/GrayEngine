@@ -67,9 +67,11 @@ namespace GrEngine
             BindContext(mdlBrowser);
             mdlBrowser->init(mdlBrowser);
             SetForegroundWindow(mdlBrowser->getEditorUI()->wpf_hwnd);
+            getAppWindow()->getRenderer()->SetHighlightingMode(false);
             mdlBrowser->StartEngine();
             mdlBrowser->Stop();
             delete mdlBrowser;
+            getAppWindow()->getRenderer()->SetHighlightingMode(true);
             EventListener::setEventsPermissions(true, true);
             BindContext(this);
             Logger::AllowMessages(MessageMode::Allow);

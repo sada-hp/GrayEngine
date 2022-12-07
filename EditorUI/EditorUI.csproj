@@ -183,7 +183,8 @@
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>
-    <PostBuildEvent>copy "$(SolutionDir)\bin\$(Configuration)-$(Platform)\WorldEditorApp\EditorUI.dll" "$(SolutionDir)\bin\Release-$(Platform)\WorldEditorApp\" /y;</PostBuildEvent>
+    <PostBuildEvent>
+    </PostBuildEvent>
   </PropertyGroup>
   <PropertyGroup>
     <DllExportIdent>FA33AD1D-E57B-4070-8C75-079F96F3648E</DllExportIdent>

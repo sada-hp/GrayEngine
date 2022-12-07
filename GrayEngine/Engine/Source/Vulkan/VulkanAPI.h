@@ -18,7 +18,7 @@ namespace GrEngine_Vulkan
 #endif
 
 
-
+	typedef void (*ImageReadCallback)(VkDeviceMemory, VkSubresourceLayout);
 
 	struct QueueFamilyIndices
 	{
@@ -37,18 +37,24 @@ namespace GrEngine_Vulkan
 		std::vector<VkPresentModeKHR> presentModes;
 	};
 
+	enum DrawMode
+	{
+		NORMAL = 0,
+		IDS = 1
+	};
+
 	class VulkanAPI : public GrEngine::Renderer
 	{
 	public:
 		bool init(void* window) override;
 		void destroy() override;
-		void drawFrame() override;
+		void RenderFrame() override;
+		void drawFrame(DrawMode mode, bool Show = true);
 		VkDevice logicalDevice;
 
 		inline VkExtent2D getExtent() { return swapChainExtent; };
 		inline VmaAllocator getMemAllocator() { return memAllocator; };
 		inline VkRenderPass getRenderPass() { return renderPass; };
-		bool updateDrawables(uint32_t index);
 		bool loadModel(const char* mesh_path, std::vector<std::string> textures_vector, std::unordered_map<std::string, std::string>* out_materials_names = nullptr) override;
 		GrEngine::EntityInfo addEntity() override;
 		bool assignTextures(std::vector<std::string> textures, GrEngine::Entity* target) override;
@@ -60,6 +66,9 @@ namespace GrEngine_Vulkan
 		static void m_destroyShaderBuffer(VkDevice device, VmaAllocator allocator, ShaderBuffer* shaderBuf);
 		static void m_destroyTexture(VkDevice device, VmaAllocator allocator, Texture* texture);
 		void transitionImageLayout(VkImage image, VkImageLayout oldLayout, VkImageLayout newLayout, VkImageSubresourceRange subres, VkCommandBuffer cmd = nullptr);
+		void SelectEntityAtCursor();
+		GrEngine::Entity* selectEntity(UINT ID) override;
+		void SetHighlightingMode(bool enabled) override;
 
 		void Update() override;
 
@@ -68,7 +77,8 @@ namespace GrEngine_Vulkan
 		bool beginCommandBuffer(VkCommandBuffer cmd, VkCommandBufferUsageFlags usage);
 		bool freeCommandBuffer(VkCommandBuffer commandBuffer);
 		void SaveScreenshot(const char* filepath);
-
+		bool updateDrawables(uint32_t index, DrawMode mode);
+		DrawMode cur_mode = DrawMode::NORMAL;
 	private:
 		int sky = -1;
 		GLFWwindow* pParentWindow;
@@ -84,6 +94,7 @@ namespace GrEngine_Vulkan
 		const std::vector<const char*> deviceExtensions = { VK_KHR_SWAPCHAIN_EXTENSION_NAME };
 		VkSwapchainKHR swapChain;
 		std::vector<VkImage> swapChainImages;
+		std::vector<VkDeviceMemory> swapChainMemory;
 		VkFormat swapChainImageFormat;
 		VkExtent2D swapChainExtent;
 		std::vector<VkImageView> swapChainImageViews;
@@ -129,6 +140,7 @@ namespace GrEngine_Vulkan
 		void cleanupSwapChain();
 
 		void copyBufferToImage(VkBuffer buffer, VkImage image, uint32_t width, uint32_t height, uint32_t channels, uint32_t length);
+		void copyImageToBuffer(VkBuffer buffer, VkImage image, uint32_t width, uint32_t height, uint32_t channels, uint32_t length);
 
 		VkImageView depthImageView;
 		AllocatedImage depthImage;

@@ -98,28 +98,6 @@ namespace GrEngine_Vulkan
 		if ((res = createSemaphores() & res) == false)
 			Logger::Out("[Vk] Failed to create semaphores", OutputColor::Red, OutputType::Error);
 
-		GrEngine_Vulkan::Vertex vertex{
-		{{ 1, 0, 1, 1.0f },
-		{ 1.f, 1.f, 1.f, 1.f },
-		{ 1.f, 1.0f }}};
-
-		GrEngine_Vulkan::Vertex vertex2{
-		{{ -1, 0, -1, 1.0f },
-		{ 1.f, 1.f, 1.f, 1.f },
-		{ 0.f, 0.0f }}};
-
-		GrEngine_Vulkan::Vertex vertex3{
-		{{ -1, 0 , 1, 1.0f },
-		{1.f, 1.f, 1.f, 1.f},
-		{ 0.f, 1.f }}};
-
-		GrEngine_Vulkan::Vertex vertex4{
-		{{ 1, 0, -1, 1.0f },
-		{ 1.f, 1.f, 1.f, 1.f },
-		{ 1.f, 0.0f }}};
-
-		grid.object_mesh.vertices = { vertex, vertex2, vertex3, vertex4 };
-		grid.object_mesh.indices = { 0, 1, 2, 0, 3, 1 };
 		grid.shader_path = "Shaders//grid";
 		grid.far_plane = 10000.f;
 
@@ -156,14 +134,19 @@ namespace GrEngine_Vulkan
 		Initialized = true;
 	}
 
-	void VulkanAPI::drawFrame()
+	void VulkanAPI::RenderFrame()
+	{
+		drawFrame(cur_mode, true);
+	}
+
+	void VulkanAPI::drawFrame(DrawMode mode, bool Show)
 	{
 		if (!Initialized) return;
 
 		currentImageIndex = 0;
 		vkAcquireNextImageKHR(logicalDevice, swapChain, UINT64_MAX, imageAvailableSemaphore, VK_NULL_HANDLE, &currentImageIndex);
 
-		if (!updateDrawables(currentImageIndex))
+		if (!updateDrawables(currentImageIndex, mode))
 			throw std::runtime_error("Logical device was lost!");
 
 		VkSubmitInfo submitInfo{};
@@ -190,23 +173,29 @@ namespace GrEngine_Vulkan
 			throw std::runtime_error("Logical device was lost!");
 		}
 
-		VkPresentInfoKHR presentInfo{};
-		presentInfo.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
+		if (Show)
+		{
+			VkPresentInfoKHR presentInfo{};
+			presentInfo.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
 
-		presentInfo.waitSemaphoreCount = 1;
-		presentInfo.pWaitSemaphores = signalSemaphores;
+			presentInfo.waitSemaphoreCount = 1;
+			presentInfo.pWaitSemaphores = signalSemaphores;
 
-		VkSwapchainKHR swapChains[] = { swapChain };
-		presentInfo.swapchainCount = 1;
-		presentInfo.pSwapchains = swapChains;
-		presentInfo.pImageIndices = &currentImageIndex;
-		presentInfo.pResults = nullptr; // Optional
+			VkSwapchainKHR swapChains[] = { swapChain };
+			presentInfo.swapchainCount = 1;
+			presentInfo.pSwapchains = swapChains;
+			presentInfo.pImageIndices = &currentImageIndex;
+			presentInfo.pResults = nullptr; // Optional
 
-		vkQueuePresentKHR(presentQueue, &presentInfo);
+			vkQueuePresentKHR(presentQueue, &presentInfo);
+		}
+
 		vkWaitForFences(logicalDevice, 1, &graphicsFence, TRUE, UINT64_MAX);
 	}
 	void VulkanAPI::SaveScreenshot(const char* filepath)
 	{
+		drawFrame(DrawMode::NORMAL, false);
+
 		VkImage srcImage = swapChainImages[currentImageIndex];
 		VkImage dstImage;
 		VkCommandBuffer cmd;
@@ -265,24 +254,130 @@ namespace GrEngine_Vulkan
 		{
 			file.open(filepath, std::ios::out | std::ios::binary);
 			file << "P6\n" << swapChainExtent.width << "\n" << swapChainExtent.height << "\n" << 255 << "\n";
-		}
-		const char* data;
-		vkMapMemory(logicalDevice, dstImageMemory, 0, VK_WHOLE_SIZE, 0, (void**)&data);
-		data += subResourceLayout.offset;
-		for (uint32_t y = 0; y < swapChainExtent.height; y++)
-		{
-			unsigned int* row = (unsigned int*)data;
-			for (uint32_t x = 0; x < swapChainExtent.width; x++)
+			const char* data;
+			vkMapMemory(logicalDevice, dstImageMemory, 0, VK_WHOLE_SIZE, 0, (void**)&data);
+			data += subResourceLayout.offset;
+			for (uint32_t y = 0; y < swapChainExtent.height; y++)
 			{
-				if (filepath != "")
+				unsigned int* row = (unsigned int*)data;
+				for (uint32_t x = 0; x < swapChainExtent.width; x++)
 				{
 					file.write((char*)row + 2, 1);
 					file.write((char*)row + 1, 1);
 					file.write((char*)row, 1);
+					row++;
+				}
+				data += subResourceLayout.rowPitch;
+			}
+
+			vkUnmapMemory(logicalDevice, dstImageMemory);
+		}
+		vkFreeMemory(logicalDevice, dstImageMemory, nullptr);
+		vkDestroyImage(logicalDevice, dstImage, nullptr);
+	}
+
+	void VulkanAPI::SelectEntityAtCursor()
+	{
+		drawFrame(DrawMode::IDS, false);
+
+		VkImage srcImage = swapChainImages[currentImageIndex];
+		VkImage dstImage;
+		VkCommandBuffer cmd;
+		VkImageCreateInfo dstInf{};
+		dstInf.imageType = VK_IMAGE_TYPE_2D;
+		dstInf.format = VK_FORMAT_R8G8B8A8_UNORM;
+		dstInf.extent.width = swapChainExtent.width;
+		dstInf.extent.height = swapChainExtent.height;
+		dstInf.extent.depth = 1;
+		dstInf.arrayLayers = 1;
+		dstInf.mipLevels = 1;
+		dstInf.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+		dstInf.samples = VK_SAMPLE_COUNT_1_BIT;
+		dstInf.tiling = VK_IMAGE_TILING_LINEAR;
+		dstInf.usage = VK_IMAGE_USAGE_TRANSFER_DST_BIT;
+		vkCreateImage(logicalDevice, &dstInf, nullptr, &dstImage);
+
+		VkMemoryRequirements memRequirements;
+		VkMemoryAllocateInfo memAllocInfo{};
+		VkDeviceMemory dstImageMemory;
+		vkGetImageMemoryRequirements(logicalDevice, dstImage, &memRequirements);
+		memAllocInfo.allocationSize = memRequirements.size;
+		VmaAllocationCreateInfo allocInfo = {};
+		allocInfo.usage = VMA_MEMORY_USAGE_CPU_ONLY;
+		allocInfo.flags = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
+		vmaFindMemoryTypeIndex(memAllocator, memRequirements.memoryTypeBits, &allocInfo, &memAllocInfo.memoryTypeIndex);
+		vkAllocateMemory(logicalDevice, &memAllocInfo, nullptr, &dstImageMemory);
+		vkBindImageMemory(logicalDevice, dstImage, dstImageMemory, 0);
+
+		allocateCommandBuffer(&cmd);
+		beginCommandBuffer(cmd, VK_COMMAND_BUFFER_USAGE_FLAG_BITS_MAX_ENUM);
+		transitionImageLayout(dstImage, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VkImageSubresourceRange{ VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1 }, cmd);
+		transitionImageLayout(srcImage, VK_IMAGE_LAYOUT_PRESENT_SRC_KHR, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, VkImageSubresourceRange{ VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1 }, cmd);
+
+		VkImageCopy imageCopyRegion{};
+		imageCopyRegion.srcSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+		imageCopyRegion.srcSubresource.layerCount = 1;
+		imageCopyRegion.dstSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+		imageCopyRegion.dstSubresource.layerCount = 1;
+		imageCopyRegion.extent.width = swapChainExtent.width;
+		imageCopyRegion.extent.height = swapChainExtent.height;
+		imageCopyRegion.extent.depth = 1;
+
+		vkCmdCopyImage(cmd, srcImage, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, dstImage, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &imageCopyRegion);
+
+		transitionImageLayout(dstImage, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_GENERAL, VkImageSubresourceRange{ VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1 }, cmd);
+		transitionImageLayout(srcImage, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, VK_IMAGE_LAYOUT_PRESENT_SRC_KHR, VkImageSubresourceRange{ VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1 }, cmd);
+		freeCommandBuffer(cmd);
+
+		VkImageSubresource subResource{ VK_IMAGE_ASPECT_COLOR_BIT, 0, 0 };
+		VkSubresourceLayout subResourceLayout;
+		vkGetImageSubresourceLayout(logicalDevice, dstImage, &subResource, &subResourceLayout);
+
+		const char* data;
+		vkMapMemory(logicalDevice, dstImageMemory, 0, VK_WHOLE_SIZE, 0, (void**)&data);
+		data += subResourceLayout.offset;
+		double xpos, ypos;
+		glfwGetCursorPos(pParentWindow, &xpos, &ypos);
+
+		bool found = false;
+		for (uint32_t y = 0; y < swapChainExtent.height; y++)
+		{
+			if (found) break;
+
+			unsigned int* row = (unsigned int*)data;
+			for (uint32_t x = 0; x < swapChainExtent.width; x++)
+			{
+				if ((int)xpos == x && (int)ypos == y)
+				{
+					unsigned char* i = (unsigned char*)row + 2;
+					unsigned char* ii = (unsigned char*)row + 1;
+					unsigned char* iii = (unsigned char*)row;
+
+					double r = i[0];
+					double g = ii[0];
+					double b = iii[0];
+
+					if ((int)i[0] > 0 && (int)ii[0] > 0 && (int)iii[0] > 0)
+					{
+						char buf[11];
+						char _buf[11];
+						std::snprintf(_buf, sizeof(_buf), "1%03d%03d%03d", (int)i[0], (int)ii[0], (int)iii[0]);
+						int id = atoi(_buf);
+						selectEntity(id);
+
+						found = true;
+						break;
+					}
 				}
 				row++;
 			}
 			data += subResourceLayout.rowPitch;
+		}
+
+		if (!found)
+		{
+			VulkanDrawable::opo.selected_entity = { 0, 0, 0 };
+			selectEntity(0);
 		}
 
 		vkUnmapMemory(logicalDevice, dstImageMemory);
@@ -290,7 +385,7 @@ namespace GrEngine_Vulkan
 		vkDestroyImage(logicalDevice, dstImage, nullptr);
 	}
 
-	bool VulkanAPI::updateDrawables(uint32_t index)
+	bool VulkanAPI::updateDrawables(uint32_t index, DrawMode mode)
 	{
 		VkCommandBufferBeginInfo beginInfo{};
 		beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
@@ -332,11 +427,11 @@ namespace GrEngine_Vulkan
 		{
 			if (object.second->GetEntityType() == "VulkanDrawable" && dynamic_cast<VulkanDrawable*>(object.second)->IsVisible())
 			{
-				dynamic_cast<VulkanDrawable*>(object.second)->recordCommandBuffer(logicalDevice, commandBuffers[index], swapChainExtent);
+				dynamic_cast<VulkanDrawable*>(object.second)->recordCommandBuffer(logicalDevice, commandBuffers[index], swapChainExtent, mode);
 			}
 		}
 
-		grid.recordCommandBuffer(logicalDevice, commandBuffers[index], swapChainExtent);
+		grid.recordCommandBuffer(logicalDevice, commandBuffers[index], swapChainExtent, mode);
 
 		vkCmdEndRenderPass(commandBuffers[index]);
 
@@ -1002,6 +1097,7 @@ namespace GrEngine_Vulkan
 				{ cur_mesh->mVertices[vert_ind].x, cur_mesh->mVertices[vert_ind].y, cur_mesh->mVertices[vert_ind].z, 1.0f },
 				{ 1.0f, 1.0f, 1.0f, 1.0f },
 				{ coord[vert_ind].x, 1.0f - coord[vert_ind].y },
+				target->getColorID(),
 				(uint32_t)uv_ind,
 				TRUE}};
 
@@ -1286,6 +1382,20 @@ namespace GrEngine_Vulkan
 			sourceStage = VK_PIPELINE_STAGE_TRANSFER_BIT;
 			destinationStage = VK_PIPELINE_STAGE_TRANSFER_BIT;
 		}
+		else if (oldLayout == VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL && newLayout == VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL) {
+			barrier.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
+			barrier.dstAccessMask = VK_ACCESS_TRANSFER_READ_BIT;
+
+			sourceStage = VK_PIPELINE_STAGE_TRANSFER_BIT;
+			destinationStage = VK_PIPELINE_STAGE_TRANSFER_BIT;
+		}
+		else if (oldLayout == VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL && newLayout == VK_IMAGE_LAYOUT_GENERAL) {
+			barrier.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
+			barrier.dstAccessMask = VK_ACCESS_MEMORY_READ_BIT;
+
+			sourceStage = VK_PIPELINE_STAGE_TRANSFER_BIT;
+			destinationStage = VK_PIPELINE_STAGE_TRANSFER_BIT;
+		}
 		else {
 			throw std::invalid_argument("unsupported layout transition!");
 		}
@@ -1330,6 +1440,40 @@ namespace GrEngine_Vulkan
 		freeCommandBuffer(commandBuffer);
 	}
 
+	void VulkanAPI::copyImageToBuffer(VkBuffer buffer, VkImage image, uint32_t width, uint32_t height, uint32_t channels, uint32_t length)
+	{
+		VkCommandBuffer commandBuffer;
+		allocateCommandBuffer(&commandBuffer);
+		beginCommandBuffer(commandBuffer, VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT);
+		std::vector<VkBufferImageCopy> regions;
+		uint32_t offset = 0;
+
+		for (int i = 0; i < length; i++)
+		{
+			VkBufferImageCopy region{};
+			region.bufferOffset = offset;
+
+			region.imageSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+			region.imageSubresource.mipLevel = 0;
+			region.imageSubresource.baseArrayLayer = i;
+			region.imageSubresource.layerCount = 1;
+
+			region.imageOffset = { 0, 0, 0 };
+			region.imageExtent = {
+				width,
+				height,
+				1
+			};
+
+			regions.push_back(region);
+			offset += width * height * channels;
+		}
+
+
+		vkCmdCopyImageToBuffer(commandBuffer,  image, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, buffer, regions.size(), regions.data());
+
+		freeCommandBuffer(commandBuffer);
+	}
 #pragma region Static functions
 
 	VkShaderModule VulkanAPI::m_createShaderModule(VkDevice device, const std::vector<char>& code)
@@ -1368,9 +1512,13 @@ namespace GrEngine_Vulkan
 		vmaCreateBuffer(allocator, &bufferCreateInfo, &vmaallocInfo, &shaderBuffer->Buffer, &shaderBuffer->Allocation, nullptr);
 		vkGetBufferMemoryRequirements(device, shaderBuffer->Buffer, &shaderBuffer->MemoryRequirements);
 
-		vmaMapMemory(allocator, shaderBuffer->Allocation, (void**)&shaderBuffer->pData);
-		memcpy(shaderBuffer->pData, bufData, dataSize);
-		//vmaUnmapMemory(allocator, shaderBuffer->Allocation);
+		if (bufData != nullptr)
+		{
+			vmaMapMemory(allocator, shaderBuffer->Allocation, (void**)&shaderBuffer->pData);
+			memcpy(shaderBuffer->pData, bufData, dataSize);
+			vmaUnmapMemory(allocator, shaderBuffer->Allocation);
+		}
+
 
 		shaderBuffer->BufferInfo.buffer = shaderBuffer->Buffer;
 		shaderBuffer->BufferInfo.offset = 0;
@@ -1391,11 +1539,11 @@ namespace GrEngine_Vulkan
 	{
 		if (shader->initialized != false)
 		{
-			//vkFlushMappedMemoryRanges(device, 1, &(shader->MappedMemoryRange));
 			vkDestroyBuffer(device, shader->Buffer, NULL);
-			vmaUnmapMemory(allocator, shader->Allocation);
+			//vmaUnmapMemory(allocator, shader->Allocation);
 			vmaFreeMemory(allocator, shader->Allocation);
 			vmaFlushAllocation(allocator, shader->Allocation, 0, shader->MappedMemoryRange.size);
+			//vkFlushMappedMemoryRanges(device, 1, &(shader->MappedMemoryRange));
 		}
 
 		shader->initialized = false;
@@ -1431,5 +1579,25 @@ namespace GrEngine_Vulkan
 		entities[ent->GetEntityInfo().EntityID] = ent;
 
 		return ent->GetEntityInfo();
+	}
+
+	GrEngine::Entity* VulkanAPI::selectEntity(UINT ID)
+	{
+		if (auto search = entities.find(ID); search != entities.end())
+		{
+			selected_entity = ID;
+			std::vector<std::any> para = { selected_entity };
+			EventListener::registerEvent(EventType::SelectionChanged, para);
+			VulkanDrawable::opo.selected_entity = { ID / 1000000 % 1000, ID / 1000 % 1000, ID % 1000 };
+			return entities.at(ID);
+		}
+
+		VulkanDrawable::opo.selected_entity = { 0, 0, 0 };
+		return nullptr;
+	}
+
+	void VulkanAPI::SetHighlightingMode(bool enabled)
+	{
+		VulkanDrawable::opo.highlight_enabled = enabled;
 	}
 }
