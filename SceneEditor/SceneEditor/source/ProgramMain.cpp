@@ -7,8 +7,7 @@ namespace SceneEditor
     void Inputs()
     {
         static glm::vec2 old_cursor_pos;
-        GrEngine::Renderer* render = app->getAppWindow()->getRenderer();
-        GLFWwindow* window = app->getAppWindow()->getWindow();
+        GrEngine::Renderer* render = app->GetRenderer();
         GrEngine::Camera* camera = render->getActiveViewport();
         POINT cur{ 1,1 };
         float cameraSpeed = 10;
@@ -17,16 +16,16 @@ namespace SceneEditor
         float senstivity = 0.75f;
 
         old_cursor_pos = glm::vec2{ 960, 540 };
-        if (app->getAppWindow()->IsKeyDown(GLFW_KEY_LEFT_SHIFT))
+        if (app->IsKeyDown(GLFW_KEY_LEFT_SHIFT))
             cameraSpeed = cameraSpeed * 4;
 
-        if (app->getAppWindow()->IsKeyDown(GLFW_KEY_W))
+        if (app->IsKeyDown(GLFW_KEY_W))
             direction.z -= 1;
-        if (app->getAppWindow()->IsKeyDown(GLFW_KEY_S))
+        if (app->IsKeyDown(GLFW_KEY_S))
             direction.z += 1;
-        if (app->getAppWindow()->IsKeyDown(GLFW_KEY_A))
+        if (app->IsKeyDown(GLFW_KEY_A))
             direction.x -= 1;
-        if (app->getAppWindow()->IsKeyDown(GLFW_KEY_D))
+        if (app->IsKeyDown(GLFW_KEY_D))
             direction.x += 1;
 
         GetCursorPos(&cur);
@@ -48,13 +47,13 @@ namespace SceneEditor
             SetCursorPos(960, 540);
         }
 
-        if (app->getAppWindow()->IsKeyDown(GLFW_KEY_UP))
+        if (app->IsKeyDown(GLFW_KEY_UP))
             orientation.y -= 1;
-        if (app->getAppWindow()->IsKeyDown(GLFW_KEY_DOWN))
+        if (app->IsKeyDown(GLFW_KEY_DOWN))
             orientation.y += 1;
-        if (app->getAppWindow()->IsKeyDown(GLFW_KEY_RIGHT))
+        if (app->IsKeyDown(GLFW_KEY_RIGHT))
             orientation.x += 1;
-        if (app->getAppWindow()->IsKeyDown(GLFW_KEY_LEFT))
+        if (app->IsKeyDown(GLFW_KEY_LEFT))
             orientation.x -= 1;
 
         camera->Rotate(orientation);
@@ -100,7 +99,7 @@ namespace SceneEditor
             {
                 if (std::any_cast<int>(para[3]) == GLFW_RELEASE)
                 {
-                    app->getAppWindow()->getRenderer()->SelectEntityAtCursor();
+                    app->GetRenderer()->SelectEntityAtCursor();
                 }
             });
 
@@ -126,7 +125,7 @@ namespace SceneEditor
 
         try
         {
-            app->getAppWindow()->AddInputProccess(Inputs);
+            app->AddInputCallback(Inputs);
             app->StartEngine();
             delete app;
 

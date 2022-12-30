@@ -19,7 +19,7 @@ namespace GrEngine
             BindContext(this);
             log_path = getExecutablePath() + std::string("grayengine.log");
 
-            getAppWindow()->getRenderer()->getActiveViewport()->LockAxes(0, 0, 89, -89, 0, 0);
+            GetRenderer()->getActiveViewport()->LockAxes(0, 0, 89, -89, 0, 0);
 
             getEditorUI()->InitUI(VIEWPORT_EDITOR);
             getEditorUI()->SetViewportHWND(getViewportHWND(), VIEWPORT_EDITOR);
@@ -67,11 +67,11 @@ namespace GrEngine
             BindContext(mdlBrowser);
             mdlBrowser->init(mdlBrowser);
             SetForegroundWindow(mdlBrowser->getEditorUI()->wpf_hwnd);
-            getAppWindow()->getRenderer()->SetHighlightingMode(false);
+            GetRenderer()->SetHighlightingMode(false);
             mdlBrowser->StartEngine();
             mdlBrowser->Stop();
             delete mdlBrowser;
-            getAppWindow()->getRenderer()->SetHighlightingMode(true);
+            GetRenderer()->SetHighlightingMode(true);
             EventListener::setEventsPermissions(true, true);
             BindContext(this);
             Logger::AllowMessages(MessageMode::Allow);
@@ -83,7 +83,7 @@ namespace GrEngine
         void toggle_free_mode()
         {
             free_mode = !free_mode;
-            getAppWindow()->AppShowCursor(!free_mode);
+            SetCursorState(!free_mode);
         }
 
         void App_UpdateEntity(EntityInfo info)
@@ -93,14 +93,14 @@ namespace GrEngine
 
         void getEntityInfo(int ID)
         {
-            EntityInfo info = getAppWindow()->getRenderer()->getEntityInfo(ID);
+            EntityInfo info = GetRenderer()->getEntityInfo(ID);
 
             getEditorUI()->SendEntityInfo(info.EntityID, Globals::StringToCharArray(info.EntityName), 
                 Globals::StringToCharArray(Globals::FloatToString(info.Position.x, 2) + ":" + Globals::FloatToString(info.Position.y, 2) + ":" + Globals::FloatToString(info.Position.z, 2)),
                 Globals::StringToCharArray(Globals::FloatToString(info.Orientation.x, 2) + ":" + Globals::FloatToString(info.Orientation.y, 2) + ":" + Globals::FloatToString(info.Orientation.z, 2)),
                 Globals::StringToCharArray(Globals::FloatToString(info.Scale.x, 2) + ":" + Globals::FloatToString(info.Scale.y, 2) + ":" + Globals::FloatToString(info.Scale.z, 2))
             );
-            getAppWindow()->getRenderer()->selectEntity(ID);
+            GetRenderer()->selectEntity(ID);
         }
 
         void pushToAppLogger(char* message)
@@ -120,7 +120,7 @@ namespace GrEngine
         {
             if (selected_property == "position")
             {
-                Entity* selection = getAppWindow()->getRenderer()->selectEntity(ID);
+                Entity* selection = SelectEntity(ID);
                 auto input = GrEngine::Globals::SeparateString(value, ':');
                 std::vector<float> coords;
 
@@ -140,7 +140,7 @@ namespace GrEngine
             }
             else if (selected_property == "orientation")
             {
-                Entity* selection = getAppWindow()->getRenderer()->selectEntity(ID);
+                Entity* selection = SelectEntity(ID);
                 auto input = GrEngine::Globals::SeparateString(value, ':');
                 std::vector<float> coords;
 
@@ -160,12 +160,12 @@ namespace GrEngine
             }
             else if (selected_property == "name")
             {
-                Entity* selection = getAppWindow()->getRenderer()->selectEntity(ID);
+                Entity* selection = SelectEntity(ID);
                 selection->UpdateNameTag(value);
             }
             else if (selected_property == "scale")
             {
-                Entity* selection = getAppWindow()->getRenderer()->selectEntity(ID);
+                Entity* selection = SelectEntity(ID);
                 auto input = GrEngine::Globals::SeparateString(value, ':');
                 std::vector<float> coords;
 
@@ -182,6 +182,12 @@ namespace GrEngine
                 }
 
                 selection->SetObjectScale(coords[0], coords[1], coords[2]);
+            }
+            else if (selected_property == "color")
+            {
+                DrawableObject* selection = dynamic_cast<DrawableObject*>(SelectEntity(ID));
+                auto input = GrEngine::Globals::SeparateString(value, ':');
+                selection->AssignColorMask((float)stoi(input[0]) / 255, (float)stoi(input[1]) / 255, (float)stoi(input[2]) / 255, (float)stoi(input[3]) / 255);
             }
         }
     };

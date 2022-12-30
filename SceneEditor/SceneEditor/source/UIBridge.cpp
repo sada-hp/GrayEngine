@@ -107,7 +107,7 @@ void SceneEditor::AssignTextures(const char* textures_path)
             continue;
         }
     }
-    GrEngine::Engine::GetContext()->AssignTextures(mat_vector, GrEngine::Engine::GetContext()->getAppWindow()->getRenderer()->GetSelectedEntity());
+    GrEngine::Engine::GetContext()->AssignTextures(mat_vector, GrEngine::Engine::GetContext()->GetRenderer()->GetSelectedEntity());
 }
 
 void SceneEditor::CloseContext()
@@ -174,6 +174,6 @@ void SceneEditor::CreateModelFile(const char* mesh_path, const char* textures)
 
 void  SceneEditor::SaveScreenshot(const char* filepath)
 {
-    GrEngine::Engine::GetContext()->getAppWindow()->getRenderer()->SaveScreenshot(filepath);
+    GrEngine::Engine::GetContext()->GetRenderer()->SaveScreenshot(filepath);
     Logger::Out("Screenshot saved at %s", OutputColor::Green, OutputType::Log, filepath);
 }

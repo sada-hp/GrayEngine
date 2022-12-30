@@ -13,15 +13,15 @@ namespace GrEngine_Vulkan
 		colorID = { id / 1000000 % 1000, id / 1000 % 1000, id % 1000};
 
 		object_mesh.vertices = {
-			{{{ 0.25, 0.25, 0.25, 1.0f },{ 0.25f,0.9f, 0.25f, 1.f },{ 1.f, 1.0f }, colorID}},
-			{{{ -0.25, 0.25, -0.25, 1.0f },{ 0.25f, 0.9f, 0.25f, 1.f },{ 0.f, 0.0f }, colorID}},
-			{{{ -0.25, 0.25 , 0.25, 1.0f },{0.25f, 0.9f, 0.25f, 1.f},{ 0.f, 1.f }, colorID}},
-			{{{ 0.25, 0.25, -0.25, 1.0f },{ 0.25f, 0.9f, 0.25f, 1.f },{ 1.f, 0.0f }, colorID}},
+			{{{ 0.25, 0.25, 0.25, 1.0f },{ 1.f, 1.0f }, colorID}},
+			{{{ -0.25, 0.25, -0.25, 1.0f },{ 0.f, 0.0f }, colorID}},
+			{{{ -0.25, 0.25 , 0.25, 1.0f },{ 0.f, 1.f }, colorID}},
+			{{{ 0.25, 0.25, -0.25, 1.0f },{ 1.f, 0.0f }, colorID}},
 
-			{{{ 0.25, -0.25, 0.25, 1.0f },{ 0.25f, 0.9f, 0.25f, 1.f },{ 1.f, 1.0f }, colorID}},
-			{{{ -0.25, -0.25, -0.25, 1.0f },{ 0.25f, 0.9f, 0.25f, 1.f },{ 0.f, 0.0f }, colorID}},
-			{{{ -0.25, -0.25 , 0.25, 1.0f },{0.25f, 0.9f, 0.25f, 1.f},{ 0.f, 1.f }, colorID}},
-			{{{ 0.25, -0.25, -0.25, 1.0f },{ 0.25f, 0.9f, 0.25f, 1.f },{ 1.f, 0.0f }, colorID}}
+			{{{ 0.25, -0.25, 0.25, 1.0f },{ 1.f, 1.0f }, colorID}},
+			{{{ -0.25, -0.25, -0.25, 1.0f },{ 0.f, 0.0f }, colorID}},
+			{{{ -0.25, -0.25 , 0.25, 1.0f },{ 0.f, 1.f }, colorID}},
+			{{{ 0.25, -0.25, -0.25, 1.0f },{ 1.f, 0.0f }, colorID}}
 		};
 
 		object_mesh.indices = { 0, 1, 2, 0, 3, 1,
@@ -31,6 +31,8 @@ namespace GrEngine_Vulkan
 			1, 3, 7, 1, 5, 7,
 			1, 2, 6, 1, 5, 6,
 		};
+
+		AssignColorMask({ 0.15, 0.85, 0.25, 1.f });
 
 		if (object_mesh.vertices.size() > 0)
 		{
@@ -147,6 +149,7 @@ namespace GrEngine_Vulkan
 		vkCmdPushConstants(cmd, pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(UniformBufferObject), &ubo);
 
 		opo.draw_mode = mode;
+		opo.color_mask = GetColorMask();
 		vkCmdPushConstants(cmd, pipelineLayout, VK_SHADER_STAGE_FRAGMENT_BIT, sizeof(UniformBufferObject), sizeof(PickingBufferObject), &opo);
 		return true;
 	}
@@ -213,11 +216,10 @@ namespace GrEngine_Vulkan
 		VkPipelineMultisampleStateCreateInfo multisampling{};
 		multisampling.sType = VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO;
 		multisampling.sampleShadingEnable = VK_FALSE;
-		multisampling.rasterizationSamples = VK_SAMPLE_COUNT_1_BIT;
-		multisampling.minSampleShading = 1.0f; // Optional
-		multisampling.pSampleMask = nullptr; // Optional
-		multisampling.alphaToCoverageEnable = VK_FALSE; // Optional
-		multisampling.alphaToOneEnable = VK_FALSE; // Optional
+		multisampling.rasterizationSamples = dynamic_cast<VulkanAPI*>(p_Owner)->GetSampling();
+		multisampling.minSampleShading = 1.0f;
+		multisampling.sampleShadingEnable = VK_TRUE;
+		multisampling.minSampleShading = .35f;
 
 		VkPipelineColorBlendAttachmentState colorBlendAttachment{};
 		colorBlendAttachment.colorWriteMask = VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT;

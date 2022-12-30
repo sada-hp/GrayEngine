@@ -212,6 +212,11 @@ namespace EditorUI
             UpdateEntityProperty(((PropertyControl)sender).ID, Marshal.StringToHGlobalAnsi("scale"), Marshal.StringToHGlobalAnsi(((PropertyControl)sender).Contents));
         }
 
+        private void UpdateObjectColor(object sender)
+        {
+            UpdateEntityProperty(((PropertyControl)sender).ID, Marshal.StringToHGlobalAnsi("color"), Marshal.StringToHGlobalAnsi(((PropertyControl)sender).Contents));
+        }
+
         internal void RetrieveEntityInfo(int ID, string name, string pos, string orient, string scale)
         {
             try
@@ -227,22 +232,29 @@ namespace EditorUI
                 properties.Add("Position", pos);
                 properties.Add("Orientation", orient);
                 properties.Add("Scale", scale);
+                properties.Add("Color", "0 0 0 0");
+
                 types.Add("EntityName", typeof(LabelControl));
                 types.Add("EntityID", typeof(TextControl));
                 types.Add("Drawable", typeof(TextControl));
                 types.Add("Position", typeof(_3VectorControl));
                 types.Add("Orientation", typeof(_3VectorControl));
                 types.Add("Scale", typeof(_3VectorControl));
+                types.Add("Color", typeof(ColorControl));
+
                 events.Add("EntityName", "TextBoxTextChanged");
                 events.Add("Drawable", "MouseDoubleClick");
                 events.Add("Position", "VectorPropertyChanged");
                 events.Add("Orientation", "VectorPropertyChanged");
                 events.Add("Scale", "VectorPropertyChanged");
+                events.Add("Color", "ColorPropertyChanged");
+
                 handlers.Add("EntityName", "UpdateObjectName");
                 handlers.Add("Drawable", "LoadModelBrowser");
                 handlers.Add("Position", "UpdateObjectPosition");
                 handlers.Add("Orientation", "UpdateObjectOrientation");
                 handlers.Add("Scale", "UpdateObjectScale");
+                handlers.Add("Color", "UpdateObjectColor");
 
                 UpdateProperties(properties, types, events, handlers);
             }

@@ -25,8 +25,8 @@ namespace GrEngine
         {
             initModelBrowser();
             dummy_entity = AddEntity();
-            getAppWindow()->getRenderer()->selectEntity(dummy_entity.EntityID);
-            getAppWindow()->AddInputProccess(Inputs);
+            SelectEntity(dummy_entity.EntityID);
+            AddInputCallback(Inputs);
 
             EventListener::pushEvent("RequireMaterialsUpdate", [](std::vector<std::any> para)
                 {
@@ -46,7 +46,7 @@ namespace GrEngine
         static void Inputs()
         {
             static float rotation = 0;
-            Renderer* render = GetContext()->getAppWindow()->getRenderer();
+            Renderer* render = GetContext()->GetRenderer();
             DrawableObject* drawable = (DrawableObject*)render->GetSelectedEntity();
             Camera* camera = render->getActiveViewport();
 

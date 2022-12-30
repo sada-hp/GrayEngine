@@ -58,6 +58,7 @@ namespace GrEngine_Vulkan
 			if (isDeviceSuitable(device)) {
 				physicalDevice = device;
 				vkGetPhysicalDeviceProperties(physicalDevice, &deviceProps);
+				msaaSamples = getMaxUsableSampleCount();
 				break;
 			}
 		}
@@ -82,7 +83,7 @@ namespace GrEngine_Vulkan
 			if ((res = createImageViews(swapChainImageFormat, VK_IMAGE_VIEW_TYPE_2D, swapChainImages[i], &swapChainImageViews[i]) & res) == false)
 				Logger::Out("[Vk] Failed to create image views", OutputColor::Red, OutputType::Error);
 		}
-		
+	
 		if ((res = createRenderPass() & res) == false)
 			Logger::Out("[Vk] Failed to create render pass", OutputColor::Red, OutputType::Error);
 
@@ -338,43 +339,22 @@ namespace GrEngine_Vulkan
 		data += subResourceLayout.offset;
 		double xpos, ypos;
 		glfwGetCursorPos(pParentWindow, &xpos, &ypos);
+		data += subResourceLayout.rowPitch * (int)ypos;
+		unsigned int* row = (unsigned int*)data + (int)xpos;
 
-		bool found = false;
-		for (uint32_t y = 0; y < swapChainExtent.height; y++)
+		double r = ((unsigned char*)row + 2)[0];
+		double g = ((unsigned char*)row + 1)[0];
+		double b = ((unsigned char*)row)[0];
+
+		if ((int)r > 0 && (int)g > 0 && (int)b > 0)
 		{
-			if (found) break;
-
-			unsigned int* row = (unsigned int*)data;
-			for (uint32_t x = 0; x < swapChainExtent.width; x++)
-			{
-				if ((int)xpos == x && (int)ypos == y)
-				{
-					unsigned char* i = (unsigned char*)row + 2;
-					unsigned char* ii = (unsigned char*)row + 1;
-					unsigned char* iii = (unsigned char*)row;
-
-					double r = i[0];
-					double g = ii[0];
-					double b = iii[0];
-
-					if ((int)i[0] > 0 && (int)ii[0] > 0 && (int)iii[0] > 0)
-					{
-						char buf[11];
-						char _buf[11];
-						std::snprintf(_buf, sizeof(_buf), "1%03d%03d%03d", (int)i[0], (int)ii[0], (int)iii[0]);
-						int id = atoi(_buf);
-						selectEntity(id);
-
-						found = true;
-						break;
-					}
-				}
-				row++;
-			}
-			data += subResourceLayout.rowPitch;
+			char buf[11];
+			char _buf[11];
+			std::snprintf(_buf, sizeof(_buf), "1%03d%03d%03d", (int)r, (int)g, (int)b);
+			int id = atoi(_buf);
+			selectEntity(id);
 		}
-
-		if (!found)
+		else
 		{
 			VulkanDrawable::opo.selected_entity = { 0, 0, 0 };
 			selectEntity(0);
@@ -456,6 +436,7 @@ namespace GrEngine_Vulkan
 		}
 
 		VkPhysicalDeviceFeatures deviceFeatures{};
+		deviceFeatures.sampleRateShading = VK_TRUE;
 
 		VkDeviceCreateInfo createInfo{};
 		createInfo.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
@@ -638,7 +619,8 @@ namespace GrEngine_Vulkan
 		return details;
 	}
 
-	VkPresentModeKHR VulkanAPI::chooseSwapPresentMode(const std::vector<VkPresentModeKHR>& availablePresentModes) {
+	VkPresentModeKHR VulkanAPI::chooseSwapPresentMode(const std::vector<VkPresentModeKHR>& availablePresentModes) 
+	{
 		for (const auto& availablePresentMode : availablePresentModes) {
 			if (availablePresentMode == VK_PRESENT_MODE_MAILBOX_KHR) {
 				return availablePresentMode;
@@ -678,6 +660,22 @@ namespace GrEngine_Vulkan
 		}
 
 		return availableFormats[0];
+	}
+
+	VkSampleCountFlagBits VulkanAPI::getMaxUsableSampleCount()
+	{
+		VkPhysicalDeviceProperties physicalDeviceProperties;
+		vkGetPhysicalDeviceProperties(physicalDevice, &physicalDeviceProperties);
+
+		VkSampleCountFlags counts = physicalDeviceProperties.limits.framebufferColorSampleCounts & physicalDeviceProperties.limits.framebufferDepthSampleCounts;
+		if (counts & VK_SAMPLE_COUNT_64_BIT) { return VK_SAMPLE_COUNT_64_BIT; }
+		if (counts & VK_SAMPLE_COUNT_32_BIT) { return VK_SAMPLE_COUNT_32_BIT; }
+		if (counts & VK_SAMPLE_COUNT_16_BIT) { return VK_SAMPLE_COUNT_16_BIT; }
+		if (counts & VK_SAMPLE_COUNT_8_BIT) { return VK_SAMPLE_COUNT_8_BIT; }
+		if (counts & VK_SAMPLE_COUNT_4_BIT) { return VK_SAMPLE_COUNT_4_BIT; }
+		if (counts & VK_SAMPLE_COUNT_2_BIT) { return VK_SAMPLE_COUNT_2_BIT; }
+
+		return VK_SAMPLE_COUNT_1_BIT;
 	}
 
 	bool VulkanAPI::createSwapChain()
@@ -732,7 +730,45 @@ namespace GrEngine_Vulkan
 		swapChainImageFormat = surfaceFormat.format;
 		swapChainExtent = extent;
 
-		VkExtent3D depthImageExtent = { extent.width, extent.height, 1 };
+
+
+		VkImageCreateInfo samplingImageInfo{};
+		samplingImageInfo.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
+		samplingImageInfo.imageType = VK_IMAGE_TYPE_2D;
+		samplingImageInfo.mipLevels = 1;
+		samplingImageInfo.extent = { extent.width, extent.height, 1 };
+		samplingImageInfo.tiling = VK_IMAGE_TILING_OPTIMAL;
+		samplingImageInfo.usage = VK_IMAGE_USAGE_TRANSIENT_ATTACHMENT_BIT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
+		samplingImageInfo.format = swapChainImageFormat;
+		samplingImageInfo.samples = msaaSamples;
+		samplingImageInfo.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+		samplingImageInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+		samplingImageInfo.arrayLayers = 1;
+		vkCreateImage(logicalDevice, &samplingImageInfo, nullptr, &samplingImage.allocatedImage);
+
+		VkMemoryRequirements memRequirements;
+		VkMemoryAllocateInfo memAllocInfo{};
+		vkGetImageMemoryRequirements(logicalDevice, samplingImage.allocatedImage, &memRequirements);
+		memAllocInfo.allocationSize = memRequirements.size;
+		VmaAllocationCreateInfo allocInfo = {};
+		allocInfo.usage = VMA_MEMORY_USAGE_GPU_ONLY;
+		vmaFindMemoryTypeIndex(memAllocator, memRequirements.memoryTypeBits, &allocInfo, &memAllocInfo.memoryTypeIndex);
+		vkAllocateMemory(logicalDevice, &memAllocInfo, nullptr, &colorImageMemory);
+		vkBindImageMemory(logicalDevice, samplingImage.allocatedImage, colorImageMemory, 0);
+
+		VkImageViewCreateInfo samplingViewInfo{};
+		samplingViewInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
+		samplingViewInfo.image = samplingImage.allocatedImage;
+		samplingViewInfo.viewType = VK_IMAGE_VIEW_TYPE_2D;
+		samplingViewInfo.format = swapChainImageFormat;
+		samplingViewInfo.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+		samplingViewInfo.subresourceRange.baseMipLevel = 0;
+		samplingViewInfo.subresourceRange.levelCount = 1;
+		samplingViewInfo.subresourceRange.baseArrayLayer = 0;
+		samplingViewInfo.subresourceRange.layerCount = 1;
+		vkCreateImageView(logicalDevice, &samplingViewInfo, nullptr, &colorImageView);
+
+
 
 		depthFormat = VK_FORMAT_D32_SFLOAT;
 
@@ -740,11 +776,11 @@ namespace GrEngine_Vulkan
 		depthImageCreateInfo.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
 		depthImageCreateInfo.pNext = nullptr;
 		depthImageCreateInfo.imageType = VK_IMAGE_TYPE_2D;
-		depthImageCreateInfo.format = depthFormat;
-		depthImageCreateInfo.extent = depthImageExtent;
+		depthImageCreateInfo.format = VK_FORMAT_D32_SFLOAT;
+		depthImageCreateInfo.extent = { extent.width, extent.height, 1 };
 		depthImageCreateInfo.mipLevels = 1;
 		depthImageCreateInfo.arrayLayers = 1;
-		depthImageCreateInfo.samples = VK_SAMPLE_COUNT_1_BIT;
+		depthImageCreateInfo.samples = msaaSamples;
 		depthImageCreateInfo.tiling = VK_IMAGE_TILING_OPTIMAL;
 		depthImageCreateInfo.usage = VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT;
 
@@ -763,7 +799,7 @@ namespace GrEngine_Vulkan
 		depthImageViewCreateInfo.pNext = nullptr;
 		depthImageViewCreateInfo.viewType = VK_IMAGE_VIEW_TYPE_2D;
 		depthImageViewCreateInfo.image = depthImage.allocatedImage;
-		depthImageViewCreateInfo.format = depthFormat;
+		depthImageViewCreateInfo.format = VK_FORMAT_D32_SFLOAT;
 		depthImageViewCreateInfo.subresourceRange.baseMipLevel = 0;
 		depthImageViewCreateInfo.subresourceRange.levelCount = 1;
 		depthImageViewCreateInfo.subresourceRange.baseArrayLayer = 0;
@@ -797,48 +833,60 @@ namespace GrEngine_Vulkan
 
 	bool VulkanAPI::createRenderPass()
 	{
+		VkAttachmentDescription colorAttachment{};
+		colorAttachment.format = swapChainImageFormat;
+		colorAttachment.samples = msaaSamples;
+		colorAttachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
+		colorAttachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
+		colorAttachment.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+		colorAttachment.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+		colorAttachment.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+		colorAttachment.finalLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+		VkAttachmentReference colorAttachmentRef{};
+		colorAttachmentRef.attachment = 0;
+		colorAttachmentRef.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+
 		VkAttachmentDescription depth_attachment{};
 		depth_attachment.flags = 0;
 		depth_attachment.format = depthFormat;
-		depth_attachment.samples = VK_SAMPLE_COUNT_1_BIT;
+		depth_attachment.samples = msaaSamples;
 		depth_attachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
 		depth_attachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
 		depth_attachment.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
 		depth_attachment.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
 		depth_attachment.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
 		depth_attachment.finalLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
-
 		VkAttachmentReference depth_attachment_ref{};
 		depth_attachment_ref.attachment = 1;
 		depth_attachment_ref.layout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
 
-		VkAttachmentDescription colorAttachment{};
-		colorAttachment.format = swapChainImageFormat;
-		colorAttachment.samples = VK_SAMPLE_COUNT_1_BIT;
-		colorAttachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
-		colorAttachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
-		colorAttachment.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
-		colorAttachment.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
-		colorAttachment.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-		colorAttachment.finalLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
-
-		VkAttachmentReference colorAttachmentRef{};
-		colorAttachmentRef.attachment = 0;
-		colorAttachmentRef.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+		VkAttachmentDescription colorAttachmentResolve{};
+		colorAttachmentResolve.format = swapChainImageFormat;
+		colorAttachmentResolve.samples = VK_SAMPLE_COUNT_1_BIT;
+		colorAttachmentResolve.loadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+		colorAttachmentResolve.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
+		colorAttachmentResolve.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+		colorAttachmentResolve.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+		colorAttachmentResolve.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+		colorAttachmentResolve.finalLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
+		VkAttachmentReference colorAttachmentResolveRef{};
+		colorAttachmentResolveRef.attachment = 2;
+		colorAttachmentResolveRef.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
 
 		VkSubpassDescription subpass{};
 		subpass.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
 		subpass.colorAttachmentCount = 1;
 		subpass.pColorAttachments = &colorAttachmentRef;
 		subpass.pDepthStencilAttachment = &depth_attachment_ref;
+		subpass.pResolveAttachments = &colorAttachmentResolveRef;
 
-		VkSubpassDependency dependency{};
-		dependency.srcSubpass = VK_SUBPASS_EXTERNAL;
-		dependency.dstSubpass = 0;
-		dependency.srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
-		dependency.srcAccessMask = 0;
-		dependency.dstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
-		dependency.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+        VkSubpassDependency dependency{};
+        dependency.srcSubpass = VK_SUBPASS_EXTERNAL;
+        dependency.dstSubpass = 0;
+        dependency.srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT | VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT;
+        dependency.srcAccessMask = 0;
+        dependency.dstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT | VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT;
+        dependency.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
 
 		VkSubpassDependency depth_dependency = {};
 		depth_dependency.srcSubpass = VK_SUBPASS_EXTERNAL;
@@ -848,12 +896,12 @@ namespace GrEngine_Vulkan
 		depth_dependency.dstStageMask = VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT | VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT;
 		depth_dependency.dstAccessMask = VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
 
-		VkAttachmentDescription attachments[] = { colorAttachment, depth_attachment };
+		VkAttachmentDescription attachments[] = { colorAttachment, depth_attachment, colorAttachmentResolve };
 		VkSubpassDependency dependecies[] = { dependency, depth_dependency };
 
 		VkRenderPassCreateInfo renderPassInfo{};
 		renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
-		renderPassInfo.attachmentCount = 2;
+		renderPassInfo.attachmentCount = 3;
 		renderPassInfo.pAttachments = attachments;
 		renderPassInfo.subpassCount = 1;
 		renderPassInfo.pSubpasses = &subpass;
@@ -872,13 +920,13 @@ namespace GrEngine_Vulkan
 
 		for (std::size_t i = 0; i < swapChainImageViews.size(); i++) {
 			VkImageView attachments[] = {
-				swapChainImageViews[i], depthImageView
+				colorImageView, depthImageView, swapChainImageViews[i]
 			};
 
 			VkFramebufferCreateInfo framebufferInfo{};
 			framebufferInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
 			framebufferInfo.renderPass = renderPass;
-			framebufferInfo.attachmentCount = 2;
+			framebufferInfo.attachmentCount = 3;
 			framebufferInfo.pAttachments = attachments;
 			framebufferInfo.width = swapChainExtent.width;
 			framebufferInfo.height = swapChainExtent.height;
@@ -972,7 +1020,13 @@ namespace GrEngine_Vulkan
 			vkDestroyImageView(logicalDevice, swapChainImageViews[i], nullptr);
 		}
 
-		/*Fixes a crash when glfw window is minimized*/
+		if (colorImageView != nullptr)
+		{
+			vkDestroyImageView(logicalDevice, colorImageView, nullptr);
+			vmaDestroyImage(memAllocator, samplingImage.allocatedImage, samplingImage.allocation);
+			vkFreeMemory(logicalDevice, colorImageMemory, nullptr);
+		}
+
 		if (depthImageView != nullptr)
 		{
 			vkDestroyImageView(logicalDevice, depthImageView, nullptr);
@@ -1009,12 +1063,11 @@ namespace GrEngine_Vulkan
 		Initialized = false;
 		auto start = std::chrono::steady_clock::now();
 		VulkanDrawable* ref_obj;
-		if (entities.size() > 0)
+		if (entities.size() > 0 && selected_entity != 0)
 		{
 			ref_obj = dynamic_cast<VulkanDrawable*>(entities[selected_entity]);
 			ref_obj->object_mesh.indices = {};
 			ref_obj->object_mesh.vertices = {};
-			ref_obj->object_mesh.mesh_path = "";
 		}
 		else
 		{
@@ -1032,9 +1085,9 @@ namespace GrEngine_Vulkan
 				inst->loadTexture(textures_vector, ref_obj, VK_IMAGE_VIEW_TYPE_2D_ARRAY, VK_IMAGE_TYPE_2D);
 			});
 
-		processes_map[processes_map.size()] = std::async(std::launch::async, [mesh_path, ref_obj, out_materials_collection, inst]()
+		processes_map[processes_map.size()] = std::async(std::launch::async, [mesh_path, textures_vector, ref_obj, out_materials_collection, inst]()
 			{
-				inst->loadMesh(mesh_path, ref_obj, out_materials_collection);
+				inst->loadMesh(mesh_path, ref_obj, textures_vector.size() != 0, out_materials_collection);
 			});
 
 		for (int ind = 0; ind < processes_map.size(); ind++)
@@ -1066,7 +1119,7 @@ namespace GrEngine_Vulkan
 		return true;
 	}
 
-	bool VulkanAPI::loadMesh(const char* mesh_path, VulkanDrawable* target, std::vector<std::string>* out_materials)
+	bool VulkanAPI::loadMesh(const char* mesh_path, VulkanDrawable* target, bool useTexturing, std::vector<std::string>* out_materials)
 	{
 		std::unordered_map<Vertex, uint32_t> uniqueVertices{};
 		Assimp::Importer importer;
@@ -1076,7 +1129,14 @@ namespace GrEngine_Vulkan
 		if (model == NULL)
 		{
 			Logger::Out("Could not load the mesh %c%s%c!", OutputColor::Red, OutputType::Error, '"', mesh_path, '"');
+			target->object_mesh.mesh_path = "";
 			return false;
+		}
+		else
+		{
+			if (target->object_mesh.mesh_path == "")
+				target->AssignColorMask({ 1, 1, 1, 1 });
+			target->object_mesh.mesh_path = mesh_path;
 		}
 
 		float highest_pointx = 0.f;
@@ -1095,11 +1155,10 @@ namespace GrEngine_Vulkan
 
 				GrEngine_Vulkan::Vertex vertex{{
 				{ cur_mesh->mVertices[vert_ind].x, cur_mesh->mVertices[vert_ind].y, cur_mesh->mVertices[vert_ind].z, 1.0f },
-				{ 1.0f, 1.0f, 1.0f, 1.0f },
 				{ coord[vert_ind].x, 1.0f - coord[vert_ind].y },
 				target->getColorID(),
 				(uint32_t)uv_ind,
-				TRUE}};
+				useTexturing}};
 
 
 				if (uniqueVertices.count(vertex) == 0) 
@@ -1127,7 +1186,6 @@ namespace GrEngine_Vulkan
 			}
 		}
 		target->SetObjectBounds(glm::vec3{highest_pointx, highest_pointy, highest_pointz});
-		target->object_mesh.mesh_path = mesh_path;
 
 		return true;
 	}
@@ -1141,7 +1199,10 @@ namespace GrEngine_Vulkan
 
 	bool VulkanAPI::loadTexture(std::vector<std::string> texture_path, VulkanDrawable* target, VkImageViewType type_view, VkImageType type_img)
 	{
-		if (texture_path.size() == 0) return false;
+		if (texture_path.size() == 0)
+		{
+			return false;
+		}
 		
 		ShaderBuffer stagingBuffer;
 		Texture new_texture;

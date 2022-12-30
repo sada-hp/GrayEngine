@@ -19,10 +19,9 @@ namespace GrEngine
 		uint32_t uses_texture;
 		glm::uvec3 inID;
 
-		Vertex(glm::vec4 position, glm::vec4 vertexcolor, glm::vec2 uv_coordinates, glm::uvec3 color_attach = {0, 0, 0}, uint32_t material_index = 0, BOOL use_texture = 0)
+		Vertex(glm::vec4 position, glm::vec2 uv_coordinates, glm::uvec3 color_attach = {0, 0, 0}, uint32_t material_index = 0, BOOL use_texture = 0)
 		{
 			pos = position;
-			color = vertexcolor;
 			uv = uv_coordinates;
 			uv_index = material_index;
 			uses_texture = use_texture;
@@ -37,7 +36,7 @@ namespace GrEngine
 
 	struct Mesh
 	{
-		const char* mesh_path;
+		const char* mesh_path = "";
 	};
 
 	class DllExport DrawableObject : public Entity
@@ -66,11 +65,27 @@ namespace GrEngine
 		{
 			visibility = value;
 		}
+
+		void AssignColorMask(glm::vec4 mask)
+		{
+			color_mask = mask;
+		}
+
+		void AssignColorMask(float r, float g, float b, float a)
+		{
+			color_mask = { r, g, b, a };
+		}
+
+		glm::vec4 GetColorMask()
+		{
+			return color_mask;
+		}
 	protected:
 		glm::uvec3 colorID = { 0, 0, 0 };
 
 	private:
 		glm::vec3 bound = { 0.f, 0.f, 0.f };
 		bool visibility = true;
+		glm::vec4 color_mask;
 	};
 }

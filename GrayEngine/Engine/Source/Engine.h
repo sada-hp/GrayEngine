@@ -12,7 +12,6 @@ namespace GrEngine
 		virtual ~Engine();
 		static bool PokeIt();
 		std::string getExecutablePath();
-		inline AppWindow* getAppWindow() { return pWindow.get(); };
 		EntityInfo AddEntity();
 		void LoadSkybox(const char* East, const char* West, const char* Top, const char* Bottom, const char* North, const char* South);
 		bool LoadObject(const char* mesh_path, std::vector<std::string> textures_vector, std::unordered_map<std::string, std::string>* out_materials = nullptr);
@@ -22,6 +21,11 @@ namespace GrEngine
 		void Stop();
 		void Pause();
 		void Unpause();
+		Renderer* GetRenderer() { return pWindow->getRenderer(); };
+		Entity* SelectEntity(UINT32 ID) { return GetRenderer()->selectEntity(ID); };
+		void SetCursorState(bool show) { pWindow->AppShowCursor(show); };
+		void AddInputCallback(InputCallbackFun callback) { pWindow->AddInputProccess(callback); };
+		bool IsKeyDown(int key) { return pWindow->IsKeyDown(key); }
 
 		static void BindContext(Engine* new_context) { context = new_context; };
 		static Engine* GetContext() { return context; };

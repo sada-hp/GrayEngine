@@ -49,6 +49,10 @@ public:
 	EditorUI()
 	{
 		dotNetGUILibrary = LoadLibraryA("EditorUI.dll");
+		if (dotNetGUILibrary == nullptr)
+		{
+			Logger::Out("Failed to load UI", OutputColor::Red, OutputType::Error);
+		}
 		CreateUserInterface = (CreateUserInterfaceFunc)GetProcAddress(dotNetGUILibrary, "CreateUserInterface");
 		DisplayUserInterface = (DisplayUserInterfaceFunc)GetProcAddress(dotNetGUILibrary, "DisplayUserInterface");
 		DestroyUserInterface = (DestroyUserInterfaceFunc)GetProcAddress(dotNetGUILibrary, "DestroyUserInterface");
@@ -69,8 +73,8 @@ public:
 
 	bool InitUI(UINT viewport_index)
 	{
+		//CoInitializeEx(NULL, COINIT_APARTMENTTHREADED);
 		wpf_hwnd = CreateUserInterface(viewport_index);
-		CoInitializeEx(NULL, COINIT_APARTMENTTHREADED);
 		if (wpf_hwnd != nullptr)
 		{
 			DisplayUserInterface(viewport_index);

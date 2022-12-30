@@ -71,7 +71,7 @@ namespace GrEngine_Vulkan
 		void SetHighlightingMode(bool enabled) override;
 
 		void Update() override;
-
+		VkSampleCountFlagBits GetSampling() { return msaaSamples; };
 	protected:
 		bool allocateCommandBuffer(VkCommandBuffer* cmd, uint32_t count = 0);
 		bool beginCommandBuffer(VkCommandBuffer cmd, VkCommandBufferUsageFlags usage);
@@ -112,7 +112,7 @@ namespace GrEngine_Vulkan
 		std::vector<VulkanDrawable> drawables;
 		uint32_t currentImageIndex = 0;
 
-		bool loadMesh(const char* mesh_path, VulkanDrawable* target, std::vector<std::string>* out_materials = nullptr);
+		bool loadMesh(const char* mesh_path, VulkanDrawable* target, bool useTexturing, std::vector<std::string>* out_materials = nullptr);
 		bool loadTexture(std::vector<std::string> texture_path, VulkanDrawable* target, VkImageViewType type_view = VK_IMAGE_VIEW_TYPE_2D, VkImageType type_img = VK_IMAGE_TYPE_2D);
 
 		bool createVKInstance();
@@ -126,6 +126,7 @@ namespace GrEngine_Vulkan
 		VkPresentModeKHR chooseSwapPresentMode(const std::vector<VkPresentModeKHR>& availablePresentModes);
 		VkExtent2D chooseSwapExtent(const VkSurfaceCapabilitiesKHR& capabilities);
 		VkSurfaceFormatKHR chooseSwapSurfaceFormat(const std::vector<VkSurfaceFormatKHR>& availableFormats);
+		VkSampleCountFlagBits getMaxUsableSampleCount();
 
 		bool createSwapChain();
 		bool createImageViews(VkFormat format, VkImageViewType type, VkImage image, VkImageView* target, int array_layers = 1, int base_layer = 0);
@@ -146,9 +147,10 @@ namespace GrEngine_Vulkan
 		AllocatedImage depthImage;
 		VkFormat depthFormat;
 
-
-
-
+		VkSampleCountFlagBits msaaSamples = VK_SAMPLE_COUNT_1_BIT;
+		VkDeviceMemory colorImageMemory;
+		VkImageView colorImageView;
+		AllocatedImage samplingImage;
 
 
 #ifdef _DEBUG
