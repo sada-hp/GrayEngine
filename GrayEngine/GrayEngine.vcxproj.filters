@@ -12,38 +12,41 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="Engine\Source\Engine.h" />
-    <ClInclude Include="Engine\Source\Headers\GrayEngine.h" />
-    <ClInclude Include="Engine\Source\Headers\Logger.h" />
-    <ClInclude Include="Engine\Source\Headers\AppWindow.h" />
-    <ClInclude Include="Engine\Source\GL_App.h" />
+    <ClInclude Include="Engine\Headers\Engine.h" />
+    <ClInclude Include="GrayEngine.h" />
+    <ClInclude Include="Engine\Headers\Core\Logger.h" />
+    <ClInclude Include="Engine\Headers\Virtual\AppWindow.h" />
+    <ClInclude Include="Engine\Headers\GL_App.h" />
     <ClInclude Include="pch.h" />
-    <ClInclude Include="Engine\Source\Headers\EventListener.h" />
-    <ClInclude Include="Engine\Source\Vulkan\VulkanDrawable.h" />
-    <ClInclude Include="Engine\Source\Vulkan\VulkanAPI.h" />
-    <ClInclude Include="Engine\Source\Headers\Renderer.h" />
-    <ClInclude Include="Engine\Source\Headers\Core.h" />
-    <ClInclude Include="Engine\Entities\DrawableObject.h" />
-    <ClInclude Include="Engine\Entities\Camera.h" />
-    <ClInclude Include="Engine\Source\Headers\Entity.h" />
-    <ClInclude Include="Engine\Source\Globals.h" />
+    <ClInclude Include="Engine\Headers\Core\EventListener.h" />
+    <ClInclude Include="Vulkan\VulkanDrawable.h" />
+    <ClInclude Include="Vulkan\VulkanAPI.h" />
+    <ClInclude Include="Engine\Headers\Virtual\Renderer.h" />
+    <ClInclude Include="Engine\Headers\Core\Core.h" />
+    <ClInclude Include="Engine\Headers\Entities\DrawableObject.h" />
+    <ClInclude Include="Engine\Headers\Entities\Camera.h" />
+    <ClInclude Include="Engine\Headers\Virtual\Entity.h" />
+    <ClInclude Include="Engine\Headers\Core\Globals.h" />
+    <ClInclude Include="Engine\Headers\Virtual\Physics.h" />
+    <ClInclude Include="Bullet\BulletAPI.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Engine\Source\GL_App.cpp" />
     <ClCompile Include="pch.cpp" />
     <ClCompile Include="Engine\Source\Engine.cpp" />
-    <ClCompile Include="Engine\Source\Vulkan\VulkanDrawable.cpp" />
-    <ClCompile Include="Engine\Source\Vulkan\VulkanAPI.cpp" />
+    <ClCompile Include="Vulkan\VulkanDrawable.cpp" />
+    <ClCompile Include="Vulkan\VulkanAPI.cpp" />
     <ClCompile Include="Engine\Source\Globals.cpp" />
+    <ClCompile Include="Bullet\BulletAPI.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="Engine\Source\Libs\lib-vc2019\glfw3.dll" />
+    <None Include="Engine\Libs\lib-vc2019\glfw3.dll" />
     <None Include="Engine\Source\Vulkan\Shaders\Compiler.bat" />
   </ItemGroup>
   <ItemGroup>
-    <Library Include="Engine\Source\Libs\lib-vc2019\glfw3.lib" />
-    <Library Include="Engine\Source\Libs\lib-vc2019\glfw3_mt.lib" />
-    <Library Include="Engine\Source\Libs\lib-vc2019\glfw3dll.lib" />
-    <Library Include="Engine\Source\Libs\Lib\vulkan-1.lib" />
+    <Library Include="Engine\Libs\lib-vc2019\glfw3.lib" />
+    <Library Include="Engine\Libs\lib-vc2019\glfw3_mt.lib" />
+    <Library Include="Engine\Libs\lib-vc2019\glfw3dll.lib" />
+    <Library Include="Engine\Libs\Lib\vulkan-1.lib" />
   </ItemGroup>
 </Project>

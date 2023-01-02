@@ -8,6 +8,7 @@ namespace GrEngine
 
 	Engine::Engine(const AppParameters& Properties)
 	{
+		Physics::SetContext(new GrEngineBullet::BulletAPI());
 		pWindow = std::unique_ptr<AppWindow>(AppWindow::Init(Properties));
 	}
 
@@ -109,5 +110,10 @@ namespace GrEngine
 		pWindow->getRenderer()->createSkybox(East, West, Top, Bottom, North, South);
 
 		Unpause();
+	}
+
+	void Engine::TogglePhysicsState(bool state)
+	{
+		Physics::GetContext()->TogglePhysicsState(state);
 	}
 }

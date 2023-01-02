@@ -52,6 +52,8 @@ namespace EditorUI
         public static extern void CloseContext();
         [DllImport("SceneEditor.dll", CallingConvention = CallingConvention.Cdecl)]
         public static extern void SaveScreenshot(IntPtr filepath);
+        [DllImport("SceneEditor.dll", CallingConvention = CallingConvention.Cdecl)]
+        public static extern void TogglePhysics();
         [DllImport("user32.dll")]
         static extern IntPtr SetParent(IntPtr hWndChild, IntPtr hWndNewParent);
         [DllImport("user32.dll")]
@@ -217,6 +219,11 @@ namespace EditorUI
             UpdateEntityProperty(((PropertyControl)sender).ID, Marshal.StringToHGlobalAnsi("color"), Marshal.StringToHGlobalAnsi(((PropertyControl)sender).Contents));
         }
 
+        private void UpdateObjectMass(object sender)
+        {
+            UpdateEntityProperty(((PropertyControl)sender).ID, Marshal.StringToHGlobalAnsi("mass"), Marshal.StringToHGlobalAnsi(((PropertyControl)sender).Contents));
+        }
+
         internal void RetrieveEntityInfo(int ID, string name, string pos, string orient, string scale)
         {
             try
@@ -232,6 +239,7 @@ namespace EditorUI
                 properties.Add("Position", pos);
                 properties.Add("Orientation", orient);
                 properties.Add("Scale", scale);
+                properties.Add("Object mass", "0");
                 properties.Add("Color", "0 0 0 0");
 
                 types.Add("EntityName", typeof(LabelControl));
@@ -240,6 +248,7 @@ namespace EditorUI
                 types.Add("Position", typeof(_3VectorControl));
                 types.Add("Orientation", typeof(_3VectorControl));
                 types.Add("Scale", typeof(_3VectorControl));
+                types.Add("Object mass", typeof(LabelControl));
                 types.Add("Color", typeof(ColorControl));
 
                 events.Add("EntityName", "TextBoxTextChanged");
@@ -247,6 +256,7 @@ namespace EditorUI
                 events.Add("Position", "VectorPropertyChanged");
                 events.Add("Orientation", "VectorPropertyChanged");
                 events.Add("Scale", "VectorPropertyChanged");
+                events.Add("Object mass", "TextBoxTextChanged");
                 events.Add("Color", "ColorPropertyChanged");
 
                 handlers.Add("EntityName", "UpdateObjectName");
@@ -254,6 +264,7 @@ namespace EditorUI
                 handlers.Add("Position", "UpdateObjectPosition");
                 handlers.Add("Orientation", "UpdateObjectOrientation");
                 handlers.Add("Scale", "UpdateObjectScale");
+                handlers.Add("Object mass", "UpdateObjectMass");
                 handlers.Add("Color", "UpdateObjectColor");
 
                 UpdateProperties(properties, types, events, handlers);
@@ -300,6 +311,11 @@ namespace EditorUI
         private void Window_Closed(object sender, EventArgs e)
         {
             CloseContext();
+        }
+
+        private void PhysicsButton_Click(object sender, RoutedEventArgs e)
+        {
+            TogglePhysics();
         }
     };
 }

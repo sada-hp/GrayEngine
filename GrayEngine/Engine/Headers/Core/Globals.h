@@ -1,5 +1,5 @@
 #pragma once
-#include "Engine/Source/Headers/Core.h"
+#include "Core/Core.h"
 
 namespace GrEngine
 {

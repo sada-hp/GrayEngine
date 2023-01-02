@@ -1,6 +1,9 @@
 #include <pch.h>
 #include "VulkanDrawable.h"
 #include "VulkanAPI.h"
+#include <assimp/Importer.hpp>
+#include <assimp/scene.h>
+#include <assimp/postprocess.h>
 
 namespace GrEngine_Vulkan
 {
@@ -362,5 +365,117 @@ namespace GrEngine_Vulkan
 		vkUpdateDescriptorSets(device, 1, &writes, 0, NULL);
 
 		return true;
+	}
+
+	void VulkanDrawable::updateCollisions()
+	{
+		delete colShape;
+		if (colMesh != nullptr)
+		{
+			delete colMesh;
+		}
+
+		colMesh = new btTriangleMesh();
+		for (int i = 0; i < object_mesh.vertices.size(); i++)
+		{
+			//colMesh->addTriangle(btVector3(object_mesh.vertices[object_mesh.indices[i]].pos.x, object_mesh.vertices[object_mesh.indices[i]].pos.y, object_mesh.vertices[object_mesh.indices[i]].pos.z),
+			//	btVector3(object_mesh.vertices[object_mesh.indices[i+1]].pos.x, object_mesh.vertices[object_mesh.indices[i+1]].pos.y, object_mesh.vertices[object_mesh.indices[i+1]].pos.z),
+			//	btVector3(object_mesh.vertices[object_mesh.indices[i+2]].pos.x, object_mesh.vertices[object_mesh.indices[i+2]].pos.y, object_mesh.vertices[object_mesh.indices[i+2]].pos.z));
+			colMesh->findOrAddVertex(btVector3(object_mesh.vertices[i].pos.x, object_mesh.vertices[i].pos.y, object_mesh.vertices[i].pos.z), false);
+		}
+		for (int i = 0; i < object_mesh.indices.size(); i+=3)
+		{
+			colMesh->addTriangleIndices(object_mesh.indices[i], object_mesh.indices[i+1], object_mesh.indices[i+2]);
+		}
+
+		colShape = new btBvhTriangleMeshShape(colMesh, false);
+		recalculatePhysics();
+	}
+
+	bool VulkanDrawable::LoadMesh(const char* mesh_path, bool useTexturing, std::vector<std::string>* out_materials)
+	{
+		std::unordered_map<Vertex, uint32_t> uniqueVertices{};
+		Assimp::Importer importer;
+
+		auto model = importer.ReadFile(mesh_path, 0);
+
+		if (model == NULL)
+		{
+			Logger::Out("Could not load the mesh %c%s%c!", OutputColor::Red, OutputType::Error, '"', mesh_path, '"');
+			object_mesh.mesh_path = "";
+			return false;
+		}
+		else
+		{
+			if (object_mesh.mesh_path == "")
+				AssignColorMask({ 1, 1, 1, 1 });
+			object_mesh.mesh_path = mesh_path;
+		}
+
+		delete colShape;
+		if (colMesh != nullptr)
+		{
+			delete colMesh;
+		}
+
+		colMesh = new btTriangleMesh();
+
+		float highest_pointx = 0.f;
+		float highest_pointy = 0.f;
+		float highest_pointz = 0.f;
+
+		for (int mesh_ind = 0; mesh_ind < model->mNumMeshes; mesh_ind++)
+		{
+			auto num_vert = model->mMeshes[mesh_ind]->mNumVertices;
+			auto cur_mesh = model->mMeshes[mesh_ind];
+			auto name3 = model->mMeshes[mesh_ind]->mName;
+			auto uv_ind = mesh_ind;
+
+			for (int vert_ind = 0; vert_ind < num_vert; vert_ind++)
+			{
+				auto coord = model->mMeshes[mesh_ind]->mTextureCoords[0];
+
+				GrEngine_Vulkan::Vertex vertex{ {
+				{ cur_mesh->mVertices[vert_ind].x, cur_mesh->mVertices[vert_ind].y, cur_mesh->mVertices[vert_ind].z, 1.0f },
+				{ coord[vert_ind].x, 1.0f - coord[vert_ind].y },
+				getColorID(),
+				(uint32_t)uv_ind,
+				useTexturing} };
+
+
+				if (uniqueVertices.count(vertex) == 0)
+				{
+					uniqueVertices[vertex] = static_cast<uint32_t>(object_mesh.vertices.size());
+					object_mesh.vertices.push_back(vertex);
+					colMesh->findOrAddVertex(btVector3(vertex.pos.x, vertex.pos.y, vertex.pos.z), false);
+				}
+
+				if (highest_pointx < cur_mesh->mVertices[vert_ind].x)
+					highest_pointx = cur_mesh->mVertices[vert_ind].x;
+				if (highest_pointy < cur_mesh->mVertices[vert_ind].y)
+					highest_pointy = cur_mesh->mVertices[vert_ind].y;
+				if (highest_pointz < cur_mesh->mVertices[vert_ind].z)
+					highest_pointz = cur_mesh->mVertices[vert_ind].z;
+
+				int index = uniqueVertices[vertex];
+				object_mesh.indices.push_back(index);
+			}
+
+			aiString name;
+			aiGetMaterialString(model->mMaterials[model->mMeshes[mesh_ind]->mMaterialIndex], AI_MATKEY_NAME, &name);
+
+			if (out_materials)
+			{
+				out_materials->push_back(name.C_Str());
+			}
+		}
+		SetObjectBounds(glm::vec3{ highest_pointx, highest_pointy, highest_pointz });
+		for (int i = 0; i < object_mesh.indices.size(); i += 3)
+		{
+			colMesh->addTriangleIndices(object_mesh.indices[i], object_mesh.indices[i + 1], object_mesh.indices[i + 2]);
+		}
+
+		colShape = new btBvhTriangleMeshShape(colMesh, false);
+		recalculatePhysics();
 	}
 }

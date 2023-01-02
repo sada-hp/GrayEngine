@@ -1,7 +1,7 @@
 #pragma once
-#include "Engine/Source/Headers/Core.h"
-#include "Vulkan/VulkanAPI.h"
-#include "Headers/AppWindow.h"
+#include "Core/Core.h"
+#include "Virtual/AppWindow.h"
+#include "Bullet/BulletAPI.h"
 
 namespace GrEngine
 {
@@ -26,6 +26,7 @@ namespace GrEngine
 		void SetCursorState(bool show) { pWindow->AppShowCursor(show); };
 		void AddInputCallback(InputCallbackFun callback) { pWindow->AddInputProccess(callback); };
 		bool IsKeyDown(int key) { return pWindow->IsKeyDown(key); }
+		void TogglePhysicsState(bool state);
 
 		static void BindContext(Engine* new_context) { context = new_context; };
 		static Engine* GetContext() { return context; };

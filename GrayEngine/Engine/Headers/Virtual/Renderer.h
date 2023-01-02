@@ -1,8 +1,8 @@
 #pragma once
-#include "Engine/Entities/Camera.h"
-#include "Engine/Entities/DrawableObject.h"
-#include "Engine/Source/Headers/Entity.h"
-#include "Engine/Source/Headers/Logger.h"
+#include "Entities/Camera.h"
+#include "Entities/DrawableObject.h"
+#include "Virtual/Entity.h"
+#include "Core/Logger.h"
 
 namespace GrEngine
 {

@@ -2,6 +2,7 @@
 #include "GL_App.h"
 #define GLFW_EXPOSE_NATIVE_WIN32
 #include <glfw/glfw3native.h>
+#include "Engine.h"
 
 namespace GrEngine
 {
@@ -98,9 +99,9 @@ namespace GrEngine
 		EventListener::pollEngineEvents();
 		ProccessInputs();
 		glfwPollEvents();
+		Physics::GetContext()->SimulateStep();
 		pAppRenderer->RenderFrame();
 		glfwSwapBuffers(window);
-
 		double currentTime = glfwGetTime();
 
 		Globals::delta_time = (currentTime - time);

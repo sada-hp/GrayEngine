@@ -6,7 +6,7 @@
 #include <glm/gtc/quaternion.hpp>
 #include <glm/gtx/quaternion.hpp>
 #include <vk_mem_alloc.h>
-#include "Engine/Source/Headers/Renderer.h"
+#include "Engine/Headers/Virtual/Renderer.h"
 
 namespace GrEngine_Vulkan
 {
@@ -123,6 +123,9 @@ namespace GrEngine_Vulkan
 		void invalidateTexture(VkDevice device, VmaAllocator allocator);
 		bool pushConstants(VkDevice devicce, VkCommandBuffer cmd, VkExtent2D extent, UINT32 mode);
 		bool recordCommandBuffer(VkDevice device, VkCommandBuffer commandBuffer, VkExtent2D extent, UINT32 mode);
+
+		void updateCollisions() override;
+		bool LoadMesh(const char* mesh_path, bool useTexturing, std::vector<std::string>* out_materials) override;
 		inline glm::uvec3 getColorID() { return colorID; };
 		static PickingBufferObject opo;
 

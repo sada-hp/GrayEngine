@@ -1,8 +1,8 @@
 #pragma once
 #include <glfw/glfw3.h>
-#include "Engine/Source/Headers/Core.h"
-#include "EventListener.h"
-#include "Renderer.h"
+#include "Core/Core.h"
+#include "Core/EventListener.h"
+#include "Virtual/Renderer.h"
 
 namespace GrEngine
 {

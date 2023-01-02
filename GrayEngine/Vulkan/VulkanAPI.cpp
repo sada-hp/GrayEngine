@@ -7,9 +7,6 @@
 #define STB_IMAGE_IMPLEMENTATION
 #define STB_IMAGE_RESIZE_IMPLEMENTATION
 #include "VulkanAPI.h"
-#include <assimp/Importer.hpp>
-#include <assimp/scene.h>
-#include <assimp/postprocess.h>
 
 namespace GrEngine_Vulkan
 {
@@ -1121,73 +1118,7 @@ namespace GrEngine_Vulkan
 
 	bool VulkanAPI::loadMesh(const char* mesh_path, VulkanDrawable* target, bool useTexturing, std::vector<std::string>* out_materials)
 	{
-		std::unordered_map<Vertex, uint32_t> uniqueVertices{};
-		Assimp::Importer importer;
-
-		auto model = importer.ReadFile(mesh_path, 0);
-
-		if (model == NULL)
-		{
-			Logger::Out("Could not load the mesh %c%s%c!", OutputColor::Red, OutputType::Error, '"', mesh_path, '"');
-			target->object_mesh.mesh_path = "";
-			return false;
-		}
-		else
-		{
-			if (target->object_mesh.mesh_path == "")
-				target->AssignColorMask({ 1, 1, 1, 1 });
-			target->object_mesh.mesh_path = mesh_path;
-		}
-
-		float highest_pointx = 0.f;
-		float highest_pointy = 0.f;
-		float highest_pointz = 0.f;
-
-		for (int mesh_ind = 0; mesh_ind < model->mNumMeshes; mesh_ind++)
-		{
-			auto num_vert = model->mMeshes[mesh_ind]->mNumVertices;
-			auto cur_mesh = model->mMeshes[mesh_ind];
-			auto name3 = model->mMeshes[mesh_ind]->mName;
-			auto uv_ind = mesh_ind;
-			for (int vert_ind = 0; vert_ind < num_vert; vert_ind++)
-			{
-				auto coord = model->mMeshes[mesh_ind]->mTextureCoords[0];
-
-				GrEngine_Vulkan::Vertex vertex{{
-				{ cur_mesh->mVertices[vert_ind].x, cur_mesh->mVertices[vert_ind].y, cur_mesh->mVertices[vert_ind].z, 1.0f },
-				{ coord[vert_ind].x, 1.0f - coord[vert_ind].y },
-				target->getColorID(),
-				(uint32_t)uv_ind,
-				useTexturing}};
-
-
-				if (uniqueVertices.count(vertex) == 0) 
-				{
-					uniqueVertices[vertex] = static_cast<uint32_t>(target->object_mesh.vertices.size());
-					target->object_mesh.vertices.push_back(vertex);
-				}
-
-				if (highest_pointx < cur_mesh->mVertices[vert_ind].x)
-					highest_pointx = cur_mesh->mVertices[vert_ind].x;
-				if (highest_pointy < cur_mesh->mVertices[vert_ind].y)
-					highest_pointy = cur_mesh->mVertices[vert_ind].y;
-				if (highest_pointz < cur_mesh->mVertices[vert_ind].z)
-					highest_pointz = cur_mesh->mVertices[vert_ind].z;
-
-				target->object_mesh.indices.push_back(uniqueVertices[vertex]);
-			}
-
-			aiString name;
-			aiGetMaterialString(model->mMaterials[model->mMeshes[mesh_ind]->mMaterialIndex], AI_MATKEY_NAME, &name);
-
-			if (out_materials)
-			{
-				out_materials->push_back(name.C_Str());
-			}
-		}
-		target->SetObjectBounds(glm::vec3{highest_pointx, highest_pointy, highest_pointz});
-
-		return true;
+		return target->LoadMesh(mesh_path, useTexturing, out_materials);
 	}
 
 	bool VulkanAPI::assignTextures(std::vector<std::string> textures, GrEngine::Entity* target)

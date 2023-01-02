@@ -177,3 +177,10 @@ void  SceneEditor::SaveScreenshot(const char* filepath)
     GrEngine::Engine::GetContext()->GetRenderer()->SaveScreenshot(filepath);
     Logger::Out("Screenshot saved at %s", OutputColor::Green, OutputType::Log, filepath);
 }
+
+void SceneEditor::TogglePhysics()
+{
+    static bool simation = false;
+    simation = !simation;
+    GrEngine::Engine::GetContext()->TogglePhysicsState(simation);
+}

@@ -1,7 +1,7 @@
 #pragma once
 #include <glm/glm.hpp>
 #include <glm/gtc/quaternion.hpp>
-#include "Engine/Source/Headers/Entity.h"
+#include "Virtual/Entity.h"
 
 namespace GrEngine
 {

@@ -189,6 +189,11 @@ namespace GrEngine
                 auto input = GrEngine::Globals::SeparateString(value, ':');
                 selection->AssignColorMask((float)stoi(input[0]) / 255, (float)stoi(input[1]) / 255, (float)stoi(input[2]) / 255, (float)stoi(input[3]) / 255);
             }
+            else if (selected_property == "mass")
+            {
+                DrawableObject* selection = dynamic_cast<DrawableObject*>(SelectEntity(ID));
+                selection->SetMass(std::stof(value));
+            }
         }
     };
 }

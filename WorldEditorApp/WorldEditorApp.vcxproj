@@ -123,7 +123,7 @@
       <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp20</LanguageStandard>
-      <AdditionalIncludeDirectories>$(SolutionDir)\SceneEditor\SceneEditor\;$(SolutionDir)\GrayEngine;$(SolutionDir)\GrayEngine\Engine\Source\Headers\;$(SolutionDir)GrayEngine\Engine\Source\Libs\IncludeVK;$(SolutionDir)GrayEngine\Engine\Source\Libs\includeGL;$(SolutionDir)GrayEngine\Engine\Source\Libs\IncludeAssimp;$(SolutionDir)GrayEngine\Engine\Source\Libs\glm;$(SolutionDir)GrayEngine\Engine\Source\Libs\TexLoader;$(SolutionDir)GrayEngine\Engine\Source\Libs\VkMemAlloc</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)\SceneEditor\SceneEditor\;$(SolutionDir)\GrayEngine;$(SolutionDir)\GrayEngine\Engine\Headers\;$(SolutionDir)GrayEngine\Engine\Libs\IncludeBullet;$(SolutionDir)GrayEngine\Engine\Libs\IncludeVK;$(SolutionDir)GrayEngine\Engine\Libs\includeGL;$(SolutionDir)GrayEngine\Engine\Libs\IncludeAssimp;$(SolutionDir)GrayEngine\Engine\Libs\glm;$(SolutionDir)GrayEngine\Engine\Libs\TexLoader;$(SolutionDir)GrayEngine\Engine\Libs\VkMemAlloc</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -143,7 +143,7 @@
       <PreprocessorDefinitions>NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp20</LanguageStandard>
-      <AdditionalIncludeDirectories>$(SolutionDir)\SceneEditor\SceneEditor\;$(SolutionDir)\GrayEngine;$(SolutionDir)\GrayEngine\Engine\Source\Headers\;$(SolutionDir)GrayEngine\Engine\Source\Libs\IncludeVK;$(SolutionDir)GrayEngine\Engine\Source\Libs\includeGL;$(SolutionDir)GrayEngine\Engine\Source\Libs\IncludeAssimp;$(SolutionDir)GrayEngine\Engine\Source\Libs\glm;$(SolutionDir)GrayEngine\Engine\Source\Libs\TexLoader;$(SolutionDir)GrayEngine\Engine\Source\Libs\VkMemAlloc</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)\SceneEditor\SceneEditor\;$(SolutionDir)\GrayEngine;$(SolutionDir)\GrayEngine\Engine\Source\Headers\;$(SolutionDir)GrayEngine\Engine\Source\Libs\IncludeBullet;$(SolutionDir)GrayEngine\Engine\Source\Libs\IncludeVK;$(SolutionDir)GrayEngine\Engine\Source\Libs\includeGL;$(SolutionDir)GrayEngine\Engine\Source\Libs\IncludeAssimp;$(SolutionDir)GrayEngine\Engine\Source\Libs\glm;$(SolutionDir)GrayEngine\Engine\Source\Libs\TexLoader;$(SolutionDir)GrayEngine\Engine\Source\Libs\VkMemAlloc</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>

@@ -5,8 +5,8 @@
 #include <stb_image.h>
 #include <stb_image_resize.h>
 #include "VulkanDrawable.h"
-#include "Engine/Source/Headers/Logger.h"
-#include "Engine/Source/Headers/Renderer.h"
+#include "Engine/Headers/Core/Logger.h"
+#include "Engine/Headers/Virtual/Renderer.h"
 
 namespace GrEngine_Vulkan
 {

@@ -1,8 +1,8 @@
 #pragma once
 #include <glm/glm.hpp>
 #include <glm/gtc/quaternion.hpp>
-#include "Engine/Source/Globals.h"
-#include "Engine/Source/Headers/Logger.h"
+#include "Core/Globals.h"
+#include "Core/Logger.h"
 
 namespace GrEngine
 {
@@ -116,27 +116,27 @@ namespace GrEngine
 			return obj_orientation;
 		}
 
-		glm::vec3& GetObjectPosition()
+		virtual glm::vec3& GetObjectPosition()
 		{
 			return object_position;
 		}
 
-		glm::quat& GetObjectOrientation()
+		virtual glm::quat& GetObjectOrientation()
 		{
 			return obj_orientation;
 		}
 
-		glm::vec3& GetObjectScale()
+		virtual glm::vec3& GetObjectScale()
 		{
 			return scale;
 		}
 
-		void SetObjectScale(glm::vec3 new_scale)
+		virtual void SetObjectScale(glm::vec3 new_scale)
 		{
 			scale = new_scale;
 		}
 
-		void SetObjectScale(float scalex, float scaley, float scalez)
+		virtual void SetObjectScale(float scalex, float scaley, float scalez)
 		{
 			scale = { scalex, scaley, scalez };
 		}
@@ -157,6 +157,7 @@ namespace GrEngine
 		glm::quat obj_orientation = { 0.f, 0.f, 0.f, 0.f };
 		glm::quat obj_orientation_target = { 0.f, 0.f, 0.f, 0.f };
 		glm::vec3 object_position = { 0.f, 0.f, 0.f };
+		glm::vec3 object_origin = { 0.f, 0.f, 0.f };
 		glm::vec3 object_position_target = { 0.f, 0.f, 0.f };
 		glm::vec3 pitch_yaw_roll = { 0.f, 0.f, 0.f };
 		glm::vec3 scale = { 1.f, 1.f, 1.f };
