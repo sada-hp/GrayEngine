@@ -12,7 +12,7 @@ namespace GrEngine
 		virtual ~Engine();
 		static bool PokeIt();
 		std::string getExecutablePath();
-		EntityInfo AddEntity();
+		Entity* AddEntity();
 		void LoadSkybox(const char* East, const char* West, const char* Top, const char* Bottom, const char* North, const char* South);
 		bool LoadObject(const char* mesh_path, std::vector<std::string> textures_vector, std::unordered_map<std::string, std::string>* out_materials = nullptr);
 		bool LoadFromGMF(const char* filepath, std::unordered_map<std::string, std::string>* out_materials = nullptr);

@@ -10,7 +10,7 @@
 #include "Vulkan/VulkanAPI.h"
 #include "Engine/Headers/GL_App.h"
 #include "Engine/Headers/Core/EventListener.h"
-#include "Engine/Headers/Virtual/Entity.h"
+#include "Engine/Headers/Entities/Entity.h"
 #include "Engine/Headers/Virtual/Physics.h"
 
 //include only

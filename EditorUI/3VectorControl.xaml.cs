@@ -44,7 +44,12 @@ namespace EditorUI
             }
         }
 
-        public void ChangeColors(System.Windows.Media.Brush background, System.Windows.Media.Brush foreground)
+        public void Init(string content)
+        {
+            Contents = content;
+        }
+
+            public void ChangeColors(System.Windows.Media.Brush background, System.Windows.Media.Brush foreground)
         {
             XBox.Background = background;
             XBox.Foreground = foreground;

@@ -6,12 +6,12 @@
              xmlns:local="clr-namespace:EditorUI"
              mc:Ignorable="d" 
              d:DesignHeight="35" d:DesignWidth="200" Width="200px" Height="35px">
-    <Grid Height="35px" Width="200px">
+    <Grid>
         <Grid.ColumnDefinitions>
-            <ColumnDefinition Width="75*">
+            <ColumnDefinition Width="1*">
                 
             </ColumnDefinition>
-            <ColumnDefinition Width="25*">
+            <ColumnDefinition Width="99*">
                 
             </ColumnDefinition>
         </Grid.ColumnDefinitions>

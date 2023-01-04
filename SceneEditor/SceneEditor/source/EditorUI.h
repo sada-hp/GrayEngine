@@ -40,7 +40,7 @@ public:
 	typedef void(*UpdateEntityFunc)(int, char*);
 	UpdateEntityFunc UpdateEntity;
 
-	typedef void(*RetrieveInfoFunc)(int, char*, char*, char*, char*);
+	typedef void(*RetrieveInfoFunc)(int, char*, char*, char*);
 	RetrieveInfoFunc SendEntityInfo;
 
 	typedef void(*SelectEntityFunc)(int);

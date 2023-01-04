@@ -23,6 +23,7 @@ namespace EditorUI
     {
         string prop_content = "";
         int entity_id;
+        ColorPicker picker;
         public event DummyEvent ColorPropertyChanged;
 
         public string Contents
@@ -47,11 +48,25 @@ namespace EditorUI
         {
             InitializeComponent();
             ColorPropertyChanged += Test;
-            ColorPicker picker = new ColorPicker();
+            picker = new ColorPicker();
             MainGrid.Children.Add(picker);
             picker.SelectedColorChanged += ColorUpdate;
             picker.ShowAvailableColors = false;
             picker.UsingAlphaChannel = true;
+        }
+
+        public void Init(string content)
+        {
+            prop_content = content;
+
+            var color = prop_content.Split(':');
+            float r = Convert.ToInt32(float.Parse(color[0], System.Globalization.CultureInfo.InvariantCulture.NumberFormat) * 255);
+            float g = Convert.ToInt32(float.Parse(color[1], System.Globalization.CultureInfo.InvariantCulture.NumberFormat) * 255);
+            float b = Convert.ToInt32(float.Parse(color[2], System.Globalization.CultureInfo.InvariantCulture.NumberFormat) * 255);
+            float a = Convert.ToInt32(float.Parse(color[3], System.Globalization.CultureInfo.InvariantCulture.NumberFormat) * 255);
+
+
+            picker.SelectedColor = System.Windows.Media.Color.FromArgb((byte)a, (byte)r, (byte)g, (byte)b);
         }
 
         public void ChangeColors(System.Windows.Media.Brush background, System.Windows.Media.Brush foreground)

@@ -95,11 +95,11 @@ namespace EditorUI
         }
 
         [DllExport]
-        public static void RetrieveEntityInfo(IntPtr id, IntPtr name, IntPtr position, IntPtr orientation, IntPtr scale)
+        public static void RetrieveEntityInfo(int id, IntPtr name, IntPtr value, IntPtr type)
         {
             wrappers[0].ui_window.Dispatcher.BeginInvoke((Action)(() =>
             {
-                ((MainView)wrappers[0].ui_window).RetrieveEntityInfo((int)id, Marshal.PtrToStringAnsi(name), Marshal.PtrToStringAnsi(position), Marshal.PtrToStringAnsi(orientation), Marshal.PtrToStringAnsi(scale));
+                ((MainView)wrappers[0].ui_window).RetrieveEntityInfo(id, Marshal.PtrToStringAnsi(name), Marshal.PtrToStringAnsi(value), Marshal.PtrToStringAnsi(type));
             }));
         }
 

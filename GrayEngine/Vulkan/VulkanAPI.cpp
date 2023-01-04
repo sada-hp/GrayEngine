@@ -118,8 +118,7 @@ namespace GrEngine_Vulkan
 			sky = -1;
 		}
 
-		GrEngine::EntityInfo inf = addEntity();
-		VulkanDrawable* back = dynamic_cast<VulkanDrawable*>(entities[inf.EntityID]);
+		VulkanDrawable* back = dynamic_cast<VulkanDrawable*>(addEntity());
 		back->shader_path = "Shaders//background";
 		back->invalidateTexture(logicalDevice, memAllocator);
 
@@ -127,7 +126,7 @@ namespace GrEngine_Vulkan
 		loadTexture(mat_vector, back, VK_IMAGE_VIEW_TYPE_CUBE, VK_IMAGE_TYPE_2D);
 
 		back->updateObject(logicalDevice, memAllocator);
-		sky = inf.EntityID;
+		sky = back->GetEntityID();
 
 		Initialized = true;
 	}
@@ -402,7 +401,7 @@ namespace GrEngine_Vulkan
 
 		for (auto object : entities)
 		{
-			if (object.second->GetEntityType() == "VulkanDrawable" && dynamic_cast<VulkanDrawable*>(object.second)->IsVisible())
+			if (object.second->GetEntityType() == "Object" && dynamic_cast<VulkanDrawable*>(object.second)->IsVisible())
 			{
 				dynamic_cast<VulkanDrawable*>(object.second)->recordCommandBuffer(logicalDevice, commandBuffers[index], swapChainExtent, mode);
 			}
@@ -1044,7 +1043,7 @@ namespace GrEngine_Vulkan
 
 		for (auto object : entities)
 		{
-			if (object.second->GetEntityType() == "VulkanDrawable")
+			if (object.second->GetEntityType() == "Object")
 			{
 				dynamic_cast<VulkanDrawable*>(object.second)->destroyObject(logicalDevice, memAllocator);
 				delete object.second;
@@ -1063,8 +1062,6 @@ namespace GrEngine_Vulkan
 		if (entities.size() > 0 && selected_entity != 0)
 		{
 			ref_obj = dynamic_cast<VulkanDrawable*>(entities[selected_entity]);
-			ref_obj->object_mesh.indices = {};
-			ref_obj->object_mesh.vertices = {};
 		}
 		else
 		{
@@ -1562,26 +1559,30 @@ namespace GrEngine_Vulkan
 
 #pragma endregion
 
-	GrEngine::EntityInfo VulkanAPI::addEntity()
+	GrEngine::Entity* VulkanAPI::addEntity()
 	{
 		GrEngine::Entity* ent = new VulkanDrawable();
 		dynamic_cast<VulkanDrawable*>(ent)->initObject(logicalDevice, memAllocator, this);
 		std::string new_name = std::string("Entity") + std::to_string(entities.size()+1);
 		ent->UpdateNameTag(new_name.c_str());
-		entities[ent->GetEntityInfo().EntityID] = ent;
+		entities[std::stoi(ent->GetPropertyValue("EntityID"))] = ent;
 
-		return ent->GetEntityInfo();
+		return ent;
 	}
 
 	GrEngine::Entity* VulkanAPI::selectEntity(UINT ID)
 	{
-		if (auto search = entities.find(ID); search != entities.end())
+		if (entities.contains(ID))
 		{
 			selected_entity = ID;
-			std::vector<std::any> para = { selected_entity };
-			EventListener::registerEvent(EventType::SelectionChanged, para);
-			VulkanDrawable::opo.selected_entity = { ID / 1000000 % 1000, ID / 1000 % 1000, ID % 1000 };
-			return entities.at(ID);
+
+			if (selected_entity > 0)
+			{
+				std::vector<std::any> para = { selected_entity };
+				VulkanDrawable::opo.selected_entity = { ID / 1000000 % 1000, ID / 1000 % 1000, ID % 1000 };
+				EventListener::registerEvent(EventType::SelectionChanged, para);
+				return entities.at(ID);
+			}
 		}
 
 		VulkanDrawable::opo.selected_entity = { 0, 0, 0 };

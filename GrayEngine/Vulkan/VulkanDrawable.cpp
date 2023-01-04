@@ -12,7 +12,7 @@ namespace GrEngine_Vulkan
 	void VulkanDrawable::initObject(VkDevice device, VmaAllocator allocator, GrEngine::Renderer* owner)
 	{
 		p_Owner = owner;
-		Type = "VulkanDrawable";
+		UINT id = GetEntityID();
 		colorID = { id / 1000000 % 1000, id / 1000 % 1000, id % 1000};
 
 		object_mesh.vertices = {
@@ -34,8 +34,6 @@ namespace GrEngine_Vulkan
 			1, 3, 7, 1, 5, 7,
 			1, 2, 6, 1, 5, 6,
 		};
-
-		AssignColorMask({ 0.15, 0.85, 0.25, 1.f });
 
 		if (object_mesh.vertices.size() > 0)
 		{
@@ -123,8 +121,8 @@ namespace GrEngine_Vulkan
 			vkCmdBindVertexBuffers(commandBuffer, 0, 1, &vertexBuffer.Buffer, offsets);
 			vkCmdBindIndexBuffer(commandBuffer, indexBuffer.Buffer, 0, VK_INDEX_TYPE_UINT16);
 
-			UpdateObjectPosition();
-			UpdateObjectOrientation();
+			//UpdateObjectPosition();
+			//UpdateObjectOrientation();
 			pushConstants(device, commandBuffer, extent, mode);
 
 			for (int ind = 0; ind < descriptorSets.size(); ind++)
@@ -145,7 +143,7 @@ namespace GrEngine_Vulkan
 		/*orientation relative to the position in a 3D space (?)*/
 		ubo.model = glm::translate(glm::mat4(1.f), GetObjectPosition()) * glm::mat4_cast(GetObjectOrientation());
 		/*Math for Game Programmers: Understanding Homogeneous Coordinates GDC 2015*/
-		ubo.view = glm::translate(glm::mat4_cast(p_Owner->getActiveViewport()->UpdateObjectOrientation(0.2)), -p_Owner->getActiveViewport()->UpdateObjectPosition(0.65)); // [ix iy iz w1( = 0)]-direction [jx jy jz w2( = 0)]-direction [kx ky kz w3( = 0)]-direction [tx ty tz w ( = 1)]-position
+		ubo.view = glm::translate(glm::mat4_cast(p_Owner->getActiveViewport()->UpdateCameraOrientation(0.2)), -p_Owner->getActiveViewport()->UpdateCameraPosition(0.65)); // [ix iy iz w1( = 0)]-direction [jx jy jz w2( = 0)]-direction [kx ky kz w3( = 0)]-direction [tx ty tz w ( = 1)]-position
 		ubo.proj = glm::perspective(glm::radians(60.0f), (float)extent.width / (float)extent.height, near_plane, far_plane); //fov, aspect ratio, near clipping plane, far clipping plane
 		ubo.proj[1][1] *= -1; //reverse Y coordinate
 		ubo.scale = GetObjectScale();
@@ -378,9 +376,6 @@ namespace GrEngine_Vulkan
 		colMesh = new btTriangleMesh();
 		for (int i = 0; i < object_mesh.vertices.size(); i++)
 		{
-			//colMesh->addTriangle(btVector3(object_mesh.vertices[object_mesh.indices[i]].pos.x, object_mesh.vertices[object_mesh.indices[i]].pos.y, object_mesh.vertices[object_mesh.indices[i]].pos.z),
-			//	btVector3(object_mesh.vertices[object_mesh.indices[i+1]].pos.x, object_mesh.vertices[object_mesh.indices[i+1]].pos.y, object_mesh.vertices[object_mesh.indices[i+1]].pos.z),
-			//	btVector3(object_mesh.vertices[object_mesh.indices[i+2]].pos.x, object_mesh.vertices[object_mesh.indices[i+2]].pos.y, object_mesh.vertices[object_mesh.indices[i+2]].pos.z));
 			colMesh->findOrAddVertex(btVector3(object_mesh.vertices[i].pos.x, object_mesh.vertices[i].pos.y, object_mesh.vertices[i].pos.z), false);
 		}
 		for (int i = 0; i < object_mesh.indices.size(); i+=3)
@@ -407,9 +402,9 @@ namespace GrEngine_Vulkan
 		}
 		else
 		{
-			if (object_mesh.mesh_path == "")
-				AssignColorMask({ 1, 1, 1, 1 });
 			object_mesh.mesh_path = mesh_path;
+			object_mesh.indices = {};
+			object_mesh.vertices = {};
 		}
 
 		delete colShape;
@@ -461,6 +456,7 @@ namespace GrEngine_Vulkan
 				object_mesh.indices.push_back(index);
 			}
 
+			ParsePropertyValue("Color", "1.00:1.00:1.00:1.00");
 			aiString name;
 			aiGetMaterialString(model->mMaterials[model->mMeshes[mesh_ind]->mMaterialIndex], AI_MATKEY_NAME, &name);
 
@@ -476,6 +472,6 @@ namespace GrEngine_Vulkan
 		}
 
 		colShape = new btBvhTriangleMeshShape(colMesh, false);
-		recalculatePhysics();
+		recalculatePhysics(true);
 	}
 }

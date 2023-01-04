@@ -108,6 +108,7 @@
     <Compile Include="ColorControl.xaml.cs">
       <DependentUpon>ColorControl.xaml</DependentUpon>
     </Compile>
+    <Compile Include="Components\ListBoxEx.cs" />
     <Compile Include="EditorWindow.cs" />
     <Compile Include="EntityItem.xaml.cs">
       <DependentUpon>EntityItem.xaml</DependentUpon>

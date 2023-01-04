@@ -25,10 +25,11 @@
     <ClInclude Include="Engine\Headers\Core\Core.h" />
     <ClInclude Include="Engine\Headers\Entities\DrawableObject.h" />
     <ClInclude Include="Engine\Headers\Entities\Camera.h" />
-    <ClInclude Include="Engine\Headers\Virtual\Entity.h" />
+    <ClInclude Include="Engine\Headers\Entities\Entity.h" />
     <ClInclude Include="Engine\Headers\Core\Globals.h" />
     <ClInclude Include="Engine\Headers\Virtual\Physics.h" />
     <ClInclude Include="Bullet\BulletAPI.h" />
+    <ClInclude Include="Engine\Headers\Entities\Properties\Property.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Engine\Source\GL_App.cpp" />
@@ -38,6 +39,7 @@
     <ClCompile Include="Vulkan\VulkanAPI.cpp" />
     <ClCompile Include="Engine\Source\Globals.cpp" />
     <ClCompile Include="Bullet\BulletAPI.cpp" />
+    <ClCompile Include="Engine\Headers\Entities\Properties\Property.cpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Engine\Libs\lib-vc2019\glfw3.dll" />

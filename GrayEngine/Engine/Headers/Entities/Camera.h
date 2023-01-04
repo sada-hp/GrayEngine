@@ -1,7 +1,7 @@
 #pragma once
 #include <glm/glm.hpp>
 #include <glm/gtc/quaternion.hpp>
-#include "Virtual/Entity.h"
+#include "Entity.h"
 
 namespace GrEngine
 {
@@ -14,7 +14,9 @@ namespace GrEngine
 			glm::quat qYaw = glm::angleAxis(glm::radians(pitch_yaw_roll.x), glm::vec3(0, 1, 0));
 			glm::quat qRoll = glm::angleAxis(glm::radians(pitch_yaw_roll.z), glm::vec3(0, 0, 1));
 			obj_orientation_target = glm::normalize(qPitch * qYaw * qRoll);
-			obj_orientation = glm::normalize(qPitch * qYaw * qRoll);
+			static_cast<EntityOrientation*>(properties[3])->SetPropertyValue(glm::normalize(qPitch * qYaw * qRoll));
+
+			Type = "Camera";
 		};
 		~Camera() {};
 
@@ -62,6 +64,20 @@ namespace GrEngine
 		void UnlockAxes()
 		{
 			axes_lock = false;
+		}
+
+		glm::vec3& UpdateCameraPosition(float smoothing_factor = 0.f)
+		{
+			smoothing_factor = smoothing_factor == 1.f ? FLT_EPSILON : smoothing_factor;
+			static_cast<EntityPosition*>(properties[2])->SetPropertyValue(*object_origin + (object_position_target - *object_origin) * (1 - smoothing_factor));
+			return *object_origin;
+		}
+
+		glm::quat& UpdateCameraOrientation(float smoothing_factor = 0.f)
+		{
+			smoothing_factor = smoothing_factor == 1.f ? FLT_EPSILON : smoothing_factor;
+			static_cast<EntityOrientation*>(properties[3])->SetPropertyValue(*obj_orientation + (obj_orientation_target - *obj_orientation) * (1 - smoothing_factor));
+			return *obj_orientation;
 		}
 
 	private:

@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Reflection;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -27,6 +28,7 @@ namespace EditorUI
     {
         string Contents { get; set; }
         int ID { get; set; }
+        void Init(string content);
         void ChangeColors(System.Windows.Media.Brush background, System.Windows.Media.Brush foreground);
     }
 
@@ -54,6 +56,8 @@ namespace EditorUI
         public static extern void SaveScreenshot(IntPtr filepath);
         [DllImport("SceneEditor.dll", CallingConvention = CallingConvention.Cdecl)]
         public static extern void TogglePhysics();
+        [DllImport("SceneEditor.dll", CallingConvention = CallingConvention.Cdecl)]
+        public static extern void AddNewEntityProperty(int ID, IntPtr property);
         [DllImport("user32.dll")]
         static extern IntPtr SetParent(IntPtr hWndChild, IntPtr hWndNewParent);
         [DllImport("user32.dll")]
@@ -142,19 +146,17 @@ namespace EditorUI
             }
         }
 
-        internal void UpdateProperties(Dictionary<string, object> properties, Dictionary<string, Type> types, Dictionary<string, string> events, Dictionary<string, string> handlers)
+        internal void UpdateProperties(int id, Dictionary<string, object> properties, Dictionary<string, Type> types, Dictionary<string, string> events, Dictionary<string, string> handlers)
         {
-            PropertiesCollection.Items.Clear();
-
             foreach (var pair in properties)
             {
                 PropertyItem item = new PropertyItem();
                 var control = Activator.CreateInstance(types[pair.Key]);
                 item.PName.Content = pair.Key;
-                ((PropertyControl)control).Contents = pair.Value.ToString();
+                ((PropertyControl)control).Init(pair.Value.ToString());
 
                 ((PropertyControl)control).ChangeColors(null, new System.Windows.Media.SolidColorBrush(System.Windows.Media.Colors.WhiteSmoke));
-                ((PropertyControl)control).ID = (int)properties["EntityID"];
+                ((PropertyControl)control).ID = id;
                 ((System.Windows.Controls.Control)control).HorizontalAlignment = System.Windows.HorizontalAlignment.Stretch;
 
                 if (events.ContainsKey(pair.Key))
@@ -171,6 +173,7 @@ namespace EditorUI
                     catch (Exception e)
                     {
                         LogMessage(Marshal.StringToHGlobalAnsi(e.Message));
+                        LogMessage(Marshal.StringToHGlobalAnsi(pair.Key));
                     }
                 }
                 System.Windows.Controls.Grid.SetColumn((System.Windows.Controls.Control)control, 1);
@@ -181,26 +184,26 @@ namespace EditorUI
             }
         }
 
-        public void LoadModelBrowser(object sender, System.Windows.Input.MouseButtonEventArgs e)
+        private void Drawable_callback(object sender)
         {
             InitModelBrowser();
         }
 
-        private void UpdateObjectPosition(object sender)
+        private void EntityPosition_callback(object sender)
         {
-            UpdateEntityProperty(((PropertyControl)sender).ID, Marshal.StringToHGlobalAnsi("position"), Marshal.StringToHGlobalAnsi(((PropertyControl)sender).Contents));
+            UpdateEntityProperty(((PropertyControl)sender).ID, Marshal.StringToHGlobalAnsi("EntityPosition"), Marshal.StringToHGlobalAnsi(((PropertyControl)sender).Contents));
         }
 
-        private void UpdateObjectOrientation(object sender)
+        private void EntityOrientation_callback(object sender)
         {
-            UpdateEntityProperty(((PropertyControl)sender).ID, Marshal.StringToHGlobalAnsi("orientation"), Marshal.StringToHGlobalAnsi(((PropertyControl)sender).Contents));
+            UpdateEntityProperty(((PropertyControl)sender).ID, Marshal.StringToHGlobalAnsi("EntityOrientation"), Marshal.StringToHGlobalAnsi(((PropertyControl)sender).Contents));
         }
 
-        private void UpdateObjectName(object sender)
+        private void EntityName_callback(object sender)
         {
             try
             {
-                UpdateEntityProperty(((PropertyControl)sender).ID, Marshal.StringToHGlobalAnsi("name"), Marshal.StringToHGlobalAnsi(((PropertyControl)sender).Contents));
+                UpdateEntityProperty(((PropertyControl)sender).ID, Marshal.StringToHGlobalAnsi("EntityName"), Marshal.StringToHGlobalAnsi(((PropertyControl)sender).Contents));
                 UpdateEntity(((PropertyControl)sender).ID, ((PropertyControl)sender).Contents);
             }
             catch (Exception e)
@@ -214,17 +217,22 @@ namespace EditorUI
             UpdateEntityProperty(((PropertyControl)sender).ID, Marshal.StringToHGlobalAnsi("scale"), Marshal.StringToHGlobalAnsi(((PropertyControl)sender).Contents));
         }
 
-        private void UpdateObjectColor(object sender)
+        private void Color_callback(object sender)
         {
-            UpdateEntityProperty(((PropertyControl)sender).ID, Marshal.StringToHGlobalAnsi("color"), Marshal.StringToHGlobalAnsi(((PropertyControl)sender).Contents));
+            var color = ((PropertyControl)sender).Contents.Split(':');
+            float r = float.Parse(color[0], System.Globalization.CultureInfo.InvariantCulture.NumberFormat) / 255;
+            float g = float.Parse(color[1], System.Globalization.CultureInfo.InvariantCulture.NumberFormat) / 255;
+            float b = float.Parse(color[2], System.Globalization.CultureInfo.InvariantCulture.NumberFormat) / 255;
+            float a = float.Parse(color[3], System.Globalization.CultureInfo.InvariantCulture.NumberFormat) / 255;
+            UpdateEntityProperty(((PropertyControl)sender).ID, Marshal.StringToHGlobalAnsi("Color"), Marshal.StringToHGlobalAnsi(r.ToString().Replace(',','.') + ":" + g.ToString().Replace(',', '.') + ":" + b.ToString().Replace(',', '.') + ":" + a.ToString().Replace(',', '.')));
         }
 
-        private void UpdateObjectMass(object sender)
+        private void Mass_callback(object sender)
         {
-            UpdateEntityProperty(((PropertyControl)sender).ID, Marshal.StringToHGlobalAnsi("mass"), Marshal.StringToHGlobalAnsi(((PropertyControl)sender).Contents));
+            UpdateEntityProperty(((PropertyControl)sender).ID, Marshal.StringToHGlobalAnsi("Mass"), Marshal.StringToHGlobalAnsi(((PropertyControl)sender).Contents));
         }
 
-        internal void RetrieveEntityInfo(int ID, string name, string pos, string orient, string scale)
+        internal void RetrieveEntityInfo(int id, string name, string value, string type)
         {
             try
             {
@@ -233,41 +241,36 @@ namespace EditorUI
                 Dictionary<string, string> events = new Dictionary<string, string>();
                 Dictionary<string, string> handlers = new Dictionary<string, string>();
 
-                properties.Add("EntityName", name);
-                properties.Add("EntityID", ID);
-                properties.Add("Drawable", "None");
-                properties.Add("Position", pos);
-                properties.Add("Orientation", orient);
-                properties.Add("Scale", scale);
-                properties.Add("Object mass", "0");
-                properties.Add("Color", "0 0 0 0");
+                properties.Add(name, value);
 
-                types.Add("EntityName", typeof(LabelControl));
-                types.Add("EntityID", typeof(TextControl));
-                types.Add("Drawable", typeof(TextControl));
-                types.Add("Position", typeof(_3VectorControl));
-                types.Add("Orientation", typeof(_3VectorControl));
-                types.Add("Scale", typeof(_3VectorControl));
-                types.Add("Object mass", typeof(LabelControl));
-                types.Add("Color", typeof(ColorControl));
+                if (type == "vector3")
+                {
+                    types.Add(name, typeof(_3VectorControl));
+                    events.Add(name, "VectorPropertyChanged");
+                }
+                else if (name == "EntityID")
+                {
+                    types.Add(name, typeof(TextControl));
+                }
+                else if (name == "Color")
+                {
+                    types.Add(name, typeof(ColorControl));
+                    events.Add(name, "ColorPropertyChanged");
+                }
+                else if (name == "Drawable")
+                {
+                    types.Add(name, typeof(ResourceControl));
+                    events.Add(name, "DialogOpen");
+                }
+                else
+                {
+                    types.Add(name, typeof(LabelControl));
+                    events.Add(name, "TextBoxTextChanged");
+                }
 
-                events.Add("EntityName", "TextBoxTextChanged");
-                events.Add("Drawable", "MouseDoubleClick");
-                events.Add("Position", "VectorPropertyChanged");
-                events.Add("Orientation", "VectorPropertyChanged");
-                events.Add("Scale", "VectorPropertyChanged");
-                events.Add("Object mass", "TextBoxTextChanged");
-                events.Add("Color", "ColorPropertyChanged");
+                handlers.Add(name, name + "_callback");
 
-                handlers.Add("EntityName", "UpdateObjectName");
-                handlers.Add("Drawable", "LoadModelBrowser");
-                handlers.Add("Position", "UpdateObjectPosition");
-                handlers.Add("Orientation", "UpdateObjectOrientation");
-                handlers.Add("Scale", "UpdateObjectScale");
-                handlers.Add("Object mass", "UpdateObjectMass");
-                handlers.Add("Color", "UpdateObjectColor");
-
-                UpdateProperties(properties, types, events, handlers);
+                UpdateProperties(id, properties, types, events, handlers);
             }
             catch (Exception e)
             {
@@ -280,7 +283,10 @@ namespace EditorUI
             try
             {
                 if (e.AddedItems.Count > 0)
+                {
+                    PropertiesCollection.Items.Clear();
                     GetEntityInfo((IntPtr)(e.AddedItems[0] as EntityItem).ID);
+                }
             }
             catch (Exception ee)
             {
@@ -316,6 +322,31 @@ namespace EditorUI
         private void PhysicsButton_Click(object sender, RoutedEventArgs e)
         {
             TogglePhysics();
+        }
+
+        private void ExtraProps_PreviewMouseUp(object sender, System.Windows.Input.MouseButtonEventArgs e)
+        {
+            ExtraProps.IsSubmenuOpen = !ExtraProps.IsSubmenuOpen;
+        }
+
+        private void MenuItem_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                AddNewEntityProperty((EntitiesList.SelectedItem as EntityItem).ID, Marshal.StringToHGlobalAnsi((sender as System.Windows.Controls.Control).Name));
+                PropertiesCollection.Items.Clear();
+                GetEntityInfo((IntPtr)((EntitiesList.SelectedItem as EntityItem).ID));
+                ExtraProps.IsSubmenuOpen = false;
+            }
+            catch (Exception ee)
+            {
+                LogMessage(Marshal.StringToHGlobalAnsi(ee.Message));
+            }
+        }
+
+        private void DockPanel_LostFocus(object sender, RoutedEventArgs e)
+        {
+
         }
     };
 }

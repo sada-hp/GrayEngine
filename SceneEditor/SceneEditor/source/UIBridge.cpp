@@ -12,8 +12,7 @@ void SceneEditor::InitModelBrowser()
 
 void SceneEditor::AddEntity()
 {
-	GrEngine::EntityInfo inf = SceneEditor::GetApplication()->GetContext()->AddEntity();
-	SceneEditor::GetApplication()->App_UpdateEntity(inf);
+	SceneEditor::GetApplication()->App_UpdateEntity(SceneEditor::GetApplication()->GetContext()->AddEntity());
 }
 
 void SceneEditor::UpdateEntityProperty(int ID, const char* selected_property, const char* value)
@@ -183,4 +182,9 @@ void SceneEditor::TogglePhysics()
     static bool simation = false;
     simation = !simation;
     GrEngine::Engine::GetContext()->TogglePhysicsState(simation);
+}
+
+void SceneEditor::AddNewEntityProperty(int id, const char* property_name)
+{
+    SceneEditor::GetApplication()->addNewProperty(id, property_name);
 }

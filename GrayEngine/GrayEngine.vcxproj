@@ -12,11 +12,12 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Bullet\BulletAPI.h" />
+    <ClInclude Include="Engine\Headers\Entities\Properties\Property.h" />
     <ClInclude Include="Engine\Headers\Virtual\AppWindow.h" />
     <ClInclude Include="Engine\Headers\Entities\Camera.h" />
     <ClInclude Include="Engine\Headers\Core\Core.h" />
     <ClInclude Include="Engine\Headers\Entities\DrawableObject.h" />
-    <ClInclude Include="Engine\Headers\Virtual\Entity.h" />
+    <ClInclude Include="Engine\Headers\Entities\Entity.h" />
     <ClInclude Include="Engine\Headers\Core\Globals.h" />
     <ClInclude Include="Engine\Headers\Virtual\Renderer.h" />
     <ClInclude Include="Vulkan\VulkanDrawable.h" />
@@ -31,6 +32,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Bullet\BulletAPI.cpp" />
+    <ClCompile Include="Engine\Headers\Entities\Properties\Property.cpp" />
     <ClCompile Include="Engine\Source\Engine.cpp" />
     <ClCompile Include="Engine\Source\Globals.cpp" />
     <ClCompile Include="Vulkan\VulkanDrawable.cpp" />
@@ -132,7 +134,7 @@
       <ConformanceMode>true</ConformanceMode>
       <PrecompiledHeader>Use</PrecompiledHeader>
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
-      <AdditionalIncludeDirectories>$(SolutionDir)GrayEngine\Engine\Source\Libs\IncludeBullet;$(SolutionDir)GrayEngine\Engine\Source\Libs\IncludeVK;$(SolutionDir)GrayEngine\Engine\Source\Libs\includeGL;$(SolutionDir)GrayEngine\Engine\Source\Libs\IncludeAssimp;$(SolutionDir)GrayEngine\Engine\Source\Libs\glm;$(SolutionDir)GrayEngine\Engine\Source\Libs\VkMemAlloc;$(SolutionDir)GrayEngine\Engine\Source\Libs\TexLoader;%(AdditionalIncludeDirectories);$(SolutionDir)GrayEngine</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)GrayEngine\Engine\Libs\IncludeBullet;$(SolutionDir)GrayEngine\Engine\Libs\IncludeVK;$(SolutionDir)GrayEngine\Engine\Libs\includeGL;$(SolutionDir)GrayEngine\Engine\Libs\IncludeAssimp;$(SolutionDir)GrayEngine\Engine\Libs\glm;$(SolutionDir)GrayEngine\Engine\Libs\VkMemAlloc;$(SolutionDir)GrayEngine\Engine\Libs\TexLoader;%(AdditionalIncludeDirectories);$(SolutionDir)GrayEngine\Engine\Headers;$(SolutionDir)GrayEngine</AdditionalIncludeDirectories>
       <LanguageStandard>stdcpp20</LanguageStandard>
       <TreatAngleIncludeAsExternal>false</TreatAngleIncludeAsExternal>
       <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
@@ -142,7 +144,7 @@
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalLibraryDirectories>$(SolutionDir)GrayEngine\Engine\Source\Libs\Lib;$(SolutionDir)GrayEngine\Engine\Source\Libs\lib-vc2019;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>$(SolutionDir)GrayEngine\Engine\Libs\Lib;$(SolutionDir)GrayEngine\Engine\Libs\lib-vc2019;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <AdditionalDependencies>BulletCollision.lib;BulletDynamics.lib;LinearMath.lib;glfw3.lib;vulkan-1.lib;assimp.lib;BulletDynamics.lib;BulletCollision.lib;LinearMath.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <PostBuildEvent>

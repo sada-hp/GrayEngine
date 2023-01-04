@@ -9,7 +9,7 @@ namespace GrEngine
     class ModelBrowser : public Engine
     {
         EditorUI editorUI;
-        EntityInfo dummy_entity;
+        Entity* dummy_entity;
 
     public:
         ModelBrowser(const AppParameters& Properties = AppParameters()) : Engine(Properties)
@@ -25,7 +25,7 @@ namespace GrEngine
         {
             initModelBrowser();
             dummy_entity = AddEntity();
-            SelectEntity(dummy_entity.EntityID);
+            SelectEntity(dummy_entity->GetEntityID());
             AddInputCallback(Inputs);
 
             EventListener::pushEvent("RequireMaterialsUpdate", [](std::vector<std::any> para)

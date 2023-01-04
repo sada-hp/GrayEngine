@@ -56,7 +56,7 @@ namespace GrEngine_Vulkan
 		inline VmaAllocator getMemAllocator() { return memAllocator; };
 		inline VkRenderPass getRenderPass() { return renderPass; };
 		bool loadModel(const char* mesh_path, std::vector<std::string> textures_vector, std::unordered_map<std::string, std::string>* out_materials_names = nullptr) override;
-		GrEngine::EntityInfo addEntity() override;
+		GrEngine::Entity* addEntity() override;
 		bool assignTextures(std::vector<std::string> textures, GrEngine::Entity* target) override;
 		void clearDrawables() override;
 		void createSkybox(const char* East, const char* West, const char* Top, const char* Bottom, const char* North, const char* South) override;

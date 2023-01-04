@@ -86,21 +86,18 @@ namespace GrEngine
             SetCursorState(!free_mode);
         }
 
-        void App_UpdateEntity(EntityInfo info)
+        void App_UpdateEntity(Entity* target)
         {
-            getEditorUI()->UpdateEntity(info.EntityID, Globals::StringToCharArray(info.EntityName));
+            getEditorUI()->UpdateEntity(target->GetEntityID(), (char*)target->GetEntityNameTag());
         }
 
         void getEntityInfo(int ID)
         {
-            EntityInfo info = GetRenderer()->getEntityInfo(ID);
-
-            getEditorUI()->SendEntityInfo(info.EntityID, Globals::StringToCharArray(info.EntityName), 
-                Globals::StringToCharArray(Globals::FloatToString(info.Position.x, 2) + ":" + Globals::FloatToString(info.Position.y, 2) + ":" + Globals::FloatToString(info.Position.z, 2)),
-                Globals::StringToCharArray(Globals::FloatToString(info.Orientation.x, 2) + ":" + Globals::FloatToString(info.Orientation.y, 2) + ":" + Globals::FloatToString(info.Orientation.z, 2)),
-                Globals::StringToCharArray(Globals::FloatToString(info.Scale.x, 2) + ":" + Globals::FloatToString(info.Scale.y, 2) + ":" + Globals::FloatToString(info.Scale.z, 2))
-            );
-            GetRenderer()->selectEntity(ID);
+            auto props = GetRenderer()->selectEntity(ID)->properties;
+            for (int i = 0; i < GetRenderer()->selectEntity(ID)->properties.size(); i++)
+            {
+                getEditorUI()->SendEntityInfo(ID, (char*)props[i]->property_name, (char*)props[i]->ValueString(), (char*)props[i]->TypeString());
+            }
         }
 
         void pushToAppLogger(char* message)
@@ -118,82 +115,14 @@ namespace GrEngine
 
         void updateEntity(int ID, std::string selected_property, std::string value)
         {
-            if (selected_property == "position")
-            {
-                Entity* selection = SelectEntity(ID);
-                auto input = GrEngine::Globals::SeparateString(value, ':');
-                std::vector<float> coords;
+            Entity* selection = SelectEntity(ID);
+            selection->ParsePropertyValue(selected_property.c_str(), value.c_str());
+        }
 
-                for (int ind = 0; ind < input.size(); ind++)
-                {
-                    try
-                    {
-                        coords.push_back(std::stof(input[ind]));
-                    }
-                    catch (...)
-                    {
-                        coords.push_back(selection->GetObjectPosition()[ind]);
-                    }
-                }
-
-                selection->PositionObjectAt(coords[0], coords[1], coords[2]);
-            }
-            else if (selected_property == "orientation")
-            {
-                Entity* selection = SelectEntity(ID);
-                auto input = GrEngine::Globals::SeparateString(value, ':');
-                std::vector<float> coords;
-
-                for (int ind = 0; ind < input.size(); ind++)
-                {
-                    try
-                    {
-                        coords.push_back(std::stof(input[ind]));
-                    }
-                    catch (...)
-                    {
-                        coords.push_back(selection->GetObjectPosition()[ind]);
-                    }
-                }
-
-                selection->SetRotation(coords[0], coords[1], coords[2]);
-            }
-            else if (selected_property == "name")
-            {
-                Entity* selection = SelectEntity(ID);
-                selection->UpdateNameTag(value);
-            }
-            else if (selected_property == "scale")
-            {
-                Entity* selection = SelectEntity(ID);
-                auto input = GrEngine::Globals::SeparateString(value, ':');
-                std::vector<float> coords;
-
-                for (int ind = 0; ind < input.size(); ind++)
-                {
-                    try
-                    {
-                        coords.push_back(std::stof(input[ind]));
-                    }
-                    catch (...)
-                    {
-                        coords.push_back(selection->GetObjectPosition()[ind]);
-                    }
-                }
-
-                selection->SetObjectScale(coords[0], coords[1], coords[2]);
-            }
-            else if (selected_property == "color")
-            {
-                DrawableObject* selection = dynamic_cast<DrawableObject*>(SelectEntity(ID));
-                auto input = GrEngine::Globals::SeparateString(value, ':');
-                selection->AssignColorMask((float)stoi(input[0]) / 255, (float)stoi(input[1]) / 255, (float)stoi(input[2]) / 255, (float)stoi(input[3]) / 255);
-            }
-            else if (selected_property == "mass")
-            {
-                DrawableObject* selection = dynamic_cast<DrawableObject*>(SelectEntity(ID));
-                selection->SetMass(std::stof(value));
-            }
+        void addNewProperty(UINT ID, const char* property_name)
+        {
+            Entity* selection = SelectEntity(ID);
+            selection->AddNewProperty(property_name);
         }
     };
 }

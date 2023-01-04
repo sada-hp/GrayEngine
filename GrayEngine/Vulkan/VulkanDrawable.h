@@ -111,7 +111,7 @@ namespace GrEngine_Vulkan
 	class VulkanDrawable : public GrEngine::DrawableObject
 	{
 	public:
-		Mesh object_mesh;
+		
 		Texture object_texture;
 		const char* shader_path = "Shaders//default";
 		float near_plane = 0.1;
@@ -133,6 +133,7 @@ namespace GrEngine_Vulkan
 		GrEngine::Renderer* p_Owner;
 		VkDescriptorSetLayout descriptorSetLayout;
 		std::vector<VkDescriptorSet> descriptorSets;
+		Mesh object_mesh;
 
 		VkDescriptorPool descriptorPool;
 		VkPipelineLayout pipelineLayout;

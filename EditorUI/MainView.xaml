@@ -4,6 +4,7 @@
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
              xmlns:local="clr-namespace:EditorUI"
+             xmlns:comp="clr-namespace:EditorUI.Components"
              mc:Ignorable="d" 
              d:DesignHeight="450" d:DesignWidth="800" WindowStartupLocation="CenterScreen" Background="#FF15161F" Title="Gray Engine: World Editor" Closed="Window_Closed">
 
@@ -30,9 +31,9 @@
                         <Button x:Name="EntityButton" Content="Add entity" Background="#FF5D5D5D" BorderBrush="#FFC8C8C8" BorderThickness="1" Margin="5" Foreground="White" FontFamily="Lucida Sans Unicode" TextOptions.TextHintingMode="Fixed" Padding="2" Cursor="Hand" Click="EntityButton_Click"/>
                         <Button x:Name="PhysicsButton" Content="Simulate physics" Background="#FF5D5D5D" BorderBrush="#FFC8C8C8" BorderThickness="1" Margin="5" Foreground="White" FontFamily="Lucida Sans Unicode" TextOptions.TextHintingMode="Fixed" Padding="2" Cursor="Hand" Click="PhysicsButton_Click"/>
                     </StackPanel>
-                    <ListBox Name="EntitiesList" Background="#FF242427" Margin="5, 5, 5, 5" IsSynchronizedWithCurrentItem="True" SelectionChanged="EntitiesList_SelectionChanged">
-                        
-                    </ListBox>
+                    <comp:ListBoxEx x:Name="EntitiesList" Background="#FF242427" Margin="5, 5, 5, 5" IsSynchronizedWithCurrentItem="True" SelectionChanged="EntitiesList_SelectionChanged">
+
+                    </comp:ListBoxEx>
                 </DockPanel>
                 <Grid Grid.Column="1">
                     <Grid.RowDefinitions>
@@ -42,9 +43,33 @@
                     <WindowsFormsHost x:Name="FormHost" Background="Black" SizeChanged="FormHost_SizeChanged" DockPanel.Dock="Top" Margin="5" Grid.Row="0"/>
                     <TextBox x:Name="OutputConsole" TextWrapping="Wrap" Foreground="#FFB9B9B9" Background="#FF262629" SelectionBrush="#FF8A9299" Padding="5" Margin="2" VerticalScrollBarVisibility="Auto" BorderThickness="0" IsReadOnly="True" HorizontalScrollBarVisibility="Auto" Grid.Row="1"/>
                 </Grid>
-                <ListBox Name="PropertiesCollection" Grid.Column="2" Background="#FF242427" Margin="5, 5, 5, 5">
-                    
-                </ListBox>
+                <Grid Grid.Column="2">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="35"/>
+                        <RowDefinition Height="*"/>
+                    </Grid.RowDefinitions>
+                    <DockPanel Background="#FF262629" Margin="5" Cursor="Hand" LostFocus="DockPanel_LostFocus">
+                        <MenuItem Name="ExtraProps" HorizontalContentAlignment="Left" VerticalContentAlignment="Center" Padding="0" PreviewMouseUp="ExtraProps_PreviewMouseUp" BorderBrush="#FFC8C8C8" BorderThickness="1">
+                            <MenuItem.Header>
+                                <TextBlock Text="Add property" Foreground="White" Background="#FF262629" />
+                            </MenuItem.Header>
+                            <MenuItem Name="Mass" HorizontalContentAlignment="Left" Click="MenuItem_Click" Cursor="Hand">
+                                <MenuItem.Header>
+                                    <TextBlock Text="Mass" HorizontalAlignment="Left" RenderTransformOrigin="0.5,0.5"/>
+                                </MenuItem.Header>
+                            </MenuItem>
+                            <MenuItem Name="Mesh" HorizontalContentAlignment="Left" Click="MenuItem_Click" Cursor="Hand">
+                                <MenuItem.Header>
+                                    <TextBlock Text="Mesh" HorizontalAlignment="Left" RenderTransformOrigin="0.5,0.5"/>
+                                </MenuItem.Header>
+                            </MenuItem>
+                        </MenuItem>
+                    </DockPanel>
+
+                    <ListBox Name="PropertiesCollection" Grid.Column="2" Background="#FF242427" Margin="5, 5, 5, 5" Grid.Row="1">
+
+                    </ListBox>
+                </Grid>
             </Grid>
         </DockPanel>
     </DockPanel>

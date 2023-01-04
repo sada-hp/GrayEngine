@@ -42,6 +42,11 @@ namespace EditorUI
             }
         }
 
+        public void Init(string content)
+        {
+            Contents = content;
+        }
+
         public void ChangeColors(System.Windows.Media.Brush background, System.Windows.Media.Brush foreground)
         {
             ContentLabel.Background = background;

@@ -83,7 +83,7 @@ namespace GrEngine
 		return Globals::writeGMF(filepath, mesh_path, textures_vector);
 	}
 
-	EntityInfo Engine::AddEntity()
+	Entity* Engine::AddEntity()
 	{
 		return pWindow->getRenderer()->addEntity();
 	}
