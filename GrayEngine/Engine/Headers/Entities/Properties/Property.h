@@ -7,7 +7,8 @@ enum class PropertyType
 	STRING = 0,
 	INT = 1,
 	VECTOR3 = 2,
-	VECTOR4 = 3
+	QUAT = 3,
+	VECTOR4 = 4
 };
 
 struct EntityProperty
@@ -37,12 +38,14 @@ public:
 		{
 		case PropertyType::STRING:
 			return "string";
-		case PropertyType::INT:
-			return "int";
 		case PropertyType::VECTOR3:
 			return "vector3";
+		case PropertyType::QUAT:
+			return "quat";
 		case PropertyType::VECTOR4:
 			return "vector4";
+		default:
+			return "int";
 		}
 	}
 
@@ -72,15 +75,15 @@ private:
 struct Mass : public EntityProperty
 {
 public:
-	Mass(int mass, void* parent = nullptr);
+	Mass(float mass, void* parent = nullptr);
 	~Mass();
 	const char* ValueString() override;
 	void ParsePropertyValue(const char* value) override;
-	void SetPropertyValue(int value);
+	void SetPropertyValue(float value);
 	std::any GetAnyValue() override;
 	virtual void* GetValueAdress() override;
 
-	int property_value;
+	float property_value;
 private:
 	std::string string_value;
 };
@@ -127,6 +130,23 @@ public:
 	}
 
 	std::string property_value;
+};
+
+struct Scale : public EntityProperty
+{
+public:
+	Scale(float x, float y, float z, void* parent = nullptr);
+	~Scale();
+	const char* ValueString() override;
+	void ParsePropertyValue(const char* value) override;
+	void SetPropertyValue(const float& x, const float& y, const float& z);
+	void SetPropertyValue(const glm::vec3& value);
+	std::any GetAnyValue() override;
+	virtual void* GetValueAdress() override;
+
+	glm::vec3 property_value;
+private:
+	std::string property_string;
 };
 
 struct EntityPosition : public EntityProperty

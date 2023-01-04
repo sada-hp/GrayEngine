@@ -49,7 +49,7 @@ void* EntityID::GetValueAdress()
 
 /////////////////////////////////////////////////////////////////////////////////
 
-Mass::Mass(int mass, void* parent)
+Mass::Mass(float mass, void* parent)
 {
 	property_value = mass;
 	property_name = "Mass";
@@ -65,24 +65,18 @@ Mass::~Mass()
 
 const char* Mass::ValueString()
 {
-	string_value = std::to_string(property_value);
+	string_value = GrEngine::Globals::FloatToString(property_value, 2);
 	return string_value.c_str();
 }
 
 void Mass::ParsePropertyValue(const char* value)
 {
-	property_value = std::atoi(value);
-
-	if (owner != nullptr)
-		static_cast<GrEngine::Entity*>(owner)->recalculatePhysics();
+	property_value = std::stof(value);
 }
 
-void Mass::SetPropertyValue(int value)
+void Mass::SetPropertyValue(float value)
 {
 	property_value = value;
-
-	if (owner != nullptr)
-		static_cast<GrEngine::Entity*>(owner)->recalculatePhysics();
 }
 
 std::any Mass::GetAnyValue()
@@ -94,6 +88,56 @@ void* Mass::GetValueAdress()
 {
 	return &property_value;
 }
+
+/////////////////////////////////////////////////////////////////////////////////
+
+Scale::Scale(float x, float y, float z, void* parent)
+{
+	property_value = { x, y, z };
+	property_name = "Scale";
+	property_type = PropertyType::VECTOR3;
+	owner = parent;
+}
+
+Scale::~Scale()
+{
+
+}
+
+const char* Scale::ValueString()
+{
+	property_string = (GrEngine::Globals::FloatToString(property_value.x, 2) + ":" + GrEngine::Globals::FloatToString(property_value.y, 2) + ":" + GrEngine::Globals::FloatToString(property_value.z, 2));
+	return property_string.c_str();
+}
+
+void Scale::ParsePropertyValue(const char* value)
+{
+	auto cols = GrEngine::Globals::SeparateString(value, ':');
+	if (cols.size() < 3) return;
+
+	property_value = { stof(cols[0]), stof(cols[1]), stof(cols[2]) };
+}
+
+void Scale::SetPropertyValue(const float& x, const float& y, const float& z)
+{
+	property_value = { x, y, z };
+}
+
+void Scale::SetPropertyValue(const glm::vec3& value)
+{
+	property_value = value;
+}
+
+std::any Scale::GetAnyValue()
+{
+	return property_value;
+}
+
+void* Scale::GetValueAdress()
+{
+	return &property_value;
+}
+
 
 /////////////////////////////////////////////////////////////////////////////////
 
@@ -122,25 +166,16 @@ void EntityPosition::ParsePropertyValue(const char* value)
 	if (cols.size() < 3) return;
 
 	property_value = { stof(cols[0]), stof(cols[1]), stof(cols[2]) };
-
-	if (owner != nullptr)
-		static_cast<GrEngine::Entity*>(owner)->recalculatePhysics();
 }
 
 void EntityPosition::SetPropertyValue(const float& x, const float& y, const float& z)
 {
 	property_value = { x, y, z };
-
-	if (owner != nullptr)
-		static_cast<GrEngine::Entity*>(owner)->recalculatePhysics();
 }
 
 void EntityPosition::SetPropertyValue(const glm::vec3& value)
 {
 	property_value = value;
-
-	if (owner != nullptr)
-		static_cast<GrEngine::Entity*>(owner)->recalculatePhysics();
 }
 
 std::any EntityPosition::GetAnyValue()
@@ -163,7 +198,7 @@ EntityOrientation::EntityOrientation(const float& pitch, const float& yaw, const
 	property_value = glm::normalize(qPitch * qYaw * qRoll);
 	pitch_yaw_roll = { pitch, yaw, roll };
 	property_name = "EntityOrientation";
-	property_type = PropertyType::VECTOR3;
+	property_type = PropertyType::QUAT;
 	owner = parent;
 }
 

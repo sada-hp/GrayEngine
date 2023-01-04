@@ -34,6 +34,8 @@ namespace GrEngine
 			properties.push_back(new EntityOrientation(0.f, 0.f, 0.f, this));
 			//Don't shuffle
 
+			obj_name = static_cast<std::string*>(properties[0]->GetValueAdress());
+			obj_id = static_cast<UINT*>(properties[1]->GetValueAdress());
 			object_origin = static_cast<glm::vec3*>(properties[2]->GetValueAdress());
 			obj_orientation = static_cast<glm::quat*>(properties[3]->GetValueAdress());
 
@@ -118,23 +120,13 @@ namespace GrEngine
 			static_cast<EntityPosition*>(properties[2])->SetPropertyValue(vector);
 		}
 
-		virtual glm::vec3& GetObjectPosition()
+		virtual glm::vec3 GetObjectPosition()
 		{
-			if (Physics::GetContext()->GetSimulationState())
+			if (physics_object && Physics::GetContext()->GetSimulationState() && body != nullptr && body->getMass() > 0.f)
 			{
-				std::string mass_property = GetPropertyValue("Mass");
-				float obj_mass = mass_property == "" ? 0.f : std::stof(mass_property);
-
-				if (obj_mass != 0.f)
-				{
-					auto phys_pos = body->getWorldTransform().getOrigin();
-					auto pos = glm::vec3(phys_pos.x(), phys_pos.y(), phys_pos.z());;
-					return pos;
-				}
-				else
-				{
-					return *object_origin;
-				}
+				auto phys_pos = body->getWorldTransform().getOrigin();
+				auto pos = glm::vec3(phys_pos.x(), phys_pos.y(), phys_pos.z());;
+				return glm::vec3(phys_pos.x(), phys_pos.y(), phys_pos.z());
 			}
 			else
 			{
@@ -142,54 +134,32 @@ namespace GrEngine
 			}
 		}
 
-		virtual glm::quat& GetObjectOrientation()
+		virtual glm::quat GetObjectOrientation()
 		{
-			if (physics_object && Physics::GetContext()->GetSimulationState())
+			if (physics_object && Physics::GetContext()->GetSimulationState() && body != nullptr && body->getMass() > 0.f)
 			{
-				std::string mass_property = GetPropertyValue("Mass");
-				float obj_mass = mass_property == "" ? 0.f : std::stof(mass_property);
-
-				if (obj_mass != 0.f)
-				{
-					auto phys_pos = body->getWorldTransform().getRotation();
-					auto ori = glm::quat(phys_pos.x(), phys_pos.y(), phys_pos.z(), phys_pos.w()) * *obj_orientation;
-					return ori;
-				}
-				else
-				{
-					return *obj_orientation;
-				}
+				auto phys_pos = body->getWorldTransform().getRotation();
+				auto ori = glm::quat(phys_pos.x(), phys_pos.y(), phys_pos.z(), phys_pos.w()) * *obj_orientation;
+				return ori;
 			}
-
-			return *obj_orientation;
+			else
+			{
+				return *obj_orientation;
+			}
 		}
 
-		virtual glm::vec3& GetObjectScale()
-		{
-			return scale;
-		}
-
-		virtual void SetObjectScale(glm::vec3 new_scale)
-		{
-			scale = new_scale;
-		}
-
-		virtual void SetObjectScale(float scalex, float scaley, float scalez)
-		{
-			scale = { scalex, scaley, scalez };
-		}
-
-		inline std::string GetPropertyValue(const char* property_name)
+		template<typename T>
+		T GetPropertyValue(const char* property_name, T default_value)
 		{
 			for (int i = 0; i < properties.size(); i++)
 			{
 				if (properties[i]->property_name == property_name)
 				{
-					return properties[i]->ValueString();
+					return std::any_cast<T>(properties[i]->GetAnyValue());
 				}
 			}
-			
-			return "";
+
+			return default_value;
 		}
 
 		inline bool HasProperty(const char* property_name)
@@ -206,7 +176,7 @@ namespace GrEngine
 			return false;
 		}
 
-		void ParsePropertyValue(const char* property_name, const char* property_value)
+		virtual void ParsePropertyValue(const char* property_name, const char* property_value)
 		{
 			for (int i = 0; i < properties.size(); i++)
 			{
@@ -234,18 +204,22 @@ namespace GrEngine
 
 		inline void UpdateNameTag(std::string new_name) 
 		{ 
-			ParsePropertyValue("EntityName", new_name.c_str());
+			static_cast<EntityName*>(properties[0])->SetPropertyValue(new_name.c_str());
 		}
 
-		inline UINT GetEntityID()
+		inline std::string& GetObjectName()
 		{
-			return static_cast<EntityID*>(properties[1])->GetValue();
+			return *obj_name;
+		}
+
+		inline UINT& GetEntityID()
+		{
+			return *obj_id;
 		}
 
 		void recalculatePhysics(bool rewrite = false)
 		{
-			std::string mass_property = GetPropertyValue("Mass");
-			float obj_mass = mass_property == "" ? 0.f : std::stof(mass_property);
+			float obj_mass = GetPropertyValue<float>("Mass", 0.f);
 
 			if (obj_mass == 0.f && body != nullptr && !rewrite || !physics_object) return;
 
@@ -253,12 +227,14 @@ namespace GrEngine
 			{
 				Physics::GetContext()->RemoveObject(static_cast<void*>(body));
 				delete body;
+				body = nullptr;
 				delete myMotionState;
+				myMotionState = nullptr;
 			}
 
 			btTransform startTransform;
 			startTransform.setIdentity();
-			glm::vec3 pos = std::any_cast<glm::vec3>(properties[2]->GetAnyValue());
+			glm::vec3 pos = *object_origin;
 			startTransform.setOrigin(btVector3(pos.x, pos.y, pos.z));
 			startTransform.setRotation(btQuaternion(btVector3(1, 0, 0), M_PI));
 			btVector3 localInertia{ 0,0,0 };
@@ -266,6 +242,7 @@ namespace GrEngine
 			if (obj_mass != 0.f && physics_object)
 				colShape->calculateLocalInertia(obj_mass, localInertia);
 
+			glm::vec3 scale = GetPropertyValue("Scale", glm::vec3(1.f));
 			colShape->setLocalScaling(btVector3(scale.x, -1 * scale.y, scale.z));
 
 			myMotionState = new btDefaultMotionState(startTransform);
@@ -287,16 +264,15 @@ namespace GrEngine
 		std::vector<EntityProperty*> properties;
 
 	protected:
+		std::string* obj_name;
+		UINT* obj_id;
 		glm::quat* obj_orientation;
 		glm::vec3* object_origin;
 		std::string Type = "Entity";
 
 		glm::quat obj_orientation_target = { 0.f, 0.f, 0.f, 0.f };
 		glm::vec3 object_position_target = { 0.f, 0.f, 0.f };
-		glm::vec3 pitch_yaw_roll = { 0.f, 0.f, 0.f };
-
-		glm::vec3 scale = { 1.f, 1.f, 1.f };
-		
+		glm::vec3 pitch_yaw_roll = { 0.f, 0.f, 0.f };		
 
 		btCollisionShape* colShape = new btBoxShape(btVector3(0.25f, 0.25f, 0.25f));
 		btRigidBody* body;
@@ -304,6 +280,7 @@ namespace GrEngine
 		btTriangleMesh* colMesh;
 		bool physics_object = false;
 
+		float mass;
 	public:
 		void AddNewProperty(const char* property_name)
 		{
@@ -314,6 +291,18 @@ namespace GrEngine
 			else if (std::string(property_name) == "Mesh")
 			{
 				properties.push_back(new Drawable("", this));
+			}
+			else if (std::string(property_name) == "Scale")
+			{
+				properties.push_back(new Scale(1.f, 1.f, 1.f, this));
+			}
+			else if (std::string(property_name) == "Color")
+			{
+				properties.push_back(new Color(1.f, 1.f, 1.f, this));
+			}
+			else
+			{
+				Logger::Out("Invalid property was provided to entity %d", OutputColor::Red, OutputType::Error, GetPropertyValue("EntityID", 0));
 			}
 		}
 	};

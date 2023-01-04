@@ -83,6 +83,7 @@ namespace EditorUI
 
         private void FormHost_SizeChanged(object sender, SizeChangedEventArgs e)
         {
+            UpdateChildPosition();
         }
 
         private void ClearButton_Click(object sender, RoutedEventArgs e)
@@ -212,9 +213,9 @@ namespace EditorUI
             }
         }
 
-        private void UpdateObjectScale(object sender)
+        private void Scale_callback(object sender)
         {
-            UpdateEntityProperty(((PropertyControl)sender).ID, Marshal.StringToHGlobalAnsi("scale"), Marshal.StringToHGlobalAnsi(((PropertyControl)sender).Contents));
+            UpdateEntityProperty(((PropertyControl)sender).ID, Marshal.StringToHGlobalAnsi("Scale"), Marshal.StringToHGlobalAnsi(((PropertyControl)sender).Contents));
         }
 
         private void Color_callback(object sender)
@@ -243,7 +244,7 @@ namespace EditorUI
 
                 properties.Add(name, value);
 
-                if (type == "vector3")
+                if (type == "vector3" || type == "quat")
                 {
                     types.Add(name, typeof(_3VectorControl));
                     events.Add(name, "VectorPropertyChanged");

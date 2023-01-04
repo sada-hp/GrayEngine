@@ -46,10 +46,6 @@ namespace GrEngine
 		{
 			recalculatePhysics();
 			Type = "Object";
-
-			Color* new_prop = new Color(0.15, 0.85, 0.25, this);
-			properties.push_back(new_prop);
-			color_mask = static_cast<glm::vec4*>(new_prop->GetValueAdress());
 			physics_object = true;
 		};
 
@@ -59,6 +55,19 @@ namespace GrEngine
 		};
 
 		virtual bool LoadMesh(const char* mesh_path, bool useTexturing, std::vector<std::string>* out_materials) = 0;
+
+		void ParsePropertyValue(const char* property_name, const char* property_value) override
+		{
+			for (int i = 0; i < properties.size(); i++)
+			{
+				auto name = properties[i]->property_name;
+				if (std::string(properties[i]->property_name) == std::string(property_name))
+				{
+					properties[i]->ParsePropertyValue(property_value);
+					recalculatePhysics();
+				}
+			}
+		}
 
 
 		glm::vec3& GetObjectBounds()
@@ -81,26 +90,8 @@ namespace GrEngine
 			visibility = value;
 		}
 
-		glm::vec4 GetColorMask()
-		{
-			return *color_mask;
-		}
-
-		void SetObjectScale(glm::vec3 new_scale) override
-		{
-			scale = new_scale;
-			recalculatePhysics();
-		}
-
-		void SetObjectScale(float scalex, float scaley, float scalez) override
-		{
-			colShape->setLocalScaling(btVector3(scalex, scaley, scalez));
-			scale = { scalex, scaley, scalez };
-			recalculatePhysics();
-		}
 
 	protected:
-		glm::vec4* color_mask;
 		glm::uvec3 colorID = { 0, 0, 0 };
 		virtual void updateCollisions() = 0;
 		glm::vec3 bound = { 0.f, 0.f, 0.f };

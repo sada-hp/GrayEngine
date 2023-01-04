@@ -146,11 +146,11 @@ namespace GrEngine_Vulkan
 		ubo.view = glm::translate(glm::mat4_cast(p_Owner->getActiveViewport()->UpdateCameraOrientation(0.2)), -p_Owner->getActiveViewport()->UpdateCameraPosition(0.65)); // [ix iy iz w1( = 0)]-direction [jx jy jz w2( = 0)]-direction [kx ky kz w3( = 0)]-direction [tx ty tz w ( = 1)]-position
 		ubo.proj = glm::perspective(glm::radians(60.0f), (float)extent.width / (float)extent.height, near_plane, far_plane); //fov, aspect ratio, near clipping plane, far clipping plane
 		ubo.proj[1][1] *= -1; //reverse Y coordinate
-		ubo.scale = GetObjectScale();
+		ubo.scale = GetPropertyValue("Scale", glm::vec3(1.f));
 		vkCmdPushConstants(cmd, pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(UniformBufferObject), &ubo);
 
 		opo.draw_mode = mode;
-		opo.color_mask = GetColorMask();
+		opo.color_mask = GetPropertyValue("Color", glm::vec4(1.f));
 		vkCmdPushConstants(cmd, pipelineLayout, VK_SHADER_STAGE_FRAGMENT_BIT, sizeof(UniformBufferObject), sizeof(PickingBufferObject), &opo);
 		return true;
 	}

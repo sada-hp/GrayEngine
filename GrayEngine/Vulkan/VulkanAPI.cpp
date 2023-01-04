@@ -1565,7 +1565,7 @@ namespace GrEngine_Vulkan
 		dynamic_cast<VulkanDrawable*>(ent)->initObject(logicalDevice, memAllocator, this);
 		std::string new_name = std::string("Entity") + std::to_string(entities.size()+1);
 		ent->UpdateNameTag(new_name.c_str());
-		entities[std::stoi(ent->GetPropertyValue("EntityID"))] = ent;
+		entities[ent->GetEntityID()] = ent;
 
 		return ent;
 	}
