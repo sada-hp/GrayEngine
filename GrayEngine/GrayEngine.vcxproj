@@ -118,7 +118,7 @@
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <AdditionalLibraryDirectories>$(SolutionDir)GrayEngine\Engine\Libs\Lib;$(SolutionDir)GrayEngine\Engine\Libs\lib-vc2019;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>BulletCollision.lib;BulletDynamics.lib;LinearMath.lib;glfw3.lib;vulkan-1.lib;assimp.lib;BulletDynamics.lib;BulletCollision.lib;LinearMath.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>BulletCollision_Debug.lib;BulletDynamics_Debug.lib;LinearMath_Debug.lib;glfw3.lib;vulkan-1.lib;assimp.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <PostBuildEvent>
       <Command>copy "$(SolutionDir)\bin\$(Configuration)-$(Platform)\$(ProjectName)\GrayEngine.dll" "$(SolutionDir)\bin\$(Configuration)-$(Platform)\WorldEditorApp\"</Command>
@@ -145,7 +145,7 @@
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <AdditionalLibraryDirectories>$(SolutionDir)GrayEngine\Engine\Libs\Lib;$(SolutionDir)GrayEngine\Engine\Libs\lib-vc2019;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>BulletCollision.lib;BulletDynamics.lib;LinearMath.lib;glfw3.lib;vulkan-1.lib;assimp.lib;BulletDynamics.lib;BulletCollision.lib;LinearMath.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>BulletCollision_Release.lib;BulletDynamics_Release.lib;LinearMath_Release.lib;glfw3.lib;vulkan-1.lib;assimp.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <PostBuildEvent>
       <Command>copy "$(SolutionDir)\bin\$(Configuration)-$(Platform)\$(ProjectName)\GrayEngine.dll" "$(SolutionDir)\bin\$(Configuration)-$(Platform)\WorldEditorApp\"</Command>

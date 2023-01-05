@@ -93,8 +93,10 @@ namespace GrEngine
 
         void getEntityInfo(int ID)
         {
-            auto props = GetRenderer()->selectEntity(ID)->properties;
-            for (int i = 0; i < GetRenderer()->selectEntity(ID)->properties.size(); i++)
+            auto props = GetRenderer()->selectEntity(ID)->GetProperties();
+            int numProps = props.size();
+
+            for (int i = 0; i < numProps; i++)
             {
                 getEditorUI()->SendEntityInfo(ID, (char*)props[i]->property_name, (char*)props[i]->ValueString(), (char*)props[i]->TypeString());
             }

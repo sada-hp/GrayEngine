@@ -8,20 +8,11 @@
 
 namespace GrEngine
 {
-	struct EntityInfo
-	{
-		std::string EntityName;
-		UINT EntityID;
-		glm::vec3 Position;
-		glm::vec3 Orientation;
-		glm::vec3 Scale;
-	};
-
 	class DllExport Entity
 	{
 	public:
 
-		Entity() 
+		Entity()
 		{
 			char buf[11];
 			char _buf[11];
@@ -40,12 +31,12 @@ namespace GrEngine
 			obj_orientation = static_cast<glm::quat*>(properties[3]->GetValueAdress());
 
 			recalculatePhysics();
-		}
+		};
 
-		virtual ~Entity() 
+		virtual ~Entity()
 		{
 
-		}
+		};
 
 		virtual void Rotate(const float& pitch, const float& yaw, const float& roll)
 		{
@@ -54,7 +45,7 @@ namespace GrEngine
 			glm::quat qYaw = glm::angleAxis(glm::radians(pitch_yaw_roll.x), glm::vec3(0, 1, 0));
 			glm::quat qRoll = glm::angleAxis(glm::radians(pitch_yaw_roll.z), glm::vec3(0, 0, 1));
 			obj_orientation_target = glm::normalize(qPitch * qYaw * qRoll);
-		}
+		};
 
 		virtual void Rotate(const glm::vec3& angle)
 		{
@@ -63,13 +54,13 @@ namespace GrEngine
 			glm::quat qYaw = glm::angleAxis(glm::radians(pitch_yaw_roll.x), glm::vec3(0, 1, 0));
 			glm::quat qRoll = glm::angleAxis(glm::radians(pitch_yaw_roll.z), glm::vec3(0, 0, 1));
 			obj_orientation_target = glm::normalize(qPitch * qYaw * qRoll);
-		}
+		};
 
 		virtual void Rotate(const glm::quat& angle)
 		{
 			pitch_yaw_roll += glm::eulerAngles(angle) * glm::vec3(Globals::delta_time, Globals::delta_time, Globals::delta_time);
 			obj_orientation_target += angle;
-		}
+		};
 
 		virtual void SetRotation(const float& pitch, const float& yaw, const float& roll)
 		{
@@ -79,7 +70,7 @@ namespace GrEngine
 			glm::quat qRoll = glm::angleAxis(glm::radians(roll), glm::vec3(0, 0, 1));
 			static_cast<EntityOrientation*>(properties[3])->SetPropertyValue(glm::normalize(qPitch * qYaw * qRoll));
 			obj_orientation_target = glm::normalize(qPitch * qYaw * qRoll);
-		}
+		};
 
 		virtual void SetRotation(const glm::vec3& angle)
 		{
@@ -89,36 +80,36 @@ namespace GrEngine
 			glm::quat qRoll = glm::angleAxis(glm::radians(angle.z), glm::vec3(0, 0, 1));
 			static_cast<EntityOrientation*>(properties[3])->SetPropertyValue(glm::normalize(qPitch * qYaw * qRoll));
 			obj_orientation_target = glm::normalize(qPitch * qYaw * qRoll);
-		}
+		};
 
 		virtual void SetRotation(const glm::quat& angle)
 		{
 			pitch_yaw_roll = glm::eulerAngles(angle);
 			static_cast<EntityOrientation*>(properties[3])->SetPropertyValue(angle);
 			obj_orientation_target = angle;
-		}
+		};
 
 		virtual void MoveObject(const float& x, const float& y, const float& z)
 		{
 			object_position_target += glm::vec3(x * Globals::delta_time, y * Globals::delta_time, z * Globals::delta_time);
-		}
+		};
 
 		virtual void MoveObject(const glm::vec3& vector)
 		{
 			object_position_target += vector * glm::vec3(Globals::delta_time, Globals::delta_time, Globals::delta_time);
-		}
+		};
 
 		virtual void PositionObjectAt(const float& x, const float& y, const float& z)
 		{
 			object_position_target = glm::vec3(x, y, z);
 			static_cast<EntityPosition*>(properties[2])->SetPropertyValue(x, y, z);
-		}
+		};
 
 		virtual void PositionObjectAt(const glm::vec3& vector)
 		{
 			object_position_target = vector;
 			static_cast<EntityPosition*>(properties[2])->SetPropertyValue(vector);
-		}
+		};
 
 		virtual glm::vec3 GetObjectPosition()
 		{
@@ -132,7 +123,7 @@ namespace GrEngine
 			{
 				return *object_origin;
 			}
-		}
+		};
 
 		virtual glm::quat GetObjectOrientation()
 		{
@@ -146,39 +137,48 @@ namespace GrEngine
 			{
 				return *obj_orientation;
 			}
-		}
+		};
 
 		template<typename T>
 		T GetPropertyValue(const char* property_name, T default_value)
 		{
-			for (int i = 0; i < properties.size(); i++)
+			EntityProperty** props = properties.data();
+			int numProps = properties.size();
+
+			for (int i = 0; i < numProps; i++)
 			{
-				if (properties[i]->property_name == property_name)
+				if (props[i]->property_name == property_name)
 				{
-					return std::any_cast<T>(properties[i]->GetAnyValue());
+					return std::any_cast<T>(props[i]->GetAnyValue());
 				}
 			}
 
 			return default_value;
-		}
+		};
 
 		inline bool HasProperty(const char* property_name)
 		{
-			for (int i = 0; i < properties.size(); i++)
+			EntityProperty** props = properties.data();
+			int numProps = properties.size();
+
+			for (int i = 0; i < numProps; i++)
 			{
-				auto name = properties[i]->property_name;
-				if (properties[i]->property_name == std::string(property_name))
+				auto name = props[i]->property_name;
+				if (props[i]->property_name == std::string(property_name))
 				{
 					return true;
 				}
 			}
 
 			return false;
-		}
+		};
 
 		virtual void ParsePropertyValue(const char* property_name, const char* property_value)
 		{
-			for (int i = 0; i < properties.size(); i++)
+			EntityProperty** props = properties.data();
+			int numProps = properties.size();
+
+			for (int i = 0; i < numProps; i++)
 			{
 				auto name = properties[i]->property_name;
 				if (std::string(properties[i]->property_name) == std::string(property_name))
@@ -186,36 +186,39 @@ namespace GrEngine
 					properties[i]->ParsePropertyValue(property_value);
 				}
 			}
-		}
+		};
 
 		void* FindPropertyAdress(const char* property_name)
 		{
-			for (int i = 0; i < properties.size(); i++)
+			EntityProperty** props = properties.data();
+			int numProps = properties.size();
+
+			for (int i = 0; i < numProps; i++)
 			{
-				auto name = properties[i]->property_name;
-				if (std::string(properties[i]->property_name) == std::string(property_name))
+				auto name = props[i]->property_name;
+				if (std::string(props[i]->property_name) == std::string(property_name))
 				{
-					return properties[i]->GetValueAdress();
+					return props[i]->GetValueAdress();
 				}
 			}
 
 			return nullptr;
-		}
+		};
 
-		inline void UpdateNameTag(std::string new_name) 
-		{ 
+		inline void UpdateNameTag(std::string new_name)
+		{
 			static_cast<EntityName*>(properties[0])->SetPropertyValue(new_name.c_str());
-		}
+		};
 
 		inline std::string& GetObjectName()
 		{
 			return *obj_name;
-		}
+		};
 
 		inline UINT& GetEntityID()
 		{
 			return *obj_id;
-		}
+		};
 
 		void recalculatePhysics(bool rewrite = false)
 		{
@@ -252,36 +255,8 @@ namespace GrEngine
 			body = new btRigidBody(rbInfo);
 
 			Physics::GetContext()->AddSimulationObject(static_cast<void*>(body));
-		}
-
-		std::string GetEntityType()
-		{
-			return Type;
 		};
 
-		inline const char* GetEntityNameTag() { return properties[0]->ValueString(); };
-
-		std::vector<EntityProperty*> properties;
-
-	protected:
-		std::string* obj_name;
-		UINT* obj_id;
-		glm::quat* obj_orientation;
-		glm::vec3* object_origin;
-		std::string Type = "Entity";
-
-		glm::quat obj_orientation_target = { 0.f, 0.f, 0.f, 0.f };
-		glm::vec3 object_position_target = { 0.f, 0.f, 0.f };
-		glm::vec3 pitch_yaw_roll = { 0.f, 0.f, 0.f };		
-
-		btCollisionShape* colShape = new btBoxShape(btVector3(0.25f, 0.25f, 0.25f));
-		btRigidBody* body;
-		btDefaultMotionState* myMotionState;
-		btTriangleMesh* colMesh;
-		bool physics_object = false;
-
-		float mass;
-	public:
 		void AddNewProperty(const char* property_name)
 		{
 			if (std::string(property_name) == "Mass")
@@ -304,6 +279,38 @@ namespace GrEngine
 			{
 				Logger::Out("Invalid property was provided to entity %d", OutputColor::Red, OutputType::Error, GetPropertyValue("EntityID", 0));
 			}
+		};
+
+		std::vector<EntityProperty*>& GetProperties()
+		{
+			return properties;
 		}
+
+		std::string GetEntityType()
+		{
+			return Type;
+		};
+
+		inline const char* GetEntityNameTag() { return properties[0]->ValueString(); };
+
+
+	protected:
+		std::vector<EntityProperty*> properties;
+
+		std::string* obj_name;
+		UINT* obj_id;
+		glm::quat* obj_orientation;
+		glm::vec3* object_origin;
+		std::string Type = "Entity";
+
+		glm::quat obj_orientation_target = { 0.f, 0.f, 0.f, 0.f };
+		glm::vec3 object_position_target = { 0.f, 0.f, 0.f };
+		glm::vec3 pitch_yaw_roll = { 0.f, 0.f, 0.f };		
+
+		btCollisionShape* colShape = new btBoxShape(btVector3(0.25f, 0.25f, 0.25f));
+		btRigidBody* body;
+		btDefaultMotionState* myMotionState;
+		btTriangleMesh* colMesh;
+		bool physics_object = false;
 	};
 }

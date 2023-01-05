@@ -164,8 +164,21 @@ void EntityPosition::ParsePropertyValue(const char* value)
 {
 	auto cols = GrEngine::Globals::SeparateString(value, ':');
 	if (cols.size() < 3) return;
+	glm::vec3 res{};
 
-	property_value = { stof(cols[0]), stof(cols[1]), stof(cols[2]) };
+	for (int ind = 0; ind < cols.size(); ind++)
+	{
+		try
+		{
+			res[ind] = std::stof(cols[ind]);
+		}
+		catch (...)
+		{
+			res[ind] = property_value[ind];
+		}
+	}
+
+	property_value = res;
 }
 
 void EntityPosition::SetPropertyValue(const float& x, const float& y, const float& z)

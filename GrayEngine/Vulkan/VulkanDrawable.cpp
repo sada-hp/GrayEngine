@@ -397,20 +397,17 @@ namespace GrEngine_Vulkan
 		if (model == NULL)
 		{
 			Logger::Out("Could not load the mesh %c%s%c!", OutputColor::Red, OutputType::Error, '"', mesh_path, '"');
-			object_mesh.mesh_path = "";
 			return false;
 		}
-		else
-		{
-			object_mesh.mesh_path = mesh_path;
-			object_mesh.indices = {};
-			object_mesh.vertices = {};
-		}
 
-		delete colShape;
+		object_mesh.indices.clear();
+		object_mesh.vertices.clear();
+		object_mesh.mesh_path = mesh_path;
+
 		if (colMesh != nullptr)
 		{
 			delete colMesh;
+			colMesh = nullptr;
 		}
 
 		colMesh = new btTriangleMesh();
@@ -456,7 +453,6 @@ namespace GrEngine_Vulkan
 				object_mesh.indices.push_back(index);
 			}
 
-			ParsePropertyValue("Color", "1.00:1.00:1.00:1.00");
 			aiString name;
 			aiGetMaterialString(model->mMaterials[model->mMeshes[mesh_ind]->mMaterialIndex], AI_MATKEY_NAME, &name);
 
@@ -471,6 +467,7 @@ namespace GrEngine_Vulkan
 			colMesh->addTriangleIndices(object_mesh.indices[i], object_mesh.indices[i + 1], object_mesh.indices[i + 2]);
 		}
 
+		delete colShape;
 		colShape = new btBvhTriangleMeshShape(colMesh, false);
 		recalculatePhysics(true);
 	}
