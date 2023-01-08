@@ -53,13 +53,12 @@ namespace GrEngine_Vulkan
 		vkDestroyPipeline(device, graphicsPipeline, NULL);
 		vkDestroyPipelineLayout(device, pipelineLayout, NULL);
 		vkFreeDescriptorSets(device, descriptorPool, descriptorSets.size(), descriptorSets.data());
+		vkDestroyDescriptorPool(device, descriptorPool, NULL);
+		vkDestroyDescriptorSetLayout(device, descriptorSetLayout, NULL);
 
 		VulkanAPI::m_destroyShaderBuffer(device, allocator, &indexBuffer);
 		VulkanAPI::m_destroyShaderBuffer(device, allocator, &vertexBuffer);
 		VulkanAPI::m_destroyTexture(device, allocator, &object_texture);
-
-		vkDestroyDescriptorPool(device, descriptorPool, NULL);
-		vkDestroyDescriptorSetLayout(device, descriptorSetLayout, NULL);
 
 		this->~VulkanDrawable();
 	}

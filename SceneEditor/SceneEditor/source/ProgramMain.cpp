@@ -93,6 +93,12 @@ namespace SceneEditor
                     SetCursorPos(960, 540);
                     app->toggle_free_mode();
                 }
+                else if (std::any_cast<int>(para[0]) == GLFW_KEY_DELETE && std::any_cast<int>(para[2]) == GLFW_PRESS)
+                {
+                    UINT id = app->GetRenderer()->GetSelectedEntity()->GetEntityID();
+                    app->GetRenderer()->DeleteEntity(id);
+                    app->App_RemoveEntity(id);
+                }
             });
 
         EventListener::pushEvent(EventType::MouseClick, [](std::vector<std::any> para)

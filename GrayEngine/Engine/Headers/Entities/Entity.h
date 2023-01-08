@@ -35,7 +35,14 @@ namespace GrEngine
 
 		virtual ~Entity()
 		{
-
+			if (body != nullptr)
+			{
+				Physics::GetContext()->RemoveObject(static_cast<void*>(body));
+				delete body;
+				body = nullptr;
+				delete myMotionState;
+				myMotionState = nullptr;
+			}
 		};
 
 		virtual void Rotate(const float& pitch, const float& yaw, const float& roll)

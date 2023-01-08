@@ -46,6 +46,9 @@ public:
 	typedef void(*SelectEntityFunc)(int);
 	SelectEntityFunc SetSelectedEntity;
 
+	typedef void(*RemoveEntityFunc)(int);
+	RemoveEntityFunc RemoveEntity;
+
 	EditorUI()
 	{
 		dotNetGUILibrary = LoadLibraryA("EditorUI.dll");
@@ -64,6 +67,7 @@ public:
 		UpdateEntity = (UpdateEntityFunc)GetProcAddress(dotNetGUILibrary, "UpdateEntity");
 		SendEntityInfo = (RetrieveInfoFunc)GetProcAddress(dotNetGUILibrary, "RetrieveEntityInfo");
 		SetSelectedEntity = (SelectEntityFunc)GetProcAddress(dotNetGUILibrary, "SetSelectedEntity");
+		RemoveEntity = (RemoveEntityFunc)GetProcAddress(dotNetGUILibrary, "RemoveEntity");
 	};
 
 	~EditorUI()

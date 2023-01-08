@@ -69,6 +69,7 @@ namespace GrEngine_Vulkan
 		void SelectEntityAtCursor();
 		GrEngine::Entity* selectEntity(UINT ID) override;
 		void SetHighlightingMode(bool enabled) override;
+		void DeleteEntity(UINT id) override;
 
 		void Update() override;
 		VkSampleCountFlagBits GetSampling() { return msaaSamples; };

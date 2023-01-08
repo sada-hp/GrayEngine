@@ -297,7 +297,11 @@ namespace EditorUI
 
         internal void SelectEntity(int ID)
         {
-            if (ID == 0) return;
+            if (ID == 0)
+            {
+                EntitiesList.SelectedItem = null;
+                PropertiesCollection.Items.Clear();
+            }
             
             for (int i = 0; i < EntitiesList.Items.Count; i++)
             {
@@ -306,6 +310,26 @@ namespace EditorUI
                     EntitiesList.SelectedItem = EntitiesList.Items.GetItemAt(i);
                     return;
                 }
+            }
+        }
+
+        internal void RemoveEntity(int ID)
+        {
+            try
+            {
+                for (int i = 0; i < entities.Count; i++)
+                {
+                    if ((entities[i] as EntityItem).ID == ID)
+                    {
+                        PropertiesCollection.Items.Clear();
+                        entities.RemoveAt(i);
+                        return;
+                    }
+                }
+            }
+            catch (Exception ee)
+            {
+                LogMessage(Marshal.StringToHGlobalAnsi(ee.Message));
             }
         }
 

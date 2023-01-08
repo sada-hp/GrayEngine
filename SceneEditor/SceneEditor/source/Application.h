@@ -91,6 +91,11 @@ namespace GrEngine
             getEditorUI()->UpdateEntity(target->GetEntityID(), (char*)target->GetEntityNameTag());
         }
 
+        void App_RemoveEntity(UINT id)
+        {
+            getEditorUI()->RemoveEntity(id);
+        }
+
         void getEntityInfo(int ID)
         {
             auto props = GetRenderer()->selectEntity(ID)->GetProperties();

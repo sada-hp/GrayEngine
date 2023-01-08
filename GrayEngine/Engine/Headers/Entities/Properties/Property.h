@@ -91,43 +91,13 @@ private:
 struct EntityName : public EntityProperty
 {
 public:
-	EntityName(const char* name, void* parent = nullptr)
-	{
-		property_value = std::string(name);
-		property_name = "EntityName";
-		property_type = PropertyType::STRING;
-		owner = parent;
-	}
-
-	~EntityName()
-	{
-
-	}
-
-	const char* ValueString() override
-	{
-		return property_value.c_str();
-	}
-
-	void ParsePropertyValue(const char* value) override
-	{
-		property_value = value;
-	}
-
-	void SetPropertyValue(const char* value)
-	{
-		property_value = value;
-	}
-
-	std::any GetAnyValue() override
-	{
-		return property_value;
-	}
-
-	virtual void* GetValueAdress() override
-	{
-		return &property_value;
-	}
+	EntityName(const char* name, void* parent = nullptr);
+	~EntityName();
+	const char* ValueString() override;
+	void ParsePropertyValue(const char* value) override;
+	void SetPropertyValue(const char* value);
+	std::any GetAnyValue() override;
+	virtual void* GetValueAdress() override;
 
 	std::string property_value;
 };

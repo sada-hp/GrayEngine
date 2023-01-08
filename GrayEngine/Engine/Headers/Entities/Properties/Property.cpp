@@ -3,6 +3,8 @@
 #include "Engine/Headers/Entities/DrawableObject.h"
 #include "Property.h"
 
+////////////////////////////////////EntityID/////////////////////////////////////////////
+
 EntityID::EntityID(UINT id, void* parent)
 {
 	property_value = id;
@@ -47,7 +49,7 @@ void* EntityID::GetValueAdress()
 	return &property_value;
 }
 
-/////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////Mass/////////////////////////////////////////////
 
 Mass::Mass(float mass, void* parent)
 {
@@ -89,7 +91,47 @@ void* Mass::GetValueAdress()
 	return &property_value;
 }
 
-/////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////EntityName/////////////////////////////////////////////
+
+EntityName::EntityName(const char* name, void* parent)
+{
+	property_value = std::string(name);
+	property_name = "EntityName";
+	property_type = PropertyType::STRING;
+	owner = parent;
+}
+
+EntityName::~EntityName()
+{
+
+}
+
+const char* EntityName::ValueString()
+{
+	return property_value.c_str();
+}
+
+void EntityName::ParsePropertyValue(const char* value)
+{
+	property_value = value;
+}
+
+void EntityName::SetPropertyValue(const char* value)
+{
+	property_value = value;
+}
+
+std::any EntityName::GetAnyValue()
+{
+	return property_value;
+}
+
+void* EntityName::GetValueAdress()
+{
+	return &property_value;
+}
+
+////////////////////////////////////Scale/////////////////////////////////////////////
 
 Scale::Scale(float x, float y, float z, void* parent)
 {
@@ -139,7 +181,7 @@ void* Scale::GetValueAdress()
 }
 
 
-/////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////EntityPosition/////////////////////////////////////////////
 
 EntityPosition::EntityPosition(float x, float y, float z, void* parent)
 {
@@ -201,7 +243,7 @@ void* EntityPosition::GetValueAdress()
 	return &property_value;
 }
 
-/////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////EntityOrientation/////////////////////////////////////////////
 
 EntityOrientation::EntityOrientation(const float& pitch, const float& yaw, const float& roll, void* parent)
 {
@@ -264,7 +306,7 @@ void* EntityOrientation::GetValueAdress()
 	return &property_value;
 }
 
-/////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////Color/////////////////////////////////////////////
 
 Color::Color(void* parent)
 {
@@ -336,7 +378,8 @@ void* Color::GetValueAdress()
 {
 	return &property_value;
 }
-/////////////////////////////////////////////////////////////////////////////////
+
+////////////////////////////////////Drawable/////////////////////////////////////////////
 
 Drawable::Drawable(const char* path, void* parent)
 {

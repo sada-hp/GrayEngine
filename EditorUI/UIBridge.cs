@@ -111,5 +111,14 @@ namespace EditorUI
                 ((MainView)wrappers[0].ui_window).SelectEntity((int)id);
             }));
         }
+
+        [DllExport]
+        public static void RemoveEntity(IntPtr id)
+        {
+            wrappers[0].ui_window.Dispatcher.BeginInvoke((Action)(() =>
+            {
+                ((MainView)wrappers[0].ui_window).RemoveEntity((int)id);
+            }));
+        }
     }
 }

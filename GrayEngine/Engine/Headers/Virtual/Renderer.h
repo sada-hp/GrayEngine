@@ -25,6 +25,7 @@ namespace GrEngine
 		virtual Entity* addEntity() = 0;
 		virtual void Update() = 0;
 		virtual void createSkybox(const char* East, const char* West, const char* Top, const char* Bottom, const char* North, const char* South) = 0;
+		virtual void DeleteEntity(UINT id) = 0;
 		inline Camera* getActiveViewport() { return &viewport_camera; };
 		virtual Entity* selectEntity(UINT32 ID)
 		{ 

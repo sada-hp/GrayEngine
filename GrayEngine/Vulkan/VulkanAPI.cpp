@@ -1572,21 +1572,28 @@ namespace GrEngine_Vulkan
 
 	GrEngine::Entity* VulkanAPI::selectEntity(UINT ID)
 	{
+		selected_entity = ID;
+		std::vector<std::any> para = { selected_entity };
+		EventListener::registerEvent(EventType::SelectionChanged, para);
+
 		if (entities.contains(ID))
 		{
-			selected_entity = ID;
-
-			if (selected_entity > 0)
-			{
-				std::vector<std::any> para = { selected_entity };
-				VulkanDrawable::opo.selected_entity = { ID / 1000000 % 1000, ID / 1000 % 1000, ID % 1000 };
-				EventListener::registerEvent(EventType::SelectionChanged, para);
-				return entities.at(ID);
-			}
+			VulkanDrawable::opo.selected_entity = { ID / 1000000 % 1000, ID / 1000 % 1000, ID % 1000 };
+			return entities.at(ID);
 		}
 
 		VulkanDrawable::opo.selected_entity = { 0, 0, 0 };
 		return nullptr;
+	}
+
+	void VulkanAPI::DeleteEntity(UINT id)
+	{
+		vkDeviceWaitIdle(logicalDevice);
+		vkQueueWaitIdle(graphicsQueue);
+
+		auto object = entities.at(id);
+		dynamic_cast<VulkanDrawable*>(object)->destroyObject(logicalDevice, memAllocator);
+		entities.erase(id);
 	}
 
 	void VulkanAPI::SetHighlightingMode(bool enabled)
