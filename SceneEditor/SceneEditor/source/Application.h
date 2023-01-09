@@ -107,6 +107,19 @@ namespace GrEngine
             }
         }
 
+        void App_GetAllEntities()
+        {
+            auto ent_vec = GetRenderer()->GetEntitiesList();
+
+            for (auto obj : ent_vec)
+            {
+                if (obj.second->GetEntityType() == "Object")
+                {
+                    App_UpdateEntity(obj.second);
+                }
+            }
+        }
+
         void pushToAppLogger(char* message)
         {
             std::fstream log_file;

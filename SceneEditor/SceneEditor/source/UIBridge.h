@@ -13,6 +13,7 @@ namespace SceneEditor
 		ExportDll void __stdcall LogMessage(const char* msg);
 		ExportDll void __stdcall InitModelBrowser();
 		ExportDll void __stdcall GetEntityInfo(int ID);
+		ExportDll void __stdcall GetEntitiesList();
 		ExportDll void __stdcall UpdateEntityProperty(int ID, const char* selected_property, const char* value);
 		ExportDll void __stdcall UpdateSkybox(const char* East, const char* West, const char* Top, const char* Bottom, const char* North, const char* South);
 		ExportDll void __stdcall App_Close();
@@ -25,5 +26,7 @@ namespace SceneEditor
 		ExportDll void __stdcall SaveScreenshot(const char* filepath);
 		ExportDll void __stdcall TogglePhysics();
 		ExportDll void __stdcall AddNewEntityProperty(int id, const char* property);
+		ExportDll void __stdcall SaveScene(const char* path);
+		ExportDll void __stdcall LoadScene(const char* path);
 	}
 }

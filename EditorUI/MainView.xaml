@@ -10,7 +10,10 @@
 
     <DockPanel Background="#FF6D88FF" LastChildFill="True">
         <Menu Height="25" Background="#FF353538" Padding="0,2,0,0" DockPanel.Dock="Top">
-            <MenuItem Header="File" Foreground="WhiteSmoke" Margin="0"/>
+            <MenuItem Header="File" Foreground="WhiteSmoke" Margin="0">
+                <MenuItem Name="LoadBtn" Header="Load" Foreground="Black" Cursor="Hand" Click="LoadBtn_Click"/>
+                <MenuItem Name="SaveBtn" Header="Save" Foreground="Black" Cursor="Hand" Click="SaveBtn_Click"/>
+            </MenuItem>
             <MenuItem Header="Level" Foreground="WhiteSmoke" Margin="0">
                 <MenuItem Name="SkyboxMenu" Header="Skybox" Foreground="Black" Click="SkyboxSettings_Click"></MenuItem>
             </MenuItem>

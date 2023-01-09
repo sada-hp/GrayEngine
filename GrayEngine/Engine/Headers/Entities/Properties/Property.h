@@ -8,7 +8,8 @@ enum class PropertyType
 	INT = 1,
 	VECTOR3 = 2,
 	QUAT = 3,
-	VECTOR4 = 4
+	VECTOR4 = 4,
+	HIDDEN
 };
 
 struct EntityProperty
@@ -31,6 +32,11 @@ public:
 	virtual void ParsePropertyValue(const char* value) = 0;
 
 	virtual void* GetValueAdress() = 0;
+
+	const char* PrpertyNameString()
+	{
+		return property_name;
+	}
 
 	const char* TypeString()
 	{
@@ -185,4 +191,20 @@ public:
 	virtual void* GetValueAdress() override;
 
 	std::string property_value;
+};
+
+struct CubemapProperty : public EntityProperty
+{
+public:
+	CubemapProperty(std::array<std::string,6> textures, void* parent = nullptr);
+	~CubemapProperty();
+	const char* ValueString() override;
+	void ParsePropertyValue(const char* value) override;
+	void SetPropertyValue(std::array<std::string, 6> value);
+	std::any GetAnyValue() override;
+	virtual void* GetValueAdress() override;
+
+	std::array<std::string, 6> property_value;
+private:
+	std::string property_string;
 };

@@ -4,7 +4,8 @@
 #include <vk_mem_alloc.h>
 #include <stb_image.h>
 #include <stb_image_resize.h>
-#include "VulkanDrawable.h"
+#include "VulkanObject.h"
+#include "VulkanSkybox.h"
 #include "Engine/Headers/Core/Logger.h"
 #include "Engine/Headers/Virtual/Renderer.h"
 
@@ -16,7 +17,6 @@ namespace GrEngine_Vulkan
 #else
 	const bool enableValidationLayers = true;
 #endif
-
 
 	typedef void (*ImageReadCallback)(VkDeviceMemory, VkSubresourceLayout);
 
@@ -55,7 +55,8 @@ namespace GrEngine_Vulkan
 		inline VkExtent2D getExtent() { return swapChainExtent; };
 		inline VmaAllocator getMemAllocator() { return memAllocator; };
 		inline VkRenderPass getRenderPass() { return renderPass; };
-		bool loadModel(const char* mesh_path, std::vector<std::string> textures_vector, std::unordered_map<std::string, std::string>* out_materials_names = nullptr) override;
+		bool loadModel(UINT id, const char* mesh_path, std::vector<std::string> textures_vector) override;
+		bool loadModel(UINT id, const char* model_path) override;
 		GrEngine::Entity* addEntity() override;
 		bool assignTextures(std::vector<std::string> textures, GrEngine::Entity* target) override;
 		void clearDrawables() override;
@@ -70,6 +71,8 @@ namespace GrEngine_Vulkan
 		GrEngine::Entity* selectEntity(UINT ID) override;
 		void SetHighlightingMode(bool enabled) override;
 		void DeleteEntity(UINT id) override;
+		void SaveScene(const char* path) override;
+		void LoadScene(const char* path) override;
 
 		void Update() override;
 		VkSampleCountFlagBits GetSampling() { return msaaSamples; };
@@ -81,12 +84,12 @@ namespace GrEngine_Vulkan
 		bool updateDrawables(uint32_t index, DrawMode mode);
 		DrawMode cur_mode = DrawMode::NORMAL;
 	private:
-		int sky = -1;
 		GLFWwindow* pParentWindow;
 		VmaAllocator memAllocator;
 
 		VkInstance _vulkan;
-		VulkanDrawable grid;
+		VulkanObject grid;
+		VulkanSkybox sky;
 
 		VkPhysicalDeviceProperties deviceProps;
 		VkQueue presentQueue;
@@ -110,10 +113,8 @@ namespace GrEngine_Vulkan
 
 		VkMemoryRequirements memRequirements;
 
-		std::vector<VulkanDrawable> drawables;
 		uint32_t currentImageIndex = 0;
 
-		bool loadMesh(const char* mesh_path, VulkanDrawable* target, bool useTexturing, std::vector<std::string>* out_materials = nullptr);
 		bool loadTexture(std::vector<std::string> texture_path, VulkanDrawable* target, VkImageViewType type_view = VK_IMAGE_VIEW_TYPE_2D, VkImageType type_img = VK_IMAGE_TYPE_2D);
 
 		bool createVKInstance();

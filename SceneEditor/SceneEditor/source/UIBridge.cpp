@@ -30,10 +30,16 @@ void SceneEditor::GetEntityInfo(int ID)
 	SceneEditor::GetApplication()->getEntityInfo(ID);
 }
 
+void SceneEditor::GetEntitiesList()
+{
+    SceneEditor::GetApplication()->App_GetAllEntities();
+}
+
 void SceneEditor::LoadModelFile(const char* model_path)
 {
     std::unordered_map<std::string, std::string> materials;
-    GrEngine::Engine::GetContext()->LoadFromGMF(model_path, &materials);
+    GrEngine::Engine::GetContext()->LoadFromGMF(GrEngine::Engine::GetContext()->GetSelectedEntityID(), model_path);
+    materials = static_cast<GrEngine::DrawableObject*>(GrEngine::Engine::GetContext()->GetRenderer()->GetSelectedEntity())->GetMaterials();
 
     std::string out_materials;
     std::string out_textures;
@@ -73,7 +79,8 @@ void SceneEditor::LoadObject(const char* mesh_path, const char* textures_path)
         }
     }
 
-    GrEngine::Engine::GetContext()->LoadObject(mesh_path, tex_vector, &materials);
+    GrEngine::Engine::GetContext()->LoadObject(GrEngine::Engine::GetContext()->GetSelectedEntityID(), mesh_path, tex_vector);
+    materials = static_cast<GrEngine::DrawableObject*>(GrEngine::Engine::GetContext()->GetRenderer()->GetSelectedEntity())->GetMaterials();
 
     std::string out_materials;
     std::string out_textures;
@@ -187,4 +194,14 @@ void SceneEditor::TogglePhysics()
 void SceneEditor::AddNewEntityProperty(int id, const char* property_name)
 {
     SceneEditor::GetApplication()->addNewProperty(id, property_name);
+}
+
+void SceneEditor::SaveScene(const char* path)
+{
+    SceneEditor::GetApplication()->GetRenderer()->SaveScene(path);
+}
+
+void SceneEditor::LoadScene(const char* path)
+{
+    SceneEditor::GetApplication()->GetRenderer()->LoadScene(path);
 }

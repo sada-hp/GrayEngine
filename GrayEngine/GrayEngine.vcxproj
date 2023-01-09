@@ -13,6 +13,7 @@
   <ItemGroup>
     <ClInclude Include="Bullet\BulletAPI.h" />
     <ClInclude Include="Engine\Headers\Entities\Properties\Property.h" />
+    <ClInclude Include="Engine\Headers\Entities\Skybox.h" />
     <ClInclude Include="Engine\Headers\Virtual\AppWindow.h" />
     <ClInclude Include="Engine\Headers\Entities\Camera.h" />
     <ClInclude Include="Engine\Headers\Core\Core.h" />
@@ -20,6 +21,8 @@
     <ClInclude Include="Engine\Headers\Entities\Entity.h" />
     <ClInclude Include="Engine\Headers\Core\Globals.h" />
     <ClInclude Include="Engine\Headers\Virtual\Renderer.h" />
+    <ClInclude Include="Vulkan\VulkanObject.h" />
+    <ClInclude Include="Vulkan\VulkanSkybox.h" />
     <ClInclude Include="Vulkan\VulkanDrawable.h" />
     <ClInclude Include="Vulkan\VulkanAPI.h" />
     <ClInclude Include="GrayEngine.h" />
@@ -35,6 +38,8 @@
     <ClCompile Include="Engine\Headers\Entities\Properties\Property.cpp" />
     <ClCompile Include="Engine\Source\Engine.cpp" />
     <ClCompile Include="Engine\Source\Globals.cpp" />
+    <ClCompile Include="Vulkan\VulkanObject.cpp" />
+    <ClCompile Include="Vulkan\VulkanSkybox.cpp" />
     <ClCompile Include="Vulkan\VulkanDrawable.cpp" />
     <ClCompile Include="Vulkan\VulkanAPI.cpp" />
     <ClCompile Include="Engine\Source\GL_App.cpp" />

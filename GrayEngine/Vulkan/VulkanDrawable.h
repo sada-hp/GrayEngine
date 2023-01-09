@@ -107,8 +107,7 @@ namespace GrEngine_Vulkan
 
 namespace GrEngine_Vulkan
 {
-
-	class VulkanDrawable : public GrEngine::DrawableObject
+	class VulkanDrawable
 	{
 	public:
 		
@@ -117,17 +116,12 @@ namespace GrEngine_Vulkan
 		float near_plane = 0.1;
 		float far_plane = 1000;
 
-		void initObject(VkDevice device, VmaAllocator allocator, GrEngine::Renderer* owner);
-		void destroyObject(VkDevice device, VmaAllocator allocator);
-		void updateObject(VkDevice device, VmaAllocator allocator);
-		void invalidateTexture(VkDevice device, VmaAllocator allocator);
-		bool pushConstants(VkDevice devicce, VkCommandBuffer cmd, VkExtent2D extent, UINT32 mode);
-		bool recordCommandBuffer(VkDevice device, VkCommandBuffer commandBuffer, VkExtent2D extent, UINT32 mode);
-
-		void updateCollisions() override;
-		bool LoadMesh(const char* mesh_path, bool useTexturing, std::vector<std::string>* out_materials) override;
-		inline glm::uvec3 getColorID() { return colorID; };
-		static PickingBufferObject opo;
+		virtual void initObject(VkDevice device, VmaAllocator allocator, GrEngine::Renderer* owner);
+		virtual void destroyObject(VkDevice device, VmaAllocator allocator);
+		virtual void updateObject(VkDevice device, VmaAllocator allocator);
+		virtual void invalidateTexture(VkDevice device, VmaAllocator allocator);
+		virtual bool pushConstants(VkDevice devicce, VkCommandBuffer cmd, VkExtent2D extent, UINT32 mode);
+		virtual bool recordCommandBuffer(VkDevice device, VkCommandBuffer commandBuffer, VkExtent2D extent, UINT32 mode);
 
 	protected:
 		GrEngine::Renderer* p_Owner;

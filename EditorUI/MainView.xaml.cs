@@ -40,6 +40,9 @@ namespace EditorUI
         public static extern void GetEntityInfo(IntPtr ID);
 
         [DllImport("SceneEditor.dll", CallingConvention = CallingConvention.Cdecl)]
+        public static extern void GetEntitiesList();
+
+        [DllImport("SceneEditor.dll", CallingConvention = CallingConvention.Cdecl)]
         public static extern void LogMessage(IntPtr msg);
 
         [DllImport("SceneEditor.dll", CallingConvention = CallingConvention.Cdecl)]
@@ -58,6 +61,10 @@ namespace EditorUI
         public static extern void TogglePhysics();
         [DllImport("SceneEditor.dll", CallingConvention = CallingConvention.Cdecl)]
         public static extern void AddNewEntityProperty(int ID, IntPtr property);
+        [DllImport("SceneEditor.dll", CallingConvention = CallingConvention.Cdecl)]
+        public static extern void SaveScene(IntPtr path);
+        [DllImport("SceneEditor.dll", CallingConvention = CallingConvention.Cdecl)]
+        public static extern void LoadScene(IntPtr path);
         [DllImport("user32.dll")]
         static extern IntPtr SetParent(IntPtr hWndChild, IntPtr hWndNewParent);
         [DllImport("user32.dll")]
@@ -372,6 +379,37 @@ namespace EditorUI
         private void DockPanel_LostFocus(object sender, RoutedEventArgs e)
         {
 
+        }
+
+        private void SaveBtn_Click(object sender, RoutedEventArgs e)
+        {
+            SaveFileDialog dlg = new SaveFileDialog();
+            dlg.RestoreDirectory = true;
+            dlg.Filter = "GRengine level file (*.glf)|*.glf"; ;
+
+            if (dlg.ShowDialog() == System.Windows.Forms.DialogResult.OK)
+            {
+                SaveScene(Marshal.StringToHGlobalAnsi(dlg.FileName));
+            }
+
+            GC.Collect();
+        }
+
+        private void LoadBtn_Click(object sender, RoutedEventArgs e)
+        {
+            OpenFileDialog dlg = new OpenFileDialog();
+            dlg.RestoreDirectory = true;
+            dlg.Filter = "GRengine level file (*.glf)|*.glf"; ;
+
+            if (dlg.ShowDialog() == System.Windows.Forms.DialogResult.OK)
+            {
+                LoadScene(Marshal.StringToHGlobalAnsi(dlg.FileName));
+                PropertiesCollection.Items.Clear();
+                entities.Clear();
+                GetEntitiesList();
+            }
+
+            GC.Collect();
         }
     };
 }

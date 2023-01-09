@@ -83,7 +83,7 @@ namespace SceneEditor
                     model_path += std::any_cast<char>(chr);
                 }
 
-                app->LoadFromGMF(model_path.c_str());
+                app->LoadFromGMF(app->GetSelectedEntityID(), model_path.c_str());
             });
 
         EventListener::pushEvent(EventType::KeyPress, [](std::vector<std::any> para)

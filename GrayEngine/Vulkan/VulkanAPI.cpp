@@ -20,6 +20,7 @@ namespace GrEngine_Vulkan
 
 		clearDrawables();
 		grid.destroyObject(logicalDevice, memAllocator);
+		sky.destroyObject(logicalDevice, memAllocator);
 		cleanupSwapChain();
 		vkDestroySemaphore(logicalDevice, renderFinishedSemaphore, nullptr);
 		vkDestroySemaphore(logicalDevice, imageAvailableSemaphore, nullptr);
@@ -101,6 +102,11 @@ namespace GrEngine_Vulkan
 
 		grid.initObject(logicalDevice, memAllocator, this);
 
+		sky.initObject(logicalDevice, memAllocator, this);
+		std::string new_name = std::string("Sky");
+		sky.UpdateNameTag(new_name.c_str());
+		entities[sky.GetEntityID()] = &sky;
+
 		vkDeviceWaitIdle(logicalDevice);
 
 		return Initialized = res;
@@ -110,23 +116,8 @@ namespace GrEngine_Vulkan
 	{
 		Initialized = false;
 
-		if (sky >= 0)
-		{
-			dynamic_cast<VulkanDrawable*>(entities[sky])->destroyObject(logicalDevice, memAllocator);
-			delete entities[sky];
-			entities.erase(sky);
-			sky = -1;
-		}
-
-		VulkanDrawable* back = dynamic_cast<VulkanDrawable*>(addEntity());
-		back->shader_path = "Shaders//background";
-		back->invalidateTexture(logicalDevice, memAllocator);
-
-		std::vector<std::string> mat_vector = { East, West, Top, Bottom, North, South };
-		loadTexture(mat_vector, back, VK_IMAGE_VIEW_TYPE_CUBE, VK_IMAGE_TYPE_2D);
-
-		back->updateObject(logicalDevice, memAllocator);
-		sky = back->GetEntityID();
+		std::array<std::string, 6> mat_vector = { East, West, Top, Bottom, North, South };
+		static_cast<CubemapProperty*>(sky.GetProperty("CubemapProperty"))->SetPropertyValue(mat_vector);
 
 		Initialized = true;
 	}
@@ -269,6 +260,7 @@ namespace GrEngine_Vulkan
 
 			vkUnmapMemory(logicalDevice, dstImageMemory);
 		}
+		file.close();
 		vkFreeMemory(logicalDevice, dstImageMemory, nullptr);
 		vkDestroyImage(logicalDevice, dstImage, nullptr);
 	}
@@ -352,7 +344,7 @@ namespace GrEngine_Vulkan
 		}
 		else
 		{
-			VulkanDrawable::opo.selected_entity = { 0, 0, 0 };
+			VulkanObject::opo.selected_entity = { 0, 0, 0 };
 			selectEntity(0);
 		}
 
@@ -401,9 +393,13 @@ namespace GrEngine_Vulkan
 
 		for (auto object : entities)
 		{
-			if (object.second->GetEntityType() == "Object" && dynamic_cast<VulkanDrawable*>(object.second)->IsVisible())
+			if (object.second->GetEntityType() == "Object" && dynamic_cast<VulkanObject*>(object.second)->IsVisible())
 			{
-				dynamic_cast<VulkanDrawable*>(object.second)->recordCommandBuffer(logicalDevice, commandBuffers[index], swapChainExtent, mode);
+				static_cast<VulkanObject*>(object.second)->recordCommandBuffer(logicalDevice, commandBuffers[index], swapChainExtent, mode);
+			}
+			else if (object.second->GetEntityType() == "Skybox")
+			{
+				static_cast<VulkanSkybox*>(object.second)->recordCommandBuffer(logicalDevice, commandBuffers[index], swapChainExtent, mode);
 			}
 		}
 
@@ -1054,74 +1050,48 @@ namespace GrEngine_Vulkan
 		Logger::Out("The scene was cleared", OutputColor::Green, OutputType::Log);
 	}
 
-	bool VulkanAPI::loadModel(const char* mesh_path, std::vector<std::string> textures_vector, std::unordered_map<std::string, std::string>* out_materials_names)
+	bool VulkanAPI::loadModel(UINT id, const char* mesh_path, std::vector<std::string> textures_vector)
 	{
 		Initialized = false;
-		auto start = std::chrono::steady_clock::now();
-		VulkanDrawable* ref_obj;
-		if (entities.size() > 0 && selected_entity != 0)
-		{
-			ref_obj = dynamic_cast<VulkanDrawable*>(entities[selected_entity]);
-		}
-		else
-		{
-			return false;
-		}
+		VulkanObject* ref_obj = dynamic_cast<VulkanObject*>(entities[id]);
+		ref_obj->LoadModel(mesh_path, textures_vector);
 
-		VulkanAPI* inst = this;
-		std::vector<std::string> materials_collection;
-		std::vector<std::string>* out_materials_collection = &materials_collection;
-		std::map<int, std::future<void>> processes_map;
-		std::map<std::string, std::vector<int>> materials_map;
-
-		processes_map[processes_map.size()] = std::async(std::launch::async, [textures_vector, ref_obj, inst]()
-			{
-				inst->loadTexture(textures_vector, ref_obj, VK_IMAGE_VIEW_TYPE_2D_ARRAY, VK_IMAGE_TYPE_2D);
-			});
-
-		processes_map[processes_map.size()] = std::async(std::launch::async, [mesh_path, textures_vector, ref_obj, out_materials_collection, inst]()
-			{
-				inst->loadMesh(mesh_path, ref_obj, textures_vector.size() != 0, out_materials_collection);
-			});
-
-		for (int ind = 0; ind < processes_map.size(); ind++)
-		{
-			if (processes_map[ind].valid())
-			{
-				processes_map[ind].wait();
-			}
-		}
-
-		ref_obj->updateObject(logicalDevice, memAllocator);
-
-		auto end = std::chrono::steady_clock::now();
-		auto time = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
-
-		if (out_materials_names)
-		{
-			for (int ind = 0; ind < materials_collection.size(); ind++)
-			{
-				if (ind < textures_vector.size())
-					out_materials_names->insert_or_assign(materials_collection[ind], textures_vector[ind]);
-				else
-					out_materials_names->insert_or_assign(materials_collection[ind], "nil");
-			}
-		}
-
-		Logger::Out("Model %s loaded in %d ms", OutputColor::Gray, OutputType::Log, mesh_path, (int)time);
 		Initialized = true;
 		return true;
 	}
 
-	bool VulkanAPI::loadMesh(const char* mesh_path, VulkanDrawable* target, bool useTexturing, std::vector<std::string>* out_materials)
+	bool VulkanAPI::loadModel(UINT id, const char* model_path) 
 	{
-		return target->LoadMesh(mesh_path, useTexturing, out_materials);
+		Initialized = false;
+		VulkanObject* ref_obj = dynamic_cast<VulkanObject*>(entities[id]);
+
+		if (ref_obj->HasProperty("Drawable"))
+		{
+			ref_obj->ParsePropertyValue("Drawable", model_path);
+		}
+		else
+		{
+			ref_obj->AddNewProperty("Drawable");
+			ref_obj->ParsePropertyValue("Drawable", model_path);
+		}
+
+		Initialized = true;
+		return true;
 	}
 
 	bool VulkanAPI::assignTextures(std::vector<std::string> textures, GrEngine::Entity* target)
 	{
-		loadTexture(textures, (VulkanDrawable*)target, VK_IMAGE_VIEW_TYPE_2D_ARRAY, VK_IMAGE_TYPE_2D);
-		dynamic_cast<VulkanDrawable*>(target)->updateObject(logicalDevice, memAllocator);
+		if (target->GetEntityType() == "Object")
+		{
+			loadTexture(textures, static_cast<VulkanObject*>(target), VK_IMAGE_VIEW_TYPE_2D_ARRAY, VK_IMAGE_TYPE_2D);
+			static_cast<VulkanObject*>(target)->updateObject(logicalDevice, memAllocator);
+		}
+		else if (target->GetEntityType() == "Skybox")
+		{
+			loadTexture(textures, static_cast<VulkanSkybox*>(target), VK_IMAGE_VIEW_TYPE_CUBE, VK_IMAGE_TYPE_2D);
+			static_cast<VulkanSkybox*>(target)->updateObject(logicalDevice, memAllocator);
+		}
+
 		return true;
 	}
 
@@ -1561,8 +1531,8 @@ namespace GrEngine_Vulkan
 
 	GrEngine::Entity* VulkanAPI::addEntity()
 	{
-		GrEngine::Entity* ent = new VulkanDrawable();
-		dynamic_cast<VulkanDrawable*>(ent)->initObject(logicalDevice, memAllocator, this);
+		GrEngine::Entity* ent = new VulkanObject();
+		dynamic_cast<VulkanObject*>(ent)->initObject(logicalDevice, memAllocator, this);
 		std::string new_name = std::string("Entity") + std::to_string(entities.size()+1);
 		ent->UpdateNameTag(new_name.c_str());
 		entities[ent->GetEntityID()] = ent;
@@ -1578,11 +1548,11 @@ namespace GrEngine_Vulkan
 
 		if (entities.contains(ID))
 		{
-			VulkanDrawable::opo.selected_entity = { ID / 1000000 % 1000, ID / 1000 % 1000, ID % 1000 };
+			VulkanObject::opo.selected_entity = { ID / 1000000 % 1000, ID / 1000 % 1000, ID % 1000 };
 			return entities.at(ID);
 		}
 
-		VulkanDrawable::opo.selected_entity = { 0, 0, 0 };
+		VulkanObject::opo.selected_entity = { 0, 0, 0 };
 		return nullptr;
 	}
 
@@ -1592,12 +1562,110 @@ namespace GrEngine_Vulkan
 		vkQueueWaitIdle(graphicsQueue);
 
 		auto object = entities.at(id);
-		dynamic_cast<VulkanDrawable*>(object)->destroyObject(logicalDevice, memAllocator);
+		dynamic_cast<VulkanObject*>(object)->destroyObject(logicalDevice, memAllocator);
 		entities.erase(id);
 	}
 
 	void VulkanAPI::SetHighlightingMode(bool enabled)
 	{
-		VulkanDrawable::opo.highlight_enabled = enabled;
+		VulkanObject::opo.highlight_enabled = enabled;
 	}
-}
+
+	void VulkanAPI::SaveScene(const char* path)
+	{
+		std::fstream new_file;
+		new_file.open(path, std::fstream::out | std::ios::trunc);
+
+		if (!new_file)
+		{
+			Logger::Out("Couldn't create file for saving!", OutputColor::Red, OutputType::Error);
+			return;
+		}
+
+		new_file << "viewport\n{\n";
+		std::vector<EntityProperty*> cur_props = getActiveViewport()->GetProperties();
+		for (int i = 0; i < cur_props.size(); i++)
+		{
+			new_file << "    " << cur_props[i]->PrpertyNameString() << " " << cur_props[i]->ValueString() << "\n";
+		}
+		new_file << "}\n";
+
+		for (auto ent : entities)
+		{
+			new_file << ent.second->GetEntityType() << "\n{\n";
+			cur_props = ent.second->GetProperties();
+			for (int j = 0; j < cur_props.size(); j++)
+			{
+				new_file << "   " << cur_props[j]->PrpertyNameString() << " " << cur_props[j]->ValueString() << "\n";
+			}
+			new_file << "}\n";
+		}
+
+		new_file << '\0';
+		new_file.close();
+	}
+
+	void VulkanAPI::LoadScene(const char* path)
+	{
+		clearDrawables();
+		Initialized = false;
+
+		std::ifstream file(path, std::ios::ate | std::ios::binary);
+
+		if (!file.is_open())
+		{
+			file.close();
+			file.open(path, std::ios::ate | std::ios::binary);
+		}
+
+		file.seekg(0);
+		std::string s;
+		std::string cur_property;
+		bool block_open = false;
+		bool value = false;
+		GrEngine::Entity* cur_ent = nullptr;
+
+		while (file >> s)
+		{
+			if (s == "{")
+			{
+				block_open = true;
+			}
+			else if (s == "}")
+			{
+				block_open = false;
+				value = false;
+			}
+			else if (block_open && cur_ent != nullptr)
+			{
+				if (!value)
+				{
+					cur_property = s;
+					cur_ent->AddNewProperty(cur_property.c_str());
+					value = true;
+				}
+				else
+				{
+					cur_ent->ParsePropertyValue(cur_property.c_str(), s.c_str());
+					value = false;
+				}
+			}
+			else if (!block_open && s == "Object")
+			{
+				cur_ent = addEntity();
+			}
+			else if (!block_open && s == "viewport")
+			{
+				cur_ent = &viewport_camera;
+			}
+			else if (!block_open && s == "Skybox")
+			{
+				cur_ent = &sky;
+				entities[sky.GetEntityID()] = &sky;
+			}
+		}
+
+		file.close();
+		Initialized = true;
+	}
+};

@@ -48,6 +48,20 @@ namespace GrEngine
 			return buffer;
 		}
 
+		template<typename T>
+		static bool VectorContains(std::vector<T>& vec, T value)
+		{
+			for (int i = 0; i < vec.size(); i++)
+			{
+				if (vec[i] == value)
+				{
+					return true;
+				}
+			}
+
+			return false;
+		}
+
 		static bool readGMF(const std::string& filepath, std::string* mesh, std::vector<std::string>* textures)
 		{
 			auto buffer = readFile(filepath);

@@ -14,8 +14,9 @@ namespace GrEngine
 		std::string getExecutablePath();
 		Entity* AddEntity();
 		void LoadSkybox(const char* East, const char* West, const char* Top, const char* Bottom, const char* North, const char* South);
-		bool LoadObject(const char* mesh_path, std::vector<std::string> textures_vector, std::unordered_map<std::string, std::string>* out_materials = nullptr);
-		bool LoadFromGMF(const char* filepath, std::unordered_map<std::string, std::string>* out_materials = nullptr);
+		bool LoadObject(UINT id, const char* mesh_path, std::vector<std::string> textures_vector);
+		bool LoadFromGMF(UINT id, const char* filepath);
+		UINT GetSelectedEntityID();
 		bool AssignTextures(std::vector<std::string> textures, Entity* target);
 		void Run();
 		void Stop();

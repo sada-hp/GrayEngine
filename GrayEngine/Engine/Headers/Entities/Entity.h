@@ -163,6 +163,23 @@ namespace GrEngine
 			return default_value;
 		};
 
+		inline EntityProperty* GetProperty(const char* property_name)
+		{
+			EntityProperty** props = properties.data();
+			int numProps = properties.size();
+
+			for (int i = 0; i < numProps; i++)
+			{
+				auto name = props[i]->property_name;
+				if (props[i]->property_name == std::string(property_name))
+				{
+					return props[i];
+				}
+			}
+
+			return nullptr;
+		};
+
 		inline bool HasProperty(const char* property_name)
 		{
 			EntityProperty** props = properties.data();
@@ -264,27 +281,32 @@ namespace GrEngine
 			Physics::GetContext()->AddSimulationObject(static_cast<void*>(body));
 		};
 
-		void AddNewProperty(const char* property_name)
+		bool AddNewProperty(const char* property_name)
 		{
 			if (std::string(property_name) == "Mass")
 			{
 				properties.push_back(new Mass(0.f, this));
+				return true;
 			}
-			else if (std::string(property_name) == "Mesh")
+			else if (std::string(property_name) == "Mesh" || std::string(property_name) == "Drawable")
 			{
 				properties.push_back(new Drawable("", this));
+				return true;
 			}
 			else if (std::string(property_name) == "Scale")
 			{
 				properties.push_back(new Scale(1.f, 1.f, 1.f, this));
+				return true;
 			}
 			else if (std::string(property_name) == "Color")
 			{
 				properties.push_back(new Color(1.f, 1.f, 1.f, this));
+				return true;
 			}
 			else
 			{
-				Logger::Out("Invalid property was provided to entity %d", OutputColor::Red, OutputType::Error, GetPropertyValue("EntityID", 0));
+				return false;
+				//Logger::Out("Invalid property was provided to entity %d", OutputColor::Red, OutputType::Error, GetPropertyValue("EntityID", 0));
 			}
 		};
 

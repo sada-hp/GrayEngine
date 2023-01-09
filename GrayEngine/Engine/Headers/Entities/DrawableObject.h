@@ -55,6 +55,8 @@ namespace GrEngine
 		};
 
 		virtual bool LoadMesh(const char* mesh_path, bool useTexturing, std::vector<std::string>* out_materials) = 0;
+		virtual bool LoadModel(const char* model_path) = 0;
+		virtual bool LoadModel(const char* mesh_path, std::vector<std::string> textures_vector) = 0;
 
 		void ParsePropertyValue(const char* property_name, const char* property_value) override
 		{
@@ -90,12 +92,25 @@ namespace GrEngine
 			visibility = value;
 		}
 
+		std::unordered_map<std::string, std::string> GetMaterials()
+		{
+			std::unordered_map<std::string, std::string> res;
+			for (int i = 0; i < material_names.size(); i++)
+			{
+				if (i < texture_names.size())
+					res.insert_or_assign(material_names[i], texture_names[i]);
+				else
+					res.insert_or_assign(material_names[i], "nil");
+			}
 
+			return res;
+		}
+
+		std::vector<std::string> material_names;
+		std::vector<std::string> texture_names;
 	protected:
-		glm::uvec3 colorID = { 0, 0, 0 };
 		virtual void updateCollisions() = 0;
 		glm::vec3 bound = { 0.f, 0.f, 0.f };
 		bool visibility = true;
-		Mesh object_mesh;
 	};
 }

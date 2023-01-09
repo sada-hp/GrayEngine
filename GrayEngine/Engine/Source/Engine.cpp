@@ -33,23 +33,19 @@ namespace GrEngine
 		glfwSetWindowShouldClose(pWindow.get()->getWindow(), true);
 	}
 
-	bool Engine::LoadObject(const char* mesh_path, std::vector<std::string> textures_vector, std::unordered_map<std::string, std::string>* out_materials)
+	bool Engine::LoadObject(UINT id, const char* mesh_path, std::vector<std::string> textures_vector)
 	{
 		Pause();
 
-		bool res = pWindow->getRenderer()->loadModel(mesh_path, textures_vector, out_materials);
+		bool res = GetRenderer()->loadModel(id, mesh_path, textures_vector);
 
 		Unpause();
 		return res;
 	}
 
-	bool Engine::LoadFromGMF(const char* filepath, std::unordered_map<std::string, std::string>* out_materials)
+	bool Engine::LoadFromGMF(UINT id, const char* filepath)
 	{
-		std::string mesh_path = "";
-		std::vector<std::string> mat_vector;
-		if (!Globals::readGMF(filepath, &mesh_path, &mat_vector)) return false;
-
-		return LoadObject(mesh_path.c_str(), mat_vector, out_materials);
+		return GetRenderer()->loadModel(id, filepath);
 	}
 
 	bool Engine::AssignTextures(std::vector<std::string> textures, Entity* target)
@@ -115,5 +111,10 @@ namespace GrEngine
 	void Engine::TogglePhysicsState(bool state)
 	{
 		Physics::GetContext()->TogglePhysicsState(state);
+	}
+
+	UINT Engine::GetSelectedEntityID()
+	{
+		return GetRenderer()->GetSelectedEntity()->GetEntityID();
 	}
 }

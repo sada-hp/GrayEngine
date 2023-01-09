@@ -1,6 +1,7 @@
 #include "pch.h"
 #include "Engine/Headers/Entities/Entity.h"
 #include "Engine/Headers/Entities/DrawableObject.h"
+#include "Engine/Headers/Entities/Skybox.h"
 #include "Property.h"
 
 ////////////////////////////////////EntityID/////////////////////////////////////////////
@@ -27,11 +28,13 @@ const char* EntityID::ValueString()
 void EntityID::ParsePropertyValue(const char* value)
 {
 	property_value = std::atoi(value);
+	string_value = value;
 }
 
 void EntityID::SetPropertyValue(UINT value)
 {
 	property_value = value;
+	string_value = std::to_string(value);
 }
 
 UINT EntityID::GetValue()
@@ -67,7 +70,7 @@ Mass::~Mass()
 
 const char* Mass::ValueString()
 {
-	string_value = GrEngine::Globals::FloatToString(property_value, 2);
+	string_value = GrEngine::Globals::FloatToString(property_value, 5);
 	return string_value.c_str();
 }
 
@@ -148,7 +151,7 @@ Scale::~Scale()
 
 const char* Scale::ValueString()
 {
-	property_string = (GrEngine::Globals::FloatToString(property_value.x, 2) + ":" + GrEngine::Globals::FloatToString(property_value.y, 2) + ":" + GrEngine::Globals::FloatToString(property_value.z, 2));
+	property_string = (GrEngine::Globals::FloatToString(property_value.x, 5) + ":" + GrEngine::Globals::FloatToString(property_value.y, 5) + ":" + GrEngine::Globals::FloatToString(property_value.z, 5));
 	return property_string.c_str();
 }
 
@@ -198,7 +201,7 @@ EntityPosition::~EntityPosition()
 
 const char* EntityPosition::ValueString()
 {
-	property_string = (GrEngine::Globals::FloatToString(property_value.x, 2) + ":" + GrEngine::Globals::FloatToString(property_value.y, 2) + ":" + GrEngine::Globals::FloatToString(property_value.z, 2));
+	property_string = (GrEngine::Globals::FloatToString(property_value.x, 5) + ":" + GrEngine::Globals::FloatToString(property_value.y, 5) + ":" + GrEngine::Globals::FloatToString(property_value.z, 5));
 	return property_string.c_str();
 }
 
@@ -264,7 +267,7 @@ EntityOrientation::~EntityOrientation()
 
 const char* EntityOrientation::ValueString()
 {
-	property_string = (GrEngine::Globals::FloatToString(pitch_yaw_roll.x, 2) + ":" + GrEngine::Globals::FloatToString(pitch_yaw_roll.y, 2) + ":" + GrEngine::Globals::FloatToString(pitch_yaw_roll.z, 2));
+	property_string = (GrEngine::Globals::FloatToString(pitch_yaw_roll.x, 5) + ":" + GrEngine::Globals::FloatToString(pitch_yaw_roll.y, 5) + ":" + GrEngine::Globals::FloatToString(pitch_yaw_roll.z, 5));
 	return property_string.c_str();
 }
 
@@ -339,7 +342,7 @@ Color::~Color()
 
 const char* Color::ValueString()
 {
-	property_string = (GrEngine::Globals::FloatToString(property_value.x, 2) + ":" + GrEngine::Globals::FloatToString(property_value.y, 2) + ":" + GrEngine::Globals::FloatToString(property_value.z, 2) + ":" + GrEngine::Globals::FloatToString(property_value.w, 2));
+	property_string = (GrEngine::Globals::FloatToString(property_value.x, 5) + ":" + GrEngine::Globals::FloatToString(property_value.y, 5) + ":" + GrEngine::Globals::FloatToString(property_value.z, 5) + ":" + GrEngine::Globals::FloatToString(property_value.w, 5));
 	return property_string.c_str();
 }
 
@@ -408,7 +411,7 @@ void Drawable::SetPropertyValue(std::string value)
 	property_value = value;
 
 	if (owner != nullptr)
-		static_cast<GrEngine::DrawableObject*>(owner)->LoadMesh(value.c_str(), true, nullptr);
+		static_cast<GrEngine::DrawableObject*>(owner)->LoadModel(value.c_str());
 }
 
 std::any Drawable::GetAnyValue()
@@ -417,6 +420,61 @@ std::any Drawable::GetAnyValue()
 }
 
 void* Drawable::GetValueAdress()
+{
+	return &property_value;
+}
+
+////////////////////////////////////CubemapProperty/////////////////////////////////////////////
+
+CubemapProperty::CubemapProperty(std::array<std::string, 6> textures, void* parent)
+{
+	property_name = "CubemapProperty";
+	property_value = textures;
+	property_type = PropertyType::HIDDEN;
+	owner = parent;
+}
+
+CubemapProperty::~CubemapProperty()
+{
+
+}
+
+const char* CubemapProperty::ValueString()
+{
+	for (int i = 0; i < 6; i++)
+	{
+		property_string += property_value[i] + '|';
+	}
+
+	return property_string.c_str();
+}
+
+void CubemapProperty::ParsePropertyValue(const char* value)
+{
+	auto texs = GrEngine::Globals::SeparateString(value, '|');
+	std::copy_n(texs.begin(), 6, property_value.begin());
+
+	if (GrEngine::Globals::VectorContains<std::string>(texs, ""))
+		return;
+
+	if (owner != nullptr)
+		static_cast<GrEngine::Skybox*>(owner)->UpdateTextures(property_value);
+}
+
+void CubemapProperty::SetPropertyValue(std::array<std::string, 6> value)
+{
+	property_value = value;
+
+	if (owner != nullptr)
+		static_cast<GrEngine::Skybox*>(owner)->UpdateTextures(property_value);
+}
+
+std::any CubemapProperty::GetAnyValue()
+{
+	return property_value;
+}
+
+void* CubemapProperty::GetValueAdress()
 {
 	return &property_value;
 }
