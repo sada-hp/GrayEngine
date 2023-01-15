@@ -120,5 +120,11 @@ namespace EditorUI
                 ((MainView)wrappers[0].ui_window).RemoveEntity((int)id);
             }));
         }
+
+        [DllExport]
+        public static void SetInputMode(uint index, int allow)
+        {
+            wrappers[index].IsInputAllowed(allow);
+        }
     }
 }

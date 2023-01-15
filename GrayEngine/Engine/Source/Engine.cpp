@@ -4,6 +4,7 @@
 
 namespace GrEngine
 {
+	std::array<short, 3> Entity::next_id = {5, 10, 25};
 	Engine* Engine::context = nullptr;
 
 	Engine::Engine(const AppParameters& Properties)

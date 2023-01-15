@@ -77,6 +77,7 @@ namespace GrEngine_Vulkan
 		void Update() override;
 		VkSampleCountFlagBits GetSampling() { return msaaSamples; };
 	protected:
+		GrEngine::Entity* addEntity(UINT ID);
 		bool allocateCommandBuffer(VkCommandBuffer* cmd, uint32_t count = 0);
 		bool beginCommandBuffer(VkCommandBuffer cmd, VkCommandBufferUsageFlags usage);
 		bool freeCommandBuffer(VkCommandBuffer commandBuffer);
@@ -89,7 +90,7 @@ namespace GrEngine_Vulkan
 
 		VkInstance _vulkan;
 		VulkanObject grid;
-		VulkanSkybox sky;
+		VulkanSkybox* sky;
 
 		VkPhysicalDeviceProperties deviceProps;
 		VkQueue presentQueue;

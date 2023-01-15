@@ -47,5 +47,16 @@ namespace EditorUI.Wrappers
                 ((EditorWindow)ui_window).UpdateChildPosition();
             }));
         }
+
+        public void IsInputAllowed(int allow)
+        {
+            ui_window.Dispatcher.BeginInvoke((Action)(() =>
+            {
+                if (allow == 0)
+                    ui_window.IsEnabled = false;
+                else
+                    ui_window.IsEnabled = true;
+            }));
+        }
     }
 }

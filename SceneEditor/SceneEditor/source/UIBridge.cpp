@@ -57,27 +57,8 @@ void SceneEditor::LoadObject(const char* mesh_path, const char* textures_path)
     EventListener::clearEventQueue();
 
     std::string temp_str = "";
-    std::vector<std::string> tex_vector;
+    std::vector<std::string> tex_vector = GrEngine::Globals::SeparateString(textures_path, '|');
     std::unordered_map<std::string, std::string> materials;
-
-    if (textures_path)
-    {
-        std::string mats = textures_path;
-
-        for (char chr : mats)
-        {
-            if (chr != '|')
-            {
-                temp_str += chr;
-            }
-            else
-            {
-                tex_vector.push_back(temp_str);
-                temp_str = "";
-                continue;
-            }
-        }
-    }
 
     GrEngine::Engine::GetContext()->LoadObject(GrEngine::Engine::GetContext()->GetSelectedEntityID(), mesh_path, tex_vector);
     materials = static_cast<GrEngine::DrawableObject*>(GrEngine::Engine::GetContext()->GetRenderer()->GetSelectedEntity())->GetMaterials();

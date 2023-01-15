@@ -8,8 +8,9 @@ namespace GrEngineBullet
 		if (simulate)
 		{
 			dynamicsWorld->stepSimulation(GrEngine::Globals::delta_time, 10);
+			int numObjects = dynamicsWorld->getNumCollisionObjects();
 
-			for (int i = 0; i < dynamicsWorld->getNumCollisionObjects(); i++)
+			for (int i = 0; i < numObjects; i++)
 			{
 				btCollisionObject* obj = dynamicsWorld->getCollisionObjectArray()[i];
 				btRigidBody* body = btRigidBody::upcast(obj);

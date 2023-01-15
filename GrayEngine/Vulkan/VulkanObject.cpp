@@ -74,13 +74,14 @@ namespace GrEngine_Vulkan
 		}
 
 		colMesh = new btTriangleMesh();
-		for (int i = 0; i < object_mesh.vertices.size(); i++)
+		for (std::vector<Vertex>::iterator itt = object_mesh.vertices.begin(); itt != object_mesh.vertices.end(); ++itt)
 		{
-			colMesh->findOrAddVertex(btVector3(object_mesh.vertices[i].pos.x, object_mesh.vertices[i].pos.y, object_mesh.vertices[i].pos.z), false);
+			colMesh->findOrAddVertex(btVector3((*itt).pos.x, (*itt).pos.y, (*itt).pos.z), false);
 		}
-		for (int i = 0; i < object_mesh.indices.size(); i += 3)
+
+		for (std::vector<uint16_t>::iterator itt = object_mesh.indices.begin(); itt != object_mesh.indices.end(); ++itt)
 		{
-			colMesh->addTriangleIndices(object_mesh.indices[i], object_mesh.indices[i + 1], object_mesh.indices[i + 2]);
+			colMesh->addTriangleIndices(*(++itt), *(++itt), *itt);
 		}
 
 		colShape = new btBvhTriangleMeshShape(colMesh, false);
@@ -109,10 +110,12 @@ namespace GrEngine_Vulkan
 		VulkanObject* ref_obj = this;
 
 		VulkanAPI* inst = static_cast<VulkanAPI*>(p_Owner);
-		std::vector<std::string> materials_collection;
-		std::vector<std::string>* out_materials_collection = &materials_collection;
+		std::vector<std::string>* out_materials_collection = &material_names;
 		std::map<int, std::future<void>> processes_map;
 		std::map<std::string, std::vector<int>> materials_map;
+
+		material_names.clear();
+		texture_names.clear();
 
 		processes_map[processes_map.size()] = std::async(std::launch::async, [textures_vector, ref_obj, inst]()
 			{
@@ -132,15 +135,8 @@ namespace GrEngine_Vulkan
 			}
 		}
 
+		texture_names = textures_vector;
 		updateObject(inst->logicalDevice, inst->getMemAllocator());
-
-		material_names.clear();
-		texture_names.clear();
-
-		for (int ind = 0; ind < materials_collection.size(); ind++)
-		{
-			material_names.push_back(materials_collection[ind]);
-		}
 
 		return true;
 	}
@@ -211,22 +207,23 @@ namespace GrEngine_Vulkan
 				object_mesh.indices.push_back(index);
 			}
 
-			aiString name;
-			aiGetMaterialString(model->mMaterials[model->mMeshes[mesh_ind]->mMaterialIndex], AI_MATKEY_NAME, &name);
+			aiString material;
+			aiGetMaterialString(model->mMaterials[model->mMeshes[mesh_ind]->mMaterialIndex], AI_MATKEY_NAME, &material);
 
 			if (out_materials)
 			{
-				out_materials->push_back(name.C_Str());
+				out_materials->push_back(material.C_Str());
 			}
 		}
 		SetObjectBounds(glm::vec3{ highest_pointx, highest_pointy, highest_pointz });
-		for (int i = 0; i < object_mesh.indices.size(); i += 3)
+
+		for (std::vector<uint16_t>::iterator itt = object_mesh.indices.begin(); itt != object_mesh.indices.end(); ++itt)
 		{
-			colMesh->addTriangleIndices(object_mesh.indices[i], object_mesh.indices[i + 1], object_mesh.indices[i + 2]);
+			colMesh->addTriangleIndices(*(++itt), *(++itt), *itt);
 		}
 
 		delete colShape;
 		colShape = new btBvhTriangleMeshShape(colMesh, false);
-		recalculatePhysics(true);
+		recalculatePhysics();
 	}
 };

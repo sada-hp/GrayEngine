@@ -27,14 +27,14 @@ const char* EntityID::ValueString()
 
 void EntityID::ParsePropertyValue(const char* value)
 {
-	property_value = std::atoi(value);
-	string_value = value;
+	//property_value = std::atoi(value);
+	//string_value = value;
 }
 
 void EntityID::SetPropertyValue(UINT value)
 {
-	property_value = value;
-	string_value = std::to_string(value);
+	//property_value = value;
+	//string_value = std::to_string(value);
 }
 
 UINT EntityID::GetValue()

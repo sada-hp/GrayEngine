@@ -95,9 +95,14 @@ namespace SceneEditor
                 }
                 else if (std::any_cast<int>(para[0]) == GLFW_KEY_DELETE && std::any_cast<int>(para[2]) == GLFW_PRESS)
                 {
-                    UINT id = app->GetRenderer()->GetSelectedEntity()->GetEntityID();
-                    app->GetRenderer()->DeleteEntity(id);
-                    app->App_RemoveEntity(id);
+                    GrEngine::Entity* obj = app->GetRenderer()->GetSelectedEntity();
+                        
+                    if (obj != nullptr)
+                    {
+                        UINT id = app->GetRenderer()->GetSelectedEntity()->GetEntityID();
+                        app->GetRenderer()->DeleteEntity(id);
+                        app->App_RemoveEntity(id);
+                    }
                 }
             });
 

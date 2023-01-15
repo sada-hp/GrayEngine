@@ -44,28 +44,67 @@ namespace GrEngine
 	public:
 		DrawableObject()
 		{
-			recalculatePhysics();
 			Type = "Object";
-			physics_object = true;
+			recalculatePhysics();
+		};
+
+		DrawableObject(UINT id) : Entity(id)
+		{
+			Type = "Object";
+			recalculatePhysics();
 		};
 
 		virtual ~DrawableObject()
 		{
-			
+			if (body != nullptr)
+			{
+				Physics::GetContext()->RemoveObject(static_cast<void*>(body));
+				delete body;
+				body = nullptr;
+				delete myMotionState;
+				myMotionState = nullptr;
+			}
 		};
 
 		virtual bool LoadMesh(const char* mesh_path, bool useTexturing, std::vector<std::string>* out_materials) = 0;
 		virtual bool LoadModel(const char* model_path) = 0;
 		virtual bool LoadModel(const char* mesh_path, std::vector<std::string> textures_vector) = 0;
 
+		virtual glm::vec3 GetObjectPosition() override
+		{
+			if (Physics::GetContext()->GetSimulationState() && body != nullptr && body->getMass() > 0.f)
+			{
+				auto phys_pos = body->getWorldTransform().getOrigin();
+				auto pos = glm::vec3(phys_pos.x(), phys_pos.y(), phys_pos.z());;
+				return glm::vec3(phys_pos.x(), phys_pos.y(), phys_pos.z());
+			}
+			else
+			{
+				return *object_origin;
+			}
+		};
+
+		virtual glm::quat GetObjectOrientation() override
+		{
+			if (Physics::GetContext()->GetSimulationState() && body != nullptr && body->getMass() > 0.f)
+			{
+				auto phys_pos = body->getWorldTransform().getRotation();
+				auto ori = glm::quat(phys_pos.x(), phys_pos.y(), phys_pos.z(), phys_pos.w());
+				return ori;
+			}
+			else
+			{
+				return *obj_orientation;
+			}
+		};
+
 		void ParsePropertyValue(const char* property_name, const char* property_value) override
 		{
-			for (int i = 0; i < properties.size(); i++)
+			for (std::vector<EntityProperty*>::iterator itt = properties.begin(); itt != properties.end(); ++itt)
 			{
-				auto name = properties[i]->property_name;
-				if (std::string(properties[i]->property_name) == std::string(property_name))
+				if ((*itt)->property_name == std::string(property_name))
 				{
-					properties[i]->ParsePropertyValue(property_value);
+					(*itt)->ParsePropertyValue(property_value);
 					recalculatePhysics();
 				}
 			}
@@ -95,6 +134,7 @@ namespace GrEngine
 		std::unordered_map<std::string, std::string> GetMaterials()
 		{
 			std::unordered_map<std::string, std::string> res;
+
 			for (int i = 0; i < material_names.size(); i++)
 			{
 				if (i < texture_names.size())
@@ -106,11 +146,67 @@ namespace GrEngine
 			return res;
 		}
 
+		void recalculatePhysics()
+		{
+			if (!CollisionEnabled) return;
+
+			float obj_mass = GetPropertyValue<float>("Mass", 0.f);
+
+			if (body != nullptr)
+			{
+				Physics::GetContext()->RemoveObject(body);
+				delete body;
+				body = nullptr;
+				delete myMotionState;
+				myMotionState = nullptr;
+			}
+
+			btTransform startTransform;
+			auto trans = glm::translate(glm::mat4(1.f), GetObjectPosition()) * glm::mat4_cast(GetObjectOrientation());
+			const float* pSource = (const float*)glm::value_ptr(trans);
+			startTransform.setFromOpenGLMatrix(pSource);
+			btVector3 localInertia{ 0,0,0 };
+
+			if (obj_mass != 0.f)
+				colShape->calculateLocalInertia(obj_mass, localInertia);
+
+			glm::vec3 scale = GetPropertyValue("Scale", glm::vec3(1.f));
+			colShape->setLocalScaling(btVector3(scale.x + 0.1, scale.y + 0.1, scale.z + 0.1));
+
+			myMotionState = new btDefaultMotionState(startTransform);
+			btRigidBody::btRigidBodyConstructionInfo rbInfo(obj_mass, myMotionState, colShape, localInertia);
+			rbInfo.m_angularDamping = .2f;
+			rbInfo.m_linearDamping = .2f;
+			body = new btRigidBody(rbInfo);
+
+			Physics::GetContext()->AddSimulationObject(body);
+		};
+
+		void DisableCollisions()
+		{
+			CollisionEnabled = false;
+
+			if (body != nullptr)
+			{
+				Physics::GetContext()->RemoveObject(body);
+				delete body;
+				body = nullptr;
+				delete myMotionState;
+				myMotionState = nullptr;
+			}
+		}
+
 		std::vector<std::string> material_names;
 		std::vector<std::string> texture_names;
 	protected:
 		virtual void updateCollisions() = 0;
 		glm::vec3 bound = { 0.f, 0.f, 0.f };
 		bool visibility = true;
+
+		btCollisionShape* colShape = new btBoxShape(btVector3(0.25f, 0.25f, 0.25f));
+		btRigidBody* body;
+		btDefaultMotionState* myMotionState;
+		btTriangleMesh* colMesh;
+		bool CollisionEnabled = true;
 	};
 }

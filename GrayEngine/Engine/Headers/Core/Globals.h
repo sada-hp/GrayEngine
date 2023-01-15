@@ -64,61 +64,55 @@ namespace GrEngine
 
 		static bool readGMF(const std::string& filepath, std::string* mesh, std::vector<std::string>* textures)
 		{
-			auto buffer = readFile(filepath);
-
-			if (buffer.size() == 0)
-				return false;
-
-			std::string temp_str = "";
+			std::string stream = "";
 			std::string distro = getExecutablePath();
-			bool is_mesh = false;
+			std::ifstream file(filepath, std::ios::ate | std::ios::binary);
 
-			if (buffer.size() == 0)
-				return false;
-
-			for (char chr : buffer)
+			if (!file.is_open())
 			{
-				if (chr == '<')
+				file.close();
+				file.open(filepath, std::ios::ate | std::ios::binary);
+			}
+
+			bool value = false;
+			bool block_open = false;
+			file.seekg(0);
+
+			while (file >> stream)
+			{
+				if (stream == "{")
 				{
-					if (temp_str != "")
-					{
-						if (is_mesh)
-						{
-							mesh->append(distro + temp_str);;
-						}
-						else
-						{
-							textures->push_back(distro + temp_str);
-						}
-
-						temp_str = "";
-					}
-
-					temp_str += chr;
+					block_open = true;
 				}
-				else if (chr == '>')
+				else if (stream == "}")
 				{
-					if (temp_str + chr == "<mesh>")
-					{
-						is_mesh = true;
-					}
-					else if (temp_str + chr == "<texture>")
-					{
-						is_mesh = false;
-					}
-
-					temp_str = "";
+					block_open = false;
 				}
-				else
+				else if (block_open)
 				{
-					temp_str += chr;
+					if (value)
+					{
+						mesh->append(distro + stream);
+					}
+					else
+					{
+						textures->push_back(distro + stream);
+					}
+				}
+				else if (!block_open && stream == "mesh")
+				{
+					value = true;
+				}
+				else if (!block_open && stream == "textures")
+				{
+					value = false;
 				}
 			}
 
 			return true;
 		}
 
-		static bool writeGMF(const std::string& filepath, const std::string& mesh_path, const std::vector<std::string> textures_vector)
+		static bool writeGMF(const char* filepath, const char* mesh_path, std::vector<std::string>& textures_vector)
 		{
 			std::fstream new_file;
 			new_file.open(filepath, std::fstream::out | std::ios::trunc);
@@ -126,11 +120,13 @@ namespace GrEngine
 			if (!new_file)
 				return false;
 
-			new_file << "<mesh>" << mesh_path << "<|mesh>";
-			for (auto tex : textures_vector)
+			new_file << "mesh\n{\n   " << mesh_path << "\n}\n";
+			new_file << "textures\n{\n";
+			for (std::vector<std::string>::iterator itt = textures_vector.begin(); itt != textures_vector.end(); ++itt)
 			{
-				new_file << "<texture>" << tex << "<|texture>";
+				new_file << "   " << (*itt) << '\n';
 			}
+			new_file << "}\n\0";
 			new_file.close();
 
 			return true;
@@ -140,11 +136,11 @@ namespace GrEngine
 		{
 			std::vector<std::string> result;
 			std::string temp = "";
-			for (auto chr : target)
+			for (std::string::iterator itt = target.begin(); itt != target.end(); ++itt)
 			{
-				if (chr != separator)
+				if ((*itt) != separator)
 				{
-					temp += chr;
+					temp += (*itt);
 				}
 				else
 				{
@@ -155,19 +151,6 @@ namespace GrEngine
 			if (temp != "") result.push_back(temp);
 
 			return result;
-		}
-
-		static char* StringToCharArray(std::string source)
-		{
-			char* msg = new char[source.size() + 1];
-			int i = 0;
-			for (char letter : source)
-			{
-				msg[i++] = (int)letter;
-			}
-			msg[i] = '\0';
-
-			return msg;
 		}
 
 		static std::string FloatToString(float value, size_t precision)

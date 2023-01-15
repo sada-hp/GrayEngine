@@ -49,6 +49,9 @@ public:
 	typedef void(*RemoveEntityFunc)(int);
 	RemoveEntityFunc RemoveEntity;
 
+	typedef void(*SetInputModeFunc)(UINT, int);
+	SetInputModeFunc SetInputMode;
+
 	EditorUI()
 	{
 		dotNetGUILibrary = LoadLibraryA("EditorUI.dll");
@@ -68,6 +71,7 @@ public:
 		SendEntityInfo = (RetrieveInfoFunc)GetProcAddress(dotNetGUILibrary, "RetrieveEntityInfo");
 		SetSelectedEntity = (SelectEntityFunc)GetProcAddress(dotNetGUILibrary, "SetSelectedEntity");
 		RemoveEntity = (RemoveEntityFunc)GetProcAddress(dotNetGUILibrary, "RemoveEntity");
+		SetInputMode = (SetInputModeFunc)GetProcAddress(dotNetGUILibrary, "SetInputMode");
 	};
 
 	~EditorUI()

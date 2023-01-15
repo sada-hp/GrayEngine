@@ -6,6 +6,9 @@ namespace GrEngine_Vulkan
 	class VulkanObject : public GrEngine::DrawableObject, public VulkanDrawable
 	{
 	public:
+		VulkanObject() {};
+		VulkanObject(UINT id) : DrawableObject(id) {};
+
 		void initObject(VkDevice device, VmaAllocator allocator, GrEngine::Renderer* owner) override;
 		virtual bool pushConstants(VkDevice devicce, VkCommandBuffer cmd, VkExtent2D extent, UINT32 mode) override;
 

@@ -20,7 +20,8 @@ namespace GrEngine_Vulkan
 
 		clearDrawables();
 		grid.destroyObject(logicalDevice, memAllocator);
-		sky.destroyObject(logicalDevice, memAllocator);
+		sky->destroyObject(logicalDevice, memAllocator);
+		delete sky;
 		cleanupSwapChain();
 		vkDestroySemaphore(logicalDevice, renderFinishedSemaphore, nullptr);
 		vkDestroySemaphore(logicalDevice, imageAvailableSemaphore, nullptr);
@@ -99,13 +100,13 @@ namespace GrEngine_Vulkan
 
 		grid.shader_path = "Shaders//grid";
 		grid.far_plane = 10000.f;
-
 		grid.initObject(logicalDevice, memAllocator, this);
+		grid.DisableCollisions();
 
-		sky.initObject(logicalDevice, memAllocator, this);
-		std::string new_name = std::string("Sky");
-		sky.UpdateNameTag(new_name.c_str());
-		entities[sky.GetEntityID()] = &sky;
+		sky = new VulkanSkybox(1000000000);
+		sky->initObject(logicalDevice, memAllocator, this);
+		sky->UpdateNameTag("Sky");
+		entities[sky->GetEntityID()] = sky;
 
 		vkDeviceWaitIdle(logicalDevice);
 
@@ -117,7 +118,7 @@ namespace GrEngine_Vulkan
 		Initialized = false;
 
 		std::array<std::string, 6> mat_vector = { East, West, Top, Bottom, North, South };
-		static_cast<CubemapProperty*>(sky.GetProperty("CubemapProperty"))->SetPropertyValue(mat_vector);
+		static_cast<CubemapProperty*>(sky->GetProperty("CubemapProperty"))->SetPropertyValue(mat_vector);
 
 		Initialized = true;
 	}
@@ -327,19 +328,20 @@ namespace GrEngine_Vulkan
 		data += subResourceLayout.offset;
 		double xpos, ypos;
 		glfwGetCursorPos(pParentWindow, &xpos, &ypos);
-		data += subResourceLayout.rowPitch * (int)ypos;
-		unsigned int* row = (unsigned int*)data + (int)xpos;
+		data += subResourceLayout.rowPitch * (int)(ypos * ((float)250 / swapChainExtent.height));
+		unsigned int* row = (unsigned int*)data + (int)(xpos * ((float)250 / swapChainExtent.width));
 
 		double r = ((unsigned char*)row + 2)[0];
 		double g = ((unsigned char*)row + 1)[0];
 		double b = ((unsigned char*)row)[0];
 
+		char buf[11];
+		char _buf[11];
+		std::snprintf(_buf, sizeof(_buf), "1%03d%03d%03d", (int)r, (int)g, (int)b);
+		int id = atoi(_buf);
+
 		if ((int)r > 0 && (int)g > 0 && (int)b > 0)
 		{
-			char buf[11];
-			char _buf[11];
-			std::snprintf(_buf, sizeof(_buf), "1%03d%03d%03d", (int)r, (int)g, (int)b);
-			int id = atoi(_buf);
 			selectEntity(id);
 		}
 		else
@@ -368,42 +370,70 @@ namespace GrEngine_Vulkan
 		VkClearValue clearValues[] = { clearColor , depthClear };
 
 		VkRenderPassBeginInfo renderPassInfo{};
-		renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
-		renderPassInfo.renderPass = renderPass;
-		renderPassInfo.framebuffer = swapChainFramebuffers[index];
-		renderPassInfo.renderArea.offset = { 0, 0 };
-		renderPassInfo.renderArea.extent = swapChainExtent;
-		renderPassInfo.clearValueCount = 2;
-		renderPassInfo.pClearValues = clearValues;
-
-		vkCmdBeginRenderPass(commandBuffers[index], &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
 		VkViewport viewport{};
-		viewport.x = 0;
-		viewport.y = 0;
-		viewport.width = (float)swapChainExtent.width;
-		viewport.height = (float)swapChainExtent.height;
-		viewport.minDepth = 0.0f;
-		viewport.maxDepth = 1.0f;
-		vkCmdSetViewport(commandBuffers[index], 0, 1, &viewport);
-
 		VkRect2D scissor{};
-		scissor.offset = { 0, 0 };
-		scissor.extent = swapChainExtent;
-		vkCmdSetScissor(commandBuffers[index], 0, 1, &scissor);
 
-		for (auto object : entities)
+		if (mode != DrawMode::IDS)
 		{
-			if (object.second->GetEntityType() == "Object" && dynamic_cast<VulkanObject*>(object.second)->IsVisible())
-			{
-				static_cast<VulkanObject*>(object.second)->recordCommandBuffer(logicalDevice, commandBuffers[index], swapChainExtent, mode);
-			}
-			else if (object.second->GetEntityType() == "Skybox")
-			{
-				static_cast<VulkanSkybox*>(object.second)->recordCommandBuffer(logicalDevice, commandBuffers[index], swapChainExtent, mode);
-			}
+			renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
+			renderPassInfo.renderPass = renderPass;
+			renderPassInfo.framebuffer = swapChainFramebuffers[index];
+			renderPassInfo.renderArea.offset = { 0, 0 };
+			renderPassInfo.renderArea.extent = swapChainExtent;
+			renderPassInfo.clearValueCount = 2;
+			renderPassInfo.pClearValues = clearValues;
+
+			vkCmdBeginRenderPass(commandBuffers[index], &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
+
+			viewport.x = 0;
+			viewport.y = 0;
+			viewport.width = (float)swapChainExtent.width;
+			viewport.height = (float)swapChainExtent.height;
+			viewport.minDepth = 0.0f;
+			viewport.maxDepth = 1.0f;
+			vkCmdSetViewport(commandBuffers[index], 0, 1, &viewport);
+			scissor.offset = { 0, 0 };
+			scissor.extent = swapChainExtent;
+			vkCmdSetScissor(commandBuffers[index], 0, 1, &scissor);
+		}
+		else
+		{
+			renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
+			renderPassInfo.renderPass = renderPass;
+			renderPassInfo.framebuffer = swapChainFramebuffers[index];
+			renderPassInfo.renderArea.offset = { 0, 0 };
+			renderPassInfo.renderArea.extent = { 250, 250 };
+			renderPassInfo.clearValueCount = 2;
+			renderPassInfo.pClearValues = clearValues;
+
+			vkCmdBeginRenderPass(commandBuffers[index], &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
+
+			double xpos, ypos;
+			glfwGetCursorPos(pParentWindow, &xpos, &ypos);
+			viewport.x = 0;
+			viewport.y = 0;
+			viewport.width = 250;
+			viewport.height = 250;
+			viewport.minDepth = 0.0f;
+			viewport.maxDepth = 1.0f;
+			vkCmdSetViewport(commandBuffers[index], 0, 1, &viewport);
+			scissor.offset = { (int)(xpos * ((float)250 / swapChainExtent.width)), (int)(ypos * ((float)250 / swapChainExtent.height)) };
+			scissor.extent = { 1, 1 };
+			vkCmdSetScissor(commandBuffers[index], 0, 1, &scissor);
 		}
 
-		grid.recordCommandBuffer(logicalDevice, commandBuffers[index], swapChainExtent, mode);
+		for (std::map<UINT, GrEngine::Entity*>::iterator itt = entities.begin(); itt != entities.end(); ++itt)
+		{
+			if ((*itt).second->GetEntityType() == "Object" && dynamic_cast<VulkanObject*>((*itt).second)->IsVisible())
+			{
+				static_cast<VulkanObject*>((*itt).second)->recordCommandBuffer(logicalDevice, commandBuffers[index], swapChainExtent, mode);
+			}
+			else if ((*itt).second->GetEntityType() == "Skybox" && mode != DrawMode::IDS)
+			{
+				static_cast<VulkanSkybox*>((*itt).second)->recordCommandBuffer(logicalDevice, commandBuffers[index], swapChainExtent, mode);
+				grid.recordCommandBuffer(logicalDevice, commandBuffers[index], swapChainExtent, mode);
+			}
+		}
 
 		vkCmdEndRenderPass(commandBuffers[index]);
 
@@ -1108,38 +1138,40 @@ namespace GrEngine_Vulkan
 		int maxW = 0;
 		int maxH = 0;
 		int channels = 0;
-		for (int i = 0; i < texture_path.size(); i++)
+		for (std::vector<std::string>::iterator itt = texture_path.begin(); itt != texture_path.end(); ++itt)
 		{
 			int width;
 			int height;
 			
-			stbi_info(texture_path[i].c_str(), &width, &height, &channels);
+			stbi_info((*itt).c_str(), &width, &height, &channels);
 
-			maxW = width > maxW || i == 0 ? width : maxW;
-			maxH = height > maxH || i == 0 ? height : maxH;
+			maxW = width > maxW ? width : maxW;
+			maxH = height > maxH ? height : maxH;
 		}
 		
 		std::map<int, std::future<void>> processes_map;
 		unsigned char* data = (unsigned char*)malloc(maxW * maxH * channels * texture_path.size());
 
 		//TBD: fix loading same image file on different surfaces
-		for (int i = 0; i < texture_path.size(); i++)
+		int procNum = 0;
+		for (std::vector<std::string>::iterator itt = texture_path.begin(); itt != texture_path.end(); ++itt)
 		{
-			processes_map[i] = std::async(std::launch::async, [texture_path, data, maxW, maxH, i]()
+			const char* texture = (*itt).c_str();
+			processes_map[procNum] = std::async(std::launch::async, [texture, data, maxW, maxH, procNum]()
 				{
 					int width;
 					int height;
 					int channels;
-					stbi_uc* pixels = stbi_load(texture_path[i].c_str(), &width, &height, &channels, STBI_rgb_alpha);
+					stbi_uc* pixels = stbi_load(texture, &width, &height, &channels, STBI_rgb_alpha);
 
 					if (!pixels)
 					{
-						Logger::Out("An error occurred while loading the texture: %s", OutputColor::Green, OutputType::Error, texture_path);
+						Logger::Out("An error occurred while loading the texture: %s", OutputColor::Green, OutputType::Error, texture);
 						free(data);
 						return;
 					}
 
-					uint32_t buf_offset = maxW * maxH * channels * i;
+					uint32_t buf_offset = maxW * maxH * channels * procNum;
 					if (width < maxW || height < maxH)
 					{
 						auto output = (unsigned char*)malloc(maxW * maxH * channels);
@@ -1155,6 +1187,8 @@ namespace GrEngine_Vulkan
 						stbi_image_free(pixels);
 					}
 				});
+
+			procNum++;
 		}
 
 		for (int ind = 0; ind < processes_map.size(); ind++)
@@ -1540,6 +1574,17 @@ namespace GrEngine_Vulkan
 		return ent;
 	}
 
+	GrEngine::Entity* VulkanAPI::addEntity(UINT id)
+	{
+		GrEngine::Entity* ent = new VulkanObject(id);
+		dynamic_cast<VulkanObject*>(ent)->initObject(logicalDevice, memAllocator, this);
+		std::string new_name = std::string("Entity") + std::to_string(entities.size() + 1);
+		ent->UpdateNameTag(new_name.c_str());
+		entities[ent->GetEntityID()] = ent;
+
+		return ent;
+	}
+
 	GrEngine::Entity* VulkanAPI::selectEntity(UINT ID)
 	{
 		selected_entity = ID;
@@ -1562,8 +1607,11 @@ namespace GrEngine_Vulkan
 		vkQueueWaitIdle(graphicsQueue);
 
 		auto object = entities.at(id);
-		dynamic_cast<VulkanObject*>(object)->destroyObject(logicalDevice, memAllocator);
-		entities.erase(id);
+		if (object != nullptr)
+		{
+			dynamic_cast<VulkanObject*>(object)->destroyObject(logicalDevice, memAllocator);
+			entities.erase(id);
+		}
 	}
 
 	void VulkanAPI::SetHighlightingMode(bool enabled)
@@ -1584,19 +1632,19 @@ namespace GrEngine_Vulkan
 
 		new_file << "viewport\n{\n";
 		std::vector<EntityProperty*> cur_props = getActiveViewport()->GetProperties();
-		for (int i = 0; i < cur_props.size(); i++)
+		for (std::vector<EntityProperty*>::iterator itt = cur_props.begin(); itt != cur_props.end(); ++itt)
 		{
-			new_file << "    " << cur_props[i]->PrpertyNameString() << " " << cur_props[i]->ValueString() << "\n";
+			new_file << "    " << (*itt)->PrpertyNameString() << " " << (*itt)->ValueString() << "\n";
 		}
 		new_file << "}\n";
 
-		for (auto ent : entities)
+		for (std::map<UINT, GrEngine::Entity*>::iterator itt = entities.begin(); itt != entities.end(); ++itt)
 		{
-			new_file << ent.second->GetEntityType() << "\n{\n";
-			cur_props = ent.second->GetProperties();
-			for (int j = 0; j < cur_props.size(); j++)
+			new_file << (*itt).second->GetEntityType() << " " << (*itt).second->GetEntityID() << "\n{\n";
+			cur_props = (*itt).second->GetProperties();
+			for (std::vector<EntityProperty*>::iterator itt = cur_props.begin(); itt != cur_props.end(); ++itt)
 			{
-				new_file << "   " << cur_props[j]->PrpertyNameString() << " " << cur_props[j]->ValueString() << "\n";
+				new_file << "   " << (*itt)->PrpertyNameString() << " " << (*itt)->ValueString() << "\n";
 			}
 			new_file << "}\n";
 		}
@@ -1607,8 +1655,10 @@ namespace GrEngine_Vulkan
 
 	void VulkanAPI::LoadScene(const char* path)
 	{
-		clearDrawables();
+		auto start = std::chrono::steady_clock::now();
+
 		Initialized = false;
+		clearDrawables();
 
 		std::ifstream file(path, std::ios::ate | std::ios::binary);
 
@@ -1619,19 +1669,19 @@ namespace GrEngine_Vulkan
 		}
 
 		file.seekg(0);
-		std::string s;
+		std::string stream;
 		std::string cur_property;
 		bool block_open = false;
 		bool value = false;
 		GrEngine::Entity* cur_ent = nullptr;
 
-		while (file >> s)
+		while (file >> stream)
 		{
-			if (s == "{")
+			if (stream == "{")
 			{
 				block_open = true;
 			}
-			else if (s == "}")
+			else if (stream == "}")
 			{
 				block_open = false;
 				value = false;
@@ -1640,32 +1690,37 @@ namespace GrEngine_Vulkan
 			{
 				if (!value)
 				{
-					cur_property = s;
+					cur_property = stream;
 					cur_ent->AddNewProperty(cur_property.c_str());
 					value = true;
 				}
 				else
 				{
-					cur_ent->ParsePropertyValue(cur_property.c_str(), s.c_str());
+					cur_ent->ParsePropertyValue(cur_property.c_str(), stream.c_str());
 					value = false;
 				}
 			}
-			else if (!block_open && s == "Object")
+			else if (!block_open && stream == "Object")
 			{
-				cur_ent = addEntity();
+				file >> stream;
+				cur_ent = addEntity(std::atoi(stream.c_str()));
 			}
-			else if (!block_open && s == "viewport")
+			else if (!block_open && stream == "viewport")
 			{
 				cur_ent = &viewport_camera;
 			}
-			else if (!block_open && s == "Skybox")
+			else if (!block_open && stream == "Skybox")
 			{
-				cur_ent = &sky;
-				entities[sky.GetEntityID()] = &sky;
+				cur_ent = sky;
+				entities[sky->GetEntityID()] = sky;
 			}
 		}
 
 		file.close();
 		Initialized = true;
+
+		auto end = std::chrono::steady_clock::now();
+		auto time = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
+		Logger::Out("Level %s loaded in %d ms", OutputColor::Gray, OutputType::Log, path, (int)time);
 	}
 };

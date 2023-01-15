@@ -58,16 +58,15 @@ namespace GrEngine
 
         void initModelBrowser()
         {
-            EnableWindow(getEditorUI()->wpf_hwnd, FALSE);
+            //getEditorUI()->SetInputMode(VIEWPORT_EDITOR, 0);
             Pause();
             Logger::AllowMessages(MessageMode::Block);
             AppParameters props;
             ModelBrowser* mdlBrowser = new ModelBrowser(props);
-            EventListener::setEventsPermissions(false, true);
             BindContext(mdlBrowser);
-            mdlBrowser->init(mdlBrowser);
-            SetForegroundWindow(mdlBrowser->getEditorUI()->wpf_hwnd);
+            EventListener::setEventsPermissions(false, true);
             GetRenderer()->SetHighlightingMode(false);
+            mdlBrowser->init(mdlBrowser);
             mdlBrowser->StartEngine();
             mdlBrowser->Stop();
             delete mdlBrowser;
@@ -76,8 +75,7 @@ namespace GrEngine
             BindContext(this);
             Logger::AllowMessages(MessageMode::Allow);
             Unpause();
-            EnableWindow(getEditorUI()->wpf_hwnd, TRUE);
-            SetForegroundWindow(getEditorUI()->wpf_hwnd);
+            //getEditorUI()->SetInputMode(VIEWPORT_EDITOR, 1);
         }
 
         void toggle_free_mode()
