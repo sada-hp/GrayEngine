@@ -4,6 +4,7 @@
 #include <vk_mem_alloc.h>
 #include <stb_image.h>
 #include <stb_image_resize.h>
+#include "VulkanResourceManager.h"
 #include "VulkanObject.h"
 #include "VulkanSkybox.h"
 #include "Engine/Headers/Core/Logger.h"
@@ -73,9 +74,12 @@ namespace GrEngine_Vulkan
 		void DeleteEntity(UINT id) override;
 		void SaveScene(const char* path) override;
 		void LoadScene(const char* path) override;
+		void waitForRenderer() override;
 
 		void Update() override;
 		VkSampleCountFlagBits GetSampling() { return msaaSamples; };
+		inline VulkanResourceManager& GetResourceManager() { return resources; }
+
 	protected:
 		GrEngine::Entity* addEntity(UINT ID);
 		bool allocateCommandBuffer(VkCommandBuffer* cmd, uint32_t count = 0);
@@ -85,6 +89,8 @@ namespace GrEngine_Vulkan
 		bool updateDrawables(uint32_t index, DrawMode mode);
 		DrawMode cur_mode = DrawMode::NORMAL;
 	private:
+		VulkanResourceManager resources;
+
 		GLFWwindow* pParentWindow;
 		VmaAllocator memAllocator;
 
@@ -154,7 +160,7 @@ namespace GrEngine_Vulkan
 		VkDeviceMemory colorImageMemory;
 		VkImageView colorImageView;
 		AllocatedImage samplingImage;
-
+		bool highlight_selection = true;
 
 #ifdef _DEBUG
 

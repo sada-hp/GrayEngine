@@ -12,16 +12,16 @@ namespace GrEngine_Vulkan
 {
 	void VulkanAPI::destroy()
 	{
-		if (Initialized == false) return;
 		Initialized = false;
 
 		vkDeviceWaitIdle(logicalDevice);
 		vkQueueWaitIdle(graphicsQueue);
 
 		clearDrawables();
-		grid.destroyObject(logicalDevice, memAllocator);
-		sky->destroyObject(logicalDevice, memAllocator);
+		grid.destroyObject();
+		sky->destroyObject();
 		delete sky;
+		resources.Clean(logicalDevice, memAllocator);
 		cleanupSwapChain();
 		vkDestroySemaphore(logicalDevice, renderFinishedSemaphore, nullptr);
 		vkDestroySemaphore(logicalDevice, imageAvailableSemaphore, nullptr);
@@ -346,7 +346,7 @@ namespace GrEngine_Vulkan
 		}
 		else
 		{
-			VulkanObject::opo.selected_entity = { 0, 0, 0 };
+			VulkanObject::selected_id = { 0, 0, 0 };
 			selectEntity(0);
 		}
 
@@ -426,12 +426,12 @@ namespace GrEngine_Vulkan
 		{
 			if ((*itt).second->GetEntityType() == "Object" && dynamic_cast<VulkanObject*>((*itt).second)->IsVisible())
 			{
-				static_cast<VulkanObject*>((*itt).second)->recordCommandBuffer(logicalDevice, commandBuffers[index], swapChainExtent, mode);
+				static_cast<VulkanObject*>((*itt).second)->recordCommandBuffer(commandBuffers[index], swapChainExtent, mode);
 			}
 			else if ((*itt).second->GetEntityType() == "Skybox" && mode != DrawMode::IDS)
 			{
-				static_cast<VulkanSkybox*>((*itt).second)->recordCommandBuffer(logicalDevice, commandBuffers[index], swapChainExtent, mode);
-				grid.recordCommandBuffer(logicalDevice, commandBuffers[index], swapChainExtent, mode);
+				static_cast<VulkanSkybox*>((*itt).second)->recordCommandBuffer(commandBuffers[index], swapChainExtent, mode);
+				grid.recordCommandBuffer(commandBuffers[index], swapChainExtent, mode);
 			}
 		}
 
@@ -1071,7 +1071,7 @@ namespace GrEngine_Vulkan
 		{
 			if (object.second->GetEntityType() == "Object")
 			{
-				dynamic_cast<VulkanDrawable*>(object.second)->destroyObject(logicalDevice, memAllocator);
+				dynamic_cast<VulkanDrawable*>(object.second)->destroyObject();
 				delete object.second;
 			}
 		}
@@ -1114,12 +1114,12 @@ namespace GrEngine_Vulkan
 		if (target->GetEntityType() == "Object")
 		{
 			loadTexture(textures, static_cast<VulkanObject*>(target), VK_IMAGE_VIEW_TYPE_2D_ARRAY, VK_IMAGE_TYPE_2D);
-			static_cast<VulkanObject*>(target)->updateObject(logicalDevice, memAllocator);
+			static_cast<VulkanObject*>(target)->updateObject();
 		}
 		else if (target->GetEntityType() == "Skybox")
 		{
 			loadTexture(textures, static_cast<VulkanSkybox*>(target), VK_IMAGE_VIEW_TYPE_CUBE, VK_IMAGE_TYPE_2D);
-			static_cast<VulkanSkybox*>(target)->updateObject(logicalDevice, memAllocator);
+			static_cast<VulkanSkybox*>(target)->updateObject();
 		}
 
 		return true;
@@ -1131,143 +1131,151 @@ namespace GrEngine_Vulkan
 		{
 			return false;
 		}
+		else if (target->object_texture != nullptr)
+		{
+			resources.RemoveTexture(target->object_texture->texture_collection, logicalDevice, memAllocator);
+			target->object_texture = nullptr;
+		}
 		
 		ShaderBuffer stagingBuffer;
-		Texture new_texture;
+		auto resource = resources.GetTextureResource(texture_path);
 
-		int maxW = 0;
-		int maxH = 0;
-		int channels = 0;
-		for (std::vector<std::string>::iterator itt = texture_path.begin(); itt != texture_path.end(); ++itt)
+		if (resource == nullptr)
 		{
-			int width;
-			int height;
-			
-			stbi_info((*itt).c_str(), &width, &height, &channels);
+			Texture* new_texture = new Texture();
 
-			maxW = width > maxW ? width : maxW;
-			maxH = height > maxH ? height : maxH;
-		}
-		
-		std::map<int, std::future<void>> processes_map;
-		unsigned char* data = (unsigned char*)malloc(maxW * maxH * channels * texture_path.size());
-
-		//TBD: fix loading same image file on different surfaces
-		int procNum = 0;
-		for (std::vector<std::string>::iterator itt = texture_path.begin(); itt != texture_path.end(); ++itt)
-		{
-			const char* texture = (*itt).c_str();
-			processes_map[procNum] = std::async(std::launch::async, [texture, data, maxW, maxH, procNum]()
-				{
-					int width;
-					int height;
-					int channels;
-					stbi_uc* pixels = stbi_load(texture, &width, &height, &channels, STBI_rgb_alpha);
-
-					if (!pixels)
-					{
-						Logger::Out("An error occurred while loading the texture: %s", OutputColor::Green, OutputType::Error, texture);
-						free(data);
-						return;
-					}
-
-					uint32_t buf_offset = maxW * maxH * channels * procNum;
-					if (width < maxW || height < maxH)
-					{
-						auto output = (unsigned char*)malloc(maxW * maxH * channels);
-						stbir_resize_uint8(pixels, width, height, 0, output, maxW, maxH, 0, channels);
-						auto s = sizeof(pixels);
-						memcpy(data + buf_offset, output, maxW * maxH * channels);
-						stbi_image_free(pixels);
-						free(output);
-					}
-					else
-					{
-						memcpy(data + buf_offset, pixels, width * height * channels);
-						stbi_image_free(pixels);
-					}
-				});
-
-			procNum++;
-		}
-
-		for (int ind = 0; ind < processes_map.size(); ind++)
-		{
-			if (processes_map[ind].valid())
+			int maxW = 0;
+			int maxH = 0;
+			int channels = 0;
+			for (std::vector<std::string>::iterator itt = texture_path.begin(); itt != texture_path.end(); ++itt)
 			{
-				processes_map[ind].wait();
+				int width;
+				int height;
+
+				stbi_info((*itt).c_str(), &width, &height, &channels);
+
+				maxW = width > maxW ? width : maxW;
+				maxH = height > maxH ? height : maxH;
 			}
+
+			std::map<int, std::future<void>> processes_map;
+			unsigned char* data = (unsigned char*)malloc(maxW * maxH * channels * texture_path.size());
+
+			//TBD: fix loading same image file on different surfaces
+			int procNum = 0;
+			for (std::vector<std::string>::iterator itt = texture_path.begin(); itt != texture_path.end(); ++itt)
+			{
+				const char* texture = (*itt).c_str();
+				processes_map[procNum] = std::async(std::launch::async, [texture, data, maxW, maxH, procNum]()
+					{
+						int width;
+						int height;
+						int channels;
+						stbi_uc* pixels = stbi_load(texture, &width, &height, &channels, STBI_rgb_alpha);
+
+						if (!pixels)
+						{
+							Logger::Out("An error occurred while loading the texture: %s", OutputColor::Green, OutputType::Error, texture);
+							free(data);
+							return;
+						}
+
+						uint32_t buf_offset = maxW * maxH * channels * procNum;
+						if (width < maxW || height < maxH)
+						{
+							auto output = (unsigned char*)malloc(maxW * maxH * channels);
+							stbir_resize_uint8(pixels, width, height, 0, output, maxW, maxH, 0, channels);
+							auto s = sizeof(pixels);
+							memcpy(data + buf_offset, output, maxW * maxH * channels);
+							stbi_image_free(pixels);
+							free(output);
+						}
+						else
+						{
+							memcpy(data + buf_offset, pixels, width * height * channels);
+							stbi_image_free(pixels);
+						}
+					});
+
+				procNum++;
+			}
+
+			for (int ind = 0; ind < processes_map.size(); ind++)
+			{
+				if (processes_map[ind].valid())
+				{
+					processes_map[ind].wait();
+				}
+			}
+
+			m_createVkBuffer(logicalDevice, memAllocator, data, maxW * maxH * channels * texture_path.size(), VK_BUFFER_USAGE_TRANSFER_SRC_BIT, &stagingBuffer);
+			free(data);
+
+			VkExtent3D imageExtent;
+			imageExtent.width = static_cast<uint32_t>(maxW);
+			imageExtent.height = static_cast<uint32_t>(maxH);
+			imageExtent.depth = 1;
+
+			VkImageCreateInfo dimg_info{};
+			dimg_info.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
+			dimg_info.pNext = nullptr;
+			dimg_info.imageType = type_img;
+			dimg_info.format = VK_FORMAT_R8G8B8A8_SRGB;
+			dimg_info.extent = imageExtent;
+			dimg_info.mipLevels = 1;
+			dimg_info.arrayLayers = 6;
+			dimg_info.samples = VK_SAMPLE_COUNT_1_BIT;
+			dimg_info.tiling = VK_IMAGE_TILING_OPTIMAL;
+			dimg_info.usage = VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT;
+			dimg_info.flags = VK_IMAGE_CREATE_CUBE_COMPATIBLE_BIT;
+
+			VmaAllocationCreateInfo dimg_allocinfo = {};
+			dimg_allocinfo.usage = VMA_MEMORY_USAGE_GPU_ONLY;
+
+			//allocate and create the image
+			vmaCreateImage(memAllocator, &dimg_info, &dimg_allocinfo, &new_texture->newImage.allocatedImage, &new_texture->newImage.allocation, nullptr);
+			//vkCreateImage(logicalDevice, &dimg_info, nullptr, &new_texture.newImage.allocatedImage);
+
+			VkImageSubresourceRange subresourceRange = {};
+			subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+			subresourceRange.baseMipLevel = 0;
+			subresourceRange.levelCount = 1;
+			subresourceRange.layerCount = texture_path.size();
+
+			transitionImageLayout(new_texture->newImage.allocatedImage, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, subresourceRange);
+			copyBufferToImage(stagingBuffer.Buffer, new_texture->newImage.allocatedImage, maxW, maxH, channels, texture_path.size());
+			transitionImageLayout(new_texture->newImage.allocatedImage, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, subresourceRange);
+			createImageViews(VK_FORMAT_R8G8B8A8_SRGB, type_view, new_texture->newImage.allocatedImage, &new_texture->textureImageView, texture_path.size());
+			m_destroyShaderBuffer(logicalDevice, memAllocator, &stagingBuffer);
+
+			VkPhysicalDeviceProperties properties{};
+			vkGetPhysicalDeviceProperties(physicalDevice, &properties);
+
+			VkSamplerCreateInfo samplerInfo{};
+			samplerInfo.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
+			samplerInfo.magFilter = VK_FILTER_LINEAR;
+			samplerInfo.minFilter = VK_FILTER_LINEAR;
+			samplerInfo.addressModeU = VK_SAMPLER_ADDRESS_MODE_REPEAT;
+			samplerInfo.addressModeV = VK_SAMPLER_ADDRESS_MODE_REPEAT;
+			samplerInfo.addressModeW = VK_SAMPLER_ADDRESS_MODE_REPEAT;
+			samplerInfo.anisotropyEnable = VK_TRUE;
+			samplerInfo.maxAnisotropy = properties.limits.maxSamplerAnisotropy;
+			samplerInfo.borderColor = VK_BORDER_COLOR_INT_OPAQUE_BLACK;
+			samplerInfo.unnormalizedCoordinates = VK_FALSE;
+			samplerInfo.compareEnable = VK_FALSE;
+			samplerInfo.compareOp = VK_COMPARE_OP_ALWAYS;
+			samplerInfo.mipmapMode = VK_SAMPLER_MIPMAP_MODE_LINEAR;
+			samplerInfo.mipLodBias = 0.0f;
+			samplerInfo.minLod = 0.0f;
+			samplerInfo.maxLod = 0.0f;
+			vkCreateSampler(logicalDevice, &samplerInfo, nullptr, &new_texture->textureSampler);
+
+			new_texture->texture_collection = texture_path;
+			new_texture->initialized = true;
+
+			resource = resources.AddTextureResource(texture_path, new_texture);
 		}
-
-		m_createVkBuffer(logicalDevice, memAllocator, data, maxW * maxH * channels * texture_path.size(), VK_BUFFER_USAGE_TRANSFER_SRC_BIT, &stagingBuffer);
-		free(data);
-
-		VkExtent3D imageExtent;
-		imageExtent.width = static_cast<uint32_t>(maxW);
-		imageExtent.height = static_cast<uint32_t>(maxH);
-		imageExtent.depth = 1;
-
-		VkImageCreateInfo dimg_info{};
-		dimg_info.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
-		dimg_info.pNext = nullptr;
-		dimg_info.imageType = type_img;
-		dimg_info.format = VK_FORMAT_R8G8B8A8_SRGB;
-		dimg_info.extent = imageExtent;
-		dimg_info.mipLevels = 1;
-		dimg_info.arrayLayers = 6;
-		dimg_info.samples = VK_SAMPLE_COUNT_1_BIT;
-		dimg_info.tiling = VK_IMAGE_TILING_OPTIMAL;
-		dimg_info.usage = VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT;
-		dimg_info.flags = VK_IMAGE_CREATE_CUBE_COMPATIBLE_BIT;
-
-		VmaAllocationCreateInfo dimg_allocinfo = {};
-		dimg_allocinfo.usage = VMA_MEMORY_USAGE_GPU_ONLY;
-
-		//allocate and create the image
-		vmaCreateImage(memAllocator, &dimg_info, &dimg_allocinfo, &new_texture.newImage.allocatedImage, &new_texture.newImage.allocation, nullptr);
-		//vkCreateImage(logicalDevice, &dimg_info, nullptr, &new_texture.newImage.allocatedImage);
-
-		VkImageSubresourceRange subresourceRange = {};
-		subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-		subresourceRange.baseMipLevel = 0;
-		subresourceRange.levelCount = 1;
-		subresourceRange.layerCount = texture_path.size();
-
-		transitionImageLayout(new_texture.newImage.allocatedImage, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, subresourceRange);
-		copyBufferToImage(stagingBuffer.Buffer, new_texture.newImage.allocatedImage, maxW, maxH, channels, texture_path.size());
-		transitionImageLayout(new_texture.newImage.allocatedImage, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, subresourceRange);
-		createImageViews(VK_FORMAT_R8G8B8A8_SRGB, type_view, new_texture.newImage.allocatedImage, &new_texture.textureImageView, texture_path.size());
-		m_destroyShaderBuffer(logicalDevice, memAllocator, &stagingBuffer);
-
-		VkPhysicalDeviceProperties properties{};
-		vkGetPhysicalDeviceProperties(physicalDevice, &properties);
-
-		VkSamplerCreateInfo samplerInfo{};
-		samplerInfo.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
-		samplerInfo.magFilter = VK_FILTER_LINEAR;
-		samplerInfo.minFilter = VK_FILTER_LINEAR;
-		samplerInfo.addressModeU = VK_SAMPLER_ADDRESS_MODE_REPEAT;
-		samplerInfo.addressModeV = VK_SAMPLER_ADDRESS_MODE_REPEAT;
-		samplerInfo.addressModeW = VK_SAMPLER_ADDRESS_MODE_REPEAT;
-		samplerInfo.anisotropyEnable = VK_TRUE;
-		samplerInfo.maxAnisotropy = properties.limits.maxSamplerAnisotropy;
-		samplerInfo.borderColor = VK_BORDER_COLOR_INT_OPAQUE_BLACK;
-		samplerInfo.unnormalizedCoordinates = VK_FALSE;
-		samplerInfo.compareEnable = VK_FALSE;
-		samplerInfo.compareOp = VK_COMPARE_OP_ALWAYS;
-		samplerInfo.mipmapMode = VK_SAMPLER_MIPMAP_MODE_LINEAR;
-		samplerInfo.mipLodBias = 0.0f;
-		samplerInfo.minLod = 0.0f;
-		samplerInfo.maxLod = 0.0f;
-		vkCreateSampler(logicalDevice, &samplerInfo, nullptr, &new_texture.textureSampler);
-
-		if (target->object_texture.initialized == true)
-		{
-			target->invalidateTexture(logicalDevice, memAllocator); //Strip object of its previous texture
-		}
-		new_texture.texture_path = texture_path[0].c_str();
-		new_texture.initialized = true;
-		target->object_texture = new_texture;
+		target->object_texture = resource->AddLink();
 
 		return true;
 	}
@@ -1555,7 +1563,7 @@ namespace GrEngine_Vulkan
 			vmaDestroyImage(allocator, texture->newImage.allocatedImage, texture->newImage.allocation);
 			vmaFlushAllocation(allocator, texture->newImage.allocation, 0, sizeof(texture->newImage.allocation));
 			texture->initialized = false;
-			texture->texture_path = NULL;
+			texture->texture_collection.clear();
 		}
 
 		is_in_use = false;
@@ -1593,30 +1601,39 @@ namespace GrEngine_Vulkan
 
 		if (entities.contains(ID))
 		{
-			VulkanObject::opo.selected_entity = { ID / 1000000 % 1000, ID / 1000 % 1000, ID % 1000 };
+			if (highlight_selection)
+				VulkanObject::selected_id = { ID / 1000000 % 1000, ID / 1000 % 1000, ID % 1000 };
+			else
+				VulkanObject::selected_id = { 0, 0, 0 };
+
 			return entities.at(ID);
 		}
 
-		VulkanObject::opo.selected_entity = { 0, 0, 0 };
+		VulkanObject::selected_id = { 0, 0, 0 };
 		return nullptr;
 	}
 
 	void VulkanAPI::DeleteEntity(UINT id)
 	{
-		vkDeviceWaitIdle(logicalDevice);
-		vkQueueWaitIdle(graphicsQueue);
+		waitForRenderer();
 
 		auto object = entities.at(id);
 		if (object != nullptr)
 		{
-			dynamic_cast<VulkanObject*>(object)->destroyObject(logicalDevice, memAllocator);
+			dynamic_cast<VulkanObject*>(object)->destroyObject();
 			entities.erase(id);
 		}
 	}
 
 	void VulkanAPI::SetHighlightingMode(bool enabled)
 	{
-		VulkanObject::opo.highlight_enabled = enabled;
+		highlight_selection = enabled;
+	}
+
+	void VulkanAPI::waitForRenderer()
+	{
+		vkDeviceWaitIdle(logicalDevice);
+		vkQueueWaitIdle(graphicsQueue);
 	}
 
 	void VulkanAPI::SaveScene(const char* path)

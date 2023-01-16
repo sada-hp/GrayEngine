@@ -92,6 +92,7 @@ namespace GrEngine
 
 	void Engine::Pause()
 	{
+		GetRenderer()->waitForRenderer();
 		isPaused = true;
 	}
 

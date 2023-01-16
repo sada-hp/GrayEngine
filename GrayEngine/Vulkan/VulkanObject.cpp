@@ -7,48 +7,64 @@
 
 namespace GrEngine_Vulkan
 {
-	PickingBufferObject VulkanObject::opo{};
+	glm::vec3 VulkanObject::selected_id{};
 
 	void VulkanObject::initObject(VkDevice device, VmaAllocator allocator, GrEngine::Renderer* owner)
 	{
 		p_Owner = owner;
+		resources = &static_cast<VulkanAPI*>(owner)->GetResourceManager();
+		logicalDevice = device;
+		memAllocator = allocator;
+
 		UINT id = GetEntityID();
 		colorID = { id / 1000000 % 1000, id / 1000 % 1000, id % 1000 };
 
-		object_mesh.vertices = {
-			{{{ 0.25, 0.25, 0.25, 1.0f },{ 1.f, 1.0f }, colorID}},
-			{{{ -0.25, 0.25, -0.25, 1.0f },{ 0.f, 0.0f }, colorID}},
-			{{{ -0.25, 0.25 , 0.25, 1.0f },{ 0.f, 1.f }, colorID}},
-			{{{ 0.25, 0.25, -0.25, 1.0f },{ 1.f, 0.0f }, colorID}},
-
-			{{{ 0.25, -0.25, 0.25, 1.0f },{ 1.f, 1.0f }, colorID}},
-			{{{ -0.25, -0.25, -0.25, 1.0f },{ 0.f, 0.0f }, colorID}},
-			{{{ -0.25, -0.25 , 0.25, 1.0f },{ 0.f, 1.f }, colorID}},
-			{{{ 0.25, -0.25, -0.25, 1.0f },{ 1.f, 0.0f }, colorID}}
-		};
-
-		object_mesh.indices = { 0, 1, 2, 0, 3, 1,
-			4, 5, 6, 4, 7, 5,
-			0, 2, 6, 0, 4, 6,
-			0, 3, 4, 3, 7, 4,
-			1, 3, 7, 1, 5, 7,
-			1, 2, 6, 1, 5, 6,
-		};
-
-		if (object_mesh.vertices.size() > 0)
+		auto resource = resources->GetMeshResource("default");
+		if (resource == nullptr)
 		{
-			VulkanAPI::m_createVkBuffer(device, allocator, object_mesh.vertices.data(), sizeof(object_mesh.vertices[0]) * object_mesh.vertices.size(), VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, &vertexBuffer);
-			VulkanAPI::m_createVkBuffer(device, allocator, object_mesh.indices.data(), sizeof(object_mesh.indices[0]) * object_mesh.indices.size(), VK_BUFFER_USAGE_INDEX_BUFFER_BIT, &indexBuffer);
+			Mesh* default_mesh = new Mesh();
+
+			default_mesh->vertices = {
+				{{{ 0.25, 0.25, 0.25, 1.0f },{ 1.f, 1.0f }}},
+				{{{ -0.25, 0.25, -0.25, 1.0f },{ 0.f, 0.0f }}},
+				{{{ -0.25, 0.25 , 0.25, 1.0f },{ 0.f, 1.f }}},
+				{{{ 0.25, 0.25, -0.25, 1.0f },{ 1.f, 0.0f }}},
+
+				{{{ 0.25, -0.25, 0.25, 1.0f },{ 1.f, 1.0f }}},
+				{{{ -0.25, -0.25, -0.25, 1.0f },{ 0.f, 0.0f }}},
+				{{{ -0.25, -0.25 , 0.25, 1.0f },{ 0.f, 1.f }}},
+				{{{ 0.25, -0.25, -0.25, 1.0f },{ 1.f, 0.0f }}}
+			};
+
+			default_mesh->indices = { 0, 1, 2, 0, 3, 1,
+				4, 5, 6, 4, 7, 5,
+				0, 2, 6, 0, 4, 6,
+				0, 3, 4, 3, 7, 4,
+				1, 3, 7, 1, 5, 7,
+				1, 2, 6, 1, 5, 6,
+			};
+
+			default_mesh->mesh_path = "default";
+
+			resource = resources->AddMeshResource("default", default_mesh);
+			object_mesh = resource->AddLink();
+
+			VulkanAPI::m_createVkBuffer(logicalDevice, memAllocator, object_mesh->vertices.data(), sizeof(object_mesh->vertices[0]) * object_mesh->vertices.size(), VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, &object_mesh->vertexBuffer);
+			VulkanAPI::m_createVkBuffer(logicalDevice, memAllocator, object_mesh->indices.data(), sizeof(object_mesh->indices[0]) * object_mesh->indices.size(), VK_BUFFER_USAGE_INDEX_BUFFER_BIT, &object_mesh->indexBuffer);
+		}
+		else
+		{
+			object_mesh = resource->AddLink();
 		}
 
-		createDescriptorLayout(device);
-		createDescriptorPool(device);
-		createDescriptorSet(device, allocator);
-		createPipelineLayout(device);
-		createGraphicsPipeline(device);
+		createDescriptorLayout();
+		createDescriptorPool();
+		createDescriptorSet();
+		createPipelineLayout();
+		createGraphicsPipeline();
 	}
 
-	bool VulkanObject::pushConstants(VkDevice devicce, VkCommandBuffer cmd, VkExtent2D extent, UINT32 mode)
+	bool VulkanObject::pushConstants(VkCommandBuffer cmd, VkExtent2D extent, UINT32 mode)
 	{
 		/*orientation relative to the position in a 3D space (?)*/
 		ubo.model = glm::translate(glm::mat4(1.f), GetObjectPosition()) * glm::mat4_cast(GetObjectOrientation());
@@ -60,7 +76,9 @@ namespace GrEngine_Vulkan
 		vkCmdPushConstants(cmd, pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(UniformBufferObject), &ubo);
 
 		opo.draw_mode = mode;
-		opo.color_mask = GetPropertyValue("Color", glm::vec4(1.f));
+		opo.colors = { {GetPropertyValue("Color", glm::vec4(1))}, {colorID.x, colorID.y, colorID.z, 1}, {selected_id.x, selected_id.y, selected_id.z, 1}};
+		//opo.colors = glm::mat4(0);
+
 		vkCmdPushConstants(cmd, pipelineLayout, VK_SHADER_STAGE_FRAGMENT_BIT, sizeof(UniformBufferObject), sizeof(PickingBufferObject), &opo);
 		return true;
 	}
@@ -74,12 +92,12 @@ namespace GrEngine_Vulkan
 		}
 
 		colMesh = new btTriangleMesh();
-		for (std::vector<Vertex>::iterator itt = object_mesh.vertices.begin(); itt != object_mesh.vertices.end(); ++itt)
+		for (std::vector<Vertex>::iterator itt = object_mesh->vertices.begin(); itt != object_mesh->vertices.end(); ++itt)
 		{
 			colMesh->findOrAddVertex(btVector3((*itt).pos.x, (*itt).pos.y, (*itt).pos.z), false);
 		}
 
-		for (std::vector<uint16_t>::iterator itt = object_mesh.indices.begin(); itt != object_mesh.indices.end(); ++itt)
+		for (std::vector<uint16_t>::iterator itt = object_mesh->indices.begin(); itt != object_mesh->indices.end(); ++itt)
 		{
 			colMesh->addTriangleIndices(*(++itt), *(++itt), *itt);
 		}
@@ -122,10 +140,25 @@ namespace GrEngine_Vulkan
 				inst->assignTextures(textures_vector, ref_obj);
 			});
 
-		processes_map[processes_map.size()] = std::async(std::launch::async, [mesh_path, textures_vector, ref_obj, out_materials_collection, inst]()
-			{
-				ref_obj->LoadMesh(mesh_path, textures_vector.size() != 0, out_materials_collection);
-			});
+		if (object_mesh != nullptr)
+		{
+			resources->RemoveMesh(object_mesh->mesh_path.c_str(), logicalDevice, memAllocator);
+			object_mesh = nullptr;
+		}
+
+		auto resource = resources->GetMeshResource(mesh_path);
+		if (resource == nullptr)
+		{
+			processes_map[processes_map.size()] = std::async(std::launch::async, [mesh_path, textures_vector, ref_obj, out_materials_collection, inst]()
+				{
+					ref_obj->LoadMesh(mesh_path, textures_vector.size() != 0, out_materials_collection);
+				});
+		}
+		else
+		{
+			object_mesh = resource->AddLink();
+			bound = object_mesh->bounds;
+		}
 
 		for (int ind = 0; ind < processes_map.size(); ind++)
 		{
@@ -136,7 +169,7 @@ namespace GrEngine_Vulkan
 		}
 
 		texture_names = textures_vector;
-		updateObject(inst->logicalDevice, inst->getMemAllocator());
+		updateObject();
 
 		return true;
 	}
@@ -145,6 +178,7 @@ namespace GrEngine_Vulkan
 	{
 		std::unordered_map<Vertex, uint32_t> uniqueVertices{};
 		Assimp::Importer importer;
+		Mesh* target_mesh = new Mesh();
 
 		auto model = importer.ReadFile(mesh_path, 0);
 
@@ -154,9 +188,7 @@ namespace GrEngine_Vulkan
 			return false;
 		}
 
-		object_mesh.indices.clear();
-		object_mesh.vertices.clear();
-		object_mesh.mesh_path = mesh_path;
+		target_mesh->mesh_path = mesh_path;
 
 		if (colMesh != nullptr)
 		{
@@ -191,8 +223,8 @@ namespace GrEngine_Vulkan
 
 				if (uniqueVertices.count(vertex) == 0)
 				{
-					uniqueVertices[vertex] = static_cast<uint32_t>(object_mesh.vertices.size());
-					object_mesh.vertices.push_back(vertex);
+					uniqueVertices[vertex] = static_cast<uint32_t>(target_mesh->vertices.size());
+					target_mesh->vertices.push_back(vertex);
 					colMesh->findOrAddVertex(btVector3(vertex.pos.x, vertex.pos.y, vertex.pos.z), false);
 				}
 
@@ -204,7 +236,7 @@ namespace GrEngine_Vulkan
 					highest_pointz = cur_mesh->mVertices[vert_ind].z;
 
 				int index = uniqueVertices[vertex];
-				object_mesh.indices.push_back(index);
+				target_mesh->indices.push_back(index);
 			}
 
 			aiString material;
@@ -215,13 +247,20 @@ namespace GrEngine_Vulkan
 				out_materials->push_back(material.C_Str());
 			}
 		}
-		SetObjectBounds(glm::vec3{ highest_pointx, highest_pointy, highest_pointz });
 
-		for (std::vector<uint16_t>::iterator itt = object_mesh.indices.begin(); itt != object_mesh.indices.end(); ++itt)
+		VulkanAPI::m_createVkBuffer(logicalDevice, memAllocator, target_mesh->vertices.data(), sizeof(target_mesh->vertices[0]) * target_mesh->vertices.size(), VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, &target_mesh->vertexBuffer);
+		VulkanAPI::m_createVkBuffer(logicalDevice, memAllocator, target_mesh->indices.data(), sizeof(target_mesh->indices[0]) * target_mesh->indices.size(), VK_BUFFER_USAGE_INDEX_BUFFER_BIT, &target_mesh->indexBuffer);
+
+		target_mesh->bounds = glm::uvec3(highest_pointx, highest_pointy, highest_pointz);
+		bound = target_mesh->bounds;
+
+		for (std::vector<uint16_t>::iterator itt = target_mesh->indices.begin(); itt != target_mesh->indices.end(); ++itt)
 		{
 			colMesh->addTriangleIndices(*(++itt), *(++itt), *itt);
 		}
 
+		auto resource = resources->AddMeshResource(mesh_path, target_mesh);
+		object_mesh = resource->AddLink();
 		delete colShape;
 		colShape = new btBvhTriangleMeshShape(colMesh, false);
 		recalculatePhysics();

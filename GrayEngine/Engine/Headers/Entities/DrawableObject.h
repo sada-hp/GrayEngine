@@ -6,7 +6,7 @@ namespace GrEngine
 {
 	struct Texture
 	{
-		const char* texture_path;
+		std::vector<std::string> texture_collection;
 		bool initialized = false;
 	};
 
@@ -36,7 +36,15 @@ namespace GrEngine
 
 	struct Mesh
 	{
-		const char* mesh_path = "";
+		std::string mesh_path = "";
+	};
+
+	struct PixelData
+	{
+		unsigned char* data;
+		int width;
+		int height;
+		int channels;
 	};
 
 	class DllExport DrawableObject : public Entity
@@ -111,12 +119,12 @@ namespace GrEngine
 		}
 
 
-		glm::vec3& GetObjectBounds()
+		virtual glm::uvec3& GetObjectBounds()
 		{
 			return bound;
 		}
 
-		void SetObjectBounds(glm::vec3 new_bounds)
+		virtual void SetObjectBounds(glm::uvec3 new_bounds)
 		{
 			bound = new_bounds;
 		}
@@ -200,7 +208,7 @@ namespace GrEngine
 		std::vector<std::string> texture_names;
 	protected:
 		virtual void updateCollisions() = 0;
-		glm::vec3 bound = { 0.f, 0.f, 0.f };
+		glm::uvec3 bound = { 0.f, 0.f, 0.f };
 		bool visibility = true;
 
 		btCollisionShape* colShape = new btBoxShape(btVector3(0.25f, 0.25f, 0.25f));

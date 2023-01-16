@@ -24,6 +24,7 @@ namespace GrEngine
 		virtual bool loadModel(UINT id, const char* mesh_path, std::vector<std::string> textures_vector) = 0;
 		virtual bool loadModel(UINT id, const char* model_path) = 0;
 		virtual void clearDrawables() = 0;
+		virtual void waitForRenderer() = 0;
 		virtual Entity* addEntity() = 0;
 		std::map<UINT, Entity*>& GetEntitiesList()
 		{
@@ -45,6 +46,7 @@ namespace GrEngine
 			return nullptr;
 		};
 		virtual Entity* GetSelectedEntity() { return entities[selected_entity]; };
+		UINT32& GetSelectionID() { return selected_entity; };
 		virtual void SaveScreenshot(const char* filepath) = 0;
 		virtual void SelectEntityAtCursor() = 0;
 		virtual void SetHighlightingMode(bool enabled) = 0;

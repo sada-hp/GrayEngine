@@ -58,24 +58,18 @@ namespace GrEngine
 
         void initModelBrowser()
         {
-            //getEditorUI()->SetInputMode(VIEWPORT_EDITOR, 0);
             Pause();
             Logger::AllowMessages(MessageMode::Block);
-            AppParameters props;
-            ModelBrowser* mdlBrowser = new ModelBrowser(props);
-            BindContext(mdlBrowser);
+            EventListener::clearEventQueue();
             EventListener::setEventsPermissions(false, true);
-            GetRenderer()->SetHighlightingMode(false);
-            mdlBrowser->init(mdlBrowser);
-            mdlBrowser->StartEngine();
-            mdlBrowser->Stop();
-            delete mdlBrowser;
+            std::thread mdl(RunModelBrowser);   
+            mdl.join();
             GetRenderer()->SetHighlightingMode(true);
-            EventListener::setEventsPermissions(true, true);
             BindContext(this);
+            EventListener::setEventsPermissions(true, true);
+            EventListener::clearEventQueue();
             Logger::AllowMessages(MessageMode::Allow);
             Unpause();
-            //getEditorUI()->SetInputMode(VIEWPORT_EDITOR, 1);
         }
 
         void toggle_free_mode()
@@ -141,6 +135,18 @@ namespace GrEngine
         {
             Entity* selection = SelectEntity(ID);
             selection->AddNewProperty(property_name);
+        }
+    private:
+
+        static void RunModelBrowser()
+        {
+            AppParameters props;
+            ModelBrowser* mdlBrowser = new ModelBrowser(props);
+            BindContext(mdlBrowser);
+            mdlBrowser->init(mdlBrowser);
+            mdlBrowser->StartEngine();
+            mdlBrowser->Stop();
+            delete mdlBrowser;
         }
     };
 }

@@ -24,6 +24,7 @@ namespace GrEngine
         void init(ModelBrowser* instance)
         {
             initModelBrowser();
+            GetRenderer()->SetHighlightingMode(false);
             dummy_entity = AddEntity();
             SelectEntity(dummy_entity->GetEntityID());
             AddInputCallback(Inputs);
@@ -52,7 +53,7 @@ namespace GrEngine
 
             if (drawable != NULL)
             {
-                glm::vec3 axis = glm::vec3(2.f + drawable->GetObjectBounds().x, 2.f + drawable->GetObjectBounds().y, 2.f + drawable->GetObjectBounds().z);
+                glm::vec3 axis = glm::vec3(3.f + drawable->GetObjectBounds().x, 3.f + drawable->GetObjectBounds().y, 3.f + drawable->GetObjectBounds().z);
 
                 rotation += GrEngine::Globals::delta_time;
                 axis = glm::vec3(axis.z * glm::cos(rotation) + axis.x * glm::sin(rotation), axis.y, axis.z * glm::sin(rotation) - axis.x * glm::cos(rotation));

@@ -33,6 +33,7 @@
     <ClInclude Include="Engine\Headers\Entities\Skybox.h" />
     <ClInclude Include="Vulkan\VulkanSkybox.h" />
     <ClInclude Include="Vulkan\VulkanObject.h" />
+    <ClInclude Include="Vulkan\VulkanResourceManager.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Engine\Source\GL_App.cpp" />
@@ -45,6 +46,7 @@
     <ClCompile Include="Engine\Headers\Entities\Properties\Property.cpp" />
     <ClCompile Include="Vulkan\VulkanSkybox.cpp" />
     <ClCompile Include="Vulkan\VulkanObject.cpp" />
+    <ClCompile Include="Vulkan\VulkanResourceManager.cpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Engine\Libs\lib-vc2019\glfw3.dll" />

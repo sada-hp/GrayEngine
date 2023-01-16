@@ -10,80 +10,106 @@ namespace GrEngine_Vulkan
 	void VulkanDrawable::initObject(VkDevice device, VmaAllocator allocator, GrEngine::Renderer* owner)
 	{
 		p_Owner = owner;
+		resources = &static_cast<VulkanAPI*>(owner)->GetResourceManager();
+		logicalDevice = device;
+		memAllocator = allocator;
 
-		object_mesh.vertices = {
-			{{{ 0.25, 0.25, 0.25, 1.0f },{ 1.f, 1.0f }, {0, 0, 0}}},
-			{{{ -0.25, 0.25, -0.25, 1.0f },{ 0.f, 0.0f }, {0, 0, 0}}},
-			{{{ -0.25, 0.25 , 0.25, 1.0f },{ 0.f, 1.f }, {0, 0, 0}}},
-			{{{ 0.25, 0.25, -0.25, 1.0f },{ 1.f, 0.0f }, {0, 0, 0}}},
-
-			{{{ 0.25, -0.25, 0.25, 1.0f },{ 1.f, 1.0f }, {0, 0, 0}}},
-			{{{ -0.25, -0.25, -0.25, 1.0f },{ 0.f, 0.0f }, {0, 0, 0}}},
-			{{{ -0.25, -0.25 , 0.25, 1.0f },{ 0.f, 1.f }, {0, 0, 0}}},
-			{{{ 0.25, -0.25, -0.25, 1.0f },{ 1.f, 0.0f }, {0, 0, 0}}}
-		};
-
-		object_mesh.indices = { 0, 1, 2, 0, 3, 1,
-			4, 5, 6, 4, 7, 5,
-			0, 2, 6, 0, 4, 6,
-			0, 3, 4, 3, 7, 4,
-			1, 3, 7, 1, 5, 7,
-			1, 2, 6, 1, 5, 6,
-		};
-
-		if (object_mesh.vertices.size() > 0)
+		if (object_mesh != nullptr)
 		{
-			VulkanAPI::m_createVkBuffer(device, allocator, object_mesh.vertices.data(), sizeof(object_mesh.vertices[0]) * object_mesh.vertices.size(), VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, &vertexBuffer);
-			VulkanAPI::m_createVkBuffer(device, allocator, object_mesh.indices.data(), sizeof(object_mesh.indices[0]) * object_mesh.indices.size(), VK_BUFFER_USAGE_INDEX_BUFFER_BIT, &indexBuffer);
+			resources->RemoveMesh(object_mesh->mesh_path.c_str(), logicalDevice, memAllocator);
+			object_mesh = nullptr;
 		}
 
-		createDescriptorLayout(device);
-		createDescriptorPool(device);
-		createDescriptorSet(device, allocator);
-		createPipelineLayout(device);
-		createGraphicsPipeline(device);
+		auto resource = resources->GetMeshResource("default");
+		if (resource == nullptr)
+		{
+			Mesh* default_mesh = new Mesh();
+
+			default_mesh->vertices = {
+				{{{ 0.25, 0.25, 0.25, 1.0f },{ 1.f, 1.0f }}},
+				{{{ -0.25, 0.25, -0.25, 1.0f },{ 0.f, 0.0f }}},
+				{{{ -0.25, 0.25 , 0.25, 1.0f },{ 0.f, 1.f }}},
+				{{{ 0.25, 0.25, -0.25, 1.0f },{ 1.f, 0.0f }}},
+
+				{{{ 0.25, -0.25, 0.25, 1.0f },{ 1.f, 1.0f }}},
+				{{{ -0.25, -0.25, -0.25, 1.0f },{ 0.f, 0.0f }}},
+				{{{ -0.25, -0.25 , 0.25, 1.0f },{ 0.f, 1.f }}},
+				{{{ 0.25, -0.25, -0.25, 1.0f },{ 1.f, 0.0f }}}
+			};
+
+			default_mesh->indices = { 0, 1, 2, 0, 3, 1,
+				4, 5, 6, 4, 7, 5,
+				0, 2, 6, 0, 4, 6,
+				0, 3, 4, 3, 7, 4,
+				1, 3, 7, 1, 5, 7,
+				1, 2, 6, 1, 5, 6,
+			};
+
+			resource = resources->AddMeshResource("default", default_mesh);
+			object_mesh = resource->AddLink();
+
+			VulkanAPI::m_createVkBuffer(logicalDevice, memAllocator, object_mesh->vertices.data(), sizeof(object_mesh->vertices[0]) * object_mesh->vertices.size(), VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, &object_mesh->vertexBuffer);
+			VulkanAPI::m_createVkBuffer(logicalDevice, memAllocator, object_mesh->indices.data(), sizeof(object_mesh->indices[0]) * object_mesh->indices.size(), VK_BUFFER_USAGE_INDEX_BUFFER_BIT, &object_mesh->indexBuffer);
+		}
+		else
+		{
+			object_mesh = resource->AddLink();
+		}
+
+		createDescriptorLayout();
+		createDescriptorPool();
+		createDescriptorSet();
+		createPipelineLayout();
+		createGraphicsPipeline();
 	}
 
-	void VulkanDrawable::destroyObject(VkDevice device, VmaAllocator allocator)
+	void VulkanDrawable::destroyObject()
 	{
-		vkDestroyPipeline(device, graphicsPipeline, NULL);
-		vkDestroyPipelineLayout(device, pipelineLayout, NULL);
-		vkFreeDescriptorSets(device, descriptorPool, descriptorSets.size(), descriptorSets.data());
-		vkDestroyDescriptorPool(device, descriptorPool, NULL);
-		vkDestroyDescriptorSetLayout(device, descriptorSetLayout, NULL);
+		if (object_mesh != nullptr)
+		{
+			resources->RemoveMesh(object_mesh->mesh_path.c_str(), logicalDevice, memAllocator);
+			object_mesh = nullptr;
+		}
 
-		VulkanAPI::m_destroyShaderBuffer(device, allocator, &indexBuffer);
-		VulkanAPI::m_destroyShaderBuffer(device, allocator, &vertexBuffer);
-		VulkanAPI::m_destroyTexture(device, allocator, &object_texture);
+		if (object_texture != nullptr)
+		{
+			resources->RemoveTexture(object_texture->texture_collection, logicalDevice, memAllocator);
+			object_texture = nullptr;
+		}
+
+		vkDestroyPipeline(logicalDevice, graphicsPipeline, NULL);
+		vkDestroyPipelineLayout(logicalDevice, pipelineLayout, NULL);
+		vkFreeDescriptorSets(logicalDevice, descriptorPool, descriptorSets.size(), descriptorSets.data());
+		vkDestroyDescriptorPool(logicalDevice, descriptorPool, NULL);
+		vkDestroyDescriptorSetLayout(logicalDevice, descriptorSetLayout, NULL);
+
+
+		//VulkanAPI::m_destroyTexture(logicalDevice, memAllocator, object_texture);
 
 		this->~VulkanDrawable();
 	}
 
-	void VulkanDrawable::updateObject(VkDevice device, VmaAllocator allocator)
+	void VulkanDrawable::updateObject()
 	{
-		VulkanAPI::m_destroyShaderBuffer(device, allocator, &indexBuffer);
-		VulkanAPI::m_destroyShaderBuffer(device, allocator, &vertexBuffer);
-		VulkanAPI::m_createVkBuffer(device, allocator, object_mesh.vertices.data(), sizeof(object_mesh.vertices[0]) * object_mesh.vertices.size(), VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, &vertexBuffer);
-		VulkanAPI::m_createVkBuffer(device, allocator, object_mesh.indices.data(), sizeof(object_mesh.indices[0]) * object_mesh.indices.size(), VK_BUFFER_USAGE_INDEX_BUFFER_BIT, &indexBuffer);
-		vkFreeDescriptorSets(device, descriptorPool, descriptorSets.size(), descriptorSets.data());
-		vkDestroyDescriptorPool(device, descriptorPool, NULL);
-		vkDestroyDescriptorSetLayout(device, descriptorSetLayout, NULL);
-		vkDestroyPipeline(device, graphicsPipeline, NULL);
-		vkDestroyPipelineLayout(device, pipelineLayout, NULL);
+		vkFreeDescriptorSets(logicalDevice, descriptorPool, descriptorSets.size(), descriptorSets.data());
+		vkDestroyDescriptorPool(logicalDevice, descriptorPool, NULL);
+		vkDestroyDescriptorSetLayout(logicalDevice, descriptorSetLayout, NULL);
+		vkDestroyPipeline(logicalDevice, graphicsPipeline, NULL);
+		vkDestroyPipelineLayout(logicalDevice, pipelineLayout, NULL);
 
-		createDescriptorLayout(device);
-		createDescriptorPool(device);
-		createDescriptorSet(device, allocator);
-		createPipelineLayout(device);
-		createGraphicsPipeline(device);
+		createDescriptorLayout();
+		createDescriptorPool();
+		createDescriptorSet();
+		createPipelineLayout();
+		createGraphicsPipeline();
 	}
 
-	void VulkanDrawable::invalidateTexture(VkDevice device, VmaAllocator allocator)
+	void VulkanDrawable::invalidateTexture()
 	{
-		VulkanAPI::m_destroyTexture(device, allocator, &object_texture);
+		//VulkanAPI::m_destroyTexture(logicalDevice, memAllocator, object_texture);
 	}
 
-	bool VulkanDrawable::createPipelineLayout(VkDevice device)
+	bool VulkanDrawable::createPipelineLayout()
 	{
 		VkPushConstantRange pushConstant;
 		pushConstant.offset = 0;
@@ -103,22 +129,22 @@ namespace GrEngine_Vulkan
 		pipelineLayoutInfo.pushConstantRangeCount = 2;
 		pipelineLayoutInfo.pPushConstantRanges = ranges.data();
 
-		return vkCreatePipelineLayout(device, &pipelineLayoutInfo, NULL, &pipelineLayout) == VK_SUCCESS;
+		return vkCreatePipelineLayout(logicalDevice, &pipelineLayoutInfo, NULL, &pipelineLayout) == VK_SUCCESS;
 	}
 
-	bool VulkanDrawable::recordCommandBuffer(VkDevice device, VkCommandBuffer commandBuffer, VkExtent2D extent, UINT32 mode)
+	bool VulkanDrawable::recordCommandBuffer(VkCommandBuffer commandBuffer, VkExtent2D extent, UINT32 mode)
 	{
-		if (vertexBuffer.initialized == true)
+		if (object_mesh->vertexBuffer.initialized == true)
 		{
 			vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, graphicsPipeline);
 
 			VkDeviceSize offsets[] = { 0 };
-			vkCmdBindVertexBuffers(commandBuffer, 0, 1, &vertexBuffer.Buffer, offsets);
-			vkCmdBindIndexBuffer(commandBuffer, indexBuffer.Buffer, 0, VK_INDEX_TYPE_UINT16);
+			vkCmdBindVertexBuffers(commandBuffer, 0, 1, &object_mesh->vertexBuffer.Buffer, offsets);
+			vkCmdBindIndexBuffer(commandBuffer, object_mesh->indexBuffer.Buffer, 0, VK_INDEX_TYPE_UINT16);
 
 			//UpdateObjectPosition();
 			//UpdateObjectOrientation();
-			pushConstants(device, commandBuffer, extent, mode);
+			pushConstants(commandBuffer, extent, mode);
 
 			for (int ind = 0; ind < descriptorSets.size(); ind++)
 			{
@@ -126,27 +152,27 @@ namespace GrEngine_Vulkan
 			}
 
 			//vkCmdDraw(commandBuffer, static_cast<uint32_t>(object_mesh.vertices.size()), 1, 0, 0);
-			vkCmdDrawIndexed(commandBuffer, static_cast<uint32_t>(object_mesh.indices.size()), 1, 0, 0, 0);
+			vkCmdDrawIndexed(commandBuffer, static_cast<uint32_t>(object_mesh->indices.size()), 1, 0, 0, 0);
 			return true;
 		}
 
 		return false;
 	}
 
-	bool VulkanDrawable::pushConstants(VkDevice devicce, VkCommandBuffer cmd, VkExtent2D extent, UINT32 mode)
+	bool VulkanDrawable::pushConstants(VkCommandBuffer cmd, VkExtent2D extent, UINT32 mode)
 	{
 		vkCmdPushConstants(cmd, pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(UniformBufferObject), &ubo);
 		return true;
 	}
 
-	bool VulkanDrawable::createGraphicsPipeline(VkDevice device)
+	bool VulkanDrawable::createGraphicsPipeline()
 	{
 		std::string solution_path = GrEngine::Globals::getExecutablePath();
 
 		std::vector<char> vertShaderCode = GrEngine::Globals::readFile(solution_path + shader_path + "_vert.spv");
 		std::vector<char> fragShaderCode = GrEngine::Globals::readFile(solution_path + shader_path + "_frag.spv");
 
-		VkShaderModule shaders[2] = { VulkanAPI::m_createShaderModule(device, vertShaderCode) , VulkanAPI::m_createShaderModule(device, fragShaderCode) };
+		VkShaderModule shaders[2] = { VulkanAPI::m_createShaderModule(logicalDevice, vertShaderCode) , VulkanAPI::m_createShaderModule(logicalDevice, fragShaderCode) };
 
 		VkPipelineShaderStageCreateInfo vertShaderStageInfo{};
 		vertShaderStageInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
@@ -264,21 +290,21 @@ namespace GrEngine_Vulkan
 		pipelineInfo.basePipelineHandle = VK_NULL_HANDLE; // Optional
 		pipelineInfo.basePipelineIndex = -1; // Optional
 
-		if (vkCreateGraphicsPipelines(device, VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &graphicsPipeline) != VK_SUCCESS)
+		if (vkCreateGraphicsPipelines(logicalDevice, VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &graphicsPipeline) != VK_SUCCESS)
 			return false;
 
-		vkDestroyShaderModule(device, shaders[0], nullptr);
-		vkDestroyShaderModule(device, shaders[1], nullptr);
+		vkDestroyShaderModule(logicalDevice, shaders[0], nullptr);
+		vkDestroyShaderModule(logicalDevice, shaders[1], nullptr);
 
 		return true;
 	}
 
-	bool VulkanDrawable::createDescriptorLayout(VkDevice device)
+	bool VulkanDrawable::createDescriptorLayout()
 	{
 		VkDescriptorSetLayoutBinding descriptorBindings{};
 		descriptorBindings.binding = 1; // DESCRIPTOR_SET_BINDING_INDEX
 		descriptorBindings.descriptorType = VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE;
-		descriptorBindings.descriptorCount = object_texture.texture_path != 0;
+		descriptorBindings.descriptorCount = object_texture != nullptr;
 		descriptorBindings.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
 		descriptorBindings.pImmutableSamplers = NULL;
 
@@ -288,14 +314,14 @@ namespace GrEngine_Vulkan
 		descriptorLayout.bindingCount = 1;
 		descriptorLayout.pBindings = &descriptorBindings;
 
-		return vkCreateDescriptorSetLayout(device, &descriptorLayout, NULL, &descriptorSetLayout) == VK_SUCCESS;
+		return vkCreateDescriptorSetLayout(logicalDevice, &descriptorLayout, NULL, &descriptorSetLayout) == VK_SUCCESS;
 	}
 
-	bool VulkanDrawable::createDescriptorPool(VkDevice device)
+	bool VulkanDrawable::createDescriptorPool()
 	{
 		VkDescriptorPoolSize descriptorTypePool;
 		descriptorTypePool.type = VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE;
-		descriptorTypePool.descriptorCount = object_texture.texture_path != 0;
+		descriptorTypePool.descriptorCount = object_texture != nullptr;
 		VkDescriptorPoolCreateInfo createInfo{};
 		createInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
 		createInfo.pNext = nullptr;
@@ -305,10 +331,10 @@ namespace GrEngine_Vulkan
 		createInfo.flags = VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT;
 
 
-		return vkCreateDescriptorPool(device, &createInfo, NULL, &descriptorPool) == VK_SUCCESS;
+		return vkCreateDescriptorPool(logicalDevice, &createInfo, NULL, &descriptorPool) == VK_SUCCESS;
 	}
 
-	bool VulkanDrawable::createDescriptorSet(VkDevice device, VmaAllocator allocator)
+	bool VulkanDrawable::createDescriptorSet()
 	{
 		VkDescriptorSetAllocateInfo descriptorAllocInfo{};
 		descriptorAllocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
@@ -318,17 +344,17 @@ namespace GrEngine_Vulkan
 		descriptorAllocInfo.pSetLayouts = &descriptorSetLayout;
 
 		std::vector<VkDescriptorImageInfo> imageInfo;
-		if (object_texture.texture_path != NULL)
+		if (object_texture != nullptr)
 		{
 			VkDescriptorImageInfo info;
 			info.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-			info.imageView = object_texture.textureImageView;
-			info.sampler = object_texture.textureSampler;
+			info.imageView = object_texture->textureImageView;
+			info.sampler = object_texture->textureSampler;
 			imageInfo.push_back(info);
 		}
 
 		descriptorSets.resize(1);
-		vkAllocateDescriptorSets(device, &descriptorAllocInfo, descriptorSets.data());
+		vkAllocateDescriptorSets(logicalDevice, &descriptorAllocInfo, descriptorSets.data());
 
 		VkWriteDescriptorSet writes{};
 		memset(&writes, 0, sizeof(writes));
@@ -344,7 +370,7 @@ namespace GrEngine_Vulkan
 		if (imageInfo.size() == 0) 
 			return true;
 
-		vkUpdateDescriptorSets(device, 1, &writes, 0, NULL);
+		vkUpdateDescriptorSets(logicalDevice, 1, &writes, 0, NULL);
 
 		return true;
 	}

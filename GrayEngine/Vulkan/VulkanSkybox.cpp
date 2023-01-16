@@ -10,56 +10,70 @@ namespace GrEngine_Vulkan
 	void VulkanSkybox::initObject(VkDevice device, VmaAllocator allocator, GrEngine::Renderer* owner)
 	{
 		p_Owner = owner;
+		resources = &static_cast<VulkanAPI*>(owner)->GetResourceManager();
+		logicalDevice = device;
+		memAllocator = allocator;
+
 		UINT id = GetEntityID();
 		shader_path = "Shaders//background";
 		Type = "Skybox";
 
-		object_mesh.vertices = {
-			{{{ 0.25, 0.25, 0.25, 1.0f },{ 1.f, 1.0f }, {0, 0, 0}}},
-			{{{ -0.25, 0.25, -0.25, 1.0f },{ 0.f, 0.0f }, {0, 0, 0}}},
-			{{{ -0.25, 0.25 , 0.25, 1.0f },{ 0.f, 1.f }, {0, 0, 0}}},
-			{{{ 0.25, 0.25, -0.25, 1.0f },{ 1.f, 0.0f }, {0, 0, 0}}},
-
-			{{{ 0.25, -0.25, 0.25, 1.0f },{ 1.f, 1.0f }, {0, 0, 0}}},
-			{{{ -0.25, -0.25, -0.25, 1.0f },{ 0.f, 0.0f }, {0, 0, 0}}},
-			{{{ -0.25, -0.25 , 0.25, 1.0f },{ 0.f, 1.f }, {0, 0, 0}}},
-			{{{ 0.25, -0.25, -0.25, 1.0f },{ 1.f, 0.0f }, {0, 0, 0}}}
-		};
-
-		object_mesh.indices = { 0, 1, 2, 0, 3, 1,
-			4, 5, 6, 4, 7, 5,
-			0, 2, 6, 0, 4, 6,
-			0, 3, 4, 3, 7, 4,
-			1, 3, 7, 1, 5, 7,
-			1, 2, 6, 1, 5, 6,
-		};
-
-		if (object_mesh.vertices.size() > 0)
+		auto resource = resources->GetMeshResource("default");
+		if (resource == nullptr)
 		{
-			VulkanAPI::m_createVkBuffer(device, allocator, object_mesh.vertices.data(), sizeof(object_mesh.vertices[0]) * object_mesh.vertices.size(), VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, &vertexBuffer);
-			VulkanAPI::m_createVkBuffer(device, allocator, object_mesh.indices.data(), sizeof(object_mesh.indices[0]) * object_mesh.indices.size(), VK_BUFFER_USAGE_INDEX_BUFFER_BIT, &indexBuffer);
+			Mesh* default_mesh = new Mesh();
+
+			default_mesh->vertices = {
+				{{{ 0.25, 0.25, 0.25, 1.0f },{ 1.f, 1.0f }}},
+				{{{ -0.25, 0.25, -0.25, 1.0f },{ 0.f, 0.0f }}},
+				{{{ -0.25, 0.25 , 0.25, 1.0f },{ 0.f, 1.f }}},
+				{{{ 0.25, 0.25, -0.25, 1.0f },{ 1.f, 0.0f }}},
+
+				{{{ 0.25, -0.25, 0.25, 1.0f },{ 1.f, 1.0f }}},
+				{{{ -0.25, -0.25, -0.25, 1.0f },{ 0.f, 0.0f }}},
+				{{{ -0.25, -0.25 , 0.25, 1.0f },{ 0.f, 1.f }}},
+				{{{ 0.25, -0.25, -0.25, 1.0f },{ 1.f, 0.0f }}}
+			};
+
+			default_mesh->indices = { 0, 1, 2, 0, 3, 1,
+				4, 5, 6, 4, 7, 5,
+				0, 2, 6, 0, 4, 6,
+				0, 3, 4, 3, 7, 4,
+				1, 3, 7, 1, 5, 7,
+				1, 2, 6, 1, 5, 6,
+			};
+
+			resource = resources->AddMeshResource("default", default_mesh);
+			object_mesh = resource->AddLink();
+
+			VulkanAPI::m_createVkBuffer(logicalDevice, memAllocator, object_mesh->vertices.data(), sizeof(object_mesh->vertices[0]) * object_mesh->vertices.size(), VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, &object_mesh->vertexBuffer);
+			VulkanAPI::m_createVkBuffer(logicalDevice, memAllocator, object_mesh->indices.data(), sizeof(object_mesh->indices[0]) * object_mesh->indices.size(), VK_BUFFER_USAGE_INDEX_BUFFER_BIT, &object_mesh->indexBuffer);
+		}
+		else
+		{
+			object_mesh = resource->AddLink();
 		}
 
-		createDescriptorLayout(device);
-		createDescriptorPool(device);
-		createDescriptorSet(device, allocator);
-		createPipelineLayout(device);
-		createGraphicsPipeline(device);
+		createDescriptorLayout();
+		createDescriptorPool();
+		createDescriptorSet();
+		createPipelineLayout();
+		createGraphicsPipeline();
 	}
 
-	bool VulkanSkybox::recordCommandBuffer(VkDevice device, VkCommandBuffer commandBuffer, VkExtent2D extent, UINT32 mode)
+	bool VulkanSkybox::recordCommandBuffer(VkCommandBuffer commandBuffer, VkExtent2D extent, UINT32 mode)
 	{
-		if (vertexBuffer.initialized == true && filled)
+		if (object_mesh->vertexBuffer.initialized == true && filled)
 		{
 			vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, graphicsPipeline);
 
 			VkDeviceSize offsets[] = { 0 };
-			vkCmdBindVertexBuffers(commandBuffer, 0, 1, &vertexBuffer.Buffer, offsets);
-			vkCmdBindIndexBuffer(commandBuffer, indexBuffer.Buffer, 0, VK_INDEX_TYPE_UINT16);
+			vkCmdBindVertexBuffers(commandBuffer, 0, 1, &object_mesh->vertexBuffer.Buffer, offsets);
+			vkCmdBindIndexBuffer(commandBuffer, object_mesh->indexBuffer.Buffer, 0, VK_INDEX_TYPE_UINT16);
 
 			//UpdateObjectPosition();
 			//UpdateObjectOrientation();
-			pushConstants(device, commandBuffer, extent, mode);
+			pushConstants(commandBuffer, extent, mode);
 
 			for (int ind = 0; ind < descriptorSets.size(); ind++)
 			{
@@ -67,7 +81,7 @@ namespace GrEngine_Vulkan
 			}
 
 			//vkCmdDraw(commandBuffer, static_cast<uint32_t>(object_mesh.vertices.size()), 1, 0, 0);
-			vkCmdDrawIndexed(commandBuffer, static_cast<uint32_t>(object_mesh.indices.size()), 1, 0, 0, 0);
+			vkCmdDrawIndexed(commandBuffer, static_cast<uint32_t>(object_mesh->indices.size()), 1, 0, 0, 0);
 			return true;
 		}
 
@@ -77,12 +91,12 @@ namespace GrEngine_Vulkan
 	void VulkanSkybox::UpdateTextures(std::array<std::string, 6> sky)
 	{
 		filled = false;
-		invalidateTexture(static_cast<VulkanAPI*>(p_Owner)->logicalDevice, static_cast<VulkanAPI*>(p_Owner)->getMemAllocator());
+		invalidateTexture();
 		static_cast<VulkanAPI*>(p_Owner)->assignTextures(std::vector<std::string>(sky.begin(), sky.end()), this);
 		filled = true;
 	}
 
-	bool VulkanSkybox::pushConstants(VkDevice devicce, VkCommandBuffer cmd, VkExtent2D extent, UINT32 mode)
+	bool VulkanSkybox::pushConstants(VkCommandBuffer cmd, VkExtent2D extent, UINT32 mode)
 	{
 		/*orientation relative to the position in a 3D space (?)*/
 		ubo.model = glm::translate(glm::mat4(1.f), GetObjectPosition()) * glm::mat4_cast(GetObjectOrientation());
