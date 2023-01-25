@@ -17,10 +17,14 @@ namespace GrEngine_Vulkan
 		vkDeviceWaitIdle(logicalDevice);
 		vkQueueWaitIdle(graphicsQueue);
 
-		clearDrawables();
-		grid.destroyObject();
-		sky->destroyObject();
-		delete sky;
+		while (entities.size() > 0)
+		{
+			std::map<UINT, GrEngine::Entity*>::iterator pos = entities.begin();
+			dynamic_cast<VulkanDrawable*>((*pos).second)->destroyObject();
+			delete (*pos).second;
+			entities.erase((*pos).first);
+		}
+
 		resources.Clean(logicalDevice, memAllocator);
 		cleanupSwapChain();
 		vkDestroySemaphore(logicalDevice, renderFinishedSemaphore, nullptr);
@@ -98,14 +102,10 @@ namespace GrEngine_Vulkan
 		if ((res = createSemaphores() & res) == false)
 			Logger::Out("[Vk] Failed to create semaphores", OutputColor::Red, OutputType::Error);
 
-		grid.shader_path = "Shaders//grid";
-		grid.far_plane = 10000.f;
-		grid.initObject(logicalDevice, memAllocator, this);
-		grid.DisableCollisions();
-
 		sky = new VulkanSkybox(1000000000);
 		sky->initObject(logicalDevice, memAllocator, this);
 		sky->UpdateNameTag("Sky");
+		sky->MakeStatic();
 		entities[sky->GetEntityID()] = sky;
 
 		vkDeviceWaitIdle(logicalDevice);
@@ -268,7 +268,40 @@ namespace GrEngine_Vulkan
 
 	void VulkanAPI::SelectEntityAtCursor()
 	{
-		drawFrame(DrawMode::IDS, false);
+		std::array<int, 3> rgb = getPixelColor(DrawMode::IDS);
+
+		if (rgb[0]> 0 || rgb[1] > 0 || rgb[2] > 0)
+		{
+			char _buf[11];
+			std::snprintf(_buf, sizeof(_buf), "1%03d%03d%03d", rgb[0], rgb[1], rgb[2]);
+			int id = atoi(_buf);
+			selectEntity(id);
+		}
+		else
+		{
+			VulkanObject::selected_id = { 0, 0, 0 };
+			selectEntity(0);
+		}
+	}
+
+	std::array<int, 3> VulkanAPI::GetPixelColorAtCursor()
+	{
+		return getPixelColor(DrawMode::NORMAL);
+	}
+
+	std::array<int, 3> VulkanAPI::getPixelColor(DrawMode mode)
+	{
+		drawFrame(mode, false);
+		VkExtent2D extent;
+
+		if (mode == DrawMode::IDS)
+		{
+			extent = { 250, 250 };
+		}
+		else
+		{
+			extent = { swapChainExtent.width, swapChainExtent.height };
+		}
 
 		VkImage srcImage = swapChainImages[currentImageIndex];
 		VkImage dstImage;
@@ -276,8 +309,8 @@ namespace GrEngine_Vulkan
 		VkImageCreateInfo dstInf{};
 		dstInf.imageType = VK_IMAGE_TYPE_2D;
 		dstInf.format = VK_FORMAT_R8G8B8A8_UNORM;
-		dstInf.extent.width = swapChainExtent.width;
-		dstInf.extent.height = swapChainExtent.height;
+		dstInf.extent.width = extent.width;
+		dstInf.extent.height = extent.height;
 		dstInf.extent.depth = 1;
 		dstInf.arrayLayers = 1;
 		dstInf.mipLevels = 1;
@@ -309,8 +342,8 @@ namespace GrEngine_Vulkan
 		imageCopyRegion.srcSubresource.layerCount = 1;
 		imageCopyRegion.dstSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
 		imageCopyRegion.dstSubresource.layerCount = 1;
-		imageCopyRegion.extent.width = swapChainExtent.width;
-		imageCopyRegion.extent.height = swapChainExtent.height;
+		imageCopyRegion.extent.width = extent.width;
+		imageCopyRegion.extent.height = extent.height;
 		imageCopyRegion.extent.depth = 1;
 
 		vkCmdCopyImage(cmd, srcImage, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, dstImage, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &imageCopyRegion);
@@ -328,31 +361,18 @@ namespace GrEngine_Vulkan
 		data += subResourceLayout.offset;
 		double xpos, ypos;
 		glfwGetCursorPos(pParentWindow, &xpos, &ypos);
-		data += subResourceLayout.rowPitch * (int)(ypos * ((float)250 / swapChainExtent.height));
-		unsigned int* row = (unsigned int*)data + (int)(xpos * ((float)250 / swapChainExtent.width));
+		data += subResourceLayout.rowPitch * (int)(ypos * ((float)extent.height / swapChainExtent.height));
+		unsigned int* row = (unsigned int*)data + (int)(xpos * ((float)extent.width / swapChainExtent.width));
 
 		double r = ((unsigned char*)row + 2)[0];
 		double g = ((unsigned char*)row + 1)[0];
 		double b = ((unsigned char*)row)[0];
 
-		char buf[11];
-		char _buf[11];
-		std::snprintf(_buf, sizeof(_buf), "1%03d%03d%03d", (int)r, (int)g, (int)b);
-		int id = atoi(_buf);
-
-		if ((int)r > 0 && (int)g > 0 && (int)b > 0)
-		{
-			selectEntity(id);
-		}
-		else
-		{
-			VulkanObject::selected_id = { 0, 0, 0 };
-			selectEntity(0);
-		}
-
 		vkUnmapMemory(logicalDevice, dstImageMemory);
 		vkFreeMemory(logicalDevice, dstImageMemory, nullptr);
 		vkDestroyImage(logicalDevice, dstImage, nullptr);
+
+		return { (int)r, (int)g, (int)b };
 	}
 
 	bool VulkanAPI::updateDrawables(uint32_t index, DrawMode mode)
@@ -431,7 +451,6 @@ namespace GrEngine_Vulkan
 			else if ((*itt).second->GetEntityType() == "Skybox" && mode != DrawMode::IDS)
 			{
 				static_cast<VulkanSkybox*>((*itt).second)->recordCommandBuffer(commandBuffers[index], swapChainExtent, mode);
-				grid.recordCommandBuffer(commandBuffers[index], swapChainExtent, mode);
 			}
 		}
 
@@ -790,8 +809,6 @@ namespace GrEngine_Vulkan
 		samplingViewInfo.subresourceRange.layerCount = 1;
 		vkCreateImageView(logicalDevice, &samplingViewInfo, nullptr, &colorImageView);
 
-
-
 		depthFormat = VK_FORMAT_D32_SFLOAT;
 
 		VkImageCreateInfo depthImageCreateInfo{};
@@ -1064,19 +1081,26 @@ namespace GrEngine_Vulkan
 
 	void VulkanAPI::clearDrawables()
 	{
-		vkDeviceWaitIdle(logicalDevice);
-		vkQueueWaitIdle(graphicsQueue);
+		waitForRenderer();
 
-		for (auto object : entities)
+		int offset = 0;
+		while (entities.size() != offset)
 		{
-			if (object.second->GetEntityType() == "Object")
+			std::map<UINT, GrEngine::Entity*>::iterator pos = entities.begin();
+			std::advance(pos, offset);
+
+			if ((*pos).second->IsStatic() == false)
 			{
-				dynamic_cast<VulkanDrawable*>(object.second)->destroyObject();
-				delete object.second;
+				dynamic_cast<VulkanDrawable*>((*pos).second)->destroyObject();
+				delete (*pos).second;
+				entities.erase((*pos).first);
+			}
+			else
+			{
+				offset++;
 			}
 		}
-		
-		entities.clear();
+
 		Logger::Out("The scene was cleared", OutputColor::Green, OutputType::Log);
 	}
 
@@ -1573,17 +1597,46 @@ namespace GrEngine_Vulkan
 
 	GrEngine::Entity* VulkanAPI::addEntity()
 	{
-		GrEngine::Entity* ent = new VulkanObject();
+		UINT id;
+		if (free_ids.size() > 0)
+		{
+			id = free_ids.front();
+			free_ids.erase(free_ids.begin());
+		}
+		else
+		{
+			next_id[2]++;
+			next_id[1] += next_id[2] / 255;
+			next_id[0] += next_id[1] / 255;
+			next_id[2] %= 255;
+			char _buf[11];
+			std::snprintf(_buf, sizeof(_buf), "1%03d%03d%03d", next_id[0], next_id[1], next_id[2]);
+			id = std::atoi(_buf);
+		}
+
+		GrEngine::Entity* ent = new VulkanObject(id);
 		dynamic_cast<VulkanObject*>(ent)->initObject(logicalDevice, memAllocator, this);
-		std::string new_name = std::string("Entity") + std::to_string(entities.size()+1);
+		std::string new_name = std::string("Entity") + std::to_string(entities.size());
 		ent->UpdateNameTag(new_name.c_str());
-		entities[ent->GetEntityID()] = ent;
+		entities[id] = ent;
 
 		return ent;
 	}
 
 	GrEngine::Entity* VulkanAPI::addEntity(UINT id)
 	{
+		char _buf[11];
+		std::snprintf(_buf, sizeof(_buf), "1%03d%03d%03d", next_id[0], next_id[1], next_id[2]);
+
+		if (id > std::atoi(_buf))
+		{
+			next_id = { id / 1000000 % 1000, id / 1000 % 1000, id % 1000 };
+			next_id[2]++;
+			next_id[1] += next_id[2] / 255;
+			next_id[0] += next_id[1] / 255;
+			next_id[2] %= 255;
+		}
+
 		GrEngine::Entity* ent = new VulkanObject(id);
 		dynamic_cast<VulkanObject*>(ent)->initObject(logicalDevice, memAllocator, this);
 		std::string new_name = std::string("Entity") + std::to_string(entities.size() + 1);
@@ -1593,10 +1646,18 @@ namespace GrEngine_Vulkan
 		return ent;
 	}
 
+	void VulkanAPI::addEntity(GrEngine::Entity* entity)
+	{
+		dynamic_cast<VulkanObject*>(entity)->initObject(logicalDevice, memAllocator, this);
+		std::string new_name = std::string("Entity") + std::to_string(entities.size() + 1);
+		entity->UpdateNameTag(new_name.c_str());
+		entities[entity->GetEntityID()] = entity;
+	}
+
 	GrEngine::Entity* VulkanAPI::selectEntity(UINT ID)
 	{
 		selected_entity = ID;
-		std::vector<std::any> para = { selected_entity };
+		std::vector<double> para = { (double)selected_entity };
 		EventListener::registerEvent(EventType::SelectionChanged, para);
 
 		if (entities.contains(ID))
@@ -1609,6 +1670,7 @@ namespace GrEngine_Vulkan
 			return entities.at(ID);
 		}
 
+		selected_entity = 0;
 		VulkanObject::selected_id = { 0, 0, 0 };
 		return nullptr;
 	}
@@ -1622,6 +1684,7 @@ namespace GrEngine_Vulkan
 		{
 			dynamic_cast<VulkanObject*>(object)->destroyObject();
 			entities.erase(id);
+			free_ids.push_back(id);
 		}
 	}
 
@@ -1657,13 +1720,16 @@ namespace GrEngine_Vulkan
 
 		for (std::map<UINT, GrEngine::Entity*>::iterator itt = entities.begin(); itt != entities.end(); ++itt)
 		{
-			new_file << (*itt).second->GetEntityType() << " " << (*itt).second->GetEntityID() << "\n{\n";
-			cur_props = (*itt).second->GetProperties();
-			for (std::vector<EntityProperty*>::iterator itt = cur_props.begin(); itt != cur_props.end(); ++itt)
+			if ((*itt).second->IsStatic() == false || (*itt).second == sky)
 			{
-				new_file << "   " << (*itt)->PrpertyNameString() << " " << (*itt)->ValueString() << "\n";
+				new_file << (*itt).second->GetEntityType() << " " << (*itt).second->GetEntityID() << "\n{\n";
+				cur_props = (*itt).second->GetProperties();
+				for (std::vector<EntityProperty*>::iterator itt = cur_props.begin(); itt != cur_props.end(); ++itt)
+				{
+					new_file << "   " << (*itt)->PrpertyNameString() << " " << (*itt)->ValueString() << "\n";
+				}
+				new_file << "}\n";
 			}
-			new_file << "}\n";
 		}
 
 		new_file << '\0';
@@ -1672,8 +1738,6 @@ namespace GrEngine_Vulkan
 
 	void VulkanAPI::LoadScene(const char* path)
 	{
-		auto start = std::chrono::steady_clock::now();
-
 		Initialized = false;
 		clearDrawables();
 
@@ -1735,9 +1799,5 @@ namespace GrEngine_Vulkan
 
 		file.close();
 		Initialized = true;
-
-		auto end = std::chrono::steady_clock::now();
-		auto time = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
-		Logger::Out("Level %s loaded in %d ms", OutputColor::Gray, OutputType::Log, path, (int)time);
 	}
 };

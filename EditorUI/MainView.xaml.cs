@@ -74,6 +74,7 @@ namespace EditorUI
         IntPtr child_hwnd;
         System.Windows.Forms.Panel panel = new System.Windows.Forms.Panel();
         ObservableCollection<object> entities = new ObservableCollection<object>();
+        ObservableCollection<PropertyItem> ent_props = new ObservableCollection<PropertyItem>();
         System.Windows.Controls.ListBoxItem SelectedEntity = new System.Windows.Controls.ListBoxItem();
 
         public MainView()
@@ -86,6 +87,7 @@ namespace EditorUI
             panel.Margin = new System.Windows.Forms.Padding(0);
             FormHost.Child = panel;
             EntitiesList.ItemsSource = entities;
+            PropertiesCollection.ItemsSource = ent_props;
         }
 
         private void FormHost_SizeChanged(object sender, SizeChangedEventArgs e)
@@ -158,37 +160,48 @@ namespace EditorUI
         {
             foreach (var pair in properties)
             {
-                PropertyItem item = new PropertyItem();
+                PropertyItem item = ent_props.Where(x => x.PropertyName == pair.Key).FirstOrDefault();
                 var control = Activator.CreateInstance(types[pair.Key]);
-                item.PName.Content = pair.Key;
-                ((PropertyControl)control).Init(pair.Value.ToString());
 
-                ((PropertyControl)control).ChangeColors(null, new System.Windows.Media.SolidColorBrush(System.Windows.Media.Colors.WhiteSmoke));
-                ((PropertyControl)control).ID = id;
-                ((System.Windows.Controls.Control)control).HorizontalAlignment = System.Windows.HorizontalAlignment.Stretch;
-
-                if (events.ContainsKey(pair.Key))
+                if (item == null)
                 {
-                    var method = events[pair.Key];
+                    item = new PropertyItem();
+                    item.PropertyName = pair.Key;
+                    item.ID = id;
+                    item.HorizontalAlignment = System.Windows.HorizontalAlignment.Stretch;
+                    item.Width = PropertiesCollection.ActualWidth;
 
-                    var event_type = control.GetType().GetEvent(method);
-                    try
-                    {
-                        Delegate d = Delegate.CreateDelegate(event_type.EventHandlerType, this, handlers[pair.Key]);
-                        event_type.AddEventHandler(control, d);
+                    ((PropertyControl)control).Init(pair.Value.ToString());
+                    ((PropertyControl)control).ChangeColors(new System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromRgb(36, 36, 39)), new System.Windows.Media.SolidColorBrush(System.Windows.Media.Colors.WhiteSmoke));
+                    ((PropertyControl)control).ID = id;
+                    ((System.Windows.Controls.Control)control).HorizontalAlignment = System.Windows.HorizontalAlignment.Stretch;
+                    System.Windows.Controls.Grid.SetColumn((System.Windows.Controls.Control)control, 1);
 
-                    }
-                    catch (Exception e)
+                    if (events.ContainsKey(pair.Key))
                     {
-                        LogMessage(Marshal.StringToHGlobalAnsi(e.Message));
-                        LogMessage(Marshal.StringToHGlobalAnsi(pair.Key));
+                        var method = events[pair.Key];
+                        var event_type = control.GetType().GetEvent(method);
+                        try
+                        {
+                            Delegate d = Delegate.CreateDelegate(event_type.EventHandlerType, this, handlers[pair.Key]);
+                            event_type.AddEventHandler(control, d);
+
+                        }
+                        catch (Exception e)
+                        {
+                            LogMessage(Marshal.StringToHGlobalAnsi(e.Message));
+                            LogMessage(Marshal.StringToHGlobalAnsi(pair.Key));
+                        }
                     }
+
+                    ent_props.Add(item);
+                    item.PropGrid.Children.Add((System.Windows.Controls.Control)control);
                 }
-                System.Windows.Controls.Grid.SetColumn((System.Windows.Controls.Control)control, 1);
-                item.PropGrid.Children.Add((System.Windows.Controls.Control)control);
-                item.HorizontalAlignment = System.Windows.HorizontalAlignment.Stretch;
-                item.Width = PropertiesCollection.ActualWidth;
-                PropertiesCollection.Items.Add(item);
+                else
+                {
+                    (item.PropGrid.Children[item.PropGrid.Children.Count - 1] as PropertyControl).Contents = pair.Value.ToString();
+                }
+
             }
         }
 
@@ -205,6 +218,11 @@ namespace EditorUI
         private void EntityOrientation_callback(object sender)
         {
             UpdateEntityProperty(((PropertyControl)sender).ID, Marshal.StringToHGlobalAnsi("EntityOrientation"), Marshal.StringToHGlobalAnsi(((PropertyControl)sender).Contents));
+        }
+
+        private void Shader_callback(object sender)
+        {
+
         }
 
         private void EntityName_callback(object sender)
@@ -282,7 +300,7 @@ namespace EditorUI
             }
             catch (Exception e)
             {
-                LogMessage(Marshal.StringToHGlobalAnsi(e.Message));
+                LogMessage(Marshal.StringToHGlobalAnsi(e.Message + e.StackTrace));
             }
         }
 
@@ -292,7 +310,7 @@ namespace EditorUI
             {
                 if (e.AddedItems.Count > 0)
                 {
-                    PropertiesCollection.Items.Clear();
+                    ent_props.Clear();
                     GetEntityInfo((IntPtr)(e.AddedItems[0] as EntityItem).ID);
                 }
             }
@@ -307,7 +325,7 @@ namespace EditorUI
             if (ID == 0)
             {
                 EntitiesList.SelectedItem = null;
-                PropertiesCollection.Items.Clear();
+                ent_props.Clear();
             }
             
             for (int i = 0; i < EntitiesList.Items.Count; i++)
@@ -328,7 +346,7 @@ namespace EditorUI
                 {
                     if ((entities[i] as EntityItem).ID == ID)
                     {
-                        PropertiesCollection.Items.Clear();
+                        ent_props.Clear();
                         entities.RemoveAt(i);
                         return;
                     }
@@ -366,7 +384,7 @@ namespace EditorUI
             try
             {
                 AddNewEntityProperty((EntitiesList.SelectedItem as EntityItem).ID, Marshal.StringToHGlobalAnsi((sender as System.Windows.Controls.Control).Name));
-                PropertiesCollection.Items.Clear();
+                ent_props.Clear();
                 GetEntityInfo((IntPtr)((EntitiesList.SelectedItem as EntityItem).ID));
                 ExtraProps.IsSubmenuOpen = false;
             }
@@ -404,7 +422,7 @@ namespace EditorUI
             if (dlg.ShowDialog() == System.Windows.Forms.DialogResult.OK)
             {
                 LoadScene(Marshal.StringToHGlobalAnsi(dlg.FileName));
-                PropertiesCollection.Items.Clear();
+                ent_props.Clear();
                 entities.Clear();
                 GetEntitiesList();
             }

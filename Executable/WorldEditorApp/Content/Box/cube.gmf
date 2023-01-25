@@ -1,1 +1,8 @@
-<mesh>Content\Box\cube.obj<|mesh><texture>Content\Box\dirty_crate_texture.png<|texture>
+mesh
+{
+   Content\Box\cube.obj
+}
+textures
+{
+   Content\Box\dirty_crate_texture.png
+}

@@ -11,6 +11,8 @@ namespace GrEngine_Vulkan
 
 	void VulkanObject::initObject(VkDevice device, VmaAllocator allocator, GrEngine::Renderer* owner)
 	{
+		properties.push_back(new Shader("Shaders//default", this));
+
 		p_Owner = owner;
 		resources = &static_cast<VulkanAPI*>(owner)->GetResourceManager();
 		logicalDevice = device;
@@ -64,10 +66,15 @@ namespace GrEngine_Vulkan
 		createGraphicsPipeline();
 	}
 
+	void VulkanObject::Refresh()
+	{
+		updateObject();
+	}
+
 	bool VulkanObject::pushConstants(VkCommandBuffer cmd, VkExtent2D extent, UINT32 mode)
 	{
 		/*orientation relative to the position in a 3D space (?)*/
-		ubo.model = glm::translate(glm::mat4(1.f), GetObjectPosition()) * glm::mat4_cast(GetObjectOrientation());
+		ubo.model = GetObjectTransformation();
 		/*Math for Game Programmers: Understanding Homogeneous Coordinates GDC 2015*/
 		ubo.view = glm::translate(glm::mat4_cast(p_Owner->getActiveViewport()->UpdateCameraOrientation(0.2)), -p_Owner->getActiveViewport()->UpdateCameraPosition(0.65)); // [ix iy iz w1( = 0)]-direction [jx jy jz w2( = 0)]-direction [kx ky kz w3( = 0)]-direction [tx ty tz w ( = 1)]-position
 		ubo.proj = glm::perspective(glm::radians(60.0f), (float)extent.width / (float)extent.height, near_plane, far_plane); //fov, aspect ratio, near clipping plane, far clipping plane
@@ -77,9 +84,141 @@ namespace GrEngine_Vulkan
 
 		opo.draw_mode = mode;
 		opo.colors = { {GetPropertyValue("Color", glm::vec4(1))}, {colorID.x, colorID.y, colorID.z, 1}, {selected_id.x, selected_id.y, selected_id.z, 1}};
-		//opo.colors = glm::mat4(0);
-
 		vkCmdPushConstants(cmd, pipelineLayout, VK_SHADER_STAGE_FRAGMENT_BIT, sizeof(UniformBufferObject), sizeof(PickingBufferObject), &opo);
+		return true;
+	}
+
+	bool VulkanObject::createGraphicsPipeline()
+	{
+		std::string solution_path = GrEngine::Globals::getExecutablePath();
+
+		std::vector<char> vertShaderCode = GrEngine::Globals::readFile(solution_path + GetPropertyValue<std::string>("Shader", "") + "_vert.spv");
+		std::vector<char> fragShaderCode = GrEngine::Globals::readFile(solution_path + GetPropertyValue<std::string>("Shader", "") + "_frag.spv");
+
+		VkShaderModule shaders[2] = { VulkanAPI::m_createShaderModule(logicalDevice, vertShaderCode) , VulkanAPI::m_createShaderModule(logicalDevice, fragShaderCode) };
+
+		VkPipelineShaderStageCreateInfo vertShaderStageInfo{};
+		vertShaderStageInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+		vertShaderStageInfo.stage = VK_SHADER_STAGE_VERTEX_BIT;
+		vertShaderStageInfo.module = shaders[0];
+		vertShaderStageInfo.pName = "main";
+
+		VkPipelineShaderStageCreateInfo fragShaderStageInfo{};
+		fragShaderStageInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+		fragShaderStageInfo.stage = VK_SHADER_STAGE_FRAGMENT_BIT;
+		fragShaderStageInfo.module = shaders[1];
+		fragShaderStageInfo.pName = "main";
+
+		VkPipelineShaderStageCreateInfo shaderStages[] = { vertShaderStageInfo, fragShaderStageInfo };
+
+		VkPipelineVertexInputStateCreateInfo vertexInputInfo{};
+		vertexInputInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
+
+		auto bindingDescription = Vertex::getBindingDescription();
+		auto attributeDescriptions = Vertex::getAttributeDescriptions();
+
+		vertexInputInfo.vertexBindingDescriptionCount = 1;
+		vertexInputInfo.vertexAttributeDescriptionCount = static_cast<uint32_t>(attributeDescriptions.size());
+		vertexInputInfo.pVertexBindingDescriptions = &bindingDescription;
+		vertexInputInfo.pVertexAttributeDescriptions = attributeDescriptions.data();
+
+		VkPipelineInputAssemblyStateCreateInfo inputAssembly{};
+		inputAssembly.sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;
+		inputAssembly.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
+		inputAssembly.primitiveRestartEnable = VK_FALSE;
+
+		VkPipelineViewportStateCreateInfo viewportState{};
+		viewportState.sType = VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO;
+		viewportState.viewportCount = 1;
+		viewportState.pViewports = nullptr;
+		viewportState.scissorCount = 1;
+		viewportState.pScissors = nullptr;
+
+		VkPipelineRasterizationStateCreateInfo rasterizer{};
+		rasterizer.sType = VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO;
+		rasterizer.depthClampEnable = VK_FALSE;
+		rasterizer.rasterizerDiscardEnable = VK_FALSE;
+		rasterizer.polygonMode = VK_POLYGON_MODE_FILL;
+		rasterizer.lineWidth = 1.0f;
+		rasterizer.cullMode = VK_CULL_MODE_NONE;
+		rasterizer.frontFace = VK_FRONT_FACE_COUNTER_CLOCKWISE;
+		rasterizer.depthBiasEnable = VK_FALSE;
+		rasterizer.depthBiasConstantFactor = 0.0f;
+		rasterizer.depthBiasClamp = 0.0f;
+		rasterizer.depthBiasSlopeFactor = 0.0f;
+
+		VkPipelineMultisampleStateCreateInfo multisampling{};
+		multisampling.sType = VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO;
+		multisampling.sampleShadingEnable = VK_FALSE;
+		multisampling.rasterizationSamples = dynamic_cast<VulkanAPI*>(p_Owner)->GetSampling();
+		multisampling.minSampleShading = 1.0f;
+		multisampling.sampleShadingEnable = VK_TRUE;
+		multisampling.minSampleShading = .35f;
+
+		VkPipelineColorBlendAttachmentState colorBlendAttachment{};
+		colorBlendAttachment.colorWriteMask = VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT;
+		colorBlendAttachment.blendEnable = VK_TRUE;
+		colorBlendAttachment.srcColorBlendFactor = VK_BLEND_FACTOR_SRC_ALPHA; // Optional
+		colorBlendAttachment.dstColorBlendFactor = VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA; // Optional
+		colorBlendAttachment.colorBlendOp = VK_BLEND_OP_ADD; // Optional
+		colorBlendAttachment.srcAlphaBlendFactor = VK_BLEND_FACTOR_SRC_ALPHA; // Optional
+		colorBlendAttachment.dstAlphaBlendFactor = VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA; // Optional
+		colorBlendAttachment.alphaBlendOp = VK_BLEND_OP_ADD; // Optional
+
+		VkPipelineColorBlendStateCreateInfo colorBlending{};
+		colorBlending.sType = VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO;
+		colorBlending.logicOpEnable = VK_FALSE;
+		colorBlending.logicOp = VK_LOGIC_OP_COPY; // Optional
+		colorBlending.attachmentCount = 1;
+		colorBlending.pAttachments = &colorBlendAttachment;
+		colorBlending.blendConstants[0] = 1.0f; // Optional
+		colorBlending.blendConstants[1] = 1.0f; // Optional
+		colorBlending.blendConstants[2] = 1.0f; // Optional
+		colorBlending.blendConstants[3] = 1.0f; // Optional
+
+		std::vector<VkDynamicState> dynamicStates = { VK_DYNAMIC_STATE_VIEWPORT, VK_DYNAMIC_STATE_SCISSOR };
+		VkPipelineDynamicStateCreateInfo dynamicCreateInfo{};
+		dynamicCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO;
+		dynamicCreateInfo.pNext = nullptr;
+		dynamicCreateInfo.flags = 0;
+		dynamicCreateInfo.dynamicStateCount = (uint32_t)dynamicStates.size();
+		dynamicCreateInfo.pDynamicStates = dynamicStates.data();
+
+		VkPipelineDepthStencilStateCreateInfo _depthStencil{};
+		_depthStencil.sType = VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO;
+		_depthStencil.pNext = nullptr;
+		_depthStencil.depthTestEnable = VK_TRUE;
+		_depthStencil.depthWriteEnable = VK_TRUE;
+		_depthStencil.depthCompareOp = VK_COMPARE_OP_LESS_OR_EQUAL;
+		_depthStencil.depthBoundsTestEnable = VK_FALSE;
+		_depthStencil.minDepthBounds = 0.0f; // Optional
+		_depthStencil.maxDepthBounds = 1.0f; // Optional
+		_depthStencil.stencilTestEnable = VK_FALSE;
+
+		VkGraphicsPipelineCreateInfo pipelineInfo{};
+		pipelineInfo.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
+		pipelineInfo.stageCount = 2;
+		pipelineInfo.pStages = shaderStages;
+		pipelineInfo.pVertexInputState = &vertexInputInfo;
+		pipelineInfo.pInputAssemblyState = &inputAssembly;
+		pipelineInfo.pViewportState = &viewportState;
+		pipelineInfo.pRasterizationState = &rasterizer;
+		pipelineInfo.pMultisampleState = &multisampling;
+		pipelineInfo.pColorBlendState = &colorBlending;
+		pipelineInfo.pDynamicState = &dynamicCreateInfo;
+		pipelineInfo.layout = pipelineLayout;
+		pipelineInfo.renderPass = reinterpret_cast<VulkanAPI*>(p_Owner)->getRenderPass();
+		pipelineInfo.subpass = 0;
+		pipelineInfo.pDepthStencilState = &_depthStencil;
+		pipelineInfo.basePipelineHandle = VK_NULL_HANDLE; // Optional
+		pipelineInfo.basePipelineIndex = -1; // Optional
+
+		if (vkCreateGraphicsPipelines(logicalDevice, VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &graphicsPipeline) != VK_SUCCESS)
+			return false;
+
+		vkDestroyShaderModule(logicalDevice, shaders[0], nullptr);
+		vkDestroyShaderModule(logicalDevice, shaders[1], nullptr);
+
 		return true;
 	}
 
@@ -112,7 +251,9 @@ namespace GrEngine_Vulkan
 
 		std::string mesh_path = "";
 		std::vector<std::string> textures_vector;
-		if (!GrEngine::Globals::readGMF(model_path, &mesh_path, &textures_vector)) return false;
+
+		if (!GrEngine::Globals::readGMF(model_path, &mesh_path, &textures_vector)) 
+			return false;
 
 		LoadModel(mesh_path.c_str(), textures_vector);
 

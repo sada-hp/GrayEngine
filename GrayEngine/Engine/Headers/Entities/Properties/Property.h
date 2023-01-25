@@ -158,6 +158,7 @@ public:
 private:
 	std::string property_string;
 	glm::vec3 pitch_yaw_roll = { 0.f, 0.f, 0.f };
+	glm::vec3 degrees = { 0.f, 0.f, 0.f };
 };
 
 struct Color : public EntityProperty
@@ -207,4 +208,18 @@ public:
 	std::array<std::string, 6> property_value;
 private:
 	std::string property_string;
+};
+
+struct Shader : public EntityProperty
+{
+public:
+	Shader(const char* path, void* parent = nullptr);
+	~Shader();
+	const char* ValueString() override;
+	void ParsePropertyValue(const char* value) override;
+	void SetPropertyValue(std::string value);
+	std::any GetAnyValue() override;
+	virtual void* GetValueAdress() override;
+
+	std::string property_value;
 };

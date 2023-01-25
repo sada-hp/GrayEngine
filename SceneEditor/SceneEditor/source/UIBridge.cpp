@@ -179,10 +179,10 @@ void SceneEditor::AddNewEntityProperty(int id, const char* property_name)
 
 void SceneEditor::SaveScene(const char* path)
 {
-    SceneEditor::GetApplication()->GetRenderer()->SaveScene(path);
+    SceneEditor::GetApplication()->App_SaveScene(path);
 }
 
 void SceneEditor::LoadScene(const char* path)
 {
-    SceneEditor::GetApplication()->GetRenderer()->LoadScene(path);
+    SceneEditor::GetApplication()->LoadScene(path);
 }

@@ -54,6 +54,11 @@ namespace EditorUI
             picker.ShowAvailableColors = false;
             picker.UsingAlphaChannel = true;
         }
+        public void Refresh()
+        {
+            Delegate d = Delegate.CreateDelegate(Type.GetType("void"), this, "Test");
+            this.Dispatcher.Invoke(System.Windows.Threading.DispatcherPriority.Render, d);
+        }
 
         public void Init(string content)
         {

@@ -8,10 +8,7 @@ using System.Windows.Controls;
 using System.Windows.Data;
 using System.Windows.Documents;
 using System.Windows.Input;
-using System.Windows.Media;
-using System.Windows.Media.Imaging;
-using System.Windows.Navigation;
-using System.Windows.Shapes;
+using System.ComponentModel;
 
 namespace EditorUI
 {
@@ -29,6 +26,8 @@ namespace EditorUI
             {
                 prop_content = value;
                 var coords = prop_content.Split(':');
+                if (coords.Length < 3) return;
+
                 XBox.Text = coords[0];
                 YBox.Text = coords[1];
                 ZBox.Text = coords[2];
@@ -49,7 +48,7 @@ namespace EditorUI
             Contents = content;
         }
 
-            public void ChangeColors(System.Windows.Media.Brush background, System.Windows.Media.Brush foreground)
+        public void ChangeColors(System.Windows.Media.Brush background, System.Windows.Media.Brush foreground)
         {
             XBox.Background = background;
             XBox.Foreground = foreground;
@@ -63,6 +62,7 @@ namespace EditorUI
         {
             InitializeComponent();
             VectorPropertyChanged += Test;
+            DataContext = this;
         }
 
         private void UserControl_MouseDoubleClick(object sender, MouseButtonEventArgs e)
@@ -72,9 +72,11 @@ namespace EditorUI
 
         private void TextInputHandler(object sender, TextChangedEventArgs e)
         {
-            Contents = XBox.Text + ':' + YBox.Text + ':' + ZBox.Text;
-
-            VectorPropertyChanged.Invoke(this);
+            if (XBox.IsFocused || YBox.IsFocused || ZBox.IsFocused)
+            {
+                Contents = XBox.Text + ':' + YBox.Text + ':' + ZBox.Text;
+                VectorPropertyChanged.Invoke(this);
+            }
         }
 
         private void Test(object sender)

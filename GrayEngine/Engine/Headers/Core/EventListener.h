@@ -16,7 +16,8 @@ enum class EventType
 	SelectionChanged
 };
 
-typedef void (*EventCallbackFun)(std::vector<std::any>);
+typedef void (*EventCallback)(std::vector<double>);
+typedef void (*EventCallbackCustom)(std::vector<std::any>);
 
 
 class DllExport EventListener //event observer pattern
@@ -29,6 +30,12 @@ protected:
 	struct EventBase
 	{
 		EventType type;
+		std::vector<double> para;
+	};
+
+	struct EventBaseCustom
+	{
+		EventType type;
 		const char* name = "";
 		std::vector<std::any> para;
 	};
@@ -39,10 +46,6 @@ protected:
 
 		switch (event.type)
 		{
-		case EventType::Custom:
-			for (const auto& callback : GetListener()->observers_custom[event.name])
-				callback(event.para);
-			break;
 		case EventType::WindowResize:
 			for (const auto& callback : GetListener()->observers_engine[event.type])
 				callback(event.para);
@@ -53,6 +56,12 @@ protected:
 				callback(event.para);
 			break;
 		}
+	}
+
+	static void notify(const EventBaseCustom& event)
+	{
+		for (const auto& callback : GetListener()->observers_custom[event.name])
+			callback(event.para);
 	}
 
 	inline static EventListener* GetListener() //Singleton
@@ -73,15 +82,15 @@ public:
 
 	void operator=(const EventListener&) = delete;
 
-	static void pushEvent(const EventType& event, EventCallbackFun event_function)
+	static void pushEvent(const EventType& event, EventCallback event_function)
 	{
 		if (GetListener()->bAllowEvents)
-			GetListener()->observers_engine[event].push_back(std::forward<EventCallbackFun>(event_function));
+			GetListener()->observers_engine[event].push_back(std::forward<EventCallback>(event_function));
 	}
-	static void pushEvent(const char* event_name, EventCallbackFun event_function)
+	static void pushEvent(const char* event_name, EventCallbackCustom event_function)
 	{
 		if (GetListener()->bAllowCustomEvents)
-			GetListener()->observers_custom[event_name].push_back(std::forward<EventCallbackFun>(event_function));
+			GetListener()->observers_custom[event_name].push_back(std::forward<EventCallbackCustom>(event_function));
 	}
 
 	static void setEventsPermissions(bool engineEventsEnabled, bool customEventsEnabled)
@@ -96,12 +105,22 @@ public:
 
 		while (GetListener()->EventQueue.size() > 0)
 		{
-			if ((GetListener()->bAllowEvents && GetListener()->EventQueue.front().type != EventType::Custom) || (GetListener()->bAllowCustomEvents && GetListener()->EventQueue.front().type == EventType::Custom))
+			if (GetListener()->bAllowEvents)
 			{
 				notify(GetListener()->EventQueue.front());
 			}
 
 			GetListener()->EventQueue.pop();
+		}
+
+		while (GetListener()->CustomEventQueue.size() > 0)
+		{
+			if (GetListener()->bAllowCustomEvents)
+			{
+				notify(GetListener()->CustomEventQueue.front());
+			}
+
+			GetListener()->CustomEventQueue.pop();
 		}
 
 		clearEventQueue();
@@ -112,15 +131,15 @@ public:
 	{
 		if (!GetListener()->bAllowCustomEvents) return;
 
-		EventBase event;
+		EventBaseCustom event;
 		event.type = EventType::Custom;
 		event.name = name;
 		event.para = para;
 
-		GetListener()->EventQueue.push(event);
+		GetListener()->CustomEventQueue.push(event);
 	}
 
-	static void registerEvent(const EventType& type, std::vector<std::any> para)
+	static void registerEvent(const EventType& type, std::vector<double> para)
 	{
 		if (!GetListener()->bAllowEvents) return;
 
@@ -141,8 +160,9 @@ public:
 		GetListener()->EventQueue.empty();
 	}
 private:
-	std::map<EventType, std::vector<EventCallbackFun>> observers_engine;
-	std::map<const char*, std::vector<EventCallbackFun>> observers_custom;
+	std::map<EventType, std::vector<EventCallback>> observers_engine;
+	std::map<const char*, std::vector<EventCallbackCustom>> observers_custom;
 	std::queue<EventBase> EventQueue;
+	std::queue<EventBaseCustom> CustomEventQueue;
 	uint32_t resizeEventsCount = 0;
 };

@@ -267,36 +267,31 @@ EntityOrientation::~EntityOrientation()
 
 const char* EntityOrientation::ValueString()
 {
-	property_string = (GrEngine::Globals::FloatToString(pitch_yaw_roll.x, 5) + ":" + GrEngine::Globals::FloatToString(pitch_yaw_roll.y, 5) + ":" + GrEngine::Globals::FloatToString(pitch_yaw_roll.z, 5));
+	property_string = (GrEngine::Globals::FloatToString(degrees.x, 5) + ":" + GrEngine::Globals::FloatToString(degrees.y, 5) + ":" + GrEngine::Globals::FloatToString(degrees.z, 5));
 	return property_string.c_str();
 }
 
-void EntityOrientation::ParsePropertyValue(const char* value)
+void EntityOrientation::ParsePropertyValue(const char* degress)
 {
-	auto cols = GrEngine::Globals::SeparateString(value, ':');
+	auto cols = GrEngine::Globals::SeparateString(degress, ':');
 
 	if (cols.size() < 3) return;
 
-	glm::quat qPitch = glm::angleAxis(glm::radians(stof(cols[1])), glm::vec3(1, 0, 0));
-	glm::quat qYaw = glm::angleAxis(glm::radians(stof(cols[0])), glm::vec3(0, 1, 0));
-	glm::quat qRoll = glm::angleAxis(glm::radians(stof(cols[2])), glm::vec3(0, 0, 1));
-
-	property_value = glm::normalize(qPitch * qYaw * qRoll);
-	pitch_yaw_roll = { stof(cols[0]), stof(cols[1]), stof(cols[2]) };
+	SetPropertyValue(stof(cols[0]), stof(cols[1]), stof(cols[2]));
 }
 
 void EntityOrientation::SetPropertyValue(const float& pitch, const float& yaw, const float& roll)
 {
-	glm::quat qPitch = glm::angleAxis(glm::radians(yaw), glm::vec3(1, 0, 0));
-	glm::quat qYaw = glm::angleAxis(glm::radians(pitch), glm::vec3(0, 1, 0));
-	glm::quat qRoll = glm::angleAxis(glm::radians(roll), glm::vec3(0, 0, 1));
-	property_value = glm::normalize(qPitch * qYaw * qRoll);
-	pitch_yaw_roll = { pitch, yaw, roll };
+	degrees = { pitch, yaw, roll };
+	pitch_yaw_roll = { glm::radians(pitch), glm::radians(yaw), glm::radians(roll) };
+	property_value = glm::quat(pitch_yaw_roll);
 }
 
 void EntityOrientation::SetPropertyValue(glm::quat value)
 {
 	property_value = value;
+	pitch_yaw_roll = glm::eulerAngles(value);
+	degrees = { glm::degrees(pitch_yaw_roll.x), glm::degrees(pitch_yaw_roll.y), glm::degrees(pitch_yaw_roll.z) };
 }
 
 std::any EntityOrientation::GetAnyValue()
@@ -475,6 +470,49 @@ std::any CubemapProperty::GetAnyValue()
 }
 
 void* CubemapProperty::GetValueAdress()
+{
+	return &property_value;
+}
+
+////////////////////////////////////Shader/////////////////////////////////////////////
+
+Shader::Shader(const char* path, void* parent)
+{
+	property_name = "Shader";
+	property_value = path;
+	property_type = PropertyType::STRING;
+	owner = parent;
+}
+
+Shader::~Shader()
+{
+
+}
+
+const char* Shader::ValueString()
+{
+	return property_value.c_str();
+}
+
+void Shader::ParsePropertyValue(const char* value)
+{
+	SetPropertyValue(value);
+}
+
+void Shader::SetPropertyValue(std::string value)
+{
+	property_value = value;
+
+	if (owner != nullptr)
+		static_cast<GrEngine::DrawableObject*>(owner)->Refresh();
+}
+
+std::any Shader::GetAnyValue()
+{
+	return property_value;
+}
+
+void* Shader::GetValueAdress()
 {
 	return &property_value;
 }

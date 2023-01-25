@@ -5,7 +5,6 @@
 #include "Core/Globals.h"
 #include "Core/Logger.h"
 #include "Properties/Property.h"
-#include "Virtual/Physics.h"
 
 namespace GrEngine
 {
@@ -15,13 +14,8 @@ namespace GrEngine
 
 		Entity()
 		{
-			char buf[11];
 			char _buf[11];
-			std::snprintf(_buf, sizeof(_buf), "1%03d%03d%03d", next_id[0] + 1, next_id[1] + 1, next_id[2]++ + 1);
-
-			next_id[0] += next_id[1] / 254;
-			next_id[1] += next_id[2] / 254;
-			next_id[2] %= 254;
+			std::snprintf(_buf, sizeof(_buf), "1%03d%03d%03d", std::rand() % 255 + 1, std::rand() % 255 + 1, std::rand() % 255 + 1);
 
 			//Don't shuffle
 			properties.push_back(new EntityName("Object", this));
@@ -49,8 +43,6 @@ namespace GrEngine
 			obj_id = static_cast<UINT*>(properties[1]->GetValueAdress());
 			object_origin = static_cast<glm::vec3*>(properties[2]->GetValueAdress());
 			obj_orientation = static_cast<glm::quat*>(properties[3]->GetValueAdress());
-
-			next_id = { (short)(id / 1000000 % 1000), (short)(id / 1000 % 1000), (short)(id % 1000) };
 		};
 
 		virtual ~Entity()
@@ -63,74 +55,57 @@ namespace GrEngine
 
 		virtual void Rotate(const float& pitch, const float& yaw, const float& roll)
 		{
-			pitch_yaw_roll += glm::vec3{ pitch * Globals::delta_time, yaw * Globals::delta_time, roll * Globals::delta_time };
-			glm::quat qPitch = glm::angleAxis(glm::radians(pitch_yaw_roll.y), glm::vec3(1, 0, 0));
-			glm::quat qYaw = glm::angleAxis(glm::radians(pitch_yaw_roll.x), glm::vec3(0, 1, 0));
-			glm::quat qRoll = glm::angleAxis(glm::radians(pitch_yaw_roll.z), glm::vec3(0, 0, 1));
-			obj_orientation_target = glm::normalize(qPitch * qYaw * qRoll);
+			pitch_yaw_roll += glm::vec3{ pitch, yaw, roll };
+			static_cast<EntityOrientation*>(properties[3])->SetPropertyValue(pitch_yaw_roll.x, pitch_yaw_roll.y, pitch_yaw_roll.z);
 		};
 
 		virtual void Rotate(const glm::vec3& angle)
 		{
-			pitch_yaw_roll += angle * glm::vec3(Globals::delta_time, Globals::delta_time, Globals::delta_time);
-			glm::quat qPitch = glm::angleAxis(glm::radians(pitch_yaw_roll.y), glm::vec3(1, 0, 0));
-			glm::quat qYaw = glm::angleAxis(glm::radians(pitch_yaw_roll.x), glm::vec3(0, 1, 0));
-			glm::quat qRoll = glm::angleAxis(glm::radians(pitch_yaw_roll.z), glm::vec3(0, 0, 1));
-			obj_orientation_target = glm::normalize(qPitch * qYaw * qRoll);
+			pitch_yaw_roll += angle;
+			static_cast<EntityOrientation*>(properties[3])->SetPropertyValue(pitch_yaw_roll.x, pitch_yaw_roll.y, pitch_yaw_roll.z);
 		};
 
 		virtual void Rotate(const glm::quat& angle)
 		{
-			pitch_yaw_roll += glm::eulerAngles(angle) * glm::vec3(Globals::delta_time, Globals::delta_time, Globals::delta_time);
-			obj_orientation_target += angle;
+			pitch_yaw_roll += glm::degrees(glm::eulerAngles(angle));
+			static_cast<EntityOrientation*>(properties[3])->SetPropertyValue(pitch_yaw_roll.x, pitch_yaw_roll.y, pitch_yaw_roll.z);
 		};
 
 		virtual void SetRotation(const float& pitch, const float& yaw, const float& roll)
 		{
 			pitch_yaw_roll = glm::vec3{ pitch, yaw, roll };
-			glm::quat qPitch = glm::angleAxis(glm::radians(yaw), glm::vec3(1, 0, 0));
-			glm::quat qYaw = glm::angleAxis(glm::radians(pitch), glm::vec3(0, 1, 0));
-			glm::quat qRoll = glm::angleAxis(glm::radians(roll), glm::vec3(0, 0, 1));
-			static_cast<EntityOrientation*>(properties[3])->SetPropertyValue(glm::normalize(qPitch * qYaw * qRoll));
-			obj_orientation_target = glm::normalize(qPitch * qYaw * qRoll);
+			static_cast<EntityOrientation*>(properties[3])->SetPropertyValue(pitch_yaw_roll.x, pitch_yaw_roll.y, pitch_yaw_roll.z);
 		};
 
 		virtual void SetRotation(const glm::vec3& angle)
 		{
 			pitch_yaw_roll = angle;
-			glm::quat qPitch = glm::angleAxis(glm::radians(angle.y), glm::vec3(1, 0, 0));
-			glm::quat qYaw = glm::angleAxis(glm::radians(angle.x), glm::vec3(0, 1, 0));
-			glm::quat qRoll = glm::angleAxis(glm::radians(angle.z), glm::vec3(0, 0, 1));
-			static_cast<EntityOrientation*>(properties[3])->SetPropertyValue(glm::normalize(qPitch * qYaw * qRoll));
-			obj_orientation_target = glm::normalize(qPitch * qYaw * qRoll);
+			static_cast<EntityOrientation*>(properties[3])->SetPropertyValue(pitch_yaw_roll.x, pitch_yaw_roll.y, pitch_yaw_roll.z);
 		};
 
 		virtual void SetRotation(const glm::quat& angle)
 		{
-			pitch_yaw_roll = glm::eulerAngles(angle);
-			static_cast<EntityOrientation*>(properties[3])->SetPropertyValue(angle);
-			obj_orientation_target = angle;
+			pitch_yaw_roll = glm::degrees(glm::eulerAngles(angle));
+			static_cast<EntityOrientation*>(properties[3])->SetPropertyValue(pitch_yaw_roll.x, pitch_yaw_roll.y, pitch_yaw_roll.z);
 		};
 
 		virtual void MoveObject(const float& x, const float& y, const float& z)
 		{
-			object_position_target += glm::vec3(x * Globals::delta_time, y * Globals::delta_time, z * Globals::delta_time);
+			static_cast<EntityPosition*>(properties[2])->SetPropertyValue(*object_origin + glm::vec3(x, y, z));
 		};
 
 		virtual void MoveObject(const glm::vec3& vector)
 		{
-			object_position_target += vector * glm::vec3(Globals::delta_time, Globals::delta_time, Globals::delta_time);
+			static_cast<EntityPosition*>(properties[2])->SetPropertyValue(*object_origin + vector);
 		};
 
 		virtual void PositionObjectAt(const float& x, const float& y, const float& z)
 		{
-			object_position_target = glm::vec3(x, y, z);
 			static_cast<EntityPosition*>(properties[2])->SetPropertyValue(x, y, z);
 		};
 
 		virtual void PositionObjectAt(const glm::vec3& vector)
 		{
-			object_position_target = vector;
 			static_cast<EntityPosition*>(properties[2])->SetPropertyValue(vector);
 		};
 
@@ -144,12 +119,17 @@ namespace GrEngine
 			return *obj_orientation;
 		};
 
+		virtual glm::mat4 GetObjectTransformation()
+		{
+			return glm::translate(glm::mat4(1.f), GetObjectPosition()) * glm::mat4_cast(GetObjectOrientation());
+		}
+
 		template<typename T>
 		T GetPropertyValue(const char* property_name, T default_value)
 		{
 			for (std::vector<EntityProperty*>::iterator itt = properties.begin(); itt != properties.end(); ++itt)
 			{
-				if ((*itt)->property_name == property_name)
+				if ((*itt)->property_name == std::string(property_name))
 				{
 					return std::any_cast<T>((*itt)->GetAnyValue());
 				}
@@ -251,18 +231,30 @@ namespace GrEngine
 			}
 		};
 
-		std::vector<EntityProperty*>& GetProperties()
+		inline std::vector<EntityProperty*>& GetProperties()
 		{
 			return properties;
 		}
 
-		std::string GetEntityType()
+		inline std::string& GetEntityType()
 		{
 			return Type;
 		};
 
-		inline const char* GetEntityNameTag() { return (*obj_name).c_str(); };
+		inline const char* GetEntityNameTag() 
+		{ 
+			return (*obj_name).c_str(); 
+		};
 
+		inline void MakeStatic()
+		{
+			isPrivated = true;
+		}
+
+		inline bool& IsStatic()
+		{
+			return isPrivated;
+		}
 
 	protected:
 		std::vector<EntityProperty*> properties;
@@ -273,10 +265,7 @@ namespace GrEngine
 		glm::vec3* object_origin;
 		std::string Type = "Entity";
 
-		glm::quat obj_orientation_target = { 0.f, 0.f, 0.f, 0.f };
-		glm::vec3 object_position_target = { 0.f, 0.f, 0.f };
 		glm::vec3 pitch_yaw_roll = { 0.f, 0.f, 0.f };
-	private:
-		static std::array<short, 3> next_id;
+		bool isPrivated = false;
 	};
 }

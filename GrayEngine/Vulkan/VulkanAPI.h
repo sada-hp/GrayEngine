@@ -59,6 +59,7 @@ namespace GrEngine_Vulkan
 		bool loadModel(UINT id, const char* mesh_path, std::vector<std::string> textures_vector) override;
 		bool loadModel(UINT id, const char* model_path) override;
 		GrEngine::Entity* addEntity() override;
+		void addEntity(GrEngine::Entity* entity) override;
 		bool assignTextures(std::vector<std::string> textures, GrEngine::Entity* target) override;
 		void clearDrawables() override;
 		void createSkybox(const char* East, const char* West, const char* Top, const char* Bottom, const char* North, const char* South) override;
@@ -68,7 +69,8 @@ namespace GrEngine_Vulkan
 		static void m_destroyShaderBuffer(VkDevice device, VmaAllocator allocator, ShaderBuffer* shaderBuf);
 		static void m_destroyTexture(VkDevice device, VmaAllocator allocator, Texture* texture);
 		void transitionImageLayout(VkImage image, VkImageLayout oldLayout, VkImageLayout newLayout, VkImageSubresourceRange subres, VkCommandBuffer cmd = nullptr);
-		void SelectEntityAtCursor();
+		void SelectEntityAtCursor() override;
+		std::array<int, 3> GetPixelColorAtCursor() override;
 		GrEngine::Entity* selectEntity(UINT ID) override;
 		void SetHighlightingMode(bool enabled) override;
 		void DeleteEntity(UINT id) override;
@@ -95,7 +97,6 @@ namespace GrEngine_Vulkan
 		VmaAllocator memAllocator;
 
 		VkInstance _vulkan;
-		VulkanObject grid;
 		VulkanSkybox* sky;
 
 		VkPhysicalDeviceProperties deviceProps;
@@ -151,6 +152,7 @@ namespace GrEngine_Vulkan
 
 		void copyBufferToImage(VkBuffer buffer, VkImage image, uint32_t width, uint32_t height, uint32_t channels, uint32_t length);
 		void copyImageToBuffer(VkBuffer buffer, VkImage image, uint32_t width, uint32_t height, uint32_t channels, uint32_t length);
+		std::array<int, 3> getPixelColor(DrawMode mode);
 
 		VkImageView depthImageView;
 		AllocatedImage depthImage;

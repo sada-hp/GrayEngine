@@ -4,12 +4,16 @@
 
 namespace GrEngine
 {
-	std::array<short, 3> Entity::next_id = {5, 10, 25};
 	Engine* Engine::context = nullptr;
 
 	Engine::Engine(const AppParameters& Properties)
 	{
-		Physics::SetContext(new GrEngineBullet::BulletAPI());
+		if (context == nullptr)
+		{
+			context = this;
+		}
+
+		physEngine = new GrEngineBullet::BulletAPI();
 		pWindow = std::unique_ptr<AppWindow>(AppWindow::Init(Properties));
 	}
 
@@ -112,11 +116,64 @@ namespace GrEngine
 
 	void Engine::TogglePhysicsState(bool state)
 	{
-		Physics::GetContext()->TogglePhysicsState(state);
+		physEngine->TogglePhysicsState(state);
 	}
 
 	UINT Engine::GetSelectedEntityID()
 	{
 		return GetRenderer()->GetSelectedEntity()->GetEntityID();
+	}
+
+	void Engine::LoadScene(const char* path)
+	{
+		auto start = std::chrono::steady_clock::now();
+
+		Pause();
+		physEngine->TogglePhysicsState(false);
+		GetContext()->GetRenderer()->LoadScene(path);
+		Unpause();
+
+		auto time = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - start).count();
+		Logger::Out("Level %s loaded in %d ms", OutputColor::Gray, OutputType::Log, path, (int)time);
+	}
+
+	void Engine::SaveScene(const char* path)
+	{
+		GetRenderer()->SaveScene(path);
+	}
+
+	POINTFLOAT Engine::GetCursorPosition()
+	{
+		POINTFLOAT res;
+		double xpos, ypos;
+		glfwGetCursorPos(pWindow->getWindow(), &xpos, &ypos);
+		res = { (float)xpos, (float)ypos };
+
+		return res;
+	}
+
+	POINT Engine::GetWindowSize()
+	{
+		int w, h;
+		glfwGetWindowSize(pWindow->getWindow(), &w, &h);
+		return { w, h };
+	}
+
+	POINT Engine::GetWindowPosition()
+	{
+		int x, y;
+		glfwGetWindowPos(pWindow->getWindow(), &x, &y);
+		return { x, y };
+	}
+
+	void Engine::SetCursorShape(int shape)
+	{
+		GLFWcursor* cur = glfwCreateStandardCursor(shape);
+		glfwSetCursor(pWindow->getWindow(), cur);
+	}
+
+	void Engine::SetCursorPosition(double xpos, double ypos)
+	{
+		glfwSetCursorPos(pWindow->getWindow(), xpos, ypos);
 	}
 }

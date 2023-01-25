@@ -6,58 +6,85 @@ namespace SceneEditor
 
     void Inputs()
     {
-        static glm::vec2 old_cursor_pos;
+        POINT vSize = app->GetWindowSize();
+        POINT vPos = app->GetWindowPosition();
         GrEngine::Renderer* render = app->GetRenderer();
         GrEngine::Camera* camera = render->getActiveViewport();
-        POINT cur{ 1,1 };
-        float cameraSpeed = 10;
-        glm::vec3 direction{ 0.f };
-        glm::vec3 orientation{ 0.f };
-        float senstivity = 0.75f;
 
-        old_cursor_pos = glm::vec2{ 960, 540 };
-        if (app->IsKeyDown(GLFW_KEY_LEFT_SHIFT))
-            cameraSpeed = cameraSpeed * 4;
-
-        if (app->IsKeyDown(GLFW_KEY_W))
-            direction.z -= 1;
-        if (app->IsKeyDown(GLFW_KEY_S))
-            direction.z += 1;
-        if (app->IsKeyDown(GLFW_KEY_A))
-            direction.x -= 1;
-        if (app->IsKeyDown(GLFW_KEY_D))
-            direction.x += 1;
-
-        GetCursorPos(&cur);
-        if (app->free_mode && old_cursor_pos != glm::vec2{ 0.f })
+        if (app->free_mode)
         {
-            if (glm::abs(old_cursor_pos.x - (float)(cur.x)) > 0.55f)
-            {
-                orientation.x -= (old_cursor_pos.x - (float)cur.x) * senstivity;
-            }
-            if (glm::abs(old_cursor_pos.y - (float)cur.y) > 0.55f)
-            {
-                orientation.y -= (old_cursor_pos.y - (float)cur.y) * senstivity;
-            }
-            SetCursorPos(960, 540);
-        }
-        else if (app->free_mode)
-        {
-            old_cursor_pos = glm::vec2{ 960, 540 };
-            SetCursorPos(960, 540);
+            glm::vec2 old_cursor_pos{ vPos.x + (vSize.x / 2), vPos.y + (vSize.y / 2) };
+            glm::vec3 direction{ 0.f };
+            glm::vec3 orientation{ 0.f };
+            float senstivity = 0.75f;
+            float cameraSpeed = 10;
+
+            POINT cur{ 1,1 };
+            GetCursorPos(&cur);
+
+            orientation.x -= (old_cursor_pos.x - (float)cur.x) * senstivity;
+            orientation.y -= (old_cursor_pos.y - (float)cur.y) * senstivity;
+            camera->Rotate(orientation);
+            SetCursorPos(vPos.x + (vSize.x / 2), vPos.y + (vSize.y / 2));
+
+            if (app->IsKeyDown(GLFW_KEY_LEFT_SHIFT))
+                cameraSpeed = cameraSpeed * 4;
+            if (app->IsKeyDown(GLFW_KEY_W))
+                direction.z -= 1;
+            if (app->IsKeyDown(GLFW_KEY_S))
+                direction.z += 1;
+            if (app->IsKeyDown(GLFW_KEY_A))
+                direction.x -= 1;
+            if (app->IsKeyDown(GLFW_KEY_D))
+                direction.x += 1;
+
+            camera->MoveObject((direction * camera->GetObjectOrientation()) * cameraSpeed);
         }
 
-        if (app->IsKeyDown(GLFW_KEY_UP))
-            orientation.y -= 1;
-        if (app->IsKeyDown(GLFW_KEY_DOWN))
-            orientation.y += 1;
-        if (app->IsKeyDown(GLFW_KEY_RIGHT))
-            orientation.x += 1;
-        if (app->IsKeyDown(GLFW_KEY_LEFT))
-            orientation.x -= 1;
+        if (app->transform_target != nullptr)
+        {
+            glm::vec3 tPos = app->transform_target->GetObjectPosition();
+            glm::quat tOri = app->transform_target->GetObjectOrientation();
+            glm::mat4 trans = app->transform_target->GetObjectTransformation();
+            POINTFLOAT cursor = app->GetCursorPosition();
+            float dist = (float)glm::length(camera->GetObjectPosition() - tPos);
+            std::string gizmo_scale = std::to_string(dist * 0.185f);
 
-        camera->Rotate(orientation);
-        camera->MoveObject((direction * camera->GetObjectOrientation()) * cameraSpeed);
+            if (app->manipulation > 0 && app->manipulation < 4)
+            {
+                int mInd = app->manipulation - 1;
+                glm::vec3 dir = glm::vec3(trans[mInd][0], trans[mInd][1], trans[mInd][2]);
+                float len = dist * (float)glm::dot(glm::vec2(app->manip_start.x - cursor.x, app->manip_start.y - cursor.y), app->direct) * 0.0012f * ((vSize.x)/(float)(vSize.y));
+
+                tPos = app->transform_target->GetObjectPosition() + dir * glm::vec3(len);
+                app->transform_target->PositionObjectAt(tPos);
+                app->manip_start = cursor;
+                app->App_UpdateUIProperty("EntityPosition");
+            }
+            else if (app->manipulation >= 4)
+            {
+                int mInd = app->manipulation - 4;
+                auto vec = glm::normalize(glm::vec2(app->obj_center.x - cursor.x, app->obj_center.y - cursor.y));
+                float angle = glm::acos(glm::dot(glm::normalize(vec), glm::normalize(app->direct)));
+
+                if (!glm::isnan(angle) && !glm::isinf(angle))
+                {
+                    double len1 = glm::length(vec);
+                    double len2 = glm::length(app->direct);
+                    short delta = glm::sign(glm::asin(((vec.x * app->direct.y)/(len1 * len2)) - ((vec.y * app->direct.x)/(len2 * len1)))) * glm::sign(glm::dot(camera->GetObjectPosition() - tPos, glm::vec3(trans[mInd][0], trans[mInd][1], trans[mInd][2])));
+                    std::array<glm::vec3, 3> directions = { glm::vec3(1, 0, 0), glm::vec3(0, 1, 0), glm::vec3(0, 0, 1) };
+
+                    tOri = tOri * glm::angleAxis(angle * delta, directions[mInd]);
+                    app->transform_target->SetRotation(tOri);
+                    app->direct = vec;
+                    app->App_UpdateUIProperty("EntityOrientation");
+                }
+            }
+
+            app->gizmo->ParsePropertyValue("Scale", (gizmo_scale + ":" + gizmo_scale + ":" + gizmo_scale).c_str());
+            app->gizmo->PositionObjectAt(tPos);
+            app->gizmo->SetRotation(tOri);
+        }
     }
 
     int SceneEditor::EntryPoint()
@@ -67,11 +94,11 @@ namespace SceneEditor
         Logger::ShowConsole(false);
         app = new GrEngine::Application();
 
-        EventListener::pushEvent(EventType::Step, [](std::vector<std::any> para)
+        EventListener::pushEvent(EventType::Step, [](std::vector<double> para)
             {
                 if (para.size() > 0)
                 {
-                    app->getEditorUI()->UpdateFramecounter((float)std::any_cast<double>(para[0]));
+                    app->App_UpdateFrameCounter(para[0]);
                 }
             });
 
@@ -86,41 +113,43 @@ namespace SceneEditor
                 app->LoadFromGMF(app->GetSelectedEntityID(), model_path.c_str());
             });
 
-        EventListener::pushEvent(EventType::KeyPress, [](std::vector<std::any> para)
+        EventListener::pushEvent(EventType::KeyPress, [](std::vector<double> para)
             {
-                if (std::any_cast<int>(para[0]) == GLFW_KEY_ESCAPE && std::any_cast<int>(para[2]) == GLFW_PRESS)
+                if (static_cast<int>(para[0]) == GLFW_KEY_ESCAPE && static_cast<int>(para[2]) == GLFW_PRESS)
                 {
-                    SetCursorPos(960, 540);
+                    POINT vSize = app->GetWindowSize();
+                    POINT vPos = app->GetWindowPosition();
+                    SetCursorPos(vPos.x + (vSize.x / 2), vPos.y + (vSize.y / 2));
                     app->toggle_free_mode();
                 }
-                else if (std::any_cast<int>(para[0]) == GLFW_KEY_DELETE && std::any_cast<int>(para[2]) == GLFW_PRESS)
+                else if (static_cast<int>(para[0]) == GLFW_KEY_DELETE && static_cast<int>(para[2]) == GLFW_PRESS)
                 {
                     GrEngine::Entity* obj = app->GetRenderer()->GetSelectedEntity();
-                        
-                    if (obj != nullptr)
-                    {
-                        UINT id = app->GetRenderer()->GetSelectedEntity()->GetEntityID();
-                        app->GetRenderer()->DeleteEntity(id);
-                        app->App_RemoveEntity(id);
-                    }
+                    app->App_RemoveEntity();
                 }
             });
 
-        EventListener::pushEvent(EventType::MouseClick, [](std::vector<std::any> para)
+        EventListener::pushEvent(EventType::MouseClick, [](std::vector<double> para)
             {
-                if (std::any_cast<int>(para[3]) == GLFW_RELEASE)
+                if (static_cast<int>(para[3]) == GLFW_PRESS && app->manipulation == 0)
                 {
                     app->GetRenderer()->SelectEntityAtCursor();
                 }
+                else if (static_cast<int>(para[3]) == GLFW_RELEASE)
+                {
+                    app->SetCursorShape(GLFW_ARROW_CURSOR);
+                    app->manipulation = 0;
+                    app->gizmo->ParsePropertyValue("Color", "255:255:255:255");
+                }
             });
 
-        EventListener::pushEvent(EventType::Log, [](std::vector<std::any> para)
+        EventListener::pushEvent(EventType::Log, [](std::vector<double> para)
             {
                 char* msg = new char[para.size() + 2];
                 int i = 0;
-                for (auto letter : para)
+                for (double letter : para)
                 {
-                    msg[i++] = std::any_cast<char>(letter);
+                    msg[i++] = static_cast<char>(letter);
                 }
                 msg[i++] = '\n';
                 msg[i] = '\0';
@@ -128,10 +157,10 @@ namespace SceneEditor
                 delete[] msg;
             });
 
-        EventListener::pushEvent(EventType::SelectionChanged, [](std::vector<std::any> para)
+        EventListener::pushEvent(EventType::SelectionChanged, [](std::vector<double> para)
             {
-                int id = std::any_cast<uint32_t>(para[0]);
-                app->getEditorUI()->SetSelectedEntity(id);
+                int id = static_cast<int>(para[0]);
+                app->App_UpdateSelection(id);
             });
 
         try

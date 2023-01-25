@@ -20,6 +20,27 @@ namespace EditorUI
     /// </summary>
     public partial class PropertyItem : UserControl
     {
+        private int id;
+        private string name;
+
+        public int ID
+        {
+            get => id;
+            set
+            {
+                id = value;
+            }
+        }
+
+        public string PropertyName
+        {
+            get => name;
+            set
+            {
+                name = value;
+                PName.Content = value;
+            }
+        }
         public PropertyItem()
         {
             InitializeComponent();

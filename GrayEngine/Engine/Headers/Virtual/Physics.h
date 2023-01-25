@@ -19,20 +19,6 @@ namespace GrEngine
 		void TogglePhysicsState(bool state) { simulate = state; };
 
 		inline bool GetSimulationState() { return simulate; };
-		inline static Physics* GetContext() { return context; };
-
-		static void SetContext(Physics* new_context)
-		{
-			if (context != nullptr)
-			{
-				return;
-			}
-
-			context = new_context;
-		}
-
-	private:
-		static Physics* context;
 	protected:
 		bool simulate = false;
 	};

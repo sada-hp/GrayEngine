@@ -49,7 +49,7 @@ public:
 
 		printf("%s\n", msg.c_str());
 
-		std::vector<std::any> para{};
+		std::vector<double> para{};
 		for (char letter : msg)
 		{
 			para.push_back(letter);

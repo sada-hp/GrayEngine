@@ -83,9 +83,6 @@ namespace GrEngine_Vulkan
 		vkDestroyDescriptorPool(logicalDevice, descriptorPool, NULL);
 		vkDestroyDescriptorSetLayout(logicalDevice, descriptorSetLayout, NULL);
 
-
-		//VulkanAPI::m_destroyTexture(logicalDevice, memAllocator, object_texture);
-
 		this->~VulkanDrawable();
 	}
 

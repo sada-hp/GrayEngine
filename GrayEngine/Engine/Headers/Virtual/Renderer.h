@@ -1,6 +1,5 @@
 #pragma once
 #include "Entities/Camera.h"
-#include "Entities/DrawableObject.h"
 #include "Entities/Entity.h"
 #include "Entities/Skybox.h"
 #include "Core/Logger.h"
@@ -26,6 +25,7 @@ namespace GrEngine
 		virtual void clearDrawables() = 0;
 		virtual void waitForRenderer() = 0;
 		virtual Entity* addEntity() = 0;
+		virtual void addEntity(Entity* entity) = 0;
 		std::map<UINT, Entity*>& GetEntitiesList()
 		{
 			return entities;
@@ -39,21 +39,27 @@ namespace GrEngine
 			if (auto search = entities.find(ID); search != entities.end())
 			{
 				selected_entity = ID;
-				std::vector<std::any> para = { selected_entity };
+				std::vector<double> para = { static_cast<double>(selected_entity) };
 				EventListener::registerEvent(EventType::SelectionChanged, para);
 				return entities.at(ID);
 			}
 			return nullptr;
 		};
-		virtual Entity* GetSelectedEntity() { return entities[selected_entity]; };
+		virtual Entity* GetSelectedEntity() 
+		{ 
+			return selected_entity == 0 ? nullptr : entities[selected_entity];
+		};
 		UINT32& GetSelectionID() { return selected_entity; };
 		virtual void SaveScreenshot(const char* filepath) = 0;
 		virtual void SelectEntityAtCursor() = 0;
+		virtual std::array<int, 3> GetPixelColorAtCursor() = 0;
 		virtual void SetHighlightingMode(bool enabled) = 0;
 		virtual void SaveScene(const char* path) = 0;
 		virtual void LoadScene(const char* path) = 0;
 	protected:
 		UINT32 selected_entity = 0;
 		std::map<UINT, Entity*> entities;
+		glm::lowp_uvec3 next_id = {0, 0, 1};
+		std::vector<UINT> free_ids;
 	};
 }

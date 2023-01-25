@@ -1,1 +1,8 @@
-<mesh>Content\Toy\toy.obj<|mesh><texture>Content\Toy\toy_Col.png<|texture>
+mesh
+{
+   Content\Toy\toy.obj
+}
+textures
+{
+   Content\Toy\toy_Col.png
+}

@@ -1,6 +1,8 @@
 #pragma once
 #include <pch.h>
 #include "Entity.h"
+#include "Engine/Headers/Engine.h"
+#include "Engine/Headers/Virtual/Physics.h"
 
 namespace GrEngine
 {
@@ -66,7 +68,7 @@ namespace GrEngine
 		{
 			if (body != nullptr)
 			{
-				Physics::GetContext()->RemoveObject(static_cast<void*>(body));
+				Engine::GetContext()->GetPhysics()->RemoveObject(static_cast<void*>(body));
 				delete body;
 				body = nullptr;
 				delete myMotionState;
@@ -77,10 +79,11 @@ namespace GrEngine
 		virtual bool LoadMesh(const char* mesh_path, bool useTexturing, std::vector<std::string>* out_materials) = 0;
 		virtual bool LoadModel(const char* model_path) = 0;
 		virtual bool LoadModel(const char* mesh_path, std::vector<std::string> textures_vector) = 0;
+		virtual void Refresh() = 0;
 
 		virtual glm::vec3 GetObjectPosition() override
 		{
-			if (Physics::GetContext()->GetSimulationState() && body != nullptr && body->getMass() > 0.f)
+			if (Engine::GetContext()->GetPhysics()->GetSimulationState() && body != nullptr && body->getMass() > 0.f)
 			{
 				auto phys_pos = body->getWorldTransform().getOrigin();
 				auto pos = glm::vec3(phys_pos.x(), phys_pos.y(), phys_pos.z());;
@@ -94,10 +97,10 @@ namespace GrEngine
 
 		virtual glm::quat GetObjectOrientation() override
 		{
-			if (Physics::GetContext()->GetSimulationState() && body != nullptr && body->getMass() > 0.f)
+			if (Engine::GetContext()->GetPhysics()->GetSimulationState() && body != nullptr && body->getMass() > 0.f)
 			{
 				auto phys_pos = body->getWorldTransform().getRotation();
-				auto ori = glm::quat(phys_pos.x(), phys_pos.y(), phys_pos.z(), phys_pos.w());
+				auto ori = glm::quat(phys_pos.w(), phys_pos.x(), phys_pos.y(), phys_pos.z());
 				return ori;
 			}
 			else
@@ -162,7 +165,7 @@ namespace GrEngine
 
 			if (body != nullptr)
 			{
-				Physics::GetContext()->RemoveObject(body);
+				Engine::GetContext()->GetPhysics()->RemoveObject(body);
 				delete body;
 				body = nullptr;
 				delete myMotionState;
@@ -170,7 +173,7 @@ namespace GrEngine
 			}
 
 			btTransform startTransform;
-			auto trans = glm::translate(glm::mat4(1.f), GetObjectPosition()) * glm::mat4_cast(GetObjectOrientation());
+			glm::mat4 trans = GetObjectTransformation();
 			const float* pSource = (const float*)glm::value_ptr(trans);
 			startTransform.setFromOpenGLMatrix(pSource);
 			btVector3 localInertia{ 0,0,0 };
@@ -187,7 +190,7 @@ namespace GrEngine
 			rbInfo.m_linearDamping = .2f;
 			body = new btRigidBody(rbInfo);
 
-			Physics::GetContext()->AddSimulationObject(body);
+			Engine::GetContext()->GetPhysics()->AddSimulationObject(body);
 		};
 
 		void DisableCollisions()
@@ -196,7 +199,7 @@ namespace GrEngine
 
 			if (body != nullptr)
 			{
-				Physics::GetContext()->RemoveObject(body);
+				Engine::GetContext()->GetPhysics()->RemoveObject(body);
 				delete body;
 				body = nullptr;
 				delete myMotionState;

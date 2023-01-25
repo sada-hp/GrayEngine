@@ -99,15 +99,20 @@ namespace GrEngine
 		EventListener::pollEngineEvents();
 		ProccessInputs();
 		glfwPollEvents();
-		Physics::GetContext()->SimulateStep();
+		Engine::GetContext()->GetPhysics()->SimulateStep();
 		pAppRenderer->RenderFrame();
 		glfwSwapBuffers(window);
 		double currentTime = glfwGetTime();
+		frames++;
 
-		Globals::delta_time = (currentTime - time);
-		std::vector<std::any> para{ 1/ Globals::delta_time, time };
-		EventListener::registerEvent(EventType::Step, para);
-		time = currentTime;
+		if (currentTime - time > 0.5f)
+		{
+			Globals::delta_time = (currentTime - time) / frames;
+			std::vector<double> para{ 1 / Globals::delta_time, time };
+			EventListener::registerEvent(EventType::Step, para);
+			time = currentTime;
+			frames = 0;
+		}
 	}
 
 
@@ -145,8 +150,8 @@ namespace GrEngine
 		{
 			AppParameters& data = *(AppParameters*)glfwGetWindowUserPointer(win);
 
-			std::vector<std::any> para = {
-				width, height
+			std::vector<double> para = {
+				(double)width, (double)height
 			};
 
 			EventListener::registerEvent(EventType::WindowResize, para);
@@ -166,8 +171,8 @@ namespace GrEngine
 			double xpos, ypos;
 			glfwGetCursorPos(win, &xpos, &ypos);
 
-			std::vector<std::any> para = {
-				xpos, ypos, button, action, mods
+			std::vector<double> para = {
+				xpos, ypos, (double)button, (double)action, (double)mods
 			};
 
 			glfwFocusWindow(win);
@@ -178,8 +183,8 @@ namespace GrEngine
 		{
 			AppParameters& data = *(AppParameters*)glfwGetWindowUserPointer(win);
 
-			std::vector<std::any> para = {
-				key, scancode, action, mods
+			std::vector<double> para = {
+				(double)key, (double)scancode, (double)action, (double)mods
 			};
 
 			EventListener::registerEvent(EventType::KeyPress, para);
@@ -188,7 +193,7 @@ namespace GrEngine
 		{
 			AppParameters& data = *(AppParameters*)glfwGetWindowUserPointer(win);
 
-			std::vector<std::any> para = {
+			std::vector<double> para = {
 				xoffset, yoffset
 			};
 
@@ -198,7 +203,7 @@ namespace GrEngine
 		{
 			AppParameters& data = *(AppParameters*)glfwGetWindowUserPointer(win);
 
-			std::vector<std::any> para = {
+			std::vector<double> para = {
 				xpos, ypos
 			};
 
@@ -208,7 +213,7 @@ namespace GrEngine
 		{
 			AppParameters& data = *(AppParameters*)glfwGetWindowUserPointer(win);
 
-			std::vector<std::any> para = {};
+			std::vector<double> para = {};
 
 			EventListener::registerEvent(EventType::WindowClosed, para);
 		});
