@@ -85,6 +85,8 @@ namespace SceneEditor
             app->gizmo->PositionObjectAt(tPos);
             app->gizmo->SetRotation(tOri);
         }
+
+        app->UpdateUI();
     }
 
     int SceneEditor::EntryPoint()
@@ -110,7 +112,7 @@ namespace SceneEditor
                     model_path += std::any_cast<char>(chr);
                 }
 
-                app->LoadFromGMF(app->GetSelectedEntityID(), model_path.c_str());
+                app->LoadFromGMF(app->transform_target->GetEntityID(), model_path.c_str());
             });
 
         EventListener::pushEvent(EventType::KeyPress, [](std::vector<double> para)

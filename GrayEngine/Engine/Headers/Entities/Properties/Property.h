@@ -4,12 +4,16 @@
 
 enum class PropertyType
 {
-	STRING = 0,
-	INT = 1,
-	VECTOR3 = 2,
-	QUAT = 3,
-	VECTOR4 = 4,
-	HIDDEN
+	EntityID = 100,
+	Mass = 101,
+	EntityName,
+	Scale,
+	EntityPosition,
+	EntityOrientation,
+	Color,
+	Drawable,
+	Cubemap,
+	Shader
 };
 
 struct EntityProperty
@@ -38,21 +42,9 @@ public:
 		return property_name;
 	}
 
-	const char* TypeString()
+	PropertyType& GetPropertyType()
 	{
-		switch (property_type)
-		{
-		case PropertyType::STRING:
-			return "string";
-		case PropertyType::VECTOR3:
-			return "vector3";
-		case PropertyType::QUAT:
-			return "quat";
-		case PropertyType::VECTOR4:
-			return "vector4";
-		default:
-			return "int";
-		}
+		return property_type;
 	}
 
 	const char* property_name;

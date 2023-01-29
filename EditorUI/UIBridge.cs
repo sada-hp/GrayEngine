@@ -10,15 +10,22 @@ namespace EditorUI
     public class UIBridge
     {
         public static Wrapper[] wrappers = new Wrapper[2];
+        public static Thread uThread;
 
         [DllExport]
         public static IntPtr CreateUserInterface(uint index)
         {
-            if (wrappers[0] == null)
-            {
-                wrappers[0] = new EditorWrapper();
-                wrappers[1] = new ModelBrowserWrapper();
-            }
+            uThread = new Thread(() => { 
+                if (wrappers[0] == null)
+                {
+                    wrappers[0] = new EditorWrapper();
+                    wrappers[1] = new ModelBrowserWrapper();
+                }
+                System.Windows.Threading.Dispatcher.Run();
+            });
+            uThread.SetApartmentState(ApartmentState.STA);
+            uThread.Start();
+            while (wrappers[1] == null && wrappers[0] == null) { };
 
             return wrappers[index].CreateWrapper();
         }
@@ -26,50 +33,36 @@ namespace EditorUI
         [DllExport]
         public static void DisplayUserInterface(uint index)
         {
-            wrappers[index].DisplayUserInterface();
+            wrappers[index].ui_window.Dispatcher.BeginInvoke((Action)(() =>
+            {
+                wrappers[index].DisplayUserInterface();
+            }));
         }
 
         [DllExport]
         public static void DestroyUserInterface(uint index)
         {
-            wrappers[index].DestroyWrapper();
+            wrappers[index].ui_window.Dispatcher.BeginInvoke((Action)(() =>
+            {
+                wrappers[index].DestroyWrapper();
+            }));
         }
 
         [DllExport]
         public static void ParentRenderer(IntPtr value, uint index)
         {
-            wrappers[index].ParentRenderer(value);
+            wrappers[index].ui_window.Dispatcher.BeginInvoke((Action)(() =>
+            {
+                wrappers[index].ParentRenderer(value);
+            }));
         }
 
         [DllExport]
         public static void UpdateChildPosition(uint index)
         {
-            wrappers[index].UpdateChildWnd();
-        }
-
-        [DllExport]
-        public static void UpdateLogger(IntPtr value)
-        {
-            var input = Marshal.PtrToStringAnsi(value);
-            try
+            wrappers[index].ui_window.Dispatcher.BeginInvoke((Action)(() =>
             {
-                ((MainView)wrappers[0].ui_window).PushIntoLogger(input);
-            }
-            catch // Can't Access to UI Thread , So Dispatching
-            {
-                wrappers[0].ui_window.Dispatcher.BeginInvoke((Action)(() =>
-                {
-                    ((MainView)wrappers[0].ui_window).PushIntoLogger(input);
-                }));
-            }
-        }
-
-        [DllExport]
-        public static void UpdateFrameCounter(double frames)
-        {
-            wrappers[0].ui_window.Dispatcher.BeginInvoke((Action)(() =>
-            {
-                ((MainView)wrappers[0].ui_window).UpdateFrameCounter(frames);
+                wrappers[index].UpdateChildWnd();
             }));
         }
 
@@ -95,24 +88,6 @@ namespace EditorUI
         }
 
         [DllExport]
-        public static void RetrieveEntityInfo(int id, IntPtr name, IntPtr value, IntPtr type)
-        {
-            wrappers[0].ui_window.Dispatcher.BeginInvoke((Action)(() =>
-            {
-                ((MainView)wrappers[0].ui_window).RetrieveEntityInfo(id, Marshal.PtrToStringAnsi(name), Marshal.PtrToStringAnsi(value), Marshal.PtrToStringAnsi(type));
-            }));
-        }
-
-        [DllExport]
-        public static void SetSelectedEntity(IntPtr id)
-        {
-            wrappers[0].ui_window.Dispatcher.BeginInvoke((Action)(() =>
-            {
-                ((MainView)wrappers[0].ui_window).SelectEntity((int)id);
-            }));
-        }
-
-        [DllExport]
         public static void RemoveEntity(IntPtr id)
         {
             wrappers[0].ui_window.Dispatcher.BeginInvoke((Action)(() =>
@@ -124,7 +99,19 @@ namespace EditorUI
         [DllExport]
         public static void SetInputMode(uint index, int allow)
         {
-            wrappers[index].IsInputAllowed(allow);
+            wrappers[index].ui_window.Dispatcher.BeginInvoke((Action)(() =>
+            {
+                wrappers[index].IsInputAllowed(allow);
+            }));
+        }
+
+        [DllExport]
+        public static void RecieveInfoChunk(int type, IntPtr name, IntPtr value)
+        {
+            wrappers[0].ui_window.Dispatcher.BeginInvoke((Action)(() =>
+            {
+                ((MainView)wrappers[0].ui_window).UpdateInfo(type, Marshal.PtrToStringAnsi(name), Marshal.PtrToStringAnsi(value));
+            }));
         }
     }
 }

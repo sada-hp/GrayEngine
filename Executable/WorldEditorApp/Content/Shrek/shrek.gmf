@@ -1,9 +1,0 @@
-mesh
-{
-   Content\Shrek\shrek.obj
-}
-textures
-{
-   Content\Shrek\ShrekHead_Col.png
-   Content\Shrek\ShrekBody_Col.png
-}

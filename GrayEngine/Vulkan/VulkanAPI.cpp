@@ -125,17 +125,17 @@ namespace GrEngine_Vulkan
 
 	void VulkanAPI::RenderFrame()
 	{
-		drawFrame(cur_mode, true);
+		drawFrame(cur_mode, swapChainExtent,true);
 	}
 
-	void VulkanAPI::drawFrame(DrawMode mode, bool Show)
+	void VulkanAPI::drawFrame(DrawMode mode, VkExtent2D extent, bool Show)
 	{
 		if (!Initialized) return;
 
 		currentImageIndex = 0;
 		vkAcquireNextImageKHR(logicalDevice, swapChain, UINT64_MAX, imageAvailableSemaphore, VK_NULL_HANDLE, &currentImageIndex);
 
-		if (!updateDrawables(currentImageIndex, mode))
+		if (!updateDrawables(currentImageIndex, mode, extent))
 			throw std::runtime_error("Logical device was lost!");
 
 		VkSubmitInfo submitInfo{};
@@ -183,7 +183,7 @@ namespace GrEngine_Vulkan
 	}
 	void VulkanAPI::SaveScreenshot(const char* filepath)
 	{
-		drawFrame(DrawMode::NORMAL, false);
+		drawFrame(DrawMode::NORMAL, swapChainExtent, false);
 
 		VkImage srcImage = swapChainImages[currentImageIndex];
 		VkImage dstImage;
@@ -291,17 +291,18 @@ namespace GrEngine_Vulkan
 
 	std::array<int, 3> VulkanAPI::getPixelColor(DrawMode mode)
 	{
-		drawFrame(mode, false);
 		VkExtent2D extent;
 
 		if (mode == DrawMode::IDS)
 		{
-			extent = { 250, 250 };
+			extent = { swapChainExtent.width/2, swapChainExtent.height/2 };
 		}
 		else
 		{
 			extent = { swapChainExtent.width, swapChainExtent.height };
 		}
+
+		drawFrame(mode, { extent }, false);
 
 		VkImage srcImage = swapChainImages[currentImageIndex];
 		VkImage dstImage;
@@ -375,7 +376,7 @@ namespace GrEngine_Vulkan
 		return { (int)r, (int)g, (int)b };
 	}
 
-	bool VulkanAPI::updateDrawables(uint32_t index, DrawMode mode)
+	bool VulkanAPI::updateDrawables(uint32_t index, DrawMode mode, VkExtent2D extent)
 	{
 		VkCommandBufferBeginInfo beginInfo{};
 		beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
@@ -393,54 +394,26 @@ namespace GrEngine_Vulkan
 		VkViewport viewport{};
 		VkRect2D scissor{};
 
-		if (mode != DrawMode::IDS)
-		{
-			renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
-			renderPassInfo.renderPass = renderPass;
-			renderPassInfo.framebuffer = swapChainFramebuffers[index];
-			renderPassInfo.renderArea.offset = { 0, 0 };
-			renderPassInfo.renderArea.extent = swapChainExtent;
-			renderPassInfo.clearValueCount = 2;
-			renderPassInfo.pClearValues = clearValues;
+		renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
+		renderPassInfo.renderPass = renderPass;
+		renderPassInfo.framebuffer = swapChainFramebuffers[index];
+		renderPassInfo.renderArea.offset = { 0, 0 };
+		renderPassInfo.renderArea.extent = extent;
+		renderPassInfo.clearValueCount = 2;
+		renderPassInfo.pClearValues = clearValues;
 
-			vkCmdBeginRenderPass(commandBuffers[index], &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
+		vkCmdBeginRenderPass(commandBuffers[index], &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
 
-			viewport.x = 0;
-			viewport.y = 0;
-			viewport.width = (float)swapChainExtent.width;
-			viewport.height = (float)swapChainExtent.height;
-			viewport.minDepth = 0.0f;
-			viewport.maxDepth = 1.0f;
-			vkCmdSetViewport(commandBuffers[index], 0, 1, &viewport);
-			scissor.offset = { 0, 0 };
-			scissor.extent = swapChainExtent;
-			vkCmdSetScissor(commandBuffers[index], 0, 1, &scissor);
-		}
-		else
-		{
-			renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
-			renderPassInfo.renderPass = renderPass;
-			renderPassInfo.framebuffer = swapChainFramebuffers[index];
-			renderPassInfo.renderArea.offset = { 0, 0 };
-			renderPassInfo.renderArea.extent = { 250, 250 };
-			renderPassInfo.clearValueCount = 2;
-			renderPassInfo.pClearValues = clearValues;
-
-			vkCmdBeginRenderPass(commandBuffers[index], &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
-
-			double xpos, ypos;
-			glfwGetCursorPos(pParentWindow, &xpos, &ypos);
-			viewport.x = 0;
-			viewport.y = 0;
-			viewport.width = 250;
-			viewport.height = 250;
-			viewport.minDepth = 0.0f;
-			viewport.maxDepth = 1.0f;
-			vkCmdSetViewport(commandBuffers[index], 0, 1, &viewport);
-			scissor.offset = { (int)(xpos * ((float)250 / swapChainExtent.width)), (int)(ypos * ((float)250 / swapChainExtent.height)) };
-			scissor.extent = { 1, 1 };
-			vkCmdSetScissor(commandBuffers[index], 0, 1, &scissor);
-		}
+		viewport.x = 0;
+		viewport.y = 0;
+		viewport.width = (float)extent.width;
+		viewport.height = (float)extent.height;
+		viewport.minDepth = 0.0f;
+		viewport.maxDepth = 1.0f;
+		vkCmdSetViewport(commandBuffers[index], 0, 1, &viewport);
+		scissor.offset = { 0, 0 };
+		scissor.extent = swapChainExtent;
+		vkCmdSetScissor(commandBuffers[index], 0, 1, &scissor);
 
 		for (std::map<UINT, GrEngine::Entity*>::iterator itt = entities.begin(); itt != entities.end(); ++itt)
 		{

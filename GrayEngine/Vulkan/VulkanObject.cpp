@@ -12,6 +12,7 @@ namespace GrEngine_Vulkan
 	void VulkanObject::initObject(VkDevice device, VmaAllocator allocator, GrEngine::Renderer* owner)
 	{
 		properties.push_back(new Shader("Shaders//default", this));
+		GrEngine::Engine::GetContext()->GetPhysics()->AddSimulationObject(this);
 
 		p_Owner = owner;
 		resources = &static_cast<VulkanAPI*>(owner)->GetResourceManager();
@@ -242,7 +243,7 @@ namespace GrEngine_Vulkan
 		}
 
 		colShape = new btBvhTriangleMeshShape(colMesh, false);
-		recalculatePhysics();
+		//recalculatePhysics();
 	}
 
 	bool VulkanObject::LoadModel(const char* model_path)
@@ -404,6 +405,6 @@ namespace GrEngine_Vulkan
 		object_mesh = resource->AddLink();
 		delete colShape;
 		colShape = new btBvhTriangleMeshShape(colMesh, false);
-		recalculatePhysics();
+		//recalculatePhysics();
 	}
 };

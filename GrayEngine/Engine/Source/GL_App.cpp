@@ -96,23 +96,18 @@ namespace GrEngine
 
 	void GL_APP::OnStep()
 	{
+		glfwPollEvents();
 		EventListener::pollEngineEvents();
 		ProccessInputs();
-		glfwPollEvents();
 		Engine::GetContext()->GetPhysics()->SimulateStep();
 		pAppRenderer->RenderFrame();
-		glfwSwapBuffers(window);
+		//glfwSwapBuffers(window);
 		double currentTime = glfwGetTime();
-		frames++;
 
-		if (currentTime - time > 0.5f)
-		{
-			Globals::delta_time = (currentTime - time) / frames;
-			std::vector<double> para{ 1 / Globals::delta_time, time };
-			EventListener::registerEvent(EventType::Step, para);
-			time = currentTime;
-			frames = 0;
-		}
+		Globals::delta_time = (currentTime - time);
+		std::vector<double> para{ 1 / Globals::delta_time, time };
+		EventListener::registerEvent(EventType::Step, para);
+		time = currentTime;
 	}
 
 

@@ -55,13 +55,11 @@ namespace GrEngine
 		DrawableObject()
 		{
 			Type = "Object";
-			recalculatePhysics();
 		};
 
 		DrawableObject(UINT id) : Entity(id)
 		{
 			Type = "Object";
-			recalculatePhysics();
 		};
 
 		virtual ~DrawableObject()
@@ -116,7 +114,6 @@ namespace GrEngine
 				if ((*itt)->property_name == std::string(property_name))
 				{
 					(*itt)->ParsePropertyValue(property_value);
-					recalculatePhysics();
 				}
 			}
 		}
@@ -157,49 +154,64 @@ namespace GrEngine
 			return res;
 		}
 
-		void recalculatePhysics()
+		void recalculatePhysics(bool enabled)
 		{
-			if (!CollisionEnabled) return;
-
-			float obj_mass = GetPropertyValue<float>("Mass", 0.f);
-
-			if (body != nullptr)
+			if (enabled)
 			{
-				Engine::GetContext()->GetPhysics()->RemoveObject(body);
-				delete body;
-				body = nullptr;
-				delete myMotionState;
-				myMotionState = nullptr;
+				if (!CollisionEnabled) return;
+
+				float obj_mass = GetPropertyValue<float>("Mass", 0.f);
+
+				if (body != nullptr)
+				{
+					Engine::GetContext()->GetPhysics()->RemovePhysicsObject(body);
+					delete body;
+					body = nullptr;
+					delete myMotionState;
+					myMotionState = nullptr;
+				}
+
+				btTransform startTransform;
+				glm::mat4 trans = GetObjectTransformation();
+				const float* pSource = (const float*)glm::value_ptr(trans);
+				startTransform.setFromOpenGLMatrix(pSource);
+				btVector3 localInertia{ 0,0,0 };
+
+				if (obj_mass != 0.f)
+					colShape->calculateLocalInertia(obj_mass, localInertia);
+
+				glm::vec3 scale = GetPropertyValue("Scale", glm::vec3(1.f));
+				colShape->setLocalScaling(btVector3(scale.x + 0.01f, scale.y + 0.01f, scale.z + 0.01f));
+
+				myMotionState = new btDefaultMotionState(startTransform);
+				btRigidBody::btRigidBodyConstructionInfo rbInfo(obj_mass, myMotionState, colShape, localInertia);
+				rbInfo.m_angularDamping = .2f;
+				rbInfo.m_linearDamping = .2f;
+				body = new btRigidBody(rbInfo);
+
+				Engine::GetContext()->GetPhysics()->AddPhysicsObject(body);
 			}
-
-			btTransform startTransform;
-			glm::mat4 trans = GetObjectTransformation();
-			const float* pSource = (const float*)glm::value_ptr(trans);
-			startTransform.setFromOpenGLMatrix(pSource);
-			btVector3 localInertia{ 0,0,0 };
-
-			if (obj_mass != 0.f)
-				colShape->calculateLocalInertia(obj_mass, localInertia);
-
-			glm::vec3 scale = GetPropertyValue("Scale", glm::vec3(1.f));
-			colShape->setLocalScaling(btVector3(scale.x + 0.1, scale.y + 0.1, scale.z + 0.1));
-
-			myMotionState = new btDefaultMotionState(startTransform);
-			btRigidBody::btRigidBodyConstructionInfo rbInfo(obj_mass, myMotionState, colShape, localInertia);
-			rbInfo.m_angularDamping = .2f;
-			rbInfo.m_linearDamping = .2f;
-			body = new btRigidBody(rbInfo);
-
-			Engine::GetContext()->GetPhysics()->AddSimulationObject(body);
+			else
+			{
+				if (body != nullptr)
+				{
+					Engine::GetContext()->GetPhysics()->RemovePhysicsObject(body);
+					delete body;
+					body = nullptr;
+					delete myMotionState;
+					myMotionState = nullptr;
+				}
+			}
 		};
 
 		void DisableCollisions()
 		{
 			CollisionEnabled = false;
+			ParsePropertyValue("Mass", "0");
 
 			if (body != nullptr)
 			{
-				Engine::GetContext()->GetPhysics()->RemoveObject(body);
+				Engine::GetContext()->GetPhysics()->RemovePhysicsObject(body);
 				delete body;
 				body = nullptr;
 				delete myMotionState;
@@ -216,6 +228,7 @@ namespace GrEngine
 
 		btCollisionShape* colShape = new btBoxShape(btVector3(0.25f, 0.25f, 0.25f));
 		btRigidBody* body;
+		btCollisionObject collision;
 		btDefaultMotionState* myMotionState;
 		btTriangleMesh* colMesh;
 		bool CollisionEnabled = true;

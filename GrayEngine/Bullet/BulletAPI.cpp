@@ -1,5 +1,6 @@
 #include "pch.h"
 #include "BulletAPI.h"
+#include "Entities/DrawableObject.h"
 
 namespace GrEngineBullet
 {
@@ -8,32 +9,47 @@ namespace GrEngineBullet
 		if (simulate)
 		{
 			dynamicsWorld->stepSimulation(GrEngine::Globals::delta_time, 10);
-			int numObjects = dynamicsWorld->getNumCollisionObjects();
-
-			for (int i = 0; i < numObjects; i++)
-			{
-				btCollisionObject* obj = dynamicsWorld->getCollisionObjectArray()[i];
-				btRigidBody* body = btRigidBody::upcast(obj);
-				btTransform trans;
-				if (body && body->getMotionState())
-				{
-					body->getMotionState()->getWorldTransform(trans);
-				}
-				else
-				{
-					trans = obj->getWorldTransform();
-				}
-			}
 		}
 	}
 
+	void BulletAPI::TogglePhysicsState(bool state)
+	{
+		simulate = state;
+
+		for (std::vector<void*>::iterator itt = objects.begin(); itt != objects.end(); ++itt)
+		{
+			GrEngine::DrawableObject* object = static_cast<GrEngine::DrawableObject*>(*itt);
+			object->recalculatePhysics(simulate);
+		}
+
+		if (simulate == false)
+			dynamicsWorld->getCollisionObjectArray().resize(0);
+	}
+
 	void BulletAPI::AddSimulationObject(void* object)
+	{
+		objects.push_back(object);
+	}
+
+	void BulletAPI::AddPhysicsObject(void* object)
 	{
 		dynamicsWorld->addRigidBody(static_cast<btRigidBody*>(object));
 	}
 
 	void BulletAPI::RemoveObject(void* object)
 	{
+		dynamicsWorld->removeCollisionObject(static_cast<btCollisionObject*>(object));
+	}
+
+	void BulletAPI::RemovePhysicsObject(void* object)
+	{
 		dynamicsWorld->removeRigidBody(static_cast<btRigidBody*>(object));
+	}
+
+	void BulletAPI::CleanUp()
+	{
+		simulate = false;
+		dynamicsWorld->getCollisionObjectArray().clear();
+		objects.resize(0);
 	}
 };

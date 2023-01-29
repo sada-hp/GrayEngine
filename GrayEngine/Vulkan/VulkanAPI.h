@@ -50,7 +50,6 @@ namespace GrEngine_Vulkan
 		bool init(void* window) override;
 		void destroy() override;
 		void RenderFrame() override;
-		void drawFrame(DrawMode mode, bool Show = true);
 		VkDevice logicalDevice;
 
 		inline VkExtent2D getExtent() { return swapChainExtent; };
@@ -88,7 +87,7 @@ namespace GrEngine_Vulkan
 		bool beginCommandBuffer(VkCommandBuffer cmd, VkCommandBufferUsageFlags usage);
 		bool freeCommandBuffer(VkCommandBuffer commandBuffer);
 		void SaveScreenshot(const char* filepath);
-		bool updateDrawables(uint32_t index, DrawMode mode);
+		bool updateDrawables(uint32_t index, DrawMode mode, VkExtent2D extent);
 		DrawMode cur_mode = DrawMode::NORMAL;
 	private:
 		VulkanResourceManager resources;
@@ -124,6 +123,7 @@ namespace GrEngine_Vulkan
 		uint32_t currentImageIndex = 0;
 
 		bool loadTexture(std::vector<std::string> texture_path, VulkanDrawable* target, VkImageViewType type_view = VK_IMAGE_VIEW_TYPE_2D, VkImageType type_img = VK_IMAGE_TYPE_2D);
+		void drawFrame(DrawMode mode, VkExtent2D extent, bool Show = true);
 
 		bool createVKInstance();
 		bool createMemoryAllocator();

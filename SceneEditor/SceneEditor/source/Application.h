@@ -6,6 +6,21 @@
 
 namespace GrEngine
 {
+    enum class ChunkType
+    {
+        FRAMES,
+        ENTITY_INFO,
+        SELECTION,
+        LOG
+    };
+
+    struct InfoChunk
+    {
+        ChunkType type;
+        std::string lParam;
+        std::string rParam;
+    };
+
     class Application : public Engine
     {
         EditorUI editorUI;
@@ -44,6 +59,14 @@ namespace GrEngine
             getEditorUI()->ShowScene();
             LoadTools();
             Run();
+        }
+
+        void LoadScene(const char* path) override
+        {
+            GetRenderer()->selectEntity(0);
+            static_cast<DrawableObject*>(gizmo)->SetVisisibility(false);
+            transform_target = nullptr;
+            Engine::LoadScene(path);
         }
 
         void App_SaveScene(const char* path)
@@ -112,7 +135,7 @@ namespace GrEngine
             }
             else
             {
-                getEditorUI()->SetSelectedEntity(id);
+                AddChunk(ChunkType::SELECTION, "", std::to_string(id));
                 transform_target = GetRenderer()->GetSelectedEntity();
 
                 if (transform_target != nullptr && transform_target != gizmo && transform_target != grid)
@@ -182,21 +205,6 @@ namespace GrEngine
             }
         }
 
-        void getEntityInfo(int ID)
-        {
-            auto ent = GetRenderer()->selectEntity(ID);
-            auto props = ent->GetProperties();
-            int numProps = props.size();
-
-            if (ent->GetEntityType() == "Object")
-            {
-                for (int i = 0; i < numProps; i++)
-                {
-                    getEditorUI()->SendEntityInfo(ID, (char*)props[i]->property_name, (char*)props[i]->ValueString(), (char*)props[i]->TypeString());
-                }
-            }
-        }
-
         void App_GetAllEntities()
         {
             auto ent_vec = GetRenderer()->GetEntitiesList();
@@ -215,30 +223,25 @@ namespace GrEngine
         void pushToAppLogger(char* message)
         {
             std::fstream log_file;
-
             log_file.open(log_path, std::fstream::out | std::ios::app);
-
             log_file << message;
-
             log_file.close();
+            AddChunk(ChunkType::LOG, "", message);
+        }
 
-            editorUI.UpdateLogger(message);
+        void getEntityInfo(int ID)
+        {
+            AddChunk(ChunkType::ENTITY_INFO, "", "", ID);
         }
 
         void App_UpdateUIProperty(const char* property_name)
         {
-            static auto time = std::chrono::steady_clock::now();
-            auto now = std::chrono::steady_clock::now();
-            if (std::chrono::duration_cast<std::chrono::milliseconds>(now - time).count() > 35.f)
-            {
-                getEditorUI()->SendEntityInfo(transform_target->GetEntityID(), (char*)property_name, (char*)transform_target->GetProperty(property_name)->ValueString(), (char*)transform_target->GetProperty(property_name)->TypeString());
-                time = now;
-            }
+            AddChunk(ChunkType::ENTITY_INFO, "", "", transform_target->GetEntityID());
         }
 
         void App_UpdateFrameCounter(float new_value)
         {
-            getEditorUI()->UpdateFramecounter(new_value);
+            AddChunk(ChunkType::FRAMES, "", Globals::FloatToString(new_value, 1), 1000);
         }
 
         void updateEntity(int ID, std::string selected_property, std::string value)
@@ -251,8 +254,17 @@ namespace GrEngine
         {
             Entity* selection = SelectEntity(ID);
             selection->AddNewProperty(property_name);
+            AddChunk(ChunkType::ENTITY_INFO, "", "", ID);
+        }
+
+        void UpdateUI()
+        {
+            SendUIInfo();
         }
     private:
+        std::unordered_map<int, InfoChunk> info_chunks;
+        std::unordered_map<int, InfoChunk> prev_chunk;
+        bool chunk_delivered = false;
 
         static void RunModelBrowser()
         {
@@ -287,6 +299,64 @@ namespace GrEngine
         void UnloadTools()
         {
             GetRenderer()->DeleteEntity(grid->GetEntityID());
+        }
+
+        void AddChunk(ChunkType type, std::string name, std::string value, int chunkID = -1)
+        {
+            InfoChunk chunk{};
+            chunk.type = type;
+            chunk.lParam = name;
+            chunk.rParam = value;
+
+            if (chunkID < 0)
+            {
+                info_chunks[info_chunks.size()] = chunk;
+            }
+            else
+            {
+                info_chunks[chunkID] = chunk;
+            }
+        }
+
+        void SendUIInfo()
+        {
+            static auto time = std::chrono::steady_clock::now();
+            auto now = std::chrono::steady_clock::now();
+            auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(now - time).count();
+
+            if (duration > 35.f)
+            {
+                prev_chunk = info_chunks;
+                for (std::unordered_map<int, InfoChunk>::iterator itt = prev_chunk.begin(); itt != prev_chunk.end(); ++itt)
+                {
+                    if ((*itt).second.type == ChunkType::ENTITY_INFO)
+                    {
+                        sendEntityInfo((*itt).first);
+                    }
+                    else
+                    {
+                        getEditorUI()->SendInfoChunk((int)(*itt).second.type, (char*)((*itt).second.lParam.c_str()), (char*)((*itt).second.rParam.c_str()));
+                    }
+                }
+
+                time = now;
+                info_chunks.clear();
+            }
+        }
+
+        void sendEntityInfo(int ID)
+        {
+            auto ent = GetRenderer()->selectEntity(ID);
+            auto props = ent->GetProperties();
+            int numProps = props.size();
+
+            if (ent->GetEntityType() == "Object")
+            {
+                for (int i = 0; i < numProps; i++)
+                {
+                    getEditorUI()->SendInfoChunk((int)ChunkType::ENTITY_INFO, (char*)props[i]->property_name, (char*)props[i]->ValueString());
+                }
+            }
         }
     };
 }

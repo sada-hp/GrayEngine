@@ -35,6 +35,7 @@ namespace GrEngine
 
 	void Engine::Stop()
 	{
+		physEngine->CleanUp();
 		glfwSetWindowShouldClose(pWindow.get()->getWindow(), true);
 	}
 
@@ -65,6 +66,7 @@ namespace GrEngine
 
 	void Engine::clearScene()
 	{
+		physEngine->CleanUp();
 		pWindow->getRenderer()->clearDrawables();
 	}
 
@@ -129,7 +131,8 @@ namespace GrEngine
 		auto start = std::chrono::steady_clock::now();
 
 		Pause();
-		physEngine->TogglePhysicsState(false);
+		TogglePhysicsState(false);
+		physEngine->CleanUp();
 		GetContext()->GetRenderer()->LoadScene(path);
 		Unpause();
 

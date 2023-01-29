@@ -28,23 +28,14 @@ public:
 	typedef void(*DestroyUserInterfaceFunc)(UINT);
 	DestroyUserInterfaceFunc DestroyUserInterface;
 
-	typedef void(*UpdateLoggerFunc)(char*);
-	UpdateLoggerFunc UpdateLogger;
-
-	typedef void(*UpdateFramecounterFunc)(double);
-	UpdateFramecounterFunc UpdateFramecounter;
-
 	typedef void(*UpdateMaterialsFunc)(char*, char*, int);
 	UpdateMaterialsFunc UpdateMaterials;
 
 	typedef void(*UpdateEntityFunc)(int, char*);
 	UpdateEntityFunc UpdateEntity;
 
-	typedef void(*RetrieveInfoFunc)(int, char*, char*, char*);
-	RetrieveInfoFunc SendEntityInfo;
-
-	typedef void(*SelectEntityFunc)(int);
-	SelectEntityFunc SetSelectedEntity;
+	typedef void(*SendInfoChunkCall)(int, char*, char*);
+	SendInfoChunkCall SendInfoChunk;
 
 	typedef void(*RemoveEntityFunc)(int);
 	RemoveEntityFunc RemoveEntity;
@@ -63,13 +54,10 @@ public:
 		DisplayUserInterface = (DisplayUserInterfaceFunc)GetProcAddress(dotNetGUILibrary, "DisplayUserInterface");
 		DestroyUserInterface = (DestroyUserInterfaceFunc)GetProcAddress(dotNetGUILibrary, "DestroyUserInterface");
 		ParentRenderer = (GetRendererViewportFunc)GetProcAddress(dotNetGUILibrary, "ParentRenderer");
-		UpdateLogger = (UpdateLoggerFunc)GetProcAddress(dotNetGUILibrary, "UpdateLogger");
 		SetViewportPosition = (SetChildPositionFunc)GetProcAddress(dotNetGUILibrary, "UpdateChildPosition");
-		UpdateFramecounter = (UpdateFramecounterFunc)GetProcAddress(dotNetGUILibrary, "UpdateFrameCounter");
 		UpdateMaterials = (UpdateMaterialsFunc)GetProcAddress(dotNetGUILibrary, "PassMaterialString");
 		UpdateEntity = (UpdateEntityFunc)GetProcAddress(dotNetGUILibrary, "UpdateEntity");
-		SendEntityInfo = (RetrieveInfoFunc)GetProcAddress(dotNetGUILibrary, "RetrieveEntityInfo");
-		SetSelectedEntity = (SelectEntityFunc)GetProcAddress(dotNetGUILibrary, "SetSelectedEntity");
+		SendInfoChunk = (SendInfoChunkCall)GetProcAddress(dotNetGUILibrary, "RecieveInfoChunk");
 		RemoveEntity = (RemoveEntityFunc)GetProcAddress(dotNetGUILibrary, "RemoveEntity");
 		SetInputMode = (SetInputModeFunc)GetProcAddress(dotNetGUILibrary, "SetInputMode");
 	};
@@ -81,15 +69,17 @@ public:
 
 	bool InitUI(UINT viewport_index)
 	{
-		//CoInitializeEx(NULL, COINIT_APARTMENTTHREADED);
-		wpf_hwnd = CreateUserInterface(viewport_index);
-		if (wpf_hwnd != nullptr)
+		if (CoInitializeEx(NULL, COINIT_APARTMENTTHREADED) == 0)
 		{
-			DisplayUserInterface(viewport_index);
-			//SetActiveWindow(wpf_hwnd);
+			wpf_hwnd = CreateUserInterface(viewport_index);
+			if (wpf_hwnd != nullptr)
+			{
+				DisplayUserInterface(viewport_index);
+				return true;
+			}
 		}
 
-		return true;
+		return false;
 	}
 
 	bool destroyUI(UINT viewport_index)

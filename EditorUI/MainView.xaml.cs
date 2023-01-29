@@ -12,6 +12,14 @@ using System.Collections.ObjectModel;
 
 namespace EditorUI
 {
+    enum InfoChunks
+    {
+        FRAMES = 0,
+        ENTITY_INFO = 1,
+        SELECTION = 2,
+        LOG
+    }
+
     struct EntityProps
     {
         public uint ID;
@@ -70,12 +78,12 @@ namespace EditorUI
         [DllImport("user32.dll")]
         static extern bool SetWindowPos(IntPtr hWnd, IntPtr hWndInsertAfter, int X, int Y, int cx, int cy, uint uFlags);
 
+        int selectinon_id;
         public Form viewport = new Form();
         IntPtr child_hwnd;
         System.Windows.Forms.Panel panel = new System.Windows.Forms.Panel();
         ObservableCollection<object> entities = new ObservableCollection<object>();
         ObservableCollection<PropertyItem> ent_props = new ObservableCollection<PropertyItem>();
-        System.Windows.Controls.ListBoxItem SelectedEntity = new System.Windows.Controls.ListBoxItem();
 
         public MainView()
         {
@@ -129,9 +137,9 @@ namespace EditorUI
             }
         }
 
-        internal void UpdateFrameCounter(double frames)
+        internal void UpdateFrameCounter(string frames)
         {
-            FrameBlock.Text = "FPS : " + frames.ToString("0.0");
+            FrameBlock.Text = "FPS : " + frames;
         }
 
         private void EntityButton_Click(object sender, RoutedEventArgs e)
@@ -161,10 +169,10 @@ namespace EditorUI
             foreach (var pair in properties)
             {
                 PropertyItem item = ent_props.Where(x => x.PropertyName == pair.Key).FirstOrDefault();
-                var control = Activator.CreateInstance(types[pair.Key]);
 
                 if (item == null)
                 {
+                    var control = Activator.CreateInstance(types[pair.Key]);
                     item = new PropertyItem();
                     item.PropertyName = pair.Key;
                     item.ID = id;
@@ -258,7 +266,26 @@ namespace EditorUI
             UpdateEntityProperty(((PropertyControl)sender).ID, Marshal.StringToHGlobalAnsi("Mass"), Marshal.StringToHGlobalAnsi(((PropertyControl)sender).Contents));
         }
 
-        internal void RetrieveEntityInfo(int id, string name, string value, string type)
+        internal void UpdateInfo(int type, string lp, string rp)
+        {
+            switch (type)
+            {
+                case (int)InfoChunks.FRAMES:
+                    UpdateFrameCounter(rp);
+                    break;
+                case (int)InfoChunks.SELECTION:
+                    SelectEntity(Convert.ToInt32(rp));
+                    break;
+                case (int)InfoChunks.ENTITY_INFO:
+                    RetrieveEntityInfo(lp, rp);
+                    break;
+                case (int)InfoChunks.LOG:
+                    PushIntoLogger(rp);
+                    break;
+            }
+        }
+
+        internal void RetrieveEntityInfo(string name, string value)
         {
             try
             {
@@ -269,7 +296,7 @@ namespace EditorUI
 
                 properties.Add(name, value);
 
-                if (type == "vector3" || type == "quat")
+                if (name == "EntityPosition" || name == "EntityOrientation")
                 {
                     types.Add(name, typeof(_3VectorControl));
                     events.Add(name, "VectorPropertyChanged");
@@ -296,7 +323,7 @@ namespace EditorUI
 
                 handlers.Add(name, name + "_callback");
 
-                UpdateProperties(id, properties, types, events, handlers);
+                UpdateProperties(selectinon_id, properties, types, events, handlers);
             }
             catch (Exception e)
             {
@@ -311,7 +338,8 @@ namespace EditorUI
                 if (e.AddedItems.Count > 0)
                 {
                     ent_props.Clear();
-                    GetEntityInfo((IntPtr)(e.AddedItems[0] as EntityItem).ID);
+                    selectinon_id = (e.AddedItems[0] as EntityItem).ID;
+                    GetEntityInfo((IntPtr)selectinon_id);
                 }
             }
             catch (Exception ee)
@@ -325,6 +353,7 @@ namespace EditorUI
             if (ID == 0)
             {
                 EntitiesList.SelectedItem = null;
+                selectinon_id = 0;
                 ent_props.Clear();
             }
             
@@ -332,7 +361,9 @@ namespace EditorUI
             {
                 if ((EntitiesList.Items.GetItemAt(i) as EntityItem).ID == ID)
                 {
+                    selectinon_id = ID;
                     EntitiesList.SelectedItem = EntitiesList.Items.GetItemAt(i);
+
                     return;
                 }
             }
@@ -385,7 +416,6 @@ namespace EditorUI
             {
                 AddNewEntityProperty((EntitiesList.SelectedItem as EntityItem).ID, Marshal.StringToHGlobalAnsi((sender as System.Windows.Controls.Control).Name));
                 ent_props.Clear();
-                GetEntityInfo((IntPtr)((EntitiesList.SelectedItem as EntityItem).ID));
                 ExtraProps.IsSubmenuOpen = false;
             }
             catch (Exception ee)

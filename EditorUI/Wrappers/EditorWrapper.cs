@@ -10,20 +10,10 @@ namespace EditorUI.Wrappers
     {
         public override IntPtr CreateWrapper()
         {
-            ui_thread = new Thread(() =>
-            {
-                if (ui_handle == IntPtr.Zero)
-                {
-                    (ui_window = new MainView()
-                    { Opacity = 0, Width = 1280, Height = 720 }).Show();
-                    ui_handle = new WindowInteropHelper(ui_window).Handle;
-                }
-                System.Windows.Threading.Dispatcher.Run();
-            }); 
-            ui_thread.SetApartmentState(ApartmentState.STA); // STA Thread Initialization
-            ui_thread.Start();
+            (ui_window = new MainView()
+            { Opacity = 0, Width = 1280, Height = 720 }).Show();
+            ui_handle = new WindowInteropHelper(ui_window).Handle;
 
-            while (ui_handle == IntPtr.Zero) { }
             return ui_handle;
         }
     }

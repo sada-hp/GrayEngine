@@ -10,7 +10,7 @@ EntityID::EntityID(UINT id, void* parent)
 {
 	property_value = id;
 	property_name = "EntityID";
-	property_type = PropertyType::INT;
+	property_type = PropertyType::EntityID;
 	string_value = std::to_string(id);
 	owner = parent;
 }
@@ -58,7 +58,7 @@ Mass::Mass(float mass, void* parent)
 {
 	property_value = mass;
 	property_name = "Mass";
-	property_type = PropertyType::INT;
+	property_type = PropertyType::Mass;
 	string_value = std::to_string(mass);
 	owner = parent;
 }
@@ -100,7 +100,7 @@ EntityName::EntityName(const char* name, void* parent)
 {
 	property_value = std::string(name);
 	property_name = "EntityName";
-	property_type = PropertyType::STRING;
+	property_type = PropertyType::EntityName;
 	owner = parent;
 }
 
@@ -140,7 +140,7 @@ Scale::Scale(float x, float y, float z, void* parent)
 {
 	property_value = { x, y, z };
 	property_name = "Scale";
-	property_type = PropertyType::VECTOR3;
+	property_type = PropertyType::Scale;
 	owner = parent;
 }
 
@@ -190,7 +190,7 @@ EntityPosition::EntityPosition(float x, float y, float z, void* parent)
 {
 	property_value = { x, y, z };
 	property_name = "EntityPosition";
-	property_type = PropertyType::VECTOR3;
+	property_type = PropertyType::EntityPosition;
 	owner = parent;
 }
 
@@ -256,7 +256,7 @@ EntityOrientation::EntityOrientation(const float& pitch, const float& yaw, const
 	property_value = glm::normalize(qPitch * qYaw * qRoll);
 	pitch_yaw_roll = { pitch, yaw, roll };
 	property_name = "EntityOrientation";
-	property_type = PropertyType::QUAT;
+	property_type = PropertyType::EntityOrientation;
 	owner = parent;
 }
 
@@ -310,7 +310,7 @@ Color::Color(void* parent)
 {
 	property_value = glm::vec4(1.f, 1.f, 1.f, 1.f);
 	property_name = "Color";
-	property_type = PropertyType::VECTOR4;
+	property_type = PropertyType::Color;
 	owner = parent;
 }
 
@@ -318,7 +318,7 @@ Color::Color(const float& r, const float& g, const float& b, const float& a, voi
 {
 	property_value = glm::vec4(r, g, b, a);
 	property_name = "Color";
-	property_type = PropertyType::VECTOR4;
+	property_type = PropertyType::Color;
 	owner = parent;
 }
 
@@ -326,7 +326,7 @@ Color::Color(const float& r, const float& g, const float& b, void* parent)
 {
 	property_value = glm::vec4(r, g, b, 1.f);
 	property_name = "Color";
-	property_type = PropertyType::VECTOR4;
+	property_type = PropertyType::Color;
 	owner = parent;
 }
 
@@ -382,7 +382,7 @@ void* Color::GetValueAdress()
 Drawable::Drawable(const char* path, void* parent)
 {
 	property_name = "Drawable";
-	property_type = PropertyType::STRING;
+	property_type = PropertyType::Drawable;
 	owner = parent;
 }
 
@@ -425,7 +425,7 @@ CubemapProperty::CubemapProperty(std::array<std::string, 6> textures, void* pare
 {
 	property_name = "CubemapProperty";
 	property_value = textures;
-	property_type = PropertyType::HIDDEN;
+	property_type = PropertyType::Cubemap;
 	owner = parent;
 }
 
@@ -480,7 +480,7 @@ Shader::Shader(const char* path, void* parent)
 {
 	property_name = "Shader";
 	property_value = path;
-	property_type = PropertyType::STRING;
+	property_type = PropertyType::Shader;
 	owner = parent;
 }
 
