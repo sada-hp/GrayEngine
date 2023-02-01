@@ -22,7 +22,7 @@ namespace GrEngine_Vulkan
 			std::map<UINT, GrEngine::Entity*>::iterator pos = entities.begin();
 			dynamic_cast<VulkanDrawable*>((*pos).second)->destroyObject();
 			delete (*pos).second;
-			entities.erase((*pos).first);
+			entities.erase(pos);
 		}
 
 		resources.Clean(logicalDevice, memAllocator);
@@ -125,7 +125,7 @@ namespace GrEngine_Vulkan
 
 	void VulkanAPI::RenderFrame()
 	{
-		drawFrame(cur_mode, swapChainExtent,true);
+		drawFrame(cur_mode, swapChainExtent, true);
 	}
 
 	void VulkanAPI::drawFrame(DrawMode mode, VkExtent2D extent, bool Show)
@@ -1022,8 +1022,10 @@ namespace GrEngine_Vulkan
 		{
 			vkDestroyFramebuffer(logicalDevice, swapChainFramebuffers[i], nullptr);
 		}
+		swapChainFramebuffers.resize(0);
 
 		vkFreeCommandBuffers(logicalDevice, commandPool, static_cast<uint32_t>(commandBuffers.size()), commandBuffers.data());
+		commandBuffers.resize(0);
 
 		vkDestroyRenderPass(logicalDevice, renderPass, nullptr);
 
@@ -1031,6 +1033,7 @@ namespace GrEngine_Vulkan
 		{
 			vkDestroyImageView(logicalDevice, swapChainImageViews[i], nullptr);
 		}
+		swapChainImageViews.resize(0);
 
 		if (colorImageView != nullptr)
 		{
@@ -1048,8 +1051,6 @@ namespace GrEngine_Vulkan
 
 		depthImageView = nullptr;
 		swapChain = nullptr;
-		swapChainImageViews.clear();
-		commandBuffers.clear();
 	}
 
 	void VulkanAPI::clearDrawables()
@@ -1090,7 +1091,7 @@ namespace GrEngine_Vulkan
 	bool VulkanAPI::loadModel(UINT id, const char* model_path) 
 	{
 		Initialized = false;
-		VulkanObject* ref_obj = dynamic_cast<VulkanObject*>(entities[id]);
+		VulkanObject* ref_obj = static_cast<VulkanObject*>(entities[id]);
 
 		if (ref_obj->HasProperty("Drawable"))
 		{
@@ -1541,6 +1542,7 @@ namespace GrEngine_Vulkan
 			//vmaUnmapMemory(allocator, shader->Allocation);
 			vmaFreeMemory(allocator, shader->Allocation);
 			vmaFlushAllocation(allocator, shader->Allocation, 0, shader->MappedMemoryRange.size);
+			shader->pData = nullptr;
 			//vkFlushMappedMemoryRanges(device, 1, &(shader->MappedMemoryRange));
 		}
 
@@ -1631,7 +1633,7 @@ namespace GrEngine_Vulkan
 	{
 		selected_entity = ID;
 		std::vector<double> para = { (double)selected_entity };
-		EventListener::registerEvent(EventType::SelectionChanged, para);
+		listener->registerEvent(EventType::SelectionChanged, para);
 
 		if (entities.contains(ID))
 		{

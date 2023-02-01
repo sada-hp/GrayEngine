@@ -19,6 +19,7 @@ namespace GrEngine
         ~ModelBrowser()
         {
             getEditorUI()->destroyUI(VIEWPORT_MODEL_BROWSER);
+            dummy_entity = nullptr;
         }
 
         void init(ModelBrowser* instance)
@@ -29,7 +30,7 @@ namespace GrEngine
             SelectEntity(dummy_entity->GetEntityID());
             AddInputCallback(Inputs);
 
-            EventListener::pushEvent("RequireMaterialsUpdate", [](std::vector<std::any> para)
+            GetEventListener()->pushEvent("RequireMaterialsUpdate", [](std::vector<std::any> para)
                 {
                     if (para.size() > 1)
                     {
@@ -89,7 +90,12 @@ namespace GrEngine
 
         void initModelBrowser()
         {
-            getEditorUI()->InitUI(VIEWPORT_MODEL_BROWSER);
+
+            if (!getEditorUI()->InitUI(VIEWPORT_MODEL_BROWSER))
+            {
+                Stop();
+                return;
+            }
             getEditorUI()->SetViewportHWND(getViewportHWND(), 1);
         }
     };

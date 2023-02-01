@@ -91,5 +91,8 @@ namespace GrEngine_Vulkan
 			VulkanAPI::m_destroyTexture(device, allocator, (*itt)->PopResource());
 			delete (*itt);
 		}
+
+		meshResources.clear();
+		texResources.clear();
 	}
 }

@@ -27,6 +27,7 @@ namespace GrEngine
 
 		props = Properties;
 		props.p_Renderer = pAppRenderer;
+		props.p_Renderer->listener = props.eventListener;
 
 		auto res = glfwInit();
 
@@ -97,7 +98,7 @@ namespace GrEngine
 	void GL_APP::OnStep()
 	{
 		glfwPollEvents();
-		EventListener::pollEngineEvents();
+		props.eventListener->pollEngineEvents();
 		ProccessInputs();
 		Engine::GetContext()->GetPhysics()->SimulateStep();
 		pAppRenderer->RenderFrame();
@@ -106,7 +107,7 @@ namespace GrEngine
 
 		Globals::delta_time = (currentTime - time);
 		std::vector<double> para{ 1 / Globals::delta_time, time };
-		EventListener::registerEvent(EventType::Step, para);
+		props.eventListener->registerEvent(EventType::Step, para);
 		time = currentTime;
 	}
 
@@ -149,7 +150,7 @@ namespace GrEngine
 				(double)width, (double)height
 			};
 
-			EventListener::registerEvent(EventType::WindowResize, para);
+			data.eventListener->registerEvent(EventType::WindowResize, para);
 
 			if (data.p_Renderer != nullptr)
 			{
@@ -172,7 +173,7 @@ namespace GrEngine
 
 			glfwFocusWindow(win);
 
-			EventListener::registerEvent(EventType::MouseClick, para);
+			data.eventListener->registerEvent(EventType::MouseClick, para);
 		});
 		glfwSetKeyCallback(target, [](GLFWwindow* win, int key, int scancode, int action, int mods)
 		{
@@ -182,7 +183,7 @@ namespace GrEngine
 				(double)key, (double)scancode, (double)action, (double)mods
 			};
 
-			EventListener::registerEvent(EventType::KeyPress, para);
+			data.eventListener->registerEvent(EventType::KeyPress, para);
 		});
 		glfwSetScrollCallback(target, [](GLFWwindow* win, double xoffset, double yoffset)
 		{
@@ -192,7 +193,7 @@ namespace GrEngine
 				xoffset, yoffset
 			};
 
-			EventListener::registerEvent(EventType::Scroll, para);
+			data.eventListener->registerEvent(EventType::Scroll, para);
 		});
 		glfwSetCursorPosCallback(target, [](GLFWwindow* win, double xpos, double ypos)
 		{
@@ -202,7 +203,7 @@ namespace GrEngine
 				xpos, ypos
 			};
 
-			EventListener::registerEvent(EventType::MouseMove, para);
+			data.eventListener->registerEvent(EventType::MouseMove, para);
 		});
 		glfwSetWindowCloseCallback(target, [](GLFWwindow* win)
 		{
@@ -210,7 +211,7 @@ namespace GrEngine
 
 			std::vector<double> para = {};
 
-			EventListener::registerEvent(EventType::WindowClosed, para);
+			data.eventListener->registerEvent(EventType::WindowClosed, para);
 		});
 	}
 }

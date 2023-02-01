@@ -1,6 +1,7 @@
 #pragma once
 #include <pch.h>
 #include "Engine.h"
+#include "GL_APP.h"
 
 namespace GrEngine
 {
@@ -14,29 +15,39 @@ namespace GrEngine
 		}
 
 		physEngine = new GrEngineBullet::BulletAPI();
-		pWindow = std::unique_ptr<AppWindow>(AppWindow::Init(Properties));
+		AppParameters param = Properties;
+		param.eventListener = &eventListener;
+		pWindow = new GL_APP(param);
 	}
 
 	Engine::~Engine()
 	{
+		delete pWindow;
+		delete physEngine;
 
+		if (context == this)
+		{
+			context = nullptr;
+		}
 	}
 
 	void Engine::Run()
 	{
-		while (!glfwWindowShouldClose(pWindow.get()->getWindow()))
+		while (!glfwWindowShouldClose(pWindow->getWindow()))
 		{
 			if (!isPaused)
 				pWindow->OnStep();
 		}
 
-		pWindow->~AppWindow();
+		physEngine->CleanUp();
 	}
 
 	void Engine::Stop()
 	{
-		physEngine->CleanUp();
-		glfwSetWindowShouldClose(pWindow.get()->getWindow(), true);
+		eventListener.clearEventQueue();
+		eventListener.setEventsPermissions(false, false);
+
+		glfwSetWindowShouldClose(pWindow->getWindow(), true);
 	}
 
 	bool Engine::LoadObject(UINT id, const char* mesh_path, std::vector<std::string> textures_vector)

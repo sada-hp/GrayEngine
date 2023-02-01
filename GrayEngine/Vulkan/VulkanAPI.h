@@ -19,8 +19,6 @@ namespace GrEngine_Vulkan
 	const bool enableValidationLayers = true;
 #endif
 
-	typedef void (*ImageReadCallback)(VkDeviceMemory, VkSubresourceLayout);
-
 	struct QueueFamilyIndices
 	{
 		std::optional<uint32_t> graphicsFamily;

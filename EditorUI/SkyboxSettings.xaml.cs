@@ -32,7 +32,7 @@ namespace EditorUI
             Preview_West.UpdateLayout();
             Preview_Top.UpdateLayout();
             Preview_Bottom.UpdateLayout();
-            MainView.UpdateSkybox(Marshal.StringToHGlobalAnsi(East.ToolTip.ToString()),
+            UIBridge.UpdateSkybox(Marshal.StringToHGlobalAnsi(East.ToolTip.ToString()),
                 Marshal.StringToHGlobalAnsi(West.ToolTip.ToString()),
                 Marshal.StringToHGlobalAnsi(Top.ToolTip.ToString()),
                 Marshal.StringToHGlobalAnsi(Bottom.ToolTip.ToString()),

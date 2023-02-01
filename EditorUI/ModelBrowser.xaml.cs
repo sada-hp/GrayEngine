@@ -15,27 +15,6 @@ namespace EditorUI
 {
     public partial class ModelBrowser : Window, EditorWindow
     {
-        [DllImport("SceneEditor.dll", CallingConvention = CallingConvention.Cdecl)]
-        public static extern void LogMessage(IntPtr msg);
-        [DllImport("user32.dll")]
-        public static extern int SendMessage(IntPtr hWnd, int wMsg, IntPtr wParam, IntPtr lParam);
-        [DllImport("user32.dll")]
-        static extern IntPtr SetParent(IntPtr hWndChild, IntPtr hWndNewParent);
-        [DllImport("user32.dll")]
-        static extern bool SetWindowPos(IntPtr hWnd, IntPtr hWndInsertAfter, int X, int Y, int cx, int cy, uint uFlags);
-        [DllImport("SceneEditor.dll", CallingConvention = CallingConvention.Cdecl)]
-        static extern void LoadModelFile(IntPtr mesh_path);
-        [DllImport("SceneEditor.dll", CallingConvention = CallingConvention.Cdecl)]
-        static extern void AssignTextures(IntPtr image_path);
-        [DllImport("SceneEditor.dll", CallingConvention = CallingConvention.Cdecl)]
-        static extern void LoadObject(IntPtr mesh_path, IntPtr tex_path);
-        [DllImport("SceneEditor.dll", CallingConvention = CallingConvention.Cdecl)]
-        static extern void AddToTheScene(IntPtr mesh_path);
-        [DllImport("SceneEditor.dll", CallingConvention = CallingConvention.Cdecl)]
-        static extern void CreateModelFile(IntPtr mesh_path, IntPtr textures);
-        [DllImport("SceneEditor.dll", CallingConvention = CallingConvention.Cdecl)]
-        static extern void CloseContext();
-
         IntPtr child_hwnd;
         bool b_fullpath = false;
         string loaded_mesh = "";
@@ -67,7 +46,7 @@ namespace EditorUI
         public void ParentRender(IntPtr child)
         {
             child_hwnd = child;
-            SetParent(child, panel.Handle);
+            UIBridge.SetParent(child, panel.Handle);
             UpdateChildPosition();
         }
 
@@ -121,6 +100,7 @@ namespace EditorUI
                             }
                         }
                         file.Close();
+                        file.Dispose();
 
                         BrowserItem item;
                         string[] name_cut = model_file.Split('\\');
@@ -150,8 +130,8 @@ namespace EditorUI
             }
             catch (Exception e)
             {
-                LogMessage(Marshal.StringToHGlobalAnsi("Exception occured in " + new StackFrame(1, true).GetMethod().Name + ": " + e.Message));
-                CloseContext();
+                UIBridge.LogMessage(Marshal.StringToHGlobalAnsi("Exception occured in " + new StackFrame(1, true).GetMethod().Name + ": " + e.Message));
+                UIBridge.CloseContext();
             }
         }
 
@@ -165,6 +145,10 @@ namespace EditorUI
             if (Browser.Items.Count > 0)
             {
                 Browser.SelectedIndex = -1;
+                foreach (BrowserItem item in Browser.Items)
+                {
+                    item.MouseDoubleClick -= BrowserItem_DoubleClick;
+                }
                 Browser.Items.Clear();
                 LoadedAssets.Clear();
                 return;
@@ -175,13 +159,21 @@ namespace EditorUI
         {
             if (child_hwnd != null)
             {
-                SetWindowPos(child_hwnd, IntPtr.Zero, 0, 0, panel.Width, panel.Height, 0);
+                UIBridge.SetWindowPos(child_hwnd, IntPtr.Zero, 0, 0, panel.Width, panel.Height, 0);
             }
         }
 
         private void MdlBrowser_Closing(object sender, System.ComponentModel.CancelEventArgs e)
         {
-            CloseContext();
+            child_hwnd = IntPtr.Zero;
+
+            ClearBrowser();
+            UIBridge.CloseContext();
+            LoadedAssets.Clear();
+            Materials.Clear();
+            IdBox.TextInput -= IdBox_TextInput;
+
+            GC.Collect();
         }
 
         private void BtnLoadMdl_Click(object sender, RoutedEventArgs e)
@@ -200,7 +192,7 @@ namespace EditorUI
                 default_name = openFileDialog.SafeFileName.Split('.')[0];
                 IdBox.Text = default_name;
 
-                LoadObject(Marshal.StringToHGlobalAnsi(openFileDialog.FileName), Marshal.StringToHGlobalAnsi(missing_texture + '|'));
+                UIBridge.LoadObject(Marshal.StringToHGlobalAnsi(openFileDialog.FileName), Marshal.StringToHGlobalAnsi(missing_texture + '|'));
             }
 
             GC.Collect();
@@ -224,7 +216,7 @@ namespace EditorUI
                 ((MaterialInput)sender).MaterialPath.Text = openFileDialog.FileName;
                 ((MaterialInput)sender).MaterialPath.ToolTip = openFileDialog.FileName;
 
-                AssignTextures(Marshal.StringToHGlobalAnsi(GetTexturesString()));
+                UIBridge.AssignTextures(Marshal.StringToHGlobalAnsi(GetTexturesString()));
             }
 
             GC.Collect();
@@ -272,7 +264,7 @@ namespace EditorUI
                 }
             }
             if (redraw == 1)
-                AssignTextures(Marshal.StringToHGlobalAnsi(GetTexturesString()));
+                UIBridge.AssignTextures(Marshal.StringToHGlobalAnsi(GetTexturesString()));
 
             GC.Collect();
         }
@@ -296,7 +288,7 @@ namespace EditorUI
                 material_string += texture.Remove(0, distr_location.Length + 1) + "|";
             }
 
-            CreateModelFile(Marshal.StringToHGlobalAnsi(loaded_mesh.Substring(0, loaded_mesh.LastIndexOf('\\')) + '\\' + IdBox.Text + ".gmf" + "|" + loaded_mesh.Remove(0, distr_location.Length + 1)), Marshal.StringToHGlobalAnsi(material_string));
+            UIBridge.CreateModelFile(Marshal.StringToHGlobalAnsi(loaded_mesh.Substring(0, loaded_mesh.LastIndexOf('\\')) + '\\' + IdBox.Text + ".gmf" + "|" + loaded_mesh.Remove(0, distr_location.Length + 1)), Marshal.StringToHGlobalAnsi(material_string));
             LoadData();
         }
 
@@ -310,13 +302,13 @@ namespace EditorUI
                 loaded_mesh = ((BrowserItem)Browser.SelectedItem).ToolTip.ToString();
                 MeshPath.Text = ((BrowserItem)Browser.SelectedItem).mesh_path;
                 MeshPath.ToolTip = ((BrowserItem)Browser.SelectedItem).mesh_path;
-                LoadModelFile(Marshal.StringToHGlobalAnsi(((BrowserItem)Browser.SelectedItem).ToolTip.ToString()));
+                UIBridge.LoadModelFile(Marshal.StringToHGlobalAnsi(((BrowserItem)Browser.SelectedItem).ToolTip.ToString()));
                 GC.Collect();
             }
             catch (Exception exc)
             {
-                LogMessage(Marshal.StringToHGlobalAnsi("Exception occured in " + new StackFrame(1, true).GetMethod().Name + ": " + exc.Message));
-                CloseContext();
+                UIBridge.LogMessage(Marshal.StringToHGlobalAnsi("Exception occured in " + new StackFrame(1, true).GetMethod().Name + ": " + exc.Message));
+                UIBridge.CloseContext();
             }
         }
 
@@ -425,12 +417,14 @@ namespace EditorUI
 
         private void BrowserItem_DoubleClick(object sender, System.Windows.Input.MouseButtonEventArgs e)
         {
-            AddToTheScene(Marshal.StringToHGlobalAnsi(((BrowserItem)Browser.SelectedItem).ToolTip.ToString()));
+            UIBridge.AddToTheScene(Marshal.StringToHGlobalAnsi(((BrowserItem)Browser.SelectedItem).ToolTip.ToString()));
             Close();
         }
 
         private void MdlBrowser_Closed(object sender, EventArgs e)
         {
+            panel.Dispose();
+            FormHost.Dispose();
             UIBridge.DestroyUserInterface(1);
         }
     }

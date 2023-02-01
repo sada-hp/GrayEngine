@@ -42,42 +42,6 @@ namespace EditorUI
 
     public partial class MainView : Window, EditorWindow
     {
-        [DllImport("SceneEditor.dll", CallingConvention = CallingConvention.Cdecl)]
-        public static extern void AddEntity();
-        [DllImport("SceneEditor.dll", CallingConvention = CallingConvention.Cdecl)]
-        public static extern void GetEntityInfo(IntPtr ID);
-
-        [DllImport("SceneEditor.dll", CallingConvention = CallingConvention.Cdecl)]
-        public static extern void GetEntitiesList();
-
-        [DllImport("SceneEditor.dll", CallingConvention = CallingConvention.Cdecl)]
-        public static extern void LogMessage(IntPtr msg);
-
-        [DllImport("SceneEditor.dll", CallingConvention = CallingConvention.Cdecl)]
-        public static extern void InitModelBrowser();
-
-        [DllImport("SceneEditor.dll", CallingConvention = CallingConvention.Cdecl)]
-        public static extern void UpdateEntityProperty(int ID, IntPtr property, IntPtr value);
-
-        [DllImport("SceneEditor.dll", CallingConvention = CallingConvention.Cdecl)]
-        public static extern void UpdateSkybox(IntPtr East, IntPtr West, IntPtr Top, IntPtr Bottom, IntPtr North, IntPtr South);
-        [DllImport("SceneEditor.dll", CallingConvention = CallingConvention.Cdecl)]
-        public static extern void CloseContext();
-        [DllImport("SceneEditor.dll", CallingConvention = CallingConvention.Cdecl)]
-        public static extern void SaveScreenshot(IntPtr filepath);
-        [DllImport("SceneEditor.dll", CallingConvention = CallingConvention.Cdecl)]
-        public static extern void TogglePhysics();
-        [DllImport("SceneEditor.dll", CallingConvention = CallingConvention.Cdecl)]
-        public static extern void AddNewEntityProperty(int ID, IntPtr property);
-        [DllImport("SceneEditor.dll", CallingConvention = CallingConvention.Cdecl)]
-        public static extern void SaveScene(IntPtr path);
-        [DllImport("SceneEditor.dll", CallingConvention = CallingConvention.Cdecl)]
-        public static extern void LoadScene(IntPtr path);
-        [DllImport("user32.dll")]
-        static extern IntPtr SetParent(IntPtr hWndChild, IntPtr hWndNewParent);
-        [DllImport("user32.dll")]
-        static extern bool SetWindowPos(IntPtr hWnd, IntPtr hWndInsertAfter, int X, int Y, int cx, int cy, uint uFlags);
-
         int selectinon_id;
         public Form viewport = new Form();
         IntPtr child_hwnd;
@@ -112,7 +76,7 @@ namespace EditorUI
 
             if (result == System.Windows.Forms.DialogResult.OK && !string.IsNullOrWhiteSpace(dlg.FileName))
             {
-                SaveScreenshot(Marshal.StringToHGlobalAnsi(dlg.FileName));
+                UIBridge.SaveScreenshot(Marshal.StringToHGlobalAnsi(dlg.FileName));
             }
         }
 
@@ -125,7 +89,7 @@ namespace EditorUI
         public void ParentRender(IntPtr child)
         {
             child_hwnd = child;
-            SetParent(child, panel.Handle);
+            UIBridge.SetParent(child, panel.Handle);
             UpdateChildPosition();
         }
 
@@ -133,7 +97,7 @@ namespace EditorUI
         {
             if (child_hwnd != null)
             {
-                SetWindowPos(child_hwnd, IntPtr.Zero, -3, -3, panel.Width + 6, panel.Height + 6, 0);
+                UIBridge.SetWindowPos(child_hwnd, IntPtr.Zero, -3, -3, panel.Width + 6, panel.Height + 6, 0);
             }
         }
 
@@ -144,7 +108,7 @@ namespace EditorUI
 
         private void EntityButton_Click(object sender, RoutedEventArgs e)
         {
-            AddEntity();
+            UIBridge.AddEntity();
         }
 
         internal void UpdateEntity(int ID, string name)
@@ -197,8 +161,8 @@ namespace EditorUI
                         }
                         catch (Exception e)
                         {
-                            LogMessage(Marshal.StringToHGlobalAnsi(e.Message));
-                            LogMessage(Marshal.StringToHGlobalAnsi(pair.Key));
+                            UIBridge.LogMessage(Marshal.StringToHGlobalAnsi(e.Message));
+                            UIBridge.LogMessage(Marshal.StringToHGlobalAnsi(pair.Key));
                         }
                     }
 
@@ -215,17 +179,17 @@ namespace EditorUI
 
         private void Drawable_callback(object sender)
         {
-            InitModelBrowser();
+            UIBridge.InitModelBrowser();
         }
 
         private void EntityPosition_callback(object sender)
         {
-            UpdateEntityProperty(((PropertyControl)sender).ID, Marshal.StringToHGlobalAnsi("EntityPosition"), Marshal.StringToHGlobalAnsi(((PropertyControl)sender).Contents));
+            UIBridge.UpdateEntityProperty(((PropertyControl)sender).ID, Marshal.StringToHGlobalAnsi("EntityPosition"), Marshal.StringToHGlobalAnsi(((PropertyControl)sender).Contents));
         }
 
         private void EntityOrientation_callback(object sender)
         {
-            UpdateEntityProperty(((PropertyControl)sender).ID, Marshal.StringToHGlobalAnsi("EntityOrientation"), Marshal.StringToHGlobalAnsi(((PropertyControl)sender).Contents));
+            UIBridge.UpdateEntityProperty(((PropertyControl)sender).ID, Marshal.StringToHGlobalAnsi("EntityOrientation"), Marshal.StringToHGlobalAnsi(((PropertyControl)sender).Contents));
         }
 
         private void Shader_callback(object sender)
@@ -237,18 +201,18 @@ namespace EditorUI
         {
             try
             {
-                UpdateEntityProperty(((PropertyControl)sender).ID, Marshal.StringToHGlobalAnsi("EntityName"), Marshal.StringToHGlobalAnsi(((PropertyControl)sender).Contents));
+                UIBridge.UpdateEntityProperty(((PropertyControl)sender).ID, Marshal.StringToHGlobalAnsi("EntityName"), Marshal.StringToHGlobalAnsi(((PropertyControl)sender).Contents));
                 UpdateEntity(((PropertyControl)sender).ID, ((PropertyControl)sender).Contents);
             }
             catch (Exception e)
             {
-                LogMessage(Marshal.StringToHGlobalAnsi(e.Message));
+                UIBridge.LogMessage(Marshal.StringToHGlobalAnsi(e.Message));
             }
         }
 
         private void Scale_callback(object sender)
         {
-            UpdateEntityProperty(((PropertyControl)sender).ID, Marshal.StringToHGlobalAnsi("Scale"), Marshal.StringToHGlobalAnsi(((PropertyControl)sender).Contents));
+            UIBridge.UpdateEntityProperty(((PropertyControl)sender).ID, Marshal.StringToHGlobalAnsi("Scale"), Marshal.StringToHGlobalAnsi(((PropertyControl)sender).Contents));
         }
 
         private void Color_callback(object sender)
@@ -258,12 +222,12 @@ namespace EditorUI
             float g = float.Parse(color[1], System.Globalization.CultureInfo.InvariantCulture.NumberFormat) / 255;
             float b = float.Parse(color[2], System.Globalization.CultureInfo.InvariantCulture.NumberFormat) / 255;
             float a = float.Parse(color[3], System.Globalization.CultureInfo.InvariantCulture.NumberFormat) / 255;
-            UpdateEntityProperty(((PropertyControl)sender).ID, Marshal.StringToHGlobalAnsi("Color"), Marshal.StringToHGlobalAnsi(r.ToString().Replace(',','.') + ":" + g.ToString().Replace(',', '.') + ":" + b.ToString().Replace(',', '.') + ":" + a.ToString().Replace(',', '.')));
+            UIBridge.UpdateEntityProperty(((PropertyControl)sender).ID, Marshal.StringToHGlobalAnsi("Color"), Marshal.StringToHGlobalAnsi(r.ToString().Replace(',','.') + ":" + g.ToString().Replace(',', '.') + ":" + b.ToString().Replace(',', '.') + ":" + a.ToString().Replace(',', '.')));
         }
 
         private void Mass_callback(object sender)
         {
-            UpdateEntityProperty(((PropertyControl)sender).ID, Marshal.StringToHGlobalAnsi("Mass"), Marshal.StringToHGlobalAnsi(((PropertyControl)sender).Contents));
+            UIBridge.UpdateEntityProperty(((PropertyControl)sender).ID, Marshal.StringToHGlobalAnsi("Mass"), Marshal.StringToHGlobalAnsi(((PropertyControl)sender).Contents));
         }
 
         internal void UpdateInfo(int type, string lp, string rp)
@@ -327,7 +291,7 @@ namespace EditorUI
             }
             catch (Exception e)
             {
-                LogMessage(Marshal.StringToHGlobalAnsi(e.Message + e.StackTrace));
+                UIBridge.LogMessage(Marshal.StringToHGlobalAnsi(e.Message + e.StackTrace));
             }
         }
 
@@ -339,12 +303,12 @@ namespace EditorUI
                 {
                     ent_props.Clear();
                     selectinon_id = (e.AddedItems[0] as EntityItem).ID;
-                    GetEntityInfo((IntPtr)selectinon_id);
+                    UIBridge.GetEntityInfo((IntPtr)selectinon_id);
                 }
             }
             catch (Exception ee)
             {
-                LogMessage(Marshal.StringToHGlobalAnsi(ee.Message));
+                UIBridge.LogMessage(Marshal.StringToHGlobalAnsi(ee.Message));
             }
         }
 
@@ -385,7 +349,7 @@ namespace EditorUI
             }
             catch (Exception ee)
             {
-                LogMessage(Marshal.StringToHGlobalAnsi(ee.Message));
+                UIBridge.LogMessage(Marshal.StringToHGlobalAnsi(ee.Message));
             }
         }
 
@@ -397,12 +361,12 @@ namespace EditorUI
 
         private void Window_Closed(object sender, EventArgs e)
         {
-            CloseContext();
+            UIBridge.CloseContext();
         }
 
         private void PhysicsButton_Click(object sender, RoutedEventArgs e)
         {
-            TogglePhysics();
+            UIBridge.TogglePhysics();
         }
 
         private void ExtraProps_PreviewMouseUp(object sender, System.Windows.Input.MouseButtonEventArgs e)
@@ -414,13 +378,13 @@ namespace EditorUI
         {
             try
             {
-                AddNewEntityProperty((EntitiesList.SelectedItem as EntityItem).ID, Marshal.StringToHGlobalAnsi((sender as System.Windows.Controls.Control).Name));
+                UIBridge.AddNewEntityProperty((EntitiesList.SelectedItem as EntityItem).ID, Marshal.StringToHGlobalAnsi((sender as System.Windows.Controls.Control).Name));
                 ent_props.Clear();
                 ExtraProps.IsSubmenuOpen = false;
             }
             catch (Exception ee)
             {
-                LogMessage(Marshal.StringToHGlobalAnsi(ee.Message));
+                UIBridge.LogMessage(Marshal.StringToHGlobalAnsi(ee.Message));
             }
         }
 
@@ -437,7 +401,7 @@ namespace EditorUI
 
             if (dlg.ShowDialog() == System.Windows.Forms.DialogResult.OK)
             {
-                SaveScene(Marshal.StringToHGlobalAnsi(dlg.FileName));
+                UIBridge.SaveScene(Marshal.StringToHGlobalAnsi(dlg.FileName));
             }
 
             GC.Collect();
@@ -451,10 +415,10 @@ namespace EditorUI
 
             if (dlg.ShowDialog() == System.Windows.Forms.DialogResult.OK)
             {
-                LoadScene(Marshal.StringToHGlobalAnsi(dlg.FileName));
+                UIBridge.LoadScene(Marshal.StringToHGlobalAnsi(dlg.FileName));
                 ent_props.Clear();
                 entities.Clear();
-                GetEntitiesList();
+                UIBridge.GetEntitiesList();
             }
 
             GC.Collect();

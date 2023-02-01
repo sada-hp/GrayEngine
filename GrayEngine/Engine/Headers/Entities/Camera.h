@@ -19,7 +19,7 @@ namespace GrEngine
 			Type = "Camera";
 			static_cast<EntityID*>(properties[1])->SetPropertyValue(std::rand() % 10000 + 1000);
 		};
-		~Camera() {};
+		virtual ~Camera() {};
 
 		void Rotate(const float& pitch, const float& yaw, const float& roll) override
 		{

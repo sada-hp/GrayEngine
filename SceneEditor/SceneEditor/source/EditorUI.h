@@ -64,7 +64,6 @@ public:
 
 	~EditorUI()
 	{
-		DestroyWindow(wpf_hwnd);
 	};
 
 	bool InitUI(UINT viewport_index)
@@ -84,9 +83,14 @@ public:
 
 	bool destroyUI(UINT viewport_index)
 	{
-		DestroyUserInterface(viewport_index);
-		DestroyWindow(wpf_hwnd);
+		if (wpf_hwnd != NULL)
+		{
+			DestroyUserInterface(viewport_index);
+			DestroyWindow(wpf_hwnd);
+		}
 
+		FreeLibrary(dotNetGUILibrary);
+		CoUninitialize();
 		return true;
 	}
 

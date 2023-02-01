@@ -23,7 +23,6 @@ namespace GrEngine
 
 		virtual ~Skybox()
 		{
-
 		};
 
 		virtual void UpdateTextures(std::array<std::string, 6> sky) = 0;

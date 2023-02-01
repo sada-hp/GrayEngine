@@ -49,13 +49,16 @@ public:
 
 		printf("%s\n", msg.c_str());
 
-		std::vector<double> para{};
-		for (char letter : msg)
+		if (eListener != nullptr)
 		{
-			para.push_back(letter);
-		}
+			std::vector<double> para{};
+			for (char letter : msg)
+			{
+				para.push_back(letter);
+			}
 
-		EventListener::registerEvent(EventType::Log, para);
+			eListener->registerEvent(EventType::Log, para);
+		}
 	}
 
 	static void ShowConsole(bool show)
@@ -80,6 +83,11 @@ public:
 				isAllowed = true;
 				return isAllowed;
 		}
+	}
+
+	static void JoinEventListener(EventListener* listener)
+	{
+		eListener = listener;
 	}
 private:
 
@@ -111,5 +119,7 @@ private:
 			return "LOG";
 		}
 	}
+
+	static EventListener* eListener;
 };
 

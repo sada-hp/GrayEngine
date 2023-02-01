@@ -11,10 +11,11 @@ namespace GrEngine
 	struct DllExport AppParameters
 	{
 		const char* Title;
-
+		EventListener* eventListener;
 		uint32_t Width;
 		uint32_t Height;
 		Renderer* p_Renderer;
+
 		bool free_mode;
 
 		AppParameters(const char* _Title = "Application", uint32_t _Width = 1280, uint32_t _Height = 720, bool free_mode = false)

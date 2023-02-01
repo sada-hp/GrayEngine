@@ -19,29 +19,16 @@ enum class PropertyType
 struct EntityProperty
 {
 public:
-	EntityProperty()
-	{
-
-	}
-
-	virtual ~EntityProperty()
-	{
-
-	}
-
+	EntityProperty() {};
+	virtual ~EntityProperty() { owner = nullptr; property_name = nullptr; };
 	virtual const char* ValueString() = 0;
-
 	virtual std::any GetAnyValue() = 0;
-
 	virtual void ParsePropertyValue(const char* value) = 0;
-
 	virtual void* GetValueAdress() = 0;
-
 	const char* PrpertyNameString()
 	{
 		return property_name;
 	}
-
 	PropertyType& GetPropertyType()
 	{
 		return property_type;

@@ -8,7 +8,7 @@ namespace GrEngine
 	class DllExport Engine
 	{
 	public:
-		Engine(const AppParameters& Properties = AppParameters());
+		Engine(const AppParameters& Properties);
 		virtual ~Engine();
 		static bool PokeIt();
 		std::string getExecutablePath();
@@ -34,6 +34,7 @@ namespace GrEngine
 		POINT GetWindowPosition();
 		void SetCursorShape(int shape);
 		void SetCursorPosition(double xpos, double ypos);
+		inline EventListener* GetEventListener() { return &eventListener; };
 
 		static void BindContext(Engine* new_context) { context = new_context; };
 		static Engine* GetContext() { return context; };
@@ -47,9 +48,10 @@ namespace GrEngine
 		inline void* getNativeWindow() { return pWindow->getNativeWindow(); };
 
 	private:
-		std::unique_ptr<AppWindow> pWindow;
+		AppWindow* pWindow;
 		bool isPaused = false;
 		static Engine* context;
 		Physics* physEngine;
+		EventListener eventListener;
 	};
 }

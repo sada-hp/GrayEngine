@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Windows.Interop;
 using System.Threading;
+using System.Windows.Threading;
 using System.Runtime.InteropServices;
 using System.Windows;
 using EditorUI;
@@ -10,53 +11,36 @@ namespace EditorUI.Wrappers
     public abstract class Wrapper
     {
         internal Window ui_window;
-        internal Thread ui_thread;
         internal IntPtr ui_handle;
 
         public abstract IntPtr CreateWrapper();
         public void DestroyWrapper()
         {
-            ui_window.Dispatcher.BeginInvoke((Action)(() =>
-            {
-                ui_window.Close();
-            }));
-
+            ui_window.Close();
             ui_handle = IntPtr.Zero;
         }
 
-        public void DisplayUserInterface() // Multi-Threaded Version
+        public void DisplayUserInterface()
         {
-            ui_window.Dispatcher.BeginInvoke((Action)(() =>
-            {
-                ui_window.Opacity = 1;
-            }));
+            ui_window.Opacity = 1;
         }
 
         public void ParentRenderer(IntPtr value)
         {
-            ui_window.Dispatcher.BeginInvoke((Action)(() =>
-            {
-                ((EditorWindow)ui_window).ParentRender(value);
-            }));
+            ((EditorWindow)ui_window).ParentRender(value);
         }
 
         public void UpdateChildWnd()
         {
-            ui_window.Dispatcher.BeginInvoke((Action)(() =>
-            {
-                ((EditorWindow)ui_window).UpdateChildPosition();
-            }));
+            ((EditorWindow)ui_window).UpdateChildPosition();
         }
 
         public void IsInputAllowed(int allow)
         {
-            ui_window.Dispatcher.BeginInvoke((Action)(() =>
-            {
-                if (allow == 0)
-                    ui_window.IsEnabled = false;
-                else
-                    ui_window.IsEnabled = true;
-            }));
+            if (allow == 0)
+                ui_window.IsEnabled = false;
+            else
+                ui_window.IsEnabled = true;
         }
     }
 }

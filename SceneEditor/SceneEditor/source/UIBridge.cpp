@@ -49,12 +49,12 @@ void SceneEditor::LoadModelFile(const char* model_path)
         out_textures += pair.second + "|";
     }
 
-    EventListener::registerEvent("RequireMaterialsUpdate", { out_materials, out_textures, 0 });
+    GrEngine::Engine::GetContext()->GetEventListener()->registerEvent("RequireMaterialsUpdate", { out_materials, out_textures, 0 });
 }
 
 void SceneEditor::LoadObject(const char* mesh_path, const char* textures_path)
 {
-    EventListener::clearEventQueue();
+    GrEngine::Engine::GetContext()->GetEventListener()->clearEventQueue();
 
     std::string temp_str = "";
     std::vector<std::string> tex_vector = GrEngine::Globals::SeparateString(textures_path, '|');
@@ -71,7 +71,7 @@ void SceneEditor::LoadObject(const char* mesh_path, const char* textures_path)
         out_textures += pair.second + "|";
     }
 
-    EventListener::registerEvent("RequireMaterialsUpdate", { out_materials, out_textures, 1});
+    GrEngine::Engine::GetContext()->GetEventListener()->registerEvent("RequireMaterialsUpdate", { out_materials, out_textures, 1});
 }
 
 void SceneEditor::AssignTextures(const char* textures_path)
@@ -111,9 +111,9 @@ void SceneEditor::AddToTheScene(const char* model_path)
         para.push_back(chr);
     }
 
-    EventListener::clearEventQueue();
+    GrEngine::Engine::GetContext()->GetEventListener()->clearEventQueue();
     GrEngine::Engine::GetContext()->Pause();
-    EventListener::registerEvent("LoadModel", para);
+    SceneEditor::GetApplication()->GetEventListener()->registerEvent("LoadModel", para);
 }
 
 void SceneEditor::CreateModelFile(const char* mesh_path, const char* textures)

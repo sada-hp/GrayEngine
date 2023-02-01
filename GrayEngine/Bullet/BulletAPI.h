@@ -21,7 +21,12 @@ namespace GrEngineBullet
 
 		~BulletAPI()
 		{
-
+			simulate = false;
+			delete dynamicsWorld;
+			delete solver;
+			delete broadphase;
+			delete dispatcher;
+			delete collisionConfiguration;
 		}
 
 		void SimulateStep() override;

@@ -172,14 +172,10 @@ namespace GrEngine
         void initModelBrowser()
         {
             Pause();
-            Logger::AllowMessages(MessageMode::Block);
-            EventListener::setEventsPermissions(false, true);
             std::thread mdl(RunModelBrowser);   
             mdl.join();
             GetRenderer()->SetHighlightingMode(true);
             BindContext(this);
-            EventListener::setEventsPermissions(true, true);
-            Logger::AllowMessages(MessageMode::Allow);
             Unpause();
         }
 
@@ -268,13 +264,14 @@ namespace GrEngine
 
         static void RunModelBrowser()
         {
+            Logger::AllowMessages(MessageMode::Block);
             AppParameters props;
             ModelBrowser* mdlBrowser = new ModelBrowser(props);
             BindContext(mdlBrowser);
             mdlBrowser->init(mdlBrowser);
             mdlBrowser->StartEngine();
-            mdlBrowser->Stop();
             delete mdlBrowser;
+            Logger::AllowMessages(MessageMode::Allow);
         }
 
         void LoadTools()

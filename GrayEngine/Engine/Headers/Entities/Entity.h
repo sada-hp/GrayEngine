@@ -47,9 +47,16 @@ namespace GrEngine
 
 		virtual ~Entity()
 		{
-			for (std::vector<EntityProperty*>::iterator itt = properties.begin(); itt != properties.end(); ++itt)
+			obj_name = nullptr;
+			obj_id = nullptr;
+			object_origin = nullptr;
+			obj_orientation = nullptr;
+
+			while (properties.size() > 0)
 			{
+				std::vector<EntityProperty*>::iterator itt = properties.begin();
 				delete (*itt);
+				properties.erase(itt);
 			}
 		};
 

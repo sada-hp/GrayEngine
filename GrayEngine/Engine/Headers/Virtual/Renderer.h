@@ -40,7 +40,7 @@ namespace GrEngine
 			{
 				selected_entity = ID;
 				std::vector<double> para = { static_cast<double>(selected_entity) };
-				EventListener::registerEvent(EventType::SelectionChanged, para);
+				listener->registerEvent(EventType::SelectionChanged, para);
 				return entities.at(ID);
 			}
 			return nullptr;
@@ -56,6 +56,7 @@ namespace GrEngine
 		virtual void SetHighlightingMode(bool enabled) = 0;
 		virtual void SaveScene(const char* path) = 0;
 		virtual void LoadScene(const char* path) = 0;
+		EventListener* listener;
 	protected:
 		UINT32 selected_entity = 0;
 		std::map<UINT, Entity*> entities;

@@ -91,12 +91,13 @@ namespace SceneEditor
 
     int SceneEditor::EntryPoint()
     {
+        app = new GrEngine::Application();
+        Logger::JoinEventListener(app->GetEventListener());
         Logger::AllowMessages(MessageMode::Allow);
         Logger::Out("--------------- Starting the engine ---------------", OutputColor::Gray, OutputType::Log);
         Logger::ShowConsole(false);
-        app = new GrEngine::Application();
 
-        EventListener::pushEvent(EventType::Step, [](std::vector<double> para)
+        app->GetEventListener()->pushEvent(EventType::Step, [](std::vector<double> para)
             {
                 if (para.size() > 0)
                 {
@@ -104,7 +105,7 @@ namespace SceneEditor
                 }
             });
 
-        EventListener::pushEvent("LoadModel", [](std::vector<std::any> para)
+        app->GetEventListener()->pushEvent("LoadModel", [](std::vector<std::any> para)
             {
                 std::string model_path = "";
                 for (auto chr : para)
@@ -115,7 +116,7 @@ namespace SceneEditor
                 app->LoadFromGMF(app->transform_target->GetEntityID(), model_path.c_str());
             });
 
-        EventListener::pushEvent(EventType::KeyPress, [](std::vector<double> para)
+        app->GetEventListener()->pushEvent(EventType::KeyPress, [](std::vector<double> para)
             {
                 if (static_cast<int>(para[0]) == GLFW_KEY_ESCAPE && static_cast<int>(para[2]) == GLFW_PRESS)
                 {
@@ -131,7 +132,7 @@ namespace SceneEditor
                 }
             });
 
-        EventListener::pushEvent(EventType::MouseClick, [](std::vector<double> para)
+        app->GetEventListener()->pushEvent(EventType::MouseClick, [](std::vector<double> para)
             {
                 if (static_cast<int>(para[3]) == GLFW_PRESS && app->manipulation == 0)
                 {
@@ -145,7 +146,7 @@ namespace SceneEditor
                 }
             });
 
-        EventListener::pushEvent(EventType::Log, [](std::vector<double> para)
+        app->GetEventListener()->pushEvent(EventType::Log, [](std::vector<double> para)
             {
                 char* msg = new char[para.size() + 2];
                 int i = 0;
@@ -159,7 +160,7 @@ namespace SceneEditor
                 delete[] msg;
             });
 
-        EventListener::pushEvent(EventType::SelectionChanged, [](std::vector<double> para)
+        app->GetEventListener()->pushEvent(EventType::SelectionChanged, [](std::vector<double> para)
             {
                 int id = static_cast<int>(para[0]);
                 app->App_UpdateSelection(id);
@@ -182,7 +183,7 @@ namespace SceneEditor
         }
     }
 
-    GrEngine::Application* GetApplication()
+    GrEngine::Application* SceneEditor::GetApplication()
     {
         return app;
     }

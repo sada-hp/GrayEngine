@@ -36,7 +36,7 @@
                     </Style>
                 </Button.Style>
             </Button>
-            <TextBox Name="MaterialPath" Grid.Row="1" Foreground="#FFB9B9D1" Background="{x:Null}" BorderBrush="{x:Null}" BorderThickness="0" SelectionBrush="#FF44434B" IsReadOnly="True" IsReadOnlyCaretVisible="False" />
+            <TextBox IsUndoEnabled="False" Name="MaterialPath" Grid.Row="1" Foreground="#FFB9B9D1" Background="{x:Null}" BorderBrush="{x:Null}" BorderThickness="0" SelectionBrush="#FF44434B" IsReadOnly="True" IsReadOnlyCaretVisible="False" />
         </Grid>
     </Border>
 </UserControl>
