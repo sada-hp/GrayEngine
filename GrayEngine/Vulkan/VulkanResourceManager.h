@@ -59,10 +59,18 @@ namespace GrEngine_Vulkan
 		bool initialized = false;
 	};
 
+	struct DescriptorSet
+	{
+		VkPipelineBindPoint bindPoint;
+		std::vector<VkDescriptorSet> set;
+		VkDescriptorPool descriptorPool;
+		VkDescriptorSetLayout descriptorSetLayout;
+	};
+
 	struct Mesh : public GrEngine::Mesh
 	{
 		std::vector<Vertex> vertices;
-		std::vector<uint16_t> indices;
+		std::vector<uint32_t> indices;
 		ShaderBuffer vertexBuffer;
 		ShaderBuffer indexBuffer;
 

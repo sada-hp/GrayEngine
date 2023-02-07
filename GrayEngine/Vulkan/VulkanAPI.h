@@ -7,6 +7,7 @@
 #include "VulkanResourceManager.h"
 #include "VulkanObject.h"
 #include "VulkanSkybox.h"
+#include "VulkanTerrain.h"
 #include "Engine/Headers/Core/Logger.h"
 #include "Engine/Headers/Virtual/Renderer.h"
 
@@ -79,6 +80,9 @@ namespace GrEngine_Vulkan
 		VkSampleCountFlagBits GetSampling() { return msaaSamples; };
 		inline VulkanResourceManager& GetResourceManager() { return resources; }
 
+		std::optional<uint32_t> compute_bit;
+		QueueFamilyIndices findQueueFamilies(VkPhysicalDevice device);
+
 	protected:
 		GrEngine::Entity* addEntity(UINT ID);
 		bool allocateCommandBuffer(VkCommandBuffer* cmd, uint32_t count = 0);
@@ -95,6 +99,7 @@ namespace GrEngine_Vulkan
 
 		VkInstance _vulkan;
 		VulkanSkybox* sky;
+		VulkanTerrain* terrain;
 
 		VkPhysicalDeviceProperties deviceProps;
 		VkQueue presentQueue;
@@ -129,7 +134,6 @@ namespace GrEngine_Vulkan
 		bool isDeviceSuitable(VkPhysicalDevice device);
 		bool checkDeviceExtensionSupport(VkPhysicalDevice device);
 
-		QueueFamilyIndices findQueueFamilies(VkPhysicalDevice device);
 		SwapChainSupportDetails querySwapChainSupport(VkPhysicalDevice device);
 		VkPresentModeKHR chooseSwapPresentMode(const std::vector<VkPresentModeKHR>& availablePresentModes);
 		VkExtent2D chooseSwapExtent(const VkSurfaceCapabilitiesKHR& capabilities);

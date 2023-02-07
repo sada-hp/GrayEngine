@@ -21,11 +21,9 @@ namespace GrEngine_Vulkan
 
 	protected:
 		GrEngine::Renderer* p_Owner;
-		VkDescriptorSetLayout descriptorSetLayout;
-		std::vector<VkDescriptorSet> descriptorSets;
+		std::vector<DescriptorSet> descriptorSets;
 		Mesh* object_mesh;
 
-		VkDescriptorPool descriptorPool;
 		VkPipelineLayout pipelineLayout;
 		VkPipeline graphicsPipeline;
 

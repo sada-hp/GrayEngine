@@ -14,26 +14,39 @@ namespace GrEngineBullet
 
 	void BulletAPI::TogglePhysicsState(bool state)
 	{
-		simulate = state;
+		dynamicsWorld->getCollisionObjectArray().resize(0);
 
-		for (std::vector<void*>::iterator itt = objects.begin(); itt != objects.end(); ++itt)
+		if (state == false)
 		{
-			GrEngine::DrawableObject* object = static_cast<GrEngine::DrawableObject*>(*itt);
-			object->recalculatePhysics(simulate);
+			for (std::vector<GrEngine::Physics::PhysicsObject*>::iterator itt = objects.begin(); itt != objects.end(); ++itt)
+			{
+				BulletPhysObject* object = static_cast<BulletPhysObject*>(*itt);
+
+				if (object->HasValue())
+				{
+					dynamicsWorld->removeRigidBody(object->body);
+					object->Dispose();
+				}
+			}
+		}
+		else
+		{
+			for (std::vector<GrEngine::Physics::PhysicsObject*>::iterator itt = objects.begin(); itt != objects.end(); ++itt)
+			{
+				BulletPhysObject* object = static_cast<BulletPhysObject*>(*itt);
+				if (object->CalculatePhysics())
+				{
+					dynamicsWorld->addRigidBody(object->body);
+				}
+			}
 		}
 
-		if (simulate == false)
-			dynamicsWorld->getCollisionObjectArray().resize(0);
+		simulate = state;
 	}
 
-	void BulletAPI::AddSimulationObject(void* object)
+	void BulletAPI::AddSimulationObject(GrEngine::Physics::PhysicsObject* object)
 	{
 		objects.push_back(object);
-	}
-
-	void BulletAPI::AddPhysicsObject(void* object)
-	{
-		dynamicsWorld->addRigidBody(static_cast<btRigidBody*>(object));
 	}
 
 	void BulletAPI::RemoveObject(void* object)
@@ -50,6 +63,10 @@ namespace GrEngineBullet
 	{
 		simulate = false;
 		dynamicsWorld->getCollisionObjectArray().clear();
+		for (std::vector<GrEngine::Physics::PhysicsObject*>::iterator itt = objects.begin(); itt != objects.end(); ++itt)
+		{
+			(*itt)->Dispose();
+		}
 		objects.resize(0);
 	}
 };

@@ -108,6 +108,10 @@ namespace GrEngine_Vulkan
 		sky->MakeStatic();
 		entities[sky->GetEntityID()] = sky;
 
+		terrain = new VulkanTerrain(100);
+		terrain->initObject(logicalDevice, memAllocator, this);
+		entities[terrain->GetEntityID()] = terrain;
+
 		vkDeviceWaitIdle(logicalDevice);
 
 		return Initialized = res;
@@ -425,6 +429,10 @@ namespace GrEngine_Vulkan
 			{
 				static_cast<VulkanSkybox*>((*itt).second)->recordCommandBuffer(commandBuffers[index], swapChainExtent, mode);
 			}
+			else if ((*itt).second->GetEntityType() == "Terrain" && mode != DrawMode::IDS)
+			{
+				static_cast<VulkanTerrain*>((*itt).second)->recordCommandBuffer(commandBuffers[index], swapChainExtent, mode);
+			}
 		}
 
 		vkCmdEndRenderPass(commandBuffers[index]);
@@ -437,7 +445,7 @@ namespace GrEngine_Vulkan
 		QueueFamilyIndices indices = findQueueFamilies(physicalDevice);
 
 		std::vector<VkDeviceQueueCreateInfo> queueCreateInfos;
-		std::set<uint32_t> uniqueQueueFamilies = { indices.graphicsFamily.value(), indices.presentFamily.value() };
+		std::set<uint32_t> uniqueQueueFamilies = { indices.graphicsFamily.value(), indices.presentFamily.value(), compute_bit.value() };
 
 		float queuePriority = 1.0f;
 		for (uint32_t queueFamily : uniqueQueueFamilies) {
@@ -451,6 +459,10 @@ namespace GrEngine_Vulkan
 
 		VkPhysicalDeviceFeatures deviceFeatures{};
 		deviceFeatures.sampleRateShading = VK_TRUE;
+		deviceFeatures.geometryShader = VK_TRUE;
+		deviceFeatures.imageCubeArray = VK_TRUE;
+		deviceFeatures.fragmentStoresAndAtomics = VK_TRUE;
+		deviceFeatures.tessellationShader = VK_TRUE;
 
 		VkDeviceCreateInfo createInfo{};
 		createInfo.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
@@ -600,7 +612,9 @@ namespace GrEngine_Vulkan
 			if (queueFamily.queueFlags & VK_QUEUE_GRAPHICS_BIT && vkGetPhysicalDeviceSurfaceSupportKHR(device, i, surface, &presentSupport) == VK_SUCCESS && presentSupport) {
 				indices.graphicsFamily = i;
 				indices.presentFamily = i;
-				break;
+			}
+			else if (queueFamily.queueFlags & VK_QUEUE_COMPUTE_BIT && vkGetPhysicalDeviceSurfaceSupportKHR(device, i, surface, &presentSupport) == VK_SUCCESS && presentSupport) {
+				compute_bit = i;
 			}
 
 			i++;
@@ -1118,6 +1132,11 @@ namespace GrEngine_Vulkan
 		{
 			loadTexture(textures, static_cast<VulkanSkybox*>(target), VK_IMAGE_VIEW_TYPE_CUBE, VK_IMAGE_TYPE_2D);
 			static_cast<VulkanSkybox*>(target)->updateObject();
+		}
+
+		else if (target->GetEntityType() == "Terrain")
+		{
+			loadTexture(textures, static_cast<VulkanTerrain*>(target), VK_IMAGE_VIEW_TYPE_2D, VK_IMAGE_TYPE_2D);
 		}
 
 		return true;

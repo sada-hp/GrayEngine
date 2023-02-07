@@ -1,5 +1,6 @@
 #pragma once
 #include "VulkanDrawable.h"
+#include "Bullet/BulletAPI.h"
 
 namespace GrEngine_Vulkan
 {
@@ -26,6 +27,7 @@ namespace GrEngine_Vulkan
 
 		glm::uvec3 colorID = { 0, 0, 0 };
 		PickingBufferObject opo;
+		btTriangleMesh* colMesh;
 	};
 }
 

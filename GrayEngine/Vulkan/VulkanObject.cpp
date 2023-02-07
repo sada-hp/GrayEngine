@@ -12,7 +12,7 @@ namespace GrEngine_Vulkan
 	void VulkanObject::initObject(VkDevice device, VmaAllocator allocator, GrEngine::Renderer* owner)
 	{
 		properties.push_back(new Shader("Shaders//default", this));
-		GrEngine::Engine::GetContext()->GetPhysics()->AddSimulationObject(this);
+		//GrEngine::Engine::GetContext()->GetPhysics()->AddSimulationObject(this);
 
 		p_Owner = owner;
 		resources = &static_cast<VulkanAPI*>(owner)->GetResourceManager();
@@ -21,6 +21,9 @@ namespace GrEngine_Vulkan
 
 		UINT id = GetEntityID();
 		colorID = { id / 1000000 % 1000, id / 1000 % 1000, id % 1000 };
+
+		physComponent = new GrEngineBullet::BulletAPI::BulletPhysObject(this);
+		GrEngine::Engine::GetContext()->GetPhysics()->AddSimulationObject(physComponent);
 
 		auto resource = resources->GetMeshResource("default");
 		if (resource == nullptr)
@@ -59,6 +62,10 @@ namespace GrEngine_Vulkan
 		{
 			object_mesh = resource->AddLink();
 		}
+
+		descriptorSets.resize(1);
+		descriptorSets[0].bindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
+		descriptorSets[0].set.resize(1);
 
 		createDescriptorLayout();
 		createDescriptorPool();
@@ -225,7 +232,6 @@ namespace GrEngine_Vulkan
 
 	void VulkanObject::updateCollisions()
 	{
-		delete colShape;
 		if (colMesh != nullptr)
 		{
 			delete colMesh;
@@ -237,12 +243,12 @@ namespace GrEngine_Vulkan
 			colMesh->findOrAddVertex(btVector3((*itt).pos.x, (*itt).pos.y, (*itt).pos.z), false);
 		}
 
-		for (std::vector<uint16_t>::iterator itt = object_mesh->indices.begin(); itt != object_mesh->indices.end(); ++itt)
+		for (std::vector<uint32_t>::iterator itt = object_mesh->indices.begin(); itt != object_mesh->indices.end(); ++itt)
 		{
 			colMesh->addTriangleIndices(*(++itt), *(++itt), *itt);
 		}
 
-		colShape = new btBvhTriangleMeshShape(colMesh, false);
+		physComponent->UpdateCollisionShape(new btBvhTriangleMeshShape(colMesh, false));
 		//recalculatePhysics();
 	}
 
@@ -396,15 +402,14 @@ namespace GrEngine_Vulkan
 		target_mesh->bounds = glm::uvec3(highest_pointx, highest_pointy, highest_pointz);
 		bound = target_mesh->bounds;
 
-		for (std::vector<uint16_t>::iterator itt = target_mesh->indices.begin(); itt != target_mesh->indices.end(); ++itt)
+		for (std::vector<uint32_t>::iterator itt = target_mesh->indices.begin(); itt != target_mesh->indices.end(); ++itt)
 		{
 			colMesh->addTriangleIndices(*(++itt), *(++itt), *itt);
 		}
 
 		auto resource = resources->AddMeshResource(mesh_path, target_mesh);
 		object_mesh = resource->AddLink();
-		delete colShape;
-		colShape = new btBvhTriangleMeshShape(colMesh, false);
+		physComponent->UpdateCollisionShape(new btBvhTriangleMeshShape(colMesh, false));
 		//recalculatePhysics();
 	}
 };

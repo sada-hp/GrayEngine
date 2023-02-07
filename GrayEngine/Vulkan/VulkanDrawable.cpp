@@ -56,6 +56,10 @@ namespace GrEngine_Vulkan
 			object_mesh = resource->AddLink();
 		}
 
+		descriptorSets.resize(1);
+		descriptorSets[0].bindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
+		descriptorSets[0].set.resize(1);
+
 		createDescriptorLayout();
 		createDescriptorPool();
 		createDescriptorSet();
@@ -79,18 +83,25 @@ namespace GrEngine_Vulkan
 
 		vkDestroyPipeline(logicalDevice, graphicsPipeline, NULL);
 		vkDestroyPipelineLayout(logicalDevice, pipelineLayout, NULL);
-		vkFreeDescriptorSets(logicalDevice, descriptorPool, descriptorSets.size(), descriptorSets.data());
-		vkDestroyDescriptorPool(logicalDevice, descriptorPool, NULL);
-		vkDestroyDescriptorSetLayout(logicalDevice, descriptorSetLayout, NULL);
+
+		for (std::vector<DescriptorSet>::iterator itt = descriptorSets.begin(); itt != descriptorSets.end(); ++itt)
+		{
+			vkFreeDescriptorSets(logicalDevice, (*itt).descriptorPool, (*itt).set.size(), (*itt).set.data());
+			vkDestroyDescriptorPool(logicalDevice, (*itt).descriptorPool, NULL);
+			vkDestroyDescriptorSetLayout(logicalDevice, (*itt).descriptorSetLayout, NULL);
+		}
 
 		this->~VulkanDrawable();
 	}
 
 	void VulkanDrawable::updateObject()
 	{
-		vkFreeDescriptorSets(logicalDevice, descriptorPool, descriptorSets.size(), descriptorSets.data());
-		vkDestroyDescriptorPool(logicalDevice, descriptorPool, NULL);
-		vkDestroyDescriptorSetLayout(logicalDevice, descriptorSetLayout, NULL);
+		for (std::vector<DescriptorSet>::iterator itt = descriptorSets.begin(); itt != descriptorSets.end(); ++itt)
+		{
+			vkFreeDescriptorSets(logicalDevice, (*itt).descriptorPool, (*itt).set.size(), (*itt).set.data());
+			vkDestroyDescriptorPool(logicalDevice, (*itt).descriptorPool, NULL);
+			vkDestroyDescriptorSetLayout(logicalDevice, (*itt).descriptorSetLayout, NULL);
+		}
 		vkDestroyPipeline(logicalDevice, graphicsPipeline, NULL);
 		vkDestroyPipelineLayout(logicalDevice, pipelineLayout, NULL);
 
@@ -119,10 +130,16 @@ namespace GrEngine_Vulkan
 		pushConstant2.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
 		std::vector<VkPushConstantRange> ranges = {pushConstant, pushConstant2};
 
+		std::vector<VkDescriptorSetLayout> layouts;
+		for (std::vector<DescriptorSet>::iterator itt = descriptorSets.begin(); itt != descriptorSets.end(); ++itt)
+		{
+			layouts.push_back((*itt).descriptorSetLayout);
+		}
+
 		VkPipelineLayoutCreateInfo pipelineLayoutInfo{};
 		pipelineLayoutInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
-		pipelineLayoutInfo.setLayoutCount = 1;
-		pipelineLayoutInfo.pSetLayouts = &descriptorSetLayout;
+		pipelineLayoutInfo.setLayoutCount = layouts.size();
+		pipelineLayoutInfo.pSetLayouts = layouts.data();
 		pipelineLayoutInfo.pushConstantRangeCount = 2;
 		pipelineLayoutInfo.pPushConstantRanges = ranges.data();
 
@@ -143,9 +160,13 @@ namespace GrEngine_Vulkan
 			//UpdateObjectOrientation();
 			pushConstants(commandBuffer, extent, mode);
 
-			for (int ind = 0; ind < descriptorSets.size(); ind++)
+			for (std::vector<DescriptorSet>::iterator itt = descriptorSets.begin(); itt != descriptorSets.end(); ++itt)
 			{
-				vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout, 0, 1, &descriptorSets[ind], 0, NULL);
+				for (std::vector<VkDescriptorSet>::iterator it = (*itt).set.begin(); it != (*itt).set.end(); ++it)
+				{
+					if ((*itt).bindPoint == VK_PIPELINE_BIND_POINT_GRAPHICS)
+						vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout, 0, 1, &(*it), 0, NULL);
+				}
 			}
 
 			//vkCmdDraw(commandBuffer, static_cast<uint32_t>(object_mesh.vertices.size()), 1, 0, 0);
@@ -311,7 +332,7 @@ namespace GrEngine_Vulkan
 		descriptorLayout.bindingCount = 1;
 		descriptorLayout.pBindings = &descriptorBindings;
 
-		return vkCreateDescriptorSetLayout(logicalDevice, &descriptorLayout, NULL, &descriptorSetLayout) == VK_SUCCESS;
+		return vkCreateDescriptorSetLayout(logicalDevice, &descriptorLayout, NULL, &descriptorSets[0].descriptorSetLayout) == VK_SUCCESS;
 	}
 
 	bool VulkanDrawable::createDescriptorPool()
@@ -328,7 +349,7 @@ namespace GrEngine_Vulkan
 		createInfo.flags = VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT;
 
 
-		return vkCreateDescriptorPool(logicalDevice, &createInfo, NULL, &descriptorPool) == VK_SUCCESS;
+		return vkCreateDescriptorPool(logicalDevice, &createInfo, NULL, &descriptorSets[0].descriptorPool) == VK_SUCCESS;
 	}
 
 	bool VulkanDrawable::createDescriptorSet()
@@ -336,9 +357,9 @@ namespace GrEngine_Vulkan
 		VkDescriptorSetAllocateInfo descriptorAllocInfo{};
 		descriptorAllocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
 		descriptorAllocInfo.pNext = NULL;
-		descriptorAllocInfo.descriptorPool = descriptorPool;
+		descriptorAllocInfo.descriptorPool = descriptorSets[0].descriptorPool;
 		descriptorAllocInfo.descriptorSetCount = 1;
-		descriptorAllocInfo.pSetLayouts = &descriptorSetLayout;
+		descriptorAllocInfo.pSetLayouts = &descriptorSets[0].descriptorSetLayout;
 
 		std::vector<VkDescriptorImageInfo> imageInfo;
 		if (object_texture != nullptr)
@@ -350,14 +371,13 @@ namespace GrEngine_Vulkan
 			imageInfo.push_back(info);
 		}
 
-		descriptorSets.resize(1);
-		vkAllocateDescriptorSets(logicalDevice, &descriptorAllocInfo, descriptorSets.data());
+		vkAllocateDescriptorSets(logicalDevice, &descriptorAllocInfo, descriptorSets[0].set.data());
 
 		VkWriteDescriptorSet writes{};
 		memset(&writes, 0, sizeof(writes));
 
 		writes.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-		writes.dstSet = descriptorSets[0];
+		writes.dstSet = descriptorSets[0].set[0];
 		writes.dstBinding = 1;
 		writes.dstArrayElement = 0;
 		writes.descriptorType = VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE;

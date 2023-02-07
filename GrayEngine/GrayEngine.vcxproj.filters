@@ -34,6 +34,8 @@
     <ClInclude Include="Vulkan\VulkanSkybox.h" />
     <ClInclude Include="Vulkan\VulkanObject.h" />
     <ClInclude Include="Vulkan\VulkanResourceManager.h" />
+    <ClInclude Include="Engine\Headers\Entities\Terrain.h" />
+    <ClInclude Include="Vulkan\VulkanTerrain.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Engine\Source\GL_App.cpp" />
@@ -47,6 +49,7 @@
     <ClCompile Include="Vulkan\VulkanSkybox.cpp" />
     <ClCompile Include="Vulkan\VulkanObject.cpp" />
     <ClCompile Include="Vulkan\VulkanResourceManager.cpp" />
+    <ClCompile Include="Vulkan\VulkanTerrain.cpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Engine\Libs\lib-vc2019\glfw3.dll" />

@@ -54,6 +54,10 @@ namespace GrEngine_Vulkan
 			object_mesh = resource->AddLink();
 		}
 
+		descriptorSets.resize(1);
+		descriptorSets[0].bindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
+		descriptorSets[0].set.resize(1);
+
 		createDescriptorLayout();
 		createDescriptorPool();
 		createDescriptorSet();
@@ -69,15 +73,19 @@ namespace GrEngine_Vulkan
 
 			VkDeviceSize offsets[] = { 0 };
 			vkCmdBindVertexBuffers(commandBuffer, 0, 1, &object_mesh->vertexBuffer.Buffer, offsets);
-			vkCmdBindIndexBuffer(commandBuffer, object_mesh->indexBuffer.Buffer, 0, VK_INDEX_TYPE_UINT16);
+			vkCmdBindIndexBuffer(commandBuffer, object_mesh->indexBuffer.Buffer, 0, VK_INDEX_TYPE_UINT8_EXT);
 
 			//UpdateObjectPosition();
 			//UpdateObjectOrientation();
 			pushConstants(commandBuffer, extent, mode);
 
-			for (int ind = 0; ind < descriptorSets.size(); ind++)
+			for (std::vector<DescriptorSet>::iterator itt = descriptorSets.begin(); itt != descriptorSets.end(); ++itt)
 			{
-				vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout, 0, 1, &descriptorSets[ind], 0, NULL);
+				for (std::vector<VkDescriptorSet>::iterator it = (*itt).set.begin(); it != (*itt).set.end(); ++it)
+				{
+					if ((*itt).bindPoint == VK_PIPELINE_BIND_POINT_GRAPHICS)
+						vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout, 0, 1, &(*it), 0, NULL);
+				}
 			}
 
 			//vkCmdDraw(commandBuffer, static_cast<uint32_t>(object_mesh.vertices.size()), 1, 0, 0);

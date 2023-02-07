@@ -21,6 +21,12 @@ namespace GrEngine
 		uint32_t uses_texture;
 		glm::uvec3 inID;
 
+		Vertex()
+		{
+			pos = glm::vec4(0.f);
+			uv = glm::vec2(0.f);
+		}
+
 		Vertex(glm::vec4 position, glm::vec2 uv_coordinates, glm::uvec3 color_attach = {0, 0, 0}, uint32_t material_index = 0, BOOL use_texture = 0)
 		{
 			pos = position;
@@ -64,13 +70,9 @@ namespace GrEngine
 
 		virtual ~DrawableObject()
 		{
-			if (body != nullptr)
+			if (physComponent != nullptr)
 			{
-				Engine::GetContext()->GetPhysics()->RemoveObject(static_cast<void*>(body));
-				delete body;
-				body = nullptr;
-				delete myMotionState;
-				myMotionState = nullptr;
+				delete physComponent;
 			}
 		};
 
@@ -81,11 +83,10 @@ namespace GrEngine
 
 		virtual glm::vec3 GetObjectPosition() override
 		{
-			if (Engine::GetContext()->GetPhysics()->GetSimulationState() && body != nullptr && body->getMass() > 0.f)
+			if (Engine::GetContext()->GetPhysics()->GetSimulationState() && physComponent->HasValue())
 			{
-				auto phys_pos = body->getWorldTransform().getOrigin();
-				auto pos = glm::vec3(phys_pos.x(), phys_pos.y(), phys_pos.z());;
-				return glm::vec3(phys_pos.x(), phys_pos.y(), phys_pos.z());
+				auto pos = physComponent->GetPhysPosition();
+				return pos;
 			}
 			else
 			{
@@ -95,10 +96,9 @@ namespace GrEngine
 
 		virtual glm::quat GetObjectOrientation() override
 		{
-			if (Engine::GetContext()->GetPhysics()->GetSimulationState() && body != nullptr && body->getMass() > 0.f)
+			if (Engine::GetContext()->GetPhysics()->GetSimulationState() && physComponent->HasValue())
 			{
-				auto phys_pos = body->getWorldTransform().getRotation();
-				auto ori = glm::quat(phys_pos.w(), phys_pos.x(), phys_pos.y(), phys_pos.z());
+				auto ori = physComponent->GetPhysOrientation();
 				return ori;
 			}
 			else
@@ -156,52 +156,7 @@ namespace GrEngine
 
 		void recalculatePhysics(bool enabled)
 		{
-			if (enabled)
-			{
-				if (!CollisionEnabled) return;
-
-				float obj_mass = GetPropertyValue<float>("Mass", 0.f);
-
-				if (body != nullptr)
-				{
-					Engine::GetContext()->GetPhysics()->RemovePhysicsObject(body);
-					delete body;
-					body = nullptr;
-					delete myMotionState;
-					myMotionState = nullptr;
-				}
-
-				btTransform startTransform;
-				glm::mat4 trans = GetObjectTransformation();
-				const float* pSource = (const float*)glm::value_ptr(trans);
-				startTransform.setFromOpenGLMatrix(pSource);
-				btVector3 localInertia{ 0,0,0 };
-
-				if (obj_mass != 0.f)
-					colShape->calculateLocalInertia(obj_mass, localInertia);
-
-				glm::vec3 scale = GetPropertyValue("Scale", glm::vec3(1.f));
-				colShape->setLocalScaling(btVector3(scale.x + 0.01f, scale.y + 0.01f, scale.z + 0.01f));
-
-				myMotionState = new btDefaultMotionState(startTransform);
-				btRigidBody::btRigidBodyConstructionInfo rbInfo(obj_mass, myMotionState, colShape, localInertia);
-				rbInfo.m_angularDamping = .2f;
-				rbInfo.m_linearDamping = .2f;
-				body = new btRigidBody(rbInfo);
-
-				Engine::GetContext()->GetPhysics()->AddPhysicsObject(body);
-			}
-			else
-			{
-				if (body != nullptr)
-				{
-					Engine::GetContext()->GetPhysics()->RemovePhysicsObject(body);
-					delete body;
-					body = nullptr;
-					delete myMotionState;
-					myMotionState = nullptr;
-				}
-			}
+			physComponent->CalculatePhysics();
 		};
 
 		void DisableCollisions()
@@ -209,13 +164,9 @@ namespace GrEngine
 			CollisionEnabled = false;
 			ParsePropertyValue("Mass", "0");
 
-			if (body != nullptr)
+			if (physComponent != nullptr)
 			{
-				Engine::GetContext()->GetPhysics()->RemovePhysicsObject(body);
-				delete body;
-				body = nullptr;
-				delete myMotionState;
-				myMotionState = nullptr;
+				physComponent->DisablePhysics();
 			}
 		}
 
@@ -226,11 +177,7 @@ namespace GrEngine
 		glm::uvec3 bound = { 0.f, 0.f, 0.f };
 		bool visibility = true;
 
-		btCollisionShape* colShape = new btBoxShape(btVector3(0.25f, 0.25f, 0.25f));
-		btRigidBody* body;
-		btCollisionObject collision;
-		btDefaultMotionState* myMotionState;
-		btTriangleMesh* colMesh;
 		bool CollisionEnabled = true;
+		Physics::PhysicsObject* physComponent;
 	};
 }
