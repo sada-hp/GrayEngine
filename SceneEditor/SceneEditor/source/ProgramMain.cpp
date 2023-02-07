@@ -3,6 +3,7 @@
 namespace SceneEditor
 {
     GrEngine::Application* app;
+    float speed_mod = 10;
 
     void Inputs()
     {
@@ -10,6 +11,7 @@ namespace SceneEditor
         POINT vPos = app->GetWindowPosition();
         GrEngine::Renderer* render = app->GetRenderer();
         GrEngine::Camera* camera = render->getActiveViewport();
+        float cameraSpeed = 10;
 
         if (app->free_mode)
         {
@@ -17,7 +19,6 @@ namespace SceneEditor
             glm::vec3 direction{ 0.f };
             glm::vec3 orientation{ 0.f };
             float senstivity = 0.75f;
-            float cameraSpeed = 10;
 
             POINT cur{ 1,1 };
             GetCursorPos(&cur);
@@ -38,7 +39,7 @@ namespace SceneEditor
             if (app->IsKeyDown(GLFW_KEY_D))
                 direction.x += 1;
 
-            camera->MoveObject((direction * camera->GetObjectOrientation()) * cameraSpeed);
+            camera->MoveObject((direction * camera->GetObjectOrientation()) * (cameraSpeed + speed_mod));
         }
 
         if (app->transform_target != nullptr)
@@ -54,7 +55,7 @@ namespace SceneEditor
             {
                 int mInd = app->manipulation - 1;
                 glm::vec3 dir = glm::vec3(trans[mInd][0], trans[mInd][1], trans[mInd][2]);
-                float len = dist * (float)glm::dot(glm::vec2(app->manip_start.x - cursor.x, app->manip_start.y - cursor.y), app->direct) * 0.0012f * ((vSize.x)/(float)(vSize.y));
+                float len = dist * (float)glm::dot(glm::vec2(app->manip_start.x - cursor.x, app->manip_start.y - cursor.y), app->direct) * 0.0012f * ((vSize.x) / (float)(vSize.y));
 
                 tPos = app->transform_target->GetObjectPosition() + dir * glm::vec3(len);
                 app->transform_target->PositionObjectAt(tPos);
@@ -71,7 +72,7 @@ namespace SceneEditor
                 {
                     double len1 = glm::length(vec);
                     double len2 = glm::length(app->direct);
-                    short delta = glm::sign(glm::asin(((vec.x * app->direct.y)/(len1 * len2)) - ((vec.y * app->direct.x)/(len2 * len1)))) * glm::sign(glm::dot(camera->GetObjectPosition() - tPos, glm::vec3(trans[mInd][0], trans[mInd][1], trans[mInd][2])));
+                    short delta = glm::sign(glm::asin(((vec.x * app->direct.y) / (len1 * len2)) - ((vec.y * app->direct.x) / (len2 * len1)))) * glm::sign(glm::dot(camera->GetObjectPosition() - tPos, glm::vec3(trans[mInd][0], trans[mInd][1], trans[mInd][2])));
                     std::array<glm::vec3, 3> directions = { glm::vec3(1, 0, 0), glm::vec3(0, 1, 0), glm::vec3(0, 0, 1) };
 
                     tOri = tOri * glm::angleAxis(angle * delta, directions[mInd]);
@@ -93,7 +94,7 @@ namespace SceneEditor
     {
         app = new GrEngine::Application();
         Logger::JoinEventListener(app->GetEventListener());
-        Logger::AllowMessages(MessageMode::Allow);
+
         Logger::Out("--------------- Starting the engine ---------------", OutputColor::Gray, OutputType::Log);
         Logger::ShowConsole(false);
 
@@ -103,6 +104,12 @@ namespace SceneEditor
                 {
                     app->App_UpdateFrameCounter(para[0]);
                 }
+            });
+
+        app->GetEventListener()->pushEvent(EventType::Scroll, [](std::vector<double> para)
+            {
+                speed_mod += para[1] * 5;
+                speed_mod = std::max(speed_mod, 1.f);
             });
 
         app->GetEventListener()->pushEvent("LoadModel", [](std::vector<std::any> para)
