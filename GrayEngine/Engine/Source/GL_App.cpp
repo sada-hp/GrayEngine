@@ -23,7 +23,7 @@ namespace GrEngine
 
 	void GL_APP::StartUp(const AppParameters& Properties)
 	{
-		pAppRenderer = new GrEngine_Vulkan::VulkanAPI();
+		pAppRenderer = new GrEngine_Vulkan::VulkanRenderer();
 
 		props = Properties;
 		props.p_Renderer = pAppRenderer;
@@ -172,7 +172,7 @@ namespace GrEngine
 			};
 
 			glfwFocusWindow(win);
-
+			
 			data.eventListener->registerEvent(EventType::MouseClick, para);
 		});
 		glfwSetKeyCallback(target, [](GLFWwindow* win, int key, int scancode, int action, int mods)

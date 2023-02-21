@@ -70,8 +70,8 @@ namespace EditorUI
         private void ClearButton_Click(object sender, RoutedEventArgs e)
         {
             SaveFileDialog dlg = new SaveFileDialog();
-            dlg.DefaultExt = ".ppm";
-            dlg.Filter = "ppm files(*.ppm) | *.ppm";
+            dlg.DefaultExt = ".png";
+            dlg.Filter = "png files(*.png) | *.png";
             DialogResult result = dlg.ShowDialog();
 
             if (result == System.Windows.Forms.DialogResult.OK && !string.IsNullOrWhiteSpace(dlg.FileName))
@@ -260,7 +260,7 @@ namespace EditorUI
 
                 properties.Add(name, value);
 
-                if (name == "EntityPosition" || name == "EntityOrientation")
+                if (name == "EntityPosition" || name == "EntityOrientation" || name == "Scale")
                 {
                     types.Add(name, typeof(_3VectorControl));
                     events.Add(name, "VectorPropertyChanged");
@@ -422,6 +422,12 @@ namespace EditorUI
             }
 
             GC.Collect();
+        }
+
+        private void TerrainSettings_Click(object sender, RoutedEventArgs e)
+        {
+            TerrainSettings settings = new TerrainSettings();
+            settings.ShowDialog();
         }
     };
 }

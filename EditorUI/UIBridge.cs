@@ -61,6 +61,9 @@ namespace EditorUI
         [DllImport("SceneEditor.dll", CallingConvention = CallingConvention.Cdecl)]
         public static extern void LoadScene(IntPtr path);
 
+        [DllImport("SceneEditor.dll", CallingConvention = CallingConvention.Cdecl)]
+        public static extern void GenerateTerrain(int resolution, int width, int height, int depth, IntPtr path);
+
         public static Wrapper[] wrappers = new Wrapper[2];
         public static Thread uThread;
         static int WrappersCount = 0;

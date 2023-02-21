@@ -101,8 +101,8 @@ namespace GrEngineBullet
 
 				myMotionState = new btDefaultMotionState(startTransform);
 				btRigidBody::btRigidBodyConstructionInfo rbInfo(obj_mass, myMotionState, colShape, localInertia);
-				rbInfo.m_angularDamping = .2f;
-				rbInfo.m_linearDamping = .2f;
+				//rbInfo.m_angularDamping = .2f;
+				//rbInfo.m_linearDamping = .2f;
 				body = new btRigidBody(rbInfo);
 				initialized = true;
 				

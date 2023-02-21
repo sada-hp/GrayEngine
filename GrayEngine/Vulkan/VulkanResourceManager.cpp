@@ -49,6 +49,25 @@ namespace GrEngine_Vulkan
 		}
 	}
 
+	void VulkanResourceManager::UpdateTexture(std::vector<std::string> names, VkDevice device, VmaAllocator allocator, Texture* newValue)
+	{
+		std::string string_name = "";
+		for (std::vector<std::string>::iterator itt = names.begin(); itt != names.end(); ++itt)
+		{
+			string_name += NormalizeName((*itt));
+		}
+
+		for (std::vector<Resource<Texture*>*>::iterator itt = texResources.begin(); itt != texResources.end(); ++itt)
+		{
+			if ((*itt)->name == string_name)
+			{
+				VulkanAPI::m_destroyTexture(device, allocator, (*itt)->PopResource());
+				(*itt)->Update(newValue);
+				break;
+			}
+		}
+	}
+
 	void VulkanResourceManager::RemoveTexture(std::vector<std::string> names, VkDevice device, VmaAllocator allocator)
 	{
 		std::string string_name = "";

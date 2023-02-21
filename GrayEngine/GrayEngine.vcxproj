@@ -22,6 +22,7 @@
     <ClInclude Include="Engine\Headers\Core\Globals.h" />
     <ClInclude Include="Engine\Headers\Virtual\Renderer.h" />
     <ClInclude Include="Engine\Headers\Entities\Terrain.h" />
+    <ClInclude Include="Vulkan\VulkanRenderer.h" />
     <ClInclude Include="Vulkan\VulkanTerrain.h" />
     <ClInclude Include="Vulkan\VulkanResourceManager.h" />
     <ClInclude Include="Vulkan\VulkanObject.h" />
@@ -41,6 +42,7 @@
     <ClCompile Include="Engine\Headers\Entities\Properties\Property.cpp" />
     <ClCompile Include="Engine\Source\Engine.cpp" />
     <ClCompile Include="Engine\Source\Globals.cpp" />
+    <ClCompile Include="Vulkan\VulkanRenderer.cpp" />
     <ClCompile Include="Vulkan\VulkanTerrain.cpp" />
     <ClCompile Include="Vulkan\VulkanResourceManager.cpp" />
     <ClCompile Include="Vulkan\VulkanObject.cpp" />

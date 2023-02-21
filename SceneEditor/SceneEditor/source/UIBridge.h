@@ -28,5 +28,6 @@ namespace SceneEditor
 		ExportDll void __stdcall AddNewEntityProperty(int id, const char* property);
 		ExportDll void __stdcall SaveScene(const char* path);
 		ExportDll void __stdcall LoadScene(const char* path);
+		ExportDll void __stdcall GenerateTerrain(int resolution, int width, int height, int depth, const char* map);
 	}
 }

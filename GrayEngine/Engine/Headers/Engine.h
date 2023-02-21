@@ -41,6 +41,7 @@ namespace GrEngine
 		static bool WriteGMF(const char* filepath, const char* mesh_path, std::vector<std::string> textures_vector);
 		virtual void LoadScene(const char* path);
 		virtual void SaveScene(const char* path);
+		virtual void GenerateTerrain(int resolution, int width, int height, int depth, const char* map);
 
 	protected:
 		void clearScene();

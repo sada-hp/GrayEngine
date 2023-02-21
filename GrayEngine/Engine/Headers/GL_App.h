@@ -1,7 +1,7 @@
 #pragma once
 #include "Virtual/AppWindow.h"
 #include "Core/EventListener.h"
-#include "Vulkan/VulkanAPI.h"
+#include "Vulkan/VulkanRenderer.h"
 #include "Bullet/BulletAPI.h"
 
 namespace GrEngine

@@ -186,3 +186,8 @@ void SceneEditor::LoadScene(const char* path)
 {
     SceneEditor::GetApplication()->LoadScene(path);
 }
+
+void SceneEditor::GenerateTerrain(int resolution, int width, int height, int depth, const char* map)
+{
+    SceneEditor::GetApplication()->GenerateTerrain(resolution, width, height, depth, map);
+}

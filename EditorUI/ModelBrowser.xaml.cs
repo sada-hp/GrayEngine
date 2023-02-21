@@ -23,9 +23,9 @@ namespace EditorUI
         System.Windows.Forms.Panel panel = new System.Windows.Forms.Panel();
         SortedDictionary<int, string> Materials = new SortedDictionary<int, string>();
         SortedDictionary<string, System.Windows.Controls.Control> LoadedAssets = new SortedDictionary<string, System.Windows.Controls.Control>();
-        static string distr_location = System.IO.Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location);
-        static string content_folder = distr_location + @"\Content\";
-        static string missing_texture = System.IO.Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location) + @"\Content\Editor\MissingTexture.png";
+        public static string distr_location = System.IO.Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location);
+        public static string content_folder = distr_location + @"\Content\";
+        public static string missing_texture = System.IO.Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location) + @"\Content\Editor\MissingTexture.png";
 
         public ModelBrowser()
         {

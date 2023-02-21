@@ -20,8 +20,8 @@ namespace GrEngine_Vulkan
 			return bindingDescription;
 		}
 
-		static std::array<VkVertexInputAttributeDescription, 4> getAttributeDescriptions() {
-			std::array<VkVertexInputAttributeDescription, 4> attributeDescriptions{};
+		static std::array<VkVertexInputAttributeDescription, 3> getAttributeDescriptions() {
+			std::array<VkVertexInputAttributeDescription, 3> attributeDescriptions{};
 
 			attributeDescriptions[0].binding = 0;
 			attributeDescriptions[0].location = 0;
@@ -37,11 +37,6 @@ namespace GrEngine_Vulkan
 			attributeDescriptions[2].location = 3;
 			attributeDescriptions[2].format = VK_FORMAT_R32_UINT;
 			attributeDescriptions[2].offset = offsetof(Vertex, uv_index);
-
-			attributeDescriptions[3].binding = 0;
-			attributeDescriptions[3].location = 4;
-			attributeDescriptions[3].format = VK_FORMAT_R32_UINT;
-			attributeDescriptions[3].offset = offsetof(Vertex, uses_texture);
 
 			return attributeDescriptions;
 		}
@@ -61,8 +56,13 @@ namespace GrEngine_Vulkan
 
 	struct DescriptorSet
 	{
+		std::vector<VkShaderStageFlags> stage;
+		std::vector<VkDescriptorType> type;
+		std::vector<VkDescriptorImageInfo> imageInfos;
+		std::vector<VkDescriptorBufferInfo> bufferInfos;
+		std::vector<uint16_t> bindings;
+		VkDescriptorSet set;
 		VkPipelineBindPoint bindPoint;
-		std::vector<VkDescriptorSet> set;
 		VkDescriptorPool descriptorPool;
 		VkDescriptorSetLayout descriptorSetLayout;
 	};
@@ -73,6 +73,7 @@ namespace GrEngine_Vulkan
 		std::vector<uint32_t> indices;
 		ShaderBuffer vertexBuffer;
 		ShaderBuffer indexBuffer;
+		btTriangleMesh collisions;
 
 		glm::uvec3 bounds;
 	};
@@ -86,7 +87,7 @@ namespace GrEngine_Vulkan
 
 	struct PickingBufferObject {
 		uint32_t draw_mode = 0;
-		glm::mat3x4 colors{ 1.f };
+		glm::vec4 colors{ 1.f };
 	};
 
 	struct AllocatedImage {
@@ -99,7 +100,10 @@ namespace GrEngine_Vulkan
 		AllocatedImage newImage;
 		VkImageView textureImageView;
 		VkSampler textureSampler;
-		int8_t material_index = -1;
+		uint32_t width = 1;
+		uint32_t height = 1;
+		uint32_t channels = 1;
+		uint32_t mipLevels = 0;
 	};
 
 
@@ -134,6 +138,11 @@ namespace GrEngine_Vulkan
 			return pointer;
 		}
 
+		void Update(T new_pointer)
+		{
+			pointer = new_pointer;
+		}
+
 		uint8_t getNumOfLinks()
 		{
 			return links;
@@ -163,6 +172,7 @@ namespace GrEngine_Vulkan
 		void RemoveMesh(const char* name, VkDevice device, VmaAllocator allocator);
 		void RemoveTexture(const char* name, VkDevice device, VmaAllocator allocator);
 		void RemoveTexture(std::vector<std::string> names, VkDevice device, VmaAllocator allocator);
+		void UpdateTexture(std::vector<std::string> names, VkDevice device, VmaAllocator allocator, Texture* newValue);
 
 		Resource<Mesh*>* AddMeshResource(const char* name, Mesh* pointer)
 		{

@@ -16,6 +16,7 @@
             </MenuItem>
             <MenuItem Header="Level" Foreground="WhiteSmoke" Margin="0">
                 <MenuItem Name="SkyboxMenu" Header="Skybox" Foreground="Black" Click="SkyboxSettings_Click"></MenuItem>
+                <MenuItem Name="TerrainMenu" Header="Terrain" Foreground="Black" Click="TerrainSettings_Click"></MenuItem>
             </MenuItem>
             <MenuItem Header="Help" Foreground="WhiteSmoke" Margin="0"/>
             <TextBlock Name="FrameBlock" Text="0,0" Foreground="WhiteSmoke"/>

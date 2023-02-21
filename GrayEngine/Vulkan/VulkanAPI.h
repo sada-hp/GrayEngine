@@ -4,32 +4,16 @@
 #include <vk_mem_alloc.h>
 #include <stb_image.h>
 #include <stb_image_resize.h>
+#include <stb_image_write.h>
 #include "VulkanResourceManager.h"
-#include "VulkanObject.h"
-#include "VulkanSkybox.h"
-#include "VulkanTerrain.h"
-#include "Engine/Headers/Core/Logger.h"
-#include "Engine/Headers/Virtual/Renderer.h"
 
 namespace GrEngine_Vulkan
 {
-
 #ifdef NDEBUG
 	const bool enableValidationLayers = false;
 #else
 	const bool enableValidationLayers = true;
 #endif
-
-	struct QueueFamilyIndices
-	{
-		std::optional<uint32_t> graphicsFamily;
-		std::optional<uint32_t> presentFamily;
-
-		bool isComplete()
-		{
-			return graphicsFamily.has_value() && presentFamily.has_value();
-		}
-	};
 
 	struct SwapChainSupportDetails {
 		VkSurfaceCapabilitiesKHR capabilities;
@@ -43,214 +27,93 @@ namespace GrEngine_Vulkan
 		IDS = 1
 	};
 
-	class VulkanAPI : public GrEngine::Renderer
+	struct ImageInfo
+	{
+		uint32_t width;
+		uint32_t height;
+		uint32_t channels;
+	};
+
+	using VulkanHandle = void*;
+	typedef void Destructor(VulkanHandle);
+
+	class VulkanAPI
 	{
 	public:
-		bool init(void* window) override;
-		void destroy() override;
-		void RenderFrame() override;
-		VkDevice logicalDevice;
-
-		inline VkExtent2D getExtent() { return swapChainExtent; };
-		inline VmaAllocator getMemAllocator() { return memAllocator; };
-		inline VkRenderPass getRenderPass() { return renderPass; };
-		bool loadModel(UINT id, const char* mesh_path, std::vector<std::string> textures_vector) override;
-		bool loadModel(UINT id, const char* model_path) override;
-		GrEngine::Entity* addEntity() override;
-		void addEntity(GrEngine::Entity* entity) override;
-		bool assignTextures(std::vector<std::string> textures, GrEngine::Entity* target) override;
-		void clearDrawables() override;
-		void createSkybox(const char* East, const char* West, const char* Top, const char* Bottom, const char* North, const char* South) override;
+		static void Destroy(VkDevice logicalDevice, VmaAllocator allocator);
 
 		static VkShaderModule m_createShaderModule(VkDevice device, const std::vector<char>& code);
 		static bool m_createVkBuffer(VkDevice device, VmaAllocator allocator, const void* bufData, uint32_t dataSize, VkBufferUsageFlags usage, ShaderBuffer* shader);
 		static void m_destroyShaderBuffer(VkDevice device, VmaAllocator allocator, ShaderBuffer* shaderBuf);
 		static void m_destroyTexture(VkDevice device, VmaAllocator allocator, Texture* texture);
-		void transitionImageLayout(VkImage image, VkImageLayout oldLayout, VkImageLayout newLayout, VkImageSubresourceRange subres, VkCommandBuffer cmd = nullptr);
-		void SelectEntityAtCursor() override;
-		std::array<int, 3> GetPixelColorAtCursor() override;
-		GrEngine::Entity* selectEntity(UINT ID) override;
-		void SetHighlightingMode(bool enabled) override;
-		void DeleteEntity(UINT id) override;
-		void SaveScene(const char* path) override;
-		void LoadScene(const char* path) override;
-		void waitForRenderer() override;
 
-		void Update() override;
-		VkSampleCountFlagBits GetSampling() { return msaaSamples; };
-		inline VulkanResourceManager& GetResourceManager() { return resources; }
+		static bool CreateLogicalDevice(VkPhysicalDevice physicalDevice, VkDeviceCreateInfo* deviceInfo, VkDevice* outLogicalDevice);
+		static bool CreateVulkanMemoryAllocator(VkInstance instance, VkPhysicalDevice physicalDevice, VkDevice logicalDevice, VmaAllocator* outAllocator);
+		static bool CreateVkSwapchain(VkPhysicalDevice physicalDevice, VkDevice logicalDevice, GLFWwindow* window,VkSurfaceKHR surface, VkSwapchainKHR* outSwapchain);
+		static bool CreateRenderPass(VkDevice device, VkFormat swapchainFormat, VkFormat depthFormat, VkSampleCountFlagBits sampleCount, VkRenderPass* outRenderPass);
+		static bool CreateFrameBuffer(VkDevice device, VkRenderPass renderPass, VkImageView* attachments, uint32_t attachmentsCount, VkExtent2D extent, VkFramebuffer* outFrameBuffer);
+		static bool CreateCommandPool(VkDevice device, uint32_t familyIndex, VkCommandPool* outPool);
+		static bool CreateVkSemaphore(VkDevice device, VkSemaphore* outSemaphore);
+		static bool CreateVkFence(VkDevice device, VkFence* outFence);
+		static bool CreateImage(VmaAllocator allocator, VkImageCreateInfo* createInfo, VkImage* outImage, VmaAllocation* outAllocation, VmaMemoryUsage memUsage = VMA_MEMORY_USAGE_AUTO_PREFER_DEVICE, VkMemoryPropertyFlags memFlags = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+		static bool CreateImageView(VkDevice device, VkFormat format, VkImage image, VkImageSubresourceRange subRange, VkImageView* target, VkImageViewType type = VK_IMAGE_VIEW_TYPE_2D);
+		static bool CreatePipelineLayout(VkDevice device, std::vector<VkPushConstantRange> pushConstants, std::vector<VkDescriptorSetLayout> descriptorLayouts, VkPipelineLayout* outLayout);
+		static bool CreateGraphicsPipeline(VkDevice device, VkGraphicsPipelineCreateInfo* info, VkPipeline* outPipeline);
+		static bool CreateComputePipeline(VkDevice device, VkComputePipelineCreateInfo* info, VkPipeline* outPipeline);
+		static bool CreateDescriptorSetLayout(VkDevice device, std::vector<VkDescriptorSetLayoutBinding> bindings, VkDescriptorSetLayout* outLayout);
+		static bool CreateDescriptorPool(VkDevice device, std::vector<VkDescriptorPoolSize> pools, VkDescriptorPool* outDescriptorPool);
+		static bool CreateSampler(VkPhysicalDevice physicalDevice, VkDevice logicalDevice, VkSampler* outSampler, float mipLevels = 0.f);
 
-		std::optional<uint32_t> compute_bit;
-		QueueFamilyIndices findQueueFamilies(VkPhysicalDevice device);
+		static void DestroyLogicalDevice(VkDevice device);
+		static void DestroyMemoryAllocator(VmaAllocator allocator);
+		static void DestroyImageView(VkImageView view);
+		static void DestroyFence(VkFence fence);
+		static void DestroySemaphore(VkSemaphore semaphore);
+		static void DestroyCommandPool(VkCommandPool pool);
+		static void DestroyFramebuffer(VkFramebuffer frameBuffer);
+		static void DestroyRenderPass(VkRenderPass renderPass);
+		static void DestroySwapchainKHR(VkSwapchainKHR swapChain);
+		static void DestroyPipelineLayout(VkPipelineLayout layout);
+		static void DestroyImage(VkImage image);
+		static void DestroyPipeline(VkPipeline pipeline);
+		static void DestroyDescriptorLayout(VkDescriptorSetLayout layout);
+		static void DestroyDescriptorPool(VkDescriptorPool pool);
+		static void DestroySampler(VkSampler sampler);
+		static void FreeCommandBuffer(VkCommandBuffer buffer);
+		static void FreeCommandBuffers(VkCommandBuffer* buffers, size_t buufersCount);
+		static void FreeDescriptorSet(VkDescriptorSet set);
+		static void FreeDescriptorSets(VkDescriptorSet* sets, size_t setCount);
 
-	protected:
-		GrEngine::Entity* addEntity(UINT ID);
-		bool allocateCommandBuffer(VkCommandBuffer* cmd, uint32_t count = 0);
-		bool beginCommandBuffer(VkCommandBuffer cmd, VkCommandBufferUsageFlags usage);
-		bool freeCommandBuffer(VkCommandBuffer commandBuffer);
-		void SaveScreenshot(const char* filepath);
-		bool updateDrawables(uint32_t index, DrawMode mode, VkExtent2D extent);
-		DrawMode cur_mode = DrawMode::NORMAL;
+		static bool GetDeviceQueue(VkDevice device, uint32_t family, VkQueue* outQueue);
+		static bool AllocateCommandBuffers(VkDevice device, VkCommandPool pool, VkCommandBuffer* outBuffers, uint32_t outBuffersCount);
+		static bool AllocateDescriptorSet(VkDevice device, VkDescriptorPool pool, VkDescriptorSetLayout layout, VkDescriptorSet* outSet);
+		static bool BeginCommandBuffer(VkCommandBuffer cmd, VkCommandBufferUsageFlags usage);
+		static bool EndAndSubmitCommandBuffer(VkDevice device, VkCommandPool pool, VkCommandBuffer commandBuffer, VkQueue queue, VkFence fence);
+		static bool CheckDeviceExtensionSupport(const VkPhysicalDevice physicalDevice, std::vector<const char*> desired_extensions);
+		static bool TransitionImageLayout(VkImage image, VkImageLayout oldLayout, VkImageLayout newLayout, VkImageSubresourceRange subRange, VkCommandBuffer cmd);
+
+		static std::vector<int32_t> FindFamilyIndicies(VkPhysicalDevice physicalDevice, VkSurfaceKHR surface, std::vector<VkQueueFlagBits> families);
+		static VkSampleCountFlagBits GetMaxSampleCount(VkPhysicalDevice physicalDevice);
+		static VkPresentModeKHR ChooseSwapPresentMode(const std::vector<VkPresentModeKHR>& availablePresentModes);
+		static VkSurfaceFormatKHR ChooseSwapSurfaceFormat(const std::vector<VkSurfaceFormatKHR>& availableFormats);
+		static VkExtent2D ChooseSwapExtent(GLFWwindow* window, const VkSurfaceCapabilitiesKHR& capabilities);
+		static SwapChainSupportDetails QuerySwapChainSupport(VkSurfaceKHR surface, VkPhysicalDevice physicalDevice);
+		static bool CopyBufferToImage(VkDevice device, VkCommandPool pool, VkBuffer buffer, VkImage image, VkQueue graphicsQueue, VkFence graphicsFence, ImageInfo imgInfo, uint32_t length);
+
+		static VkDeviceCreateInfo StructDeviceCreateInfo(VkPhysicalDevice physicalDevice, VkPhysicalDeviceFeatures* deviceFeatures, VkDeviceQueueCreateInfo* deviceQueues, uint32_t queuesCount, const char* const* deviceExtensions, uint32_t extensionsCount);
+		static std::vector<VkDeviceQueueCreateInfo> StructQueueCreateInfo(VkPhysicalDevice physicalDevice, VkSurfaceKHR surface, std::vector<VkQueueFlagBits> families, float* priority);
+		static VkPhysicalDeviceFeatures StructPhysicalDeviceFeatures();
+		static VkImageCreateInfo StructImageCreateInfo(VkExtent3D extent, VkFormat format, VkSampleCountFlagBits samples, VkImageUsageFlags usage, VkImageType type = VK_IMAGE_TYPE_2D, VkSharingMode sharing = VK_SHARING_MODE_EXCLUSIVE);
+		static VkImageSubresourceRange StructSubresourceRange(VkImageAspectFlags aspectMask, uint32_t baseMipLevel = 0, uint32_t levelCount = 1, uint32_t baseArrayLevel = 0, uint32_t arrayLevelCount = 1);
+
 	private:
-		VulkanResourceManager resources;
+		static std::unordered_map<VulkanHandle, Destructor*> destructors;
 
-		GLFWwindow* pParentWindow;
-		VmaAllocator memAllocator;
+		static std::unordered_map<VulkanHandle, VmaAllocation> allocations;
+		static std::unordered_map<VulkanHandle, VkDescriptorPool> descriptors;
+		static std::unordered_map<VulkanHandle, VkCommandPool> cmdPools;
 
-		VkInstance _vulkan;
-		VulkanSkybox* sky;
-		VulkanTerrain* terrain;
-
-		VkPhysicalDeviceProperties deviceProps;
-		VkQueue presentQueue;
-		VkSurfaceKHR surface;
-		VkPhysicalDevice physicalDevice = nullptr;
-		const std::vector<const char*> deviceExtensions = { VK_KHR_SWAPCHAIN_EXTENSION_NAME };
-		VkSwapchainKHR swapChain;
-		std::vector<VkImage> swapChainImages;
-		std::vector<VkDeviceMemory> swapChainMemory;
-		VkFormat swapChainImageFormat;
-		VkExtent2D swapChainExtent;
-		std::vector<VkImageView> swapChainImageViews;
-		VkRenderPass renderPass;
-		std::vector<VkFramebuffer> swapChainFramebuffers;
-		VkCommandPool commandPool;
-		std::vector<VkCommandBuffer> commandBuffers;
-		VkSemaphore imageAvailableSemaphore;
-		VkSemaphore renderFinishedSemaphore;
-		VkQueue graphicsQueue;
-		VkFence graphicsFence;
-
-		VkMemoryRequirements memRequirements;
-
-		uint32_t currentImageIndex = 0;
-
-		bool loadTexture(std::vector<std::string> texture_path, VulkanDrawable* target, VkImageViewType type_view = VK_IMAGE_VIEW_TYPE_2D, VkImageType type_img = VK_IMAGE_TYPE_2D);
-		void drawFrame(DrawMode mode, VkExtent2D extent, bool Show = true);
-
-		bool createVKInstance();
-		bool createMemoryAllocator();
-		bool createLogicalDevice();
-		bool isDeviceSuitable(VkPhysicalDevice device);
-		bool checkDeviceExtensionSupport(VkPhysicalDevice device);
-
-		SwapChainSupportDetails querySwapChainSupport(VkPhysicalDevice device);
-		VkPresentModeKHR chooseSwapPresentMode(const std::vector<VkPresentModeKHR>& availablePresentModes);
-		VkExtent2D chooseSwapExtent(const VkSurfaceCapabilitiesKHR& capabilities);
-		VkSurfaceFormatKHR chooseSwapSurfaceFormat(const std::vector<VkSurfaceFormatKHR>& availableFormats);
-		VkSampleCountFlagBits getMaxUsableSampleCount();
-
-		bool createSwapChain();
-		bool createImageViews(VkFormat format, VkImageViewType type, VkImage image, VkImageView* target, int array_layers = 1, int base_layer = 0);
-
-		bool createRenderPass();
-		bool createFramebuffers();
-		bool createCommandPool();
-		bool createCommandBuffers();
-		bool createSemaphores();
-
-		void recreateSwapChain();
-		void cleanupSwapChain();
-
-		void copyBufferToImage(VkBuffer buffer, VkImage image, uint32_t width, uint32_t height, uint32_t channels, uint32_t length);
-		void copyImageToBuffer(VkBuffer buffer, VkImage image, uint32_t width, uint32_t height, uint32_t channels, uint32_t length);
-		std::array<int, 3> getPixelColor(DrawMode mode);
-
-		VkImageView depthImageView;
-		AllocatedImage depthImage;
-		VkFormat depthFormat;
-
-		VkSampleCountFlagBits msaaSamples = VK_SAMPLE_COUNT_1_BIT;
-		VkDeviceMemory colorImageMemory;
-		VkImageView colorImageView;
-		AllocatedImage samplingImage;
-		bool highlight_selection = true;
-
-#ifdef _DEBUG
-
-		VkDebugUtilsMessengerEXT debugMessenger;
-		const std::vector<const char*> validationLayers = { "VK_LAYER_KHRONOS_validation" };
-
-		VkResult CreateDebugUtilsMessengerEXT(VkInstance instance, const VkDebugUtilsMessengerCreateInfoEXT* pCreateInfo, const VkAllocationCallbacks* pAllocator, VkDebugUtilsMessengerEXT* pDebugMessenger) {
-			auto func = (PFN_vkCreateDebugUtilsMessengerEXT)vkGetInstanceProcAddr(instance, "vkCreateDebugUtilsMessengerEXT");
-			if (func != nullptr) {
-				return func(instance, pCreateInfo, pAllocator, pDebugMessenger);
-			}
-			else {
-				return VK_ERROR_EXTENSION_NOT_PRESENT;
-			}
-		}
-
-		void DestroyDebugUtilsMessengerEXT(VkInstance instance, VkDebugUtilsMessengerEXT debugMessenger, const VkAllocationCallbacks* pAllocator) {
-			auto func = (PFN_vkDestroyDebugUtilsMessengerEXT)vkGetInstanceProcAddr(instance, "vkDestroyDebugUtilsMessengerEXT");
-			if (func != nullptr) {
-				func(instance, debugMessenger, pAllocator);
-			}
-		}
-
-		void populateDebugMessengerCreateInfo(VkDebugUtilsMessengerCreateInfoEXT& createInfo) {
-			createInfo = {};
-			createInfo.sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT;
-			createInfo.messageSeverity = VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT;
-			createInfo.messageType = VK_DEBUG_UTILS_MESSAGE_TYPE_GENERAL_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT;
-			createInfo.pfnUserCallback = debugCallback;
-		}
-
-		void setupDebugMessenger() {
-			if (!enableValidationLayers) return;
-
-			VkDebugUtilsMessengerCreateInfoEXT createInfo;
-			populateDebugMessengerCreateInfo(createInfo);
-
-			if (CreateDebugUtilsMessengerEXT(_vulkan, &createInfo, nullptr, &debugMessenger) != VK_SUCCESS) {
-				throw std::runtime_error("failed to set up debug messenger!");
-			}
-		}
-
-		std::vector<const char*> getRequiredExtensions() {
-			uint32_t glfwExtensionCount = 0;
-			const char** glfwExtensions;
-			glfwExtensions = glfwGetRequiredInstanceExtensions(&glfwExtensionCount);
-
-			std::vector<const char*> extensions(glfwExtensions, glfwExtensions + glfwExtensionCount);
-
-			if (enableValidationLayers) {
-				extensions.push_back(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
-			}
-
-			return extensions;
-		}
-
-		bool checkValidationLayerSupport() {
-			uint32_t layerCount;
-			vkEnumerateInstanceLayerProperties(&layerCount, nullptr);
-
-			std::vector<VkLayerProperties> availableLayers(layerCount);
-			vkEnumerateInstanceLayerProperties(&layerCount, availableLayers.data());
-
-			for (const char* layerName : validationLayers) {
-				bool layerFound = false;
-
-				for (const auto& layerProperties : availableLayers) {
-					if (strcmp(layerName, layerProperties.layerName) == 0) {
-						layerFound = true;
-						break;
-					}
-				}
-
-				if (!layerFound) {
-					return false;
-				}
-			}
-
-			return true;
-		}
-
-		static VKAPI_ATTR VkBool32 VKAPI_CALL debugCallback(VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity, VkDebugUtilsMessageTypeFlagsEXT messageType, const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData, void* pUserData) {
-			std::cerr << "validation layer: " << pCallbackData->pMessage << std::endl;
-
-			return VK_FALSE;
-		}
-#endif
+		static std::unordered_map<VulkanHandle, VkDevice> devices;
+		static std::unordered_map<VmaAllocation, VmaAllocator> allocators;
 	};
 }

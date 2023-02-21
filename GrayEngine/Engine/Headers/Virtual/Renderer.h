@@ -20,17 +20,21 @@ namespace GrEngine
 		virtual void destroy() = 0;
 		virtual void RenderFrame() = 0;
 		virtual bool assignTextures(std::vector<std::string> textures, Entity* target) = 0;
+		virtual bool updateTexture(Entity* target, int textureIndex) = 0;
+		virtual bool updateTexture(Entity* target, void* pixels, int textureIndex) = 0;
 		virtual bool loadModel(UINT id, const char* mesh_path, std::vector<std::string> textures_vector) = 0;
 		virtual bool loadModel(UINT id, const char* model_path) = 0;
 		virtual void clearDrawables() = 0;
 		virtual void waitForRenderer() = 0;
 		virtual Entity* addEntity() = 0;
+		virtual Entity* addEntity(UINT ID) = 0;
 		virtual void addEntity(Entity* entity) = 0;
 		std::map<UINT, Entity*>& GetEntitiesList()
 		{
 			return entities;
 		}
 		virtual void Update() = 0;
+		virtual void LoadTerrain(int resolution, int width, int height, int depth, const char* map) = 0;
 		virtual void createSkybox(const char* East, const char* West, const char* Top, const char* Bottom, const char* North, const char* South) = 0;
 		virtual void DeleteEntity(UINT id) = 0;
 		inline Camera* getActiveViewport() { return &viewport_camera; };
@@ -52,7 +56,8 @@ namespace GrEngine
 		UINT32& GetSelectionID() { return selected_entity; };
 		virtual void SaveScreenshot(const char* filepath) = 0;
 		virtual void SelectEntityAtCursor() = 0;
-		virtual std::array<int, 3> GetPixelColorAtCursor() = 0;
+		virtual std::array<byte, 3> GetPixelColorAtCursor() = 0;
+		virtual float GetDepthAt(float x, float y) = 0;
 		virtual void SetHighlightingMode(bool enabled) = 0;
 		virtual void SaveScene(const char* path) = 0;
 		virtual void LoadScene(const char* path) = 0;

@@ -65,7 +65,13 @@ namespace GrEngineBullet
 		dynamicsWorld->getCollisionObjectArray().clear();
 		for (std::vector<GrEngine::Physics::PhysicsObject*>::iterator itt = objects.begin(); itt != objects.end(); ++itt)
 		{
-			(*itt)->Dispose();
+			BulletPhysObject* object = static_cast<BulletPhysObject*>(*itt);
+
+			if (object->HasValue())
+			{
+				dynamicsWorld->removeRigidBody(object->body);
+				object->Dispose();
+			}
 		}
 		objects.resize(0);
 	}

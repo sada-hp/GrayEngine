@@ -28,8 +28,9 @@ namespace GrEngine
 			}
 		}
 
-		virtual void GenerateTerrain(uint16_t resolution) = 0;
+		virtual void GenerateTerrain(int resolution, int width, int height, int depth, const char* map) = 0;
 		virtual void calculateCollisions() = 0;
+		virtual void UpdateFoliageMask(void* pixels) = 0;
 
 		Physics::PhysicsObject* physComponent;
 	};

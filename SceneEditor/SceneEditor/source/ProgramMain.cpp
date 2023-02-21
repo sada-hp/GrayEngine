@@ -15,16 +15,15 @@ namespace SceneEditor
 
         if (app->free_mode)
         {
-            glm::vec2 old_cursor_pos{ vPos.x + (vSize.x / 2), vPos.y + (vSize.y / 2) };
+            glm::vec2 old_cursor_pos{ vSize.x / 2, vSize.y / 2 };
             glm::vec3 direction{ 0.f };
             glm::vec3 orientation{ 0.f };
             float senstivity = 0.75f;
 
-            POINT cur{ 1,1 };
-            GetCursorPos(&cur);
+            POINTFLOAT cur = app->GetCursorPosition();
 
-            orientation.x -= (old_cursor_pos.x - (float)cur.x) * senstivity;
-            orientation.y -= (old_cursor_pos.y - (float)cur.y) * senstivity;
+            orientation.x -= (old_cursor_pos.x - cur.x) * senstivity;
+            orientation.y -= (old_cursor_pos.y - cur.y) * senstivity;
             camera->Rotate(orientation);
             SetCursorPos(vPos.x + (vSize.x / 2), vPos.y + (vSize.y / 2));
 
@@ -62,7 +61,7 @@ namespace SceneEditor
                 app->manip_start = cursor;
                 app->App_UpdateUIProperty("EntityPosition");
             }
-            else if (app->manipulation >= 4)
+            else if (app->manipulation >= 4 && app->manipulation < 7)
             {
                 int mInd = app->manipulation - 4;
                 auto vec = glm::normalize(glm::vec2(app->obj_center.x - cursor.x, app->obj_center.y - cursor.y));
@@ -81,6 +80,10 @@ namespace SceneEditor
                     app->App_UpdateUIProperty("EntityOrientation");
                 }
             }
+            else if (app->manipulation == 7)
+            {
+                app->App_PaintMask();
+            }
 
             app->gizmo->ParsePropertyValue("Scale", (gizmo_scale + ":" + gizmo_scale + ":" + gizmo_scale).c_str());
             app->gizmo->PositionObjectAt(tPos);
@@ -92,9 +95,8 @@ namespace SceneEditor
 
     int SceneEditor::EntryPoint()
     {
+        Logger::AllowMessages(MessageMode::Allow);
         app = new GrEngine::Application();
-        Logger::JoinEventListener(app->GetEventListener());
-
         Logger::Out("--------------- Starting the engine ---------------", OutputColor::Gray, OutputType::Log);
         Logger::ShowConsole(false);
 
@@ -110,6 +112,11 @@ namespace SceneEditor
             {
                 speed_mod += para[1] * 5;
                 speed_mod = std::max(speed_mod, 1.f);
+            });
+
+        app->GetEventListener()->pushEvent(EventType::MouseMove, [](std::vector<double> para)
+            {
+                app->App_UpdateSphere();
             });
 
         app->GetEventListener()->pushEvent("LoadModel", [](std::vector<std::any> para)
@@ -141,7 +148,7 @@ namespace SceneEditor
 
         app->GetEventListener()->pushEvent(EventType::MouseClick, [](std::vector<double> para)
             {
-                if (static_cast<int>(para[3]) == GLFW_PRESS && app->manipulation == 0)
+                if (static_cast<int>(para[3]) == GLFW_PRESS)
                 {
                     app->GetRenderer()->SelectEntityAtCursor();
                 }

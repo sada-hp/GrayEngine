@@ -131,6 +131,9 @@
     <Compile Include="SkyboxSettings.xaml.cs">
       <DependentUpon>SkyboxSettings.xaml</DependentUpon>
     </Compile>
+    <Compile Include="TerrainSettings.xaml.cs">
+      <DependentUpon>TerrainSettings.xaml</DependentUpon>
+    </Compile>
     <Compile Include="TextControl.xaml.cs">
       <DependentUpon>TextControl.xaml</DependentUpon>
     </Compile>
@@ -188,6 +191,10 @@
       <Generator>MSBuild:Compile</Generator>
     </Page>
     <Page Include="SkyboxSettings.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="TerrainSettings.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>

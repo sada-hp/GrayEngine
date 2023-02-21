@@ -18,7 +18,6 @@ namespace GrEngine
 		glm::vec4 color;
 		glm::vec2 uv;
 		uint32_t uv_index;
-		uint32_t uses_texture;
 		glm::uvec3 inID;
 
 		Vertex()
@@ -27,12 +26,11 @@ namespace GrEngine
 			uv = glm::vec2(0.f);
 		}
 
-		Vertex(glm::vec4 position, glm::vec2 uv_coordinates, glm::uvec3 color_attach = {0, 0, 0}, uint32_t material_index = 0, BOOL use_texture = 0)
+		Vertex(glm::vec4 position, glm::vec2 uv_coordinates, glm::uvec3 color_attach = {0, 0, 0}, uint32_t material_index = 0)
 		{
 			pos = position;
 			uv = uv_coordinates;
 			uv_index = material_index;
-			uses_texture = use_texture;
 			inID = color_attach;
 		}
 
@@ -76,9 +74,11 @@ namespace GrEngine
 			}
 		};
 
-		virtual bool LoadMesh(const char* mesh_path, bool useTexturing, std::vector<std::string>* out_materials) = 0;
+		virtual bool LoadMesh(const char* mesh_path, std::vector<std::string>* out_materials) = 0;
 		virtual bool LoadModel(const char* model_path) = 0;
 		virtual bool LoadModel(const char* mesh_path, std::vector<std::string> textures_vector) = 0;
+		virtual void GeneratePlaneMesh(float width, int subdivisions) = 0;
+		virtual void GenerateBoxMesh(float width, float height, float depth) = 0;
 		virtual void Refresh() = 0;
 
 		virtual glm::vec3 GetObjectPosition() override

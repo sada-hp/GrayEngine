@@ -8,7 +8,7 @@ namespace GrEngine_Vulkan
 	{
 	public:
 		Texture* object_texture;
-		const char* shader_path = "Shaders//default";
+		std::string shader_path = "Shaders//default";
 		float near_plane = 0.1;
 		float far_plane = 1000;
 
@@ -18,8 +18,13 @@ namespace GrEngine_Vulkan
 		virtual void invalidateTexture();
 		virtual bool pushConstants(VkCommandBuffer cmd, VkExtent2D extent, UINT32 mode);
 		virtual bool recordCommandBuffer(VkCommandBuffer commandBuffer, VkExtent2D extent, UINT32 mode);
+		void LinkExternalStorageBuffer(VkShaderStageFlagBits stage, ShaderBuffer* buffer);
 
 	protected:
+		void subscribeDescriptor(VkShaderStageFlags shaderStage, uint8_t binding, VkDescriptorType descType, VkDescriptorImageInfo imageInfo, int targetLayout = 0);
+		void subscribeDescriptor(VkShaderStageFlags shaderStage, uint8_t binding, VkDescriptorType descType, VkDescriptorBufferInfo bufferInfo, int targetLayout = 0);
+		virtual void populateDescriptorSets() = 0;
+
 		GrEngine::Renderer* p_Owner;
 		std::vector<DescriptorSet> descriptorSets;
 		Mesh* object_mesh;
@@ -37,5 +42,6 @@ namespace GrEngine_Vulkan
 		VulkanResourceManager* resources;
 		VkDevice logicalDevice;
 		VmaAllocator memAllocator;
+		std::map<VkShaderStageFlagBits, ShaderBuffer*> globalBuffers;
 	};
 }

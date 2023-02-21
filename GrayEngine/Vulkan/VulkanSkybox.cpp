@@ -1,6 +1,6 @@
 #include <pch.h>
 #include "VulkanSkybox.h"
-#include "VulkanAPI.h"
+#include "VulkanRenderer.h"
 #include <assimp/Importer.hpp>
 #include <assimp/scene.h>
 #include <assimp/postprocess.h>
@@ -9,14 +9,20 @@ namespace GrEngine_Vulkan
 {
 	void VulkanSkybox::initObject(VkDevice device, VmaAllocator allocator, GrEngine::Renderer* owner)
 	{
-		p_Owner = owner;
-		resources = &static_cast<VulkanAPI*>(owner)->GetResourceManager();
-		logicalDevice = device;
-		memAllocator = allocator;
-
 		UINT id = GetEntityID();
 		shader_path = "Shaders//background";
 		Type = "Skybox";
+
+		p_Owner = owner;
+		resources = &static_cast<VulkanRenderer*>(owner)->GetResourceManager();
+		logicalDevice = device;
+		memAllocator = allocator;
+
+		if (object_mesh != nullptr)
+		{
+			resources->RemoveMesh(object_mesh->mesh_path.c_str(), logicalDevice, memAllocator);
+			object_mesh = nullptr;
+		}
 
 		auto resource = resources->GetMeshResource("default");
 		if (resource == nullptr)
@@ -54,42 +60,14 @@ namespace GrEngine_Vulkan
 			object_mesh = resource->AddLink();
 		}
 
-		descriptorSets.resize(1);
-		descriptorSets[0].bindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
-		descriptorSets[0].set.resize(1);
-
-		createDescriptorLayout();
-		createDescriptorPool();
-		createDescriptorSet();
-		createPipelineLayout();
-		createGraphicsPipeline();
+		static_cast<VulkanRenderer*>(p_Owner)->assignTextures({ }, this);
 	}
 
 	bool VulkanSkybox::recordCommandBuffer(VkCommandBuffer commandBuffer, VkExtent2D extent, UINT32 mode)
 	{
 		if (object_mesh->vertexBuffer.initialized == true && filled)
 		{
-			vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, graphicsPipeline);
-
-			VkDeviceSize offsets[] = { 0 };
-			vkCmdBindVertexBuffers(commandBuffer, 0, 1, &object_mesh->vertexBuffer.Buffer, offsets);
-			vkCmdBindIndexBuffer(commandBuffer, object_mesh->indexBuffer.Buffer, 0, VK_INDEX_TYPE_UINT8_EXT);
-
-			//UpdateObjectPosition();
-			//UpdateObjectOrientation();
-			pushConstants(commandBuffer, extent, mode);
-
-			for (std::vector<DescriptorSet>::iterator itt = descriptorSets.begin(); itt != descriptorSets.end(); ++itt)
-			{
-				for (std::vector<VkDescriptorSet>::iterator it = (*itt).set.begin(); it != (*itt).set.end(); ++it)
-				{
-					if ((*itt).bindPoint == VK_PIPELINE_BIND_POINT_GRAPHICS)
-						vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout, 0, 1, &(*it), 0, NULL);
-				}
-			}
-
-			//vkCmdDraw(commandBuffer, static_cast<uint32_t>(object_mesh.vertices.size()), 1, 0, 0);
-			vkCmdDrawIndexed(commandBuffer, static_cast<uint32_t>(object_mesh->indices.size()), 1, 0, 0, 0);
+			VulkanDrawable::recordCommandBuffer(commandBuffer, extent, mode);
 			return true;
 		}
 
@@ -99,8 +77,8 @@ namespace GrEngine_Vulkan
 	void VulkanSkybox::UpdateTextures(std::array<std::string, 6> sky)
 	{
 		filled = false;
-		invalidateTexture();
-		static_cast<VulkanAPI*>(p_Owner)->assignTextures(std::vector<std::string>(sky.begin(), sky.end()), this);
+		//invalidateTexture();
+		static_cast<VulkanRenderer*>(p_Owner)->assignTextures(std::vector<std::string>(sky.begin(), sky.end()), this);
 		filled = true;
 	}
 
@@ -114,5 +92,22 @@ namespace GrEngine_Vulkan
 		ubo.proj[1][1] *= -1; //reverse Y coordinate
 		vkCmdPushConstants(cmd, pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(UniformBufferObject), &ubo);
 		return true;
+	}
+
+	void VulkanSkybox::populateDescriptorSets()
+	{
+		descriptorSets.clear();
+		descriptorSets.resize(1);
+		descriptorSets[0].bindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
+
+		VkDescriptorImageInfo info;
+		info.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+		info.imageView = object_texture->textureImageView;
+		info.sampler = object_texture->textureSampler;
+		subscribeDescriptor(VK_SHADER_STAGE_FRAGMENT_BIT, 0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, info);
+
+		createDescriptorLayout();
+		createDescriptorPool();
+		createDescriptorSet();
 	}
 }

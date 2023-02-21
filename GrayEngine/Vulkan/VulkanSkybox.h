@@ -29,6 +29,10 @@ namespace GrEngine_Vulkan
 		bool recordCommandBuffer(VkCommandBuffer commandBuffer, VkExtent2D extent, UINT32 mode) override;
 		void initObject(VkDevice device, VmaAllocator allocator, GrEngine::Renderer* owner) override;
 		bool pushConstants(VkCommandBuffer cmd, VkExtent2D extent, UINT32 mode) override;
+
+	protected:
+		void populateDescriptorSets() override;
+
 	private:
 		bool filled = false;
 	};

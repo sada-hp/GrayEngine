@@ -188,6 +188,12 @@ namespace GrEngine
 
 	void Engine::SetCursorPosition(double xpos, double ypos)
 	{
+		glfwFocusWindow(pWindow->getWindow());
 		glfwSetCursorPos(pWindow->getWindow(), xpos, ypos);
+	}
+
+	void Engine::GenerateTerrain(int resolution, int width, int height, int depth, const char* map)
+	{
+		GetRenderer()->LoadTerrain(resolution, width, height, depth, map);
 	}
 }

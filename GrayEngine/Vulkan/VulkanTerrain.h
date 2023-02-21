@@ -19,7 +19,8 @@ namespace GrEngine_Vulkan
 			int height;
 		};
 
-		ComputeSize size = { 512, 2000, 2000, 400 };
+		ComputeSize size;
+		bool ready = false;
 
 	public:
 		VulkanTerrain() {};
@@ -27,30 +28,32 @@ namespace GrEngine_Vulkan
 		VulkanTerrain(UINT id) : Terrain(id) {};
 
 		virtual void initObject(VkDevice device, VmaAllocator allocator, GrEngine::Renderer* owner) override;
-		bool recordCommandBuffer(VkCommandBuffer commandBuffer, VkExtent2D extent, UINT32 mode) override;
 		virtual bool pushConstants(VkCommandBuffer cmd, VkExtent2D extent, UINT32 mode) override;
 		void destroyObject() override;
 		void calculateCollisions() override;
-		void GenerateTerrain(uint16_t resolution) override;
+		void GenerateTerrain(int resolution, int width, int height, int depth, const char* map) override;
+		void UpdateFoliageMask(void* pixels) override;
 
 	protected:
+		void populateDescriptorSets();
+
 		bool createPipelineLayout() override;
 		bool createGraphicsPipeline() override;
-		bool createDescriptorLayout() override;
-		bool createDescriptorPool() override;
-		bool createDescriptorSet() override;
 		btTriangleMesh* colMesh;
 
 
 		void* terI;
 		ShaderBuffer terOut;
 		ShaderBuffer terIn;
+
 		VkPipeline computePipeline;
 		VkPipelineLayout computeLayout;
 		VkCommandBuffer computeCmd;
 		VkCommandPool computePool;
 		VkQueue computeQueue;
 		VkFence computeFence;
+		Texture* heightMap;
+		Texture* foliageMask;
 	};
 }
 
