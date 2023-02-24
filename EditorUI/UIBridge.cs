@@ -62,7 +62,19 @@ namespace EditorUI
         public static extern void LoadScene(IntPtr path);
 
         [DllImport("SceneEditor.dll", CallingConvention = CallingConvention.Cdecl)]
-        public static extern void GenerateTerrain(int resolution, int width, int height, int depth, IntPtr path);
+        public static extern void GenerateTerrain(int resolution, int x, int y, int z, IntPtr height, IntPtr blend, IntPtr baselayer, IntPtr red, IntPtr green, IntPtr blue);
+
+        [DllImport("SceneEditor.dll", CallingConvention = CallingConvention.Cdecl)]
+        public static extern void ToggleBrush(int mode, int strength);
+
+        [DllImport("SceneEditor.dll", CallingConvention = CallingConvention.Cdecl)]
+        public static extern void UpdateBrush(int mode, float opacity, float size);
+
+        [DllImport("SceneEditor.dll", CallingConvention = CallingConvention.Cdecl)]
+        public static extern void SetActiveBrushChannels(bool red, bool green, bool blue);
+
+        [DllImport("SceneEditor.dll", CallingConvention = CallingConvention.Cdecl)]
+        public static extern void ControlKey(bool state);
 
         public static Wrapper[] wrappers = new Wrapper[2];
         public static Thread uThread;

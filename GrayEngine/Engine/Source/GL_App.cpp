@@ -122,7 +122,7 @@ namespace GrEngine
 	{
 		for (auto input : inputs_vector)
 		{
-			input();
+			input.second();
 		}
 	}
 

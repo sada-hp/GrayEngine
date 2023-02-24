@@ -27,7 +27,8 @@ namespace GrEngine
 		Entity* SelectEntity(UINT32 ID) { return GetRenderer()->selectEntity(ID); };
 		POINTFLOAT GetCursorPosition();
 		void SetCursorState(bool show) { pWindow->AppShowCursor(show); };
-		void AddInputCallback(InputCallbackFun callback) { pWindow->AddInputProccess(callback); };
+		void AddInputCallback(UINT id, InputCallbackFun callback) { pWindow->AddInputProccess(id, callback); };
+		void RemoveInputCallback(UINT id) { pWindow->RemoveInput(id); };
 		bool IsKeyDown(int key) { return pWindow->IsKeyDown(key); }
 		void TogglePhysicsState(bool state);
 		POINT GetWindowSize();
@@ -41,7 +42,7 @@ namespace GrEngine
 		static bool WriteGMF(const char* filepath, const char* mesh_path, std::vector<std::string> textures_vector);
 		virtual void LoadScene(const char* path);
 		virtual void SaveScene(const char* path);
-		virtual void GenerateTerrain(int resolution, int width, int height, int depth, const char* map);
+		virtual void GenerateTerrain(int resolution, int width, int height, int depth, std::array<std::string, 6> maps);
 
 	protected:
 		void clearScene();

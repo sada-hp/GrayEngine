@@ -14,7 +14,6 @@ namespace GrEngine_Vulkan
 		properties.push_back(new Shader("Shaders//default", this));
 
 		UINT id = GetEntityID();
-		colorID = { id / 1000000 % 1000, id / 1000 % 1000, id % 1000 };
 
 		physComponent = new GrEngineBullet::BulletAPI::BulletPhysObject(this);
 		GrEngine::Engine::GetContext()->GetPhysics()->AddSimulationObject(physComponent);
@@ -27,6 +26,13 @@ namespace GrEngine_Vulkan
 		GenerateBoxMesh(0.5, 0.5, 0.5);
 
 		static_cast<VulkanRenderer*>(p_Owner)->assignTextures({""}, this);
+	}
+
+	void VulkanObject::destroyObject()
+	{
+		GrEngine::Engine::GetContext()->GetPhysics()->RemoveSimulationObject(physComponent);
+
+		VulkanDrawable::destroyObject();
 	}
 
 	void VulkanObject::Refresh()
@@ -220,7 +226,6 @@ namespace GrEngine_Vulkan
 					GrEngine_Vulkan::Vertex vertex{ {
 					{ cur_mesh->mVertices[vert_ind].x, cur_mesh->mVertices[vert_ind].y, cur_mesh->mVertices[vert_ind].z, 1.0f },
 					{ coord[vert_ind].x, 1.0f - coord[vert_ind].y },
-					getColorID(),
 					(uint32_t)uv_ind
 					} };
 

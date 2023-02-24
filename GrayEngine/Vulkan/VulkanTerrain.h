@@ -31,7 +31,7 @@ namespace GrEngine_Vulkan
 		virtual bool pushConstants(VkCommandBuffer cmd, VkExtent2D extent, UINT32 mode) override;
 		void destroyObject() override;
 		void calculateCollisions() override;
-		void GenerateTerrain(int resolution, int width, int height, int depth, const char* map) override;
+		void GenerateTerrain(int resolution, int width, int height, int depth, std::array<std::string, 6> images) override;
 		void UpdateFoliageMask(void* pixels) override;
 
 	protected:

@@ -72,7 +72,7 @@ namespace EditorUI
 
         private void TextInputHandler(object sender, TextChangedEventArgs e)
         {
-            if (XBox.IsFocused || YBox.IsFocused || ZBox.IsFocused)
+            if (XBox.IsKeyboardFocused || YBox.IsKeyboardFocused || ZBox.IsKeyboardFocused)
             {
                 Contents = XBox.Text + ':' + YBox.Text + ':' + ZBox.Text;
                 VectorPropertyChanged.Invoke(this);

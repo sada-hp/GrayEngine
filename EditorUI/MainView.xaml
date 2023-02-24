@@ -6,7 +6,7 @@
              xmlns:local="clr-namespace:EditorUI"
              xmlns:comp="clr-namespace:EditorUI.Components"
              mc:Ignorable="d" 
-             d:DesignHeight="450" d:DesignWidth="800" WindowStartupLocation="CenterScreen" Background="#FF15161F" Title="Gray Engine: World Editor" Closed="Window_Closed">
+             d:DesignHeight="450" d:DesignWidth="800" WindowStartupLocation="CenterScreen" Background="#FF15161F" Title="Gray Engine: World Editor" Closed="Window_Closed" KeyDown="Window_KeyDown" KeyUp="Window_KeyUp">
 
     <DockPanel Background="#FF6D88FF" LastChildFill="True">
         <Menu Height="25" Background="#FF353538" Padding="0,2,0,0" DockPanel.Dock="Top">
@@ -34,6 +34,7 @@
                         <!--<Button x:Name="BrowserButton" Content="Model browser" Background="#FF5D5D5D" BorderBrush="#FFC8C8C8" BorderThickness="1" Margin="5" Foreground="White" FontFamily="Lucida Sans Unicode" TextOptions.TextHintingMode="Fixed" Padding="2" Cursor="Hand" Click="BrowserButton_Click"/>-->
                         <Button x:Name="EntityButton" Content="Add entity" Background="#FF5D5D5D" BorderBrush="#FFC8C8C8" BorderThickness="1" Margin="5" Foreground="White" FontFamily="Lucida Sans Unicode" TextOptions.TextHintingMode="Fixed" Padding="2" Cursor="Hand" Click="EntityButton_Click"/>
                         <Button x:Name="PhysicsButton" Content="Simulate physics" Background="#FF5D5D5D" BorderBrush="#FFC8C8C8" BorderThickness="1" Margin="5" Foreground="White" FontFamily="Lucida Sans Unicode" TextOptions.TextHintingMode="Fixed" Padding="2" Cursor="Hand" Click="PhysicsButton_Click"/>
+                        <Button x:Name="BrushButton" Content="Terrain brush" Background="#FF5D5D5D" BorderBrush="#FFC8C8C8" BorderThickness="1" Margin="5" Foreground="White" FontFamily="Lucida Sans Unicode" TextOptions.TextHintingMode="Fixed" Padding="2" Cursor="Hand" Click="BrushButton_Click"/>
                     </StackPanel>
                     <comp:ListBoxEx x:Name="EntitiesList" Background="#FF242427" Margin="5, 5, 5, 5" IsSynchronizedWithCurrentItem="True" SelectionChanged="EntitiesList_SelectionChanged">
 

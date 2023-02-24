@@ -66,7 +66,9 @@ namespace EditorUI
         private void ContentLabel_TextInput(object sender, TextChangedEventArgs e)
         {
             Contents = ContentLabel.Text;
-            TextBoxTextChanged.Invoke(this);
+
+            if (ContentLabel.IsKeyboardFocused)
+                TextBoxTextChanged.Invoke(this);
         }
     }
 }

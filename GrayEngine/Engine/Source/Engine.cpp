@@ -12,8 +12,10 @@ namespace GrEngine
 		if (context == nullptr)
 		{
 			context = this;
+			Logger::JoinEventListener(&eventListener);
 		}
 
+		Logger::Out("--------------- Starting the engine ---------------", OutputColor::Gray, OutputType::Log);
 		physEngine = new GrEngineBullet::BulletAPI();
 		AppParameters param = Properties;
 		param.eventListener = &eventListener;
@@ -192,8 +194,8 @@ namespace GrEngine
 		glfwSetCursorPos(pWindow->getWindow(), xpos, ypos);
 	}
 
-	void Engine::GenerateTerrain(int resolution, int width, int height, int depth, const char* map)
+	void Engine::GenerateTerrain(int resolution, int width, int height, int depth, std::array<std::string, 6> maps)
 	{
-		GetRenderer()->LoadTerrain(resolution, width, height, depth, map);
+		GetRenderer()->LoadTerrain(resolution, width, height, depth, maps);
 	}
 }

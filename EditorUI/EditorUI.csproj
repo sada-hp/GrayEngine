@@ -68,6 +68,7 @@
   <ItemGroup>
     <Reference Include="PresentationCore" />
     <Reference Include="PresentationFramework" />
+    <Reference Include="PresentationFramework.Aero2" />
     <Reference Include="System" />
     <Reference Include="System.Core" />
     <Reference Include="System.Drawing" />
@@ -115,6 +116,9 @@
     </Compile>
     <Compile Include="LabelControl.xaml.cs">
       <DependentUpon>LabelControl.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="ListControl.xaml.cs">
+      <DependentUpon>ListControl.xaml</DependentUpon>
     </Compile>
     <Compile Include="MaterialInput.xaml.cs">
       <DependentUpon>MaterialInput.xaml</DependentUpon>
@@ -167,6 +171,10 @@
       <Generator>MSBuild:Compile</Generator>
     </Page>
     <Page Include="LabelControl.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="ListControl.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>

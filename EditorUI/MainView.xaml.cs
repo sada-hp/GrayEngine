@@ -43,11 +43,14 @@ namespace EditorUI
     public partial class MainView : Window, EditorWindow
     {
         int selectinon_id;
+        int brush_mode = 0;
         public Form viewport = new Form();
         IntPtr child_hwnd;
         System.Windows.Forms.Panel panel = new System.Windows.Forms.Panel();
         ObservableCollection<object> entities = new ObservableCollection<object>();
         ObservableCollection<PropertyItem> ent_props = new ObservableCollection<PropertyItem>();
+        float brushOpacity = 1;
+        float brushSize = 1;
 
         public MainView()
         {
@@ -174,6 +177,7 @@ namespace EditorUI
                     (item.PropGrid.Children[item.PropGrid.Children.Count - 1] as PropertyControl).Contents = pair.Value.ToString();
                 }
 
+                System.Windows.Input.Keyboard.ClearFocus();
             }
         }
 
@@ -228,6 +232,42 @@ namespace EditorUI
         private void Mass_callback(object sender)
         {
             UIBridge.UpdateEntityProperty(((PropertyControl)sender).ID, Marshal.StringToHGlobalAnsi("Mass"), Marshal.StringToHGlobalAnsi(((PropertyControl)sender).Contents));
+        }
+
+        private void Opacity_callback(object sender)
+        {
+            float opac = 0;
+            bool res = float.TryParse(((PropertyControl)sender).Contents, out opac);
+            opac = res ? opac : 1;
+            UIBridge.UpdateBrush(-1, opac, -1);
+        }
+
+        private void Size_callback(object sender)
+        {
+            float size = 0;
+            bool res = float.TryParse(((PropertyControl)sender).Contents, out size);
+            size = res ? size : 1;
+            UIBridge.UpdateBrush(-1 , - 1, size);
+        }
+
+        private void BrushMode_callback(object sender)
+        {
+            if ((sender as PropertyControl).Contents == "Paint")
+                UIBridge.UpdateBrush(1, -1, -1);
+            else if ((sender as PropertyControl).Contents == "Erase")
+                UIBridge.UpdateBrush(2, -1, -1);
+        }
+
+        private void BrushChannels_callback(object sender)
+        {
+            if ((sender as PropertyControl).Contents == "Red")
+                UIBridge.SetActiveBrushChannels(true, false, false);
+            else if ((sender as PropertyControl).Contents == "Green")
+                UIBridge.SetActiveBrushChannels(false, true, false);
+            else if ((sender as PropertyControl).Contents == "Blue")
+                UIBridge.SetActiveBrushChannels(false, false, true);
+            else if ((sender as PropertyControl).Contents == "RGB")
+                UIBridge.SetActiveBrushChannels(true, true, true);
         }
 
         internal void UpdateInfo(int type, string lp, string rp)
@@ -286,6 +326,43 @@ namespace EditorUI
                 }
 
                 handlers.Add(name, name + "_callback");
+
+                UpdateProperties(selectinon_id, properties, types, events, handlers);
+            }
+            catch (Exception e)
+            {
+                UIBridge.LogMessage(Marshal.StringToHGlobalAnsi(e.Message + e.StackTrace));
+            }
+        }
+
+        internal void LoadBrushInfo()
+        {
+            try
+            {
+                Dictionary<string, object> properties = new Dictionary<string, object>();
+                Dictionary<string, Type> types = new Dictionary<string, Type>();
+                Dictionary<string, string> events = new Dictionary<string, string>();
+                Dictionary<string, string> handlers = new Dictionary<string, string>();
+
+                properties.Add("Mode", "Paint:Erase");
+                types.Add("Mode", typeof(ListControl));
+                events.Add("Mode", "ControlSelectionChanged");
+                handlers.Add("Mode", "BrushMode_callback");
+
+                properties.Add("Channels", "Red:Green:Blue:RGB");
+                types.Add("Channels", typeof(ListControl));
+                events.Add("Channels", "ControlSelectionChanged");
+                handlers.Add("Channels", "BrushChannels_callback");
+
+                properties.Add("Opacity", brushOpacity.ToString("0.0000"));
+                types.Add("Opacity", typeof(LabelControl));
+                events.Add("Opacity", "TextBoxTextChanged");
+                handlers.Add("Opacity", "Opacity_callback");
+
+                properties.Add("Size", brushSize.ToString("0.0000"));
+                types.Add("Size", typeof(LabelControl));
+                events.Add("Size", "TextBoxTextChanged");
+                handlers.Add("Size", "Size_callback");
 
                 UpdateProperties(selectinon_id, properties, types, events, handlers);
             }
@@ -428,6 +505,35 @@ namespace EditorUI
         {
             TerrainSettings settings = new TerrainSettings();
             settings.ShowDialog();
+        }
+
+        private void BrushButton_Click(object sender, RoutedEventArgs e)
+        {
+            if (brush_mode == 0)
+            {
+                LoadBrushInfo();
+                brush_mode = 1;
+            }
+            else
+                brush_mode = 0;
+
+            UIBridge.ToggleBrush(brush_mode, 1);
+        }
+
+        private void Window_KeyDown(object sender, System.Windows.Input.KeyEventArgs e)
+        {
+            if (e.Key == System.Windows.Input.Key.LeftCtrl)
+            {
+                UIBridge.ControlKey(true);
+            }
+        }
+
+        private void Window_KeyUp(object sender, System.Windows.Input.KeyEventArgs e)
+        {
+            if (e.Key == System.Windows.Input.Key.LeftCtrl)
+            {
+                UIBridge.ControlKey(false);
+            }
         }
     };
 }

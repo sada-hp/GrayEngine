@@ -28,6 +28,10 @@ namespace SceneEditor
 		ExportDll void __stdcall AddNewEntityProperty(int id, const char* property);
 		ExportDll void __stdcall SaveScene(const char* path);
 		ExportDll void __stdcall LoadScene(const char* path);
-		ExportDll void __stdcall GenerateTerrain(int resolution, int width, int height, int depth, const char* map);
+		ExportDll void __stdcall GenerateTerrain(int resolution, int x, int y, int z, const char* height, const char* blend, const char* base, const char* red, const char* green, const char* blue);
+		ExportDll void __stdcall ToggleBrush(int mode, int strength);
+		ExportDll void __stdcall UpdateBrush(int mode, float opacity, float size);
+		ExportDll void __stdcall SetActiveBrushChannels(bool red, bool green, bool blue);
+		ExportDll void __stdcall ControlKey(bool state);
 	}
 }

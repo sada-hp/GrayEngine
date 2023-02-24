@@ -6,52 +6,148 @@
              xmlns:local="clr-namespace:EditorUI"
              mc:Ignorable="d" 
              d:DesignHeight="450" d:DesignWidth="800" Width="650" Height="450" ResizeMode="NoResize" WindowStartupLocation="CenterScreen" Title="Terrain editor">
-    <Grid Background="#FF353538">
+    <Window.Resources>
+        <Style TargetType="{x:Type TabItem}">
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="{x:Type TabItem}">
+                        <Grid>
+                            <Border 
+                                Name="Border"
+                                Margin="0,0,-4,0" 
+                                Background="#FF23232C"
+                                BorderThickness="0,0,0,0" 
+                                CornerRadius="2,12,0,0" >
+                                <ContentPresenter x:Name="ContentSite"
+                                    VerticalAlignment="Center"
+                                    HorizontalAlignment="Center"
+                                    ContentSource="Header"
+                                    Margin="12,2,12,2"
+                                    RecognizesAccessKey="True"/>
+                            </Border>
+                        </Grid>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsSelected" Value="True">
+                                <Setter Property="Panel.ZIndex" Value="100" />
+                                <Setter TargetName="Border" Property="Background" Value="#FF353538" />
+                                <Setter Property="Foreground" Value="WhiteSmoke" />
+                            </Trigger>
+                            <Trigger Property="IsEnabled" Value="False">
+                                <Setter Property="Foreground" Value="Gray" />
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+    </Window.Resources>
+    <Grid  Background="#FF292A30">
         <Grid.RowDefinitions>
-            <RowDefinition Height="70*"/>
-            <RowDefinition Height="15*"/>
+            <RowDefinition Height="85*"/>
             <RowDefinition Height="15*"/>
         </Grid.RowDefinitions>
-        <Grid Grid.Row="0">
-            <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="*"/>
-                <ColumnDefinition Width="Auto"/>
-                <ColumnDefinition Width="*"/>
-            </Grid.ColumnDefinitions>
-            <Image Name="ImgHolder" Grid.Column="1" Margin="10" IsEnabled="False"/>
-            <Button Name="LoadBtn" Content="HEIGHT MAP" Grid.Column="1" Background="#FF242427" Margin="10" Foreground="White" FontFamily="Lucida Sans Unicode" FontSize="25" FontWeight="ExtraBold" Click="Button_Click_1" Padding="40"/>
-        </Grid>
-        <Grid Grid.Row="1">
-            <Grid.RowDefinitions>
-                <RowDefinition Height="Auto"/>
-                <RowDefinition Height="*"/>
-            </Grid.RowDefinitions>
-            <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="5*"/>
-                <ColumnDefinition Width="Auto"/>
-                <ColumnDefinition Width="Auto"/>
-                <ColumnDefinition Width="5*"/>
-                <ColumnDefinition Width="Auto"/>
-                <ColumnDefinition Width="Auto"/>
-                <ColumnDefinition Width="Auto"/>
-                <ColumnDefinition Width="Auto"/>
-                <ColumnDefinition Width="5*"/>
-            </Grid.ColumnDefinitions>
-            <Label Content="Subdivisions:" Grid.Column="2" Foreground="WhiteSmoke" FontFamily="Lucida Sans Unicode" VerticalContentAlignment="Center"/>
-            <TextBox Name ="ResolutionTB" Grid.Column="2" Grid.Row="1" Width="80" Background="#FF323238"  HorizontalContentAlignment="Center" VerticalContentAlignment="Center" Foreground="WhiteSmoke" MaxLines="1" MaxLength="4" PreviewTextInput="TextBox_PreviewTextInput"/>
-            <Label Content="Maximum size:" Grid.Column="6" Foreground="WhiteSmoke" FontFamily="Lucida Sans Unicode" VerticalContentAlignment="Center"/>
-            <TextBox Name="WidthTB" Grid.Column="5" Grid.Row="1" Width="80" Background="#FF323238"  HorizontalContentAlignment="Center" VerticalContentAlignment="Center" Foreground="WhiteSmoke" MaxLines="1" MaxLength="4" PreviewTextInput="TextBox_PreviewTextInput"/>
-            <TextBox Name="HeightTB" Grid.Column="6" Grid.Row="1" Width="80" Background="#FF323238"  HorizontalContentAlignment="Center" VerticalContentAlignment="Center" Foreground="WhiteSmoke" MaxLines="1" MaxLength="4" PreviewTextInput="TextBox_PreviewTextInput"/>
-            <TextBox Name="DepthTB" Grid.Column="7" Grid.Row="1" Width="80" Background="#FF323238"  HorizontalContentAlignment="Center" VerticalContentAlignment="Center" Foreground="WhiteSmoke" MaxLines="1" MaxLength="4" PreviewTextInput="TextBox_PreviewTextInput"/>
-        </Grid>
-        <Grid Grid.Row="2">
-            <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="60*"/>
-                <ColumnDefinition Width="20*"/>
-                <ColumnDefinition Width="20*"/>
-            </Grid.ColumnDefinitions>
-            <Button Content="Apply" Grid.Row="1" Click="Button_Click" Grid.Column="1" Background="#FF5D5D5D" BorderBrush="#FFC8C8C8" BorderThickness="2" Foreground="White" FontFamily="Lucida Sans Unicode" Width="65" Height="35" Cursor="Hand" HorizontalAlignment="Center"/>
-            <Button Name="Cancel" Content="Cancel" Grid.Row="1" Grid.Column="2" Background="#FF5D5D5D" BorderBrush="#FFC8C8C8" BorderThickness="2" Foreground="White" FontFamily="Lucida Sans Unicode" Width="65" Height="35" Cursor="Hand" HorizontalAlignment="Center" Click="Cancel_Click"/>
-        </Grid>
+        <TabControl Background="#FF343440">
+            <TabItem Header="Height map" Foreground="WhiteSmoke" Background="{x:Null}">
+                <Grid Background="#FF353538">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="70*"/>
+                        <ColumnDefinition Width="30*"/>
+                    </Grid.ColumnDefinitions>
+                    <Image Name="ImgHolder" Grid.Column="0" Margin="10" IsEnabled="False" OpacityMask="Black"/>
+                    <Button Name="LoadBtn" Content="HEIGHT MAP" Grid.Column="0" Background="#FF242427" Margin="10" Foreground="White" FontFamily="Lucida Sans Unicode" FontSize="25" FontWeight="ExtraBold" Click="Button_Click_1" Padding="40" Cursor="Hand"/>
+                    <GridSplitter Name="GridSplitter" Width="1" Background="#FFC8C8C8" Margin="0,0,0,0" Foreground="{x:Null}"/>
+                    <Grid Grid.Column="1">
+                        <Grid.RowDefinitions>
+                            <RowDefinition/>
+                            <RowDefinition/>
+                            <RowDefinition/>
+                            <RowDefinition/>
+                            <RowDefinition/>
+                        </Grid.RowDefinitions>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition/>
+                            <ColumnDefinition/>
+                        </Grid.ColumnDefinitions>
+                        <Label Content="Subdivisions:" Foreground="WhiteSmoke" FontFamily="Lucida Sans Unicode" VerticalContentAlignment="Center" Margin="5"/>
+                        <TextBox Name ="ResolutionTB" Grid.Column="1" Width="80" Background="#FF24242C"  HorizontalContentAlignment="Center" VerticalContentAlignment="Center" Foreground="WhiteSmoke" MaxLines="1" MaxLength="4" PreviewTextInput="TextBox_PreviewTextInput" MaxHeight="30"/>
+
+                        <Label Content="Size X:" Grid.Row="2" Foreground="WhiteSmoke" FontFamily="Lucida Sans Unicode" VerticalContentAlignment="Center" Margin="10"/>
+                        <TextBox Name="WidthTB" Grid.Column="1" Grid.Row="2" Width="80" Background="#FF24242C"  HorizontalContentAlignment="Center" VerticalContentAlignment="Center" Foreground="WhiteSmoke" MaxLines="1" MaxLength="4" PreviewTextInput="TextBox_PreviewTextInput" MaxHeight="30"/>
+                        <Label Content="Size Y:" Grid.Row="3" Foreground="WhiteSmoke" FontFamily="Lucida Sans Unicode" VerticalContentAlignment="Center" Margin="10"/>
+                        <TextBox Name="HeightTB" Grid.Column="1" Grid.Row="3" Width="80" Background="#FF24242C"  HorizontalContentAlignment="Center" VerticalContentAlignment="Center" Foreground="WhiteSmoke" MaxLines="1" MaxLength="4" PreviewTextInput="TextBox_PreviewTextInput" MaxHeight="30"/>
+                        <Label Content="Size Z:" Grid.Row="4" Foreground="WhiteSmoke" FontFamily="Lucida Sans Unicode" VerticalContentAlignment="Center" Margin="10"/>
+                        <TextBox Name="DepthTB" Grid.Column="1" Grid.Row="4" Width="80" Background="#FF24242C"  HorizontalContentAlignment="Center" VerticalContentAlignment="Center" Foreground="WhiteSmoke" MaxLines="1" MaxLength="4" PreviewTextInput="TextBox_PreviewTextInput" MaxHeight="30"/>
+                    </Grid>
+                </Grid>
+            </TabItem>
+            <TabItem Header="Blend mask" Foreground="WhiteSmoke" Background="{x:Null}">
+                <Grid Background="#FF353538">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="45*"/>
+                        <ColumnDefinition Width="65*"/>
+                    </Grid.ColumnDefinitions>
+                    <Button Name="MaskBtn" Grid.Column="0" Foreground="White" FontFamily="Lucida Sans Unicode" FontSize="25" FontWeight="DemiBold"  Background="#FF242427" Margin="10" Padding="40" Cursor="Hand" Click="MaskBtn_Click">
+                        <Label Content="Blend mask" Foreground="White" FontFamily="Lucida Sans Unicode" FontSize="25" FontWeight="DemiBold" IsEnabled="False">
+                            <Label.LayoutTransform>
+                                <RotateTransform Angle="90" />
+                            </Label.LayoutTransform>
+                        </Label>
+                    </Button>
+                    <GridSplitter Name="GridSplitter2" Width="1" Background="#FFC8C8C8" Margin="0,0,0,0" Foreground="{x:Null}"/>
+                    <Grid Background="#FF353538" Grid.Column="1">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition/>
+                            <ColumnDefinition/>
+                            <ColumnDefinition/>
+                            <ColumnDefinition/>
+                        </Grid.ColumnDefinitions>
+
+                        <Button Name="BaseBtn" Grid.Column="0" Background="#FF242427" Margin="10" Cursor="Hand" Click="BaseBtn_Click">
+                            <Label Content="Base layer" Foreground="White" FontFamily="Lucida Sans Unicode" FontSize="25" FontWeight="DemiBold" IsEnabled="False">
+                                <Label.LayoutTransform>
+                                    <RotateTransform Angle="90" />
+                                </Label.LayoutTransform>
+                            </Label>
+                        </Button>
+
+                        <Button Name="RedBtn" Grid.Column="1" Background="#FF242427" Margin="10" Cursor="Hand" Click="RedBtn_Click">
+                            <Label Content="Red channel" Foreground="White" FontFamily="Lucida Sans Unicode" FontSize="25" FontWeight="DemiBold" IsEnabled="False">
+                                <Label.LayoutTransform>
+                                    <RotateTransform Angle="90" />
+                                </Label.LayoutTransform>
+                            </Label>
+                        </Button>
+
+                        <Button Name="GreenBtn" Grid.Column="2" Background="#FF242427" Margin="10" Cursor="Hand" Click="GreenBtn_Click">
+                            <Label Content="Green channel" Foreground="White" FontFamily="Lucida Sans Unicode" FontSize="25" FontWeight="DemiBold" IsEnabled="False">
+                                <Label.LayoutTransform>
+                                    <RotateTransform Angle="90" />
+                                </Label.LayoutTransform>
+                            </Label>
+                        </Button>
+
+                        <Button Name="BlueBtn" Grid.Column="3" Background="#FF242427" Margin="10" Cursor="Hand" Click="BlueBtn_Click">
+                            <Label Content="Blue channel" Foreground="White" FontFamily="Lucida Sans Unicode" FontSize="25" FontWeight="DemiBold" IsEnabled="False">
+                                <Label.LayoutTransform>
+                                    <RotateTransform Angle="90" />
+                                </Label.LayoutTransform>
+                            </Label>
+                        </Button>
+                    </Grid>
+                </Grid>
+            </TabItem>
+        </TabControl>
+        <Border BorderBrush="#FFACACAC"  Grid.Row="1" BorderThickness="2,0,2,2">
+            <Grid Background="#FF1B1A1F">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="60*"/>
+                    <ColumnDefinition Width="20*"/>
+                    <ColumnDefinition Width="20*"/>
+                </Grid.ColumnDefinitions>
+                <Button Content="Apply" Grid.Row="1" Click="Button_Click" Grid.Column="1" Background="#FF323134" BorderBrush="#FFC8C8C8" BorderThickness="2" Foreground="White" FontFamily="Lucida Sans Unicode" Width="100" Height="35" Cursor="Hand" HorizontalAlignment="Center"/>
+                <Button Name="Cancel" Content="Cancel" Grid.Row="1" Grid.Column="2" Background="#FF323134" BorderBrush="#FFC8C8C8" BorderThickness="2" Foreground="White" FontFamily="Lucida Sans Unicode" Width="100" Height="35" Cursor="Hand" HorizontalAlignment="Center" Click="Cancel_Click"/>
+            </Grid>
+        </Border>
+       
     </Grid>
 </Window>

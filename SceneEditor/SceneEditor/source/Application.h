@@ -33,6 +33,7 @@ namespace GrEngine
 
     public:
         bool free_mode = false;
+        bool mouse_down = false;
         uint8_t manipulation = 0;
         POINTFLOAT manip_start;
         Entity* grid;
@@ -41,6 +42,16 @@ namespace GrEngine
         Entity* transform_target;
         glm::vec2 direct;
         glm::vec2 obj_center;
+        float brush_size = 1;
+        float brush_opacity = 1;
+        std::string brush_opacity_string = "";
+        std::string brush_size_string = "";
+        bool ctr_down = false;
+        int paint_mode = 1;
+        bool red_channel = true;
+        bool green_channel = false;
+        bool blue_channel = false;
+        float mask_aspect = 1;
 
         Application(const AppParameters& Properties = AppParameters()) : Engine(Properties)
         {
@@ -51,8 +62,6 @@ namespace GrEngine
             getEditorUI()->InitUI(VIEWPORT_EDITOR);
             getEditorUI()->SetViewportHWND(getViewportHWND(), VIEWPORT_EDITOR);
             Logger::JoinEventListener(GetEventListener());
-
-            foliage_mask = stbi_load("D:\\GrEngine\\GrayEngine\\bin\\Debug-x64\\WorldEditorApp\\Content\\Terrain\\terrain_FM_temp.png", &mask_width, &mask_height, &mask_channels, STBI_rgb_alpha);;
         }
 
         ~Application()
@@ -146,7 +155,7 @@ namespace GrEngine
                 obj_center = glm::project(pos, model, proj, view);
                 direct = glm::normalize(glm::vec2{ obj_center.x - manip_start.x, obj_center.y - manip_start.y });
             }
-            else
+            else if (manipulation != 7)
             {
                 AddChunk(ChunkType::SELECTION, "", std::to_string(id));
                 transform_target = GetRenderer()->GetSelectedEntity();
@@ -157,12 +166,7 @@ namespace GrEngine
                     gizmo->PositionObjectAt(transform_target->GetObjectPosition());
                     gizmo->SetRotation(transform_target->GetObjectOrientation());
                 }
-                else if (transform_target != nullptr && transform_target->GetEntityID() == 100)
-                {
-                    manipulation = 7;
-                    static_cast<DrawableObject*>(gizmo)->SetVisisibility(false);
-                }
-                else
+                else if (transform_target == nullptr || transform_target->GetEntityID() == 100)
                 {
                     manipulation = 0;
                     static_cast<DrawableObject*>(gizmo)->SetVisisibility(false);
@@ -170,36 +174,29 @@ namespace GrEngine
             }
         }
 
-        void App_PaintMask()
+        void App_ShowBrush(int mode, int strength)
         {
-            static auto time = std::chrono::steady_clock::now();
-            auto now = std::chrono::steady_clock::now();
-            auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(now - time).count();
-
-            int radius = 5;
-            if (duration > 35.f)
+            if (foliage_mask != nullptr)
             {
-                glm::vec3 tset = brush->GetObjectPosition();
-                int cent_x = (mask_width / 2000.f) * (tset.x + 1000.f);
-                int cent_y = mask_height - (mask_height / 2000.f) * (tset.z + 1000.f);
-
-                for (int y = -radius; y <= radius; y++)
+                if (mode > 0)
                 {
-                    for (int x = -radius; x <= radius; x++)
-                    {
-                        if (x * x + y * y <= radius * radius)
-                        {
-                            int row = (cent_y + y) * mask_width * mask_channels;
-                            int col = (cent_x + x) * mask_channels;
-
-                            int red = foliage_mask[row + col] + 10;
-                            foliage_mask[row + col] = glm::min(red, 255);
-                        }
-                    }
+                    static_cast<DrawableObject*>(brush)->SetVisisibility(true);
+                    transform_target = GetRenderer()->selectEntity(100);
+                    manipulation = 7;
+                    GetEventListener()->registerEvent("TerrainBlendMask", { true });
                 }
-
-                static_cast<Terrain*>(transform_target)->UpdateFoliageMask(foliage_mask);
-                time = now;
+                else
+                {
+                    static_cast<DrawableObject*>(brush)->SetVisisibility(false);
+                    GetRenderer()->selectEntity(0);
+                    manipulation = 0;
+                    GetEventListener()->registerEvent("TerrainBlendMask", { false });
+                }
+            }
+            else
+            {
+                Logger::Out("Invalid foliage mask selected!", OutputColor::Red, OutputType::Error);
+                GetRenderer()->selectEntity(0);
             }
         }
 
@@ -310,23 +307,107 @@ namespace GrEngine
             SendUIInfo();
         }
 
-        void App_UpdateSphere()
+        void App_GenerateTerrain(int resolution, int x, int y, int z, std::array<std::string, 6> maps)
         {
-            POINTFLOAT point = GetCursorPosition();
-            float depth = GetRenderer()->GetDepthAt(point.x, point.y);
-
-            if (depth > 0.f && !free_mode)
+            if (foliage_mask != nullptr)
             {
-                glm::mat4 model = glm::translate(glm::mat4_cast(GetRenderer()->getActiveViewport()->GetObjectOrientation()), -GetRenderer()->getActiveViewport()->GetObjectPosition());
-                glm::mat4 proj = glm::perspective(glm::radians(60.0f), (float)GetWindowSize().x / (float)GetWindowSize().y, 0.1f, 1000.0f);
-                glm::vec4 view(0, 0, GetWindowSize().x, GetWindowSize().y);
-                proj[1][1] *= -1;
-                glm::vec3 tset = glm::unProject(glm::vec3(point.x, point.y, depth), model, proj, view);
-                tset += tset - GetRenderer()->getActiveViewport()->GetObjectPosition();
-                brush->PositionObjectAt(tset);
+                free(foliage_mask);
+                foliage_mask = nullptr;
             }
 
+            foliage_mask = stbi_load(maps[1].c_str(), &mask_width, &mask_height, &mask_channels, STBI_rgb_alpha);;
+            mask_aspect = mask_width / 1024;
+            GenerateTerrain(resolution, x, y, z, maps);
         }
+
+        void App_PaintMask()
+        {
+            if (mouse_down)
+            {
+                static auto time = std::chrono::steady_clock::now();
+                auto now = std::chrono::steady_clock::now();
+                auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(now - time).count();
+
+                int radius = brush_size * mask_aspect;
+                if (duration > 65.f)
+                {
+                    int sign = paint_mode == 1 ? 1 : -1;
+                    int strength = 255 * brush_opacity * paint_mode * sign;
+                    glm::vec3 tset = brush->GetObjectPosition();
+                    int cent_x = (mask_width / 2000.f) * (tset.x + 1000.f);
+                    int cent_y = mask_height - (mask_height / 2000.f) * (tset.z + 1000.f);
+
+                    for (int y = -radius; y <= radius; y++)
+                    {
+                        for (int x = -radius; x <= radius; x++)
+                        {
+                            if (x * x + y * y <= radius * radius)
+                            {
+                                int row = (cent_y + y) * mask_width * mask_channels;
+                                int col = (cent_x + x) * mask_channels;
+
+                                int red = foliage_mask[row + col] + strength * red_channel;
+                                int green = foliage_mask[row + col + 1] + strength * green_channel;
+                                int blue = foliage_mask[row + col + 2] + strength * blue_channel;
+                                foliage_mask[row + col] = glm::max(glm::min(red, 255), 0);
+                                foliage_mask[row + col + 1] = glm::max(glm::min(green, 255), 0);
+                                foliage_mask[row + col + 2] = glm::max(glm::min(blue, 255), 0);
+                            }
+                        }
+                    }
+
+                    static_cast<Terrain*>(transform_target)->UpdateFoliageMask(foliage_mask);
+                    time = now;
+                }
+            }
+        }
+
+        void App_UpdateSphere()
+        {
+            if (manipulation == 7)
+            {
+                POINTFLOAT point = GetCursorPosition();
+                float depth = GetRenderer()->GetDepthAt(point.x, point.y, 100);
+
+                if (depth > 0.f && !free_mode)
+                {
+                    glm::mat4 model = glm::translate(glm::mat4_cast(GetRenderer()->getActiveViewport()->GetObjectOrientation()), -GetRenderer()->getActiveViewport()->GetObjectPosition());
+                    glm::mat4 proj = glm::perspective(glm::radians(60.0f), (float)GetWindowSize().x / (float)GetWindowSize().y, 0.1f, 1000.0f);
+                    glm::vec4 view(0, 0, GetWindowSize().x, GetWindowSize().y);
+                    proj[1][1] *= -1;
+                    glm::vec3 tset = glm::unProject(glm::vec3(point.x, point.y, depth), model, proj, view);
+                    tset += tset - GetRenderer()->getActiveViewport()->GetObjectPosition();
+                    brush->PositionObjectAt(tset);
+                }
+            }
+        }
+
+        void App_UpdateBrush(int mode, float opacity, float size)
+        {
+            brush_size = size > 0 ? size : brush_size;
+            brush_opacity = opacity > 0 ? opacity : brush_opacity;
+            std::string temp = Globals::FloatToString(brush_size * 2, 5);
+            std::string col = Globals::FloatToString(brush_opacity / 2, 5);
+            brush->ParsePropertyValue("Scale", (temp + ":" + temp + ":" + temp).c_str());
+            brush->ParsePropertyValue("Color", ("255:255:255:" + col).c_str());
+            paint_mode = mode > 0 ? mode : paint_mode;
+        }
+
+        void App_SendBrushInfo()
+        {
+            brush_opacity_string = Globals::FloatToString(brush_opacity, 5);
+            brush_size_string = Globals::FloatToString(brush_size, 5);
+            getEditorUI()->SendInfoChunk((int)ChunkType::ENTITY_INFO, (char*)"Opacity", (char*)brush_opacity_string.c_str());
+            getEditorUI()->SendInfoChunk((int)ChunkType::ENTITY_INFO, (char*)"Size", (char*)brush_size_string.c_str());
+        }
+
+        void App_SetActiveChannels(bool red, bool green, bool blue)
+        {
+            red_channel = red;
+            green_channel = green;
+            blue_channel = blue;
+        }
+
     private:
         std::unordered_map<int, InfoChunk> info_chunks;
         std::unordered_map<int, InfoChunk> prev_chunk;
@@ -356,6 +437,7 @@ namespace GrEngine
             //Move
             gizmo = GetRenderer()->addEntity(2000000001);
             static_cast<DrawableObject*>(gizmo)->DisableCollisions();
+            static_cast<DrawableObject*>(gizmo)->SetVisisibility(false);
             static_cast<DrawableObject*>(gizmo)->LoadMesh((Globals::getExecutablePath() + "Content\\Editor\\ManipulationTool.obj").c_str(), nullptr);
             gizmo->ParsePropertyValue("Shader", "Shaders\\gizmo");
             gizmo->AddNewProperty("Color");
@@ -367,11 +449,12 @@ namespace GrEngine
             brush = GetRenderer()->addEntity(2000000002);
             brush->ParsePropertyValue("Shader", "Shaders\\brush");
             static_cast<DrawableObject*>(brush)->DisableCollisions();
+            static_cast<DrawableObject*>(brush)->SetVisisibility(false);
             static_cast<DrawableObject*>(brush)->LoadMesh((Globals::getExecutablePath() + "Content\\Editor\\PaintingSphere.obj").c_str(), nullptr);
             brush->AddNewProperty("Color");
-            brush->ParsePropertyValue("Color", "1:1:1:0.1");
+            brush->ParsePropertyValue("Color", "1:1:1:0.5");
             brush->AddNewProperty("Scale");
-            brush->ParsePropertyValue("Scale", "10:10:10");
+            brush->ParsePropertyValue("Scale", "2:2:2");
             brush->MakeStatic();
         }
 

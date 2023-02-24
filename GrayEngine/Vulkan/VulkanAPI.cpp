@@ -285,12 +285,15 @@ namespace GrEngine_Vulkan
 		renderPassInfo.dependencyCount = 2;
 		renderPassInfo.pDependencies = dependecies;
 
-		bool res = vkCreateRenderPass(device, &renderPassInfo, nullptr, outRenderPass) == VK_SUCCESS;
+		VkResult res = vkCreateRenderPass(device, &renderPassInfo, nullptr, outRenderPass);
+
+		if (res != VK_SUCCESS)
+			Logger::Out("[VK] Failed to create render pass with code %d", OutputColor::Red, OutputType::Error, res);
 
 		destructors.insert_or_assign(destructors.begin(), *outRenderPass, (Destructor*)DestroyRenderPass);
 		devices[*outRenderPass] = device;
 
-		return res;
+		return res == VK_SUCCESS;
 	}
 
 	bool VulkanAPI::CreateFrameBuffer(VkDevice device, VkRenderPass renderPass, VkImageView* attachments, uint32_t attachmentsCount, VkExtent2D extent, VkFramebuffer* outFrameBuffer)
@@ -304,12 +307,15 @@ namespace GrEngine_Vulkan
 		framebufferInfo.height = extent.height;
 		framebufferInfo.layers = 1;
 
-		bool res = vkCreateFramebuffer(device, &framebufferInfo, nullptr, outFrameBuffer) == VK_SUCCESS;
+		VkResult res = vkCreateFramebuffer(device, &framebufferInfo, nullptr, outFrameBuffer);
+
+		if (res != VK_SUCCESS)
+			Logger::Out("[VK] Failed to create framebuffer with code %d", OutputColor::Red, OutputType::Error, res);
 
 		destructors.insert_or_assign(destructors.begin(), *outFrameBuffer, (Destructor*)DestroyFramebuffer);
 		devices[*outFrameBuffer] = device;
 
-		return res;
+		return res == VK_SUCCESS;
 	}
 
 	bool VulkanAPI::CreateCommandPool(VkDevice device, uint32_t familyIndex, VkCommandPool* outPool)
@@ -319,11 +325,15 @@ namespace GrEngine_Vulkan
 		poolInfo.queueFamilyIndex = familyIndex;
 		poolInfo.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
 
-		bool res = vkCreateCommandPool(device, &poolInfo, nullptr, outPool) == VK_SUCCESS;
+		VkResult res = vkCreateCommandPool(device, &poolInfo, nullptr, outPool);
+
+		if (res != VK_SUCCESS)
+			Logger::Out("[VK] Failed to create command pool with code %d", OutputColor::Red, OutputType::Error, res);
+
 		destructors.insert_or_assign(destructors.begin(), *outPool, (Destructor*)DestroyCommandPool);
 		devices[*outPool] = device;
 
-		return res;
+		return res == VK_SUCCESS;
 	}
 
 	bool VulkanAPI::CreateVkSemaphore(VkDevice device, VkSemaphore* outSemaphore)
@@ -331,12 +341,15 @@ namespace GrEngine_Vulkan
 		VkSemaphoreCreateInfo semaphoreInfo{};
 		semaphoreInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
 
-		bool res = vkCreateSemaphore(device, &semaphoreInfo, nullptr, outSemaphore) == VK_SUCCESS;
+		VkResult res = vkCreateSemaphore(device, &semaphoreInfo, nullptr, outSemaphore);
+
+		if (res != VK_SUCCESS)
+			Logger::Out("[VK] Failed to create semaphore with code %d", OutputColor::Red, OutputType::Error, res);
 
 		destructors.insert_or_assign(destructors.begin(), *outSemaphore, (Destructor*)DestroySemaphore);
 		devices[*outSemaphore] = device;
 
-		return res;
+		return res == VK_SUCCESS;
 	}
 
 	bool VulkanAPI::CreateVkFence(VkDevice device, VkFence* outFence)
@@ -345,12 +358,15 @@ namespace GrEngine_Vulkan
 		fenceInfo.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
 		fenceInfo.flags = VK_FENCE_CREATE_SIGNALED_BIT;
 
-		bool res = vkCreateFence(device, &fenceInfo, nullptr, outFence) == VK_SUCCESS;
+		VkResult res = vkCreateFence(device, &fenceInfo, nullptr, outFence);
+
+		if (res != VK_SUCCESS)
+			Logger::Out("[VK] Failed to create fence with code %d", OutputColor::Red, OutputType::Error, res);
 
 		destructors.insert_or_assign(destructors.begin(), *outFence, (Destructor*)DestroyFence);
 		devices[*outFence] = device;
 
-		return res;
+		return res == VK_SUCCESS;
 	}
 
 	bool VulkanAPI::CreateImage(VmaAllocator allocator, VkImageCreateInfo* createInfo, VkImage* outImage, VmaAllocation* outAllocation, VmaMemoryUsage memUsage, VkMemoryPropertyFlags memFlags)
@@ -360,13 +376,16 @@ namespace GrEngine_Vulkan
 		imageAllocationCreateInfo.preferredFlags = memFlags;
 		imageAllocationCreateInfo.requiredFlags = 0; //CHECK THIS LATER
 
-		bool res = vmaCreateImage(allocator, createInfo, &imageAllocationCreateInfo, outImage, outAllocation, nullptr) == VK_SUCCESS;
+		VkResult res = vmaCreateImage(allocator, createInfo, &imageAllocationCreateInfo, outImage, outAllocation, nullptr);
+
+		if (res != VK_SUCCESS)
+			Logger::Out("[VK] Failed to create image with code %d", OutputColor::Red, OutputType::Error, res);
 
 		destructors.insert_or_assign(destructors.begin(), *outImage, (Destructor*)DestroyImage);
 		allocations[*outImage] = *outAllocation;
 		allocators[*outAllocation] = allocator;
 
-		return res;
+		return res == VK_SUCCESS;
 	}
 
 	bool VulkanAPI::CreateImageView(VkDevice device, VkFormat format, VkImage image, VkImageSubresourceRange subRange, VkImageView* target, VkImageViewType type)
@@ -382,12 +401,15 @@ namespace GrEngine_Vulkan
 		createInfo.subresourceRange = subRange;
 		createInfo.image = image;
 
-		bool res = vkCreateImageView(device, &createInfo, nullptr, target) == VK_SUCCESS;
+		VkResult res = vkCreateImageView(device, &createInfo, nullptr, target);
+
+		if (res != VK_SUCCESS)
+			Logger::Out("[VK] Failed to create image with code %d", OutputColor::Red, OutputType::Error, res);
 
 		destructors.insert_or_assign(destructors.begin(), *target, (Destructor*)DestroyImageView);
 		devices[*target] = device;
 
-		return  res;
+		return  res == VK_SUCCESS;
 	}
 
 	bool VulkanAPI::CreatePipelineLayout(VkDevice device, std::vector<VkPushConstantRange> pushConstants, std::vector<VkDescriptorSetLayout> descriptorLayouts, VkPipelineLayout* outLayout)
@@ -399,29 +421,41 @@ namespace GrEngine_Vulkan
 		pipelineLayoutInfo.pushConstantRangeCount = pushConstants.size();
 		pipelineLayoutInfo.pPushConstantRanges = pushConstants.data();
 
-		bool res = vkCreatePipelineLayout(device, &pipelineLayoutInfo, NULL, outLayout) == VK_SUCCESS;
+		VkResult res = vkCreatePipelineLayout(device, &pipelineLayoutInfo, NULL, outLayout);
+
+		if (res != VK_SUCCESS)
+			Logger::Out("[VK] Failed to create pipeline layout with code %d", OutputColor::Red, OutputType::Error, res);
+
 		destructors.insert_or_assign(destructors.begin(), *outLayout, (Destructor*)DestroyPipelineLayout);
 		devices[*outLayout] = device;
 
-		return res;
+		return res == VK_SUCCESS;
 	}
 
 	bool VulkanAPI::CreateGraphicsPipeline(VkDevice device, VkGraphicsPipelineCreateInfo* info, VkPipeline* outPipeline)
 	{
-		bool res = vkCreateGraphicsPipelines(device, NULL, 1, info, nullptr, outPipeline);
+		VkResult res = vkCreateGraphicsPipelines(device, NULL, 1, info, nullptr, outPipeline);
+
+		if (res != VK_SUCCESS)
+			Logger::Out("[VK] Failed to create pipeline with code %d", OutputColor::Red, OutputType::Error, res);
+
 		destructors.insert_or_assign(destructors.begin(), *outPipeline, (Destructor*)DestroyPipeline);
 		devices[*outPipeline] = device;
 
-		return res;
+		return res == VK_SUCCESS;
 	}
 
 	bool VulkanAPI::CreateComputePipeline(VkDevice device, VkComputePipelineCreateInfo* info, VkPipeline* outPipeline)
 	{
-		bool res = vkCreateComputePipelines(device, NULL, 1, info, nullptr, outPipeline);
+		VkResult res = vkCreateComputePipelines(device, NULL, 1, info, nullptr, outPipeline);
+
+		if (res != VK_SUCCESS)
+			Logger::Out("[VK] Failed to create pipeline with code %d", OutputColor::Red, OutputType::Error, res);
+
 		destructors.insert_or_assign(destructors.begin(), *outPipeline, (Destructor*)DestroyPipeline);
 		devices[*outPipeline] = device;
 
-		return res;
+		return res == VK_SUCCESS;
 	}
 
 	bool VulkanAPI::CreateDescriptorSetLayout(VkDevice device, std::vector<VkDescriptorSetLayoutBinding> bindings, VkDescriptorSetLayout* outLayout)
@@ -479,11 +513,15 @@ namespace GrEngine_Vulkan
 		samplerInfo.minLod = 0.0f;
 		samplerInfo.maxLod = mipLevels;
 		
-		bool res = vkCreateSampler(logicalDevice, &samplerInfo, nullptr, outSampler) == VK_SUCCESS;
+		VkResult res = vkCreateSampler(logicalDevice, &samplerInfo, nullptr, outSampler);
+
+		if (res != VK_SUCCESS)
+			Logger::Out("[VK] Failed to create sampler with code %d", OutputColor::Red, OutputType::Error, res);
+
 		destructors[*outSampler] = (Destructor*)DestroySampler;
 		devices[*outSampler] = logicalDevice;
 
-		return res;
+		return res == VK_SUCCESS;
 	}
 
 	void VulkanAPI::DestroyLogicalDevice(VkDevice device)

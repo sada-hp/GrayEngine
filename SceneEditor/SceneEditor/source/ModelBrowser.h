@@ -28,7 +28,7 @@ namespace GrEngine
             GetRenderer()->SetHighlightingMode(false);
             dummy_entity = AddEntity();
             SelectEntity(dummy_entity->GetEntityID());
-            AddInputCallback(Inputs);
+            AddInputCallback(0, Inputs);
 
             GetEventListener()->pushEvent("RequireMaterialsUpdate", [](std::vector<std::any> para)
                 {

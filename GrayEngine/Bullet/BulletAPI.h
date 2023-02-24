@@ -128,7 +128,7 @@ namespace GrEngineBullet
 		void SimulateStep() override;
 
 		void AddSimulationObject(GrEngine::Physics::PhysicsObject* object) override;
-		void RemoveObject(void* object) override;
+		void RemoveSimulationObject(GrEngine::Physics::PhysicsObject* object) override;
 		void RemovePhysicsObject(void* object) override;
 		void TogglePhysicsState(bool state) override;
 

@@ -21,20 +21,16 @@ namespace GrEngine_Vulkan
 		bool LoadModel(const char* mesh_path, std::vector<std::string> textures_vector) override;
 		void GeneratePlaneMesh(float width, int subdivisions) override;
 		void GenerateBoxMesh(float width, float height, float depth) override;
-		inline glm::uvec3 getColorID() { return colorID; };
 		static uint32_t selected_id;
-		//bool recordCommandBuffer(VkCommandBuffer commandBuffer, VkExtent2D extent, UINT32 mode) override;
-		
+		void destroyObject() override;
+
 
 	protected:
 		void populateDescriptorSets() override;
-
 		bool createGraphicsPipeline() override;
 
-		glm::uvec3 colorID = { 0, 0, 0 };
 		PickingBufferObject opo;
 		btTriangleMesh* colMesh;
-		
 	};
 }
 

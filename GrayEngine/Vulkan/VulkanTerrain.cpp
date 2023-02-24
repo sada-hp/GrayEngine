@@ -31,11 +31,11 @@ namespace GrEngine_Vulkan
 			VulkanAPI::m_destroyShaderBuffer(logicalDevice, memAllocator, &terIn);
 			VulkanAPI::m_destroyShaderBuffer(logicalDevice, memAllocator, &terOut);
 		}
-
-		VulkanAPI::DestroyImage(heightMap->newImage.allocatedImage);
-		VulkanAPI::DestroyImage(foliageMask->newImage.allocatedImage);
+		resources->RemoveTexture(heightMap->texture_collection, logicalDevice, memAllocator);
+		resources->RemoveTexture(foliageMask->texture_collection, logicalDevice, memAllocator);
 		VulkanAPI::DestroyPipeline(computePipeline);
 		VulkanAPI::DestroyPipelineLayout(computeLayout);
+		GrEngine::Engine::GetContext()->GetPhysics()->RemoveSimulationObject(physComponent);
 
 		ready = false;
 		VulkanDrawable::destroyObject();
@@ -51,7 +51,7 @@ namespace GrEngine_Vulkan
 		updateObject();
 	}
 
-	void VulkanTerrain::GenerateTerrain(int resolution, int width, int height, int depth, const char* map)
+	void VulkanTerrain::GenerateTerrain(int resolution, int width, int height, int depth, std::array<std::string, 6> images)
 	{
 		if (ready)
 		{
@@ -71,11 +71,10 @@ namespace GrEngine_Vulkan
 
 		VulkanAPI::m_createVkBuffer(logicalDevice, memAllocator, &size, sizeof(ComputeSize), VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, &terIn);
 		VulkanAPI::m_createVkBuffer(logicalDevice, memAllocator, nullptr, size.resolution * size.resolution * sizeof(ComputeVertex), VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, &terOut);
-		terI = calloc(size.resolution * size.resolution, sizeof(ComputeVertex));
 
-		heightMap = static_cast<VulkanRenderer*>(p_Owner)->loadTexture({ map }, VK_IMAGE_VIEW_TYPE_2D_ARRAY)->AddLink();
-		foliageMask = static_cast<VulkanRenderer*>(p_Owner)->loadTexture({ "D:\\GrEngine\\GrayEngine\\bin\\Debug-x64\\WorldEditorApp\\Content\\Terrain\\terrain_FM_temp.png" }, VK_IMAGE_VIEW_TYPE_2D_ARRAY)->AddLink();
-		bool res = static_cast<VulkanRenderer*>(p_Owner)->assignTextures({ "D:\\GrEngine\\GrayEngine\\bin\\Debug-x64\\WorldEditorApp\\Content\\Terrain\\terrain_BaseLayer.png", "D:\\GrEngine\\GrayEngine\\bin\\Debug-x64\\WorldEditorApp\\Content\\Terrain\\terrain_RedLayer.png", "", "" }, this);
+		heightMap = static_cast<VulkanRenderer*>(p_Owner)->loadTexture({ images[0] }, VK_IMAGE_VIEW_TYPE_2D_ARRAY)->AddLink();
+		foliageMask = static_cast<VulkanRenderer*>(p_Owner)->loadTexture({ images[1] }, VK_IMAGE_VIEW_TYPE_2D_ARRAY)->AddLink();
+		bool res = static_cast<VulkanRenderer*>(p_Owner)->assignTextures({ images[2], images[3], images[4], images[5] }, this);
 
 		VkCommandPoolCreateInfo cmdPoolInfo{};
 		cmdPoolInfo.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
@@ -335,7 +334,7 @@ namespace GrEngine_Vulkan
 		pipelineInfo.basePipelineHandle = VK_NULL_HANDLE; // Optional
 		pipelineInfo.basePipelineIndex = -1; // Optional
 
-		if (VulkanAPI::CreateGraphicsPipeline(logicalDevice, &pipelineInfo, &graphicsPipeline) != VK_SUCCESS)
+		if (VulkanAPI::CreateGraphicsPipeline(logicalDevice, &pipelineInfo, &graphicsPipeline) != true)
 			return false;
 
 		VkPipelineShaderStageCreateInfo compShaderStageInfo{};
@@ -349,7 +348,7 @@ namespace GrEngine_Vulkan
 		computeInfo.layout = computeLayout;
 		computeInfo.stage = compShaderStageInfo;
 
-		if (VulkanAPI::CreateComputePipeline(logicalDevice, &computeInfo, &computePipeline) != VK_SUCCESS)
+		if (VulkanAPI::CreateComputePipeline(logicalDevice, &computeInfo, &computePipeline) != true)
 			return false;
 
 		vkDestroyShaderModule(logicalDevice, shaders[0], nullptr);

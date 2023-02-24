@@ -26,6 +26,11 @@ namespace EditorUI
             ImgHolder.Source = null;
             ImgHolder.UpdateLayout();
             ImgHolder.ToolTip = "";
+            MaskBtn.ToolTip = "";
+            BaseBtn.ToolTip = "";
+            RedBtn.ToolTip = "";
+            GreenBtn.ToolTip = "";
+            BlueBtn.ToolTip = "";
         }
 
         private void Button_Click(object sender, RoutedEventArgs e)
@@ -47,9 +52,14 @@ namespace EditorUI
             res = int.TryParse(DepthTB.Text, out depth);
             depth = res && depth >= 1 ? depth : 1;
 
-            string terrain = ImgHolder.ToolTip.ToString() == "" ? ModelBrowser.content_folder + "Editor\\Black.png" : ImgHolder.ToolTip.ToString();
+            string height_map = ImgHolder.ToolTip.ToString();
+            string blend_mask = MaskBtn.ToolTip.ToString();
+            string base_layer = BaseBtn.ToolTip.ToString();
+            string red_ch = RedBtn.ToolTip.ToString();
+            string green_ch = GreenBtn.ToolTip.ToString();
+            string blue_ch = BlueBtn.ToolTip.ToString();
 
-            UIBridge.GenerateTerrain(resolution, width, height, depth, Marshal.StringToHGlobalAnsi(terrain));
+            UIBridge.GenerateTerrain(resolution, width, height, depth, Marshal.StringToHGlobalAnsi(height_map), Marshal.StringToHGlobalAnsi(blend_mask), Marshal.StringToHGlobalAnsi(base_layer), Marshal.StringToHGlobalAnsi(red_ch), Marshal.StringToHGlobalAnsi(green_ch), Marshal.StringToHGlobalAnsi(blue_ch));
             Close();
             GC.Collect(GC.MaxGeneration, GCCollectionMode.Forced, true);
         }
@@ -93,6 +103,81 @@ namespace EditorUI
                 ImgHolder.UpdateLayout();
                 LoadBtn.Background = null;
                 LoadBtn.Content = "";
+            }
+        }
+
+        private void BaseBtn_Click(object sender, RoutedEventArgs e)
+        {
+            System.Windows.Forms.OpenFileDialog openFileDialog = new System.Windows.Forms.OpenFileDialog();
+            openFileDialog.Filter = "image files (*.png)|*.png";
+            openFileDialog.RestoreDirectory = true;
+
+            if (openFileDialog.ShowDialog() == System.Windows.Forms.DialogResult.OK)
+            {
+                ImageBrush brush = new ImageBrush(BitmapFromUri(new Uri(openFileDialog.FileName), Rotation.Rotate0));
+                brush.Stretch = Stretch.UniformToFill;
+                BaseBtn.Background = brush;
+                BaseBtn.ToolTip = openFileDialog.FileName;
+            }
+        }
+
+        private void RedBtn_Click(object sender, RoutedEventArgs e)
+        {
+            System.Windows.Forms.OpenFileDialog openFileDialog = new System.Windows.Forms.OpenFileDialog();
+            openFileDialog.Filter = "image files (*.png)|*.png";
+            openFileDialog.RestoreDirectory = true;
+
+            if (openFileDialog.ShowDialog() == System.Windows.Forms.DialogResult.OK)
+            {
+                ImageBrush brush = new ImageBrush(BitmapFromUri(new Uri(openFileDialog.FileName), Rotation.Rotate0));
+                brush.Stretch = Stretch.UniformToFill;
+                RedBtn.Background = brush;
+                RedBtn.ToolTip = openFileDialog.FileName;
+            }
+        }
+
+        private void GreenBtn_Click(object sender, RoutedEventArgs e)
+        {
+            System.Windows.Forms.OpenFileDialog openFileDialog = new System.Windows.Forms.OpenFileDialog();
+            openFileDialog.Filter = "image files (*.png)|*.png";
+            openFileDialog.RestoreDirectory = true;
+
+            if (openFileDialog.ShowDialog() == System.Windows.Forms.DialogResult.OK)
+            {
+                ImageBrush brush = new ImageBrush(BitmapFromUri(new Uri(openFileDialog.FileName), Rotation.Rotate0));
+                brush.Stretch = Stretch.UniformToFill;
+                GreenBtn.Background = brush;
+                GreenBtn.ToolTip = openFileDialog.FileName;
+            }
+        }
+
+        private void BlueBtn_Click(object sender, RoutedEventArgs e)
+        {
+            System.Windows.Forms.OpenFileDialog openFileDialog = new System.Windows.Forms.OpenFileDialog();
+            openFileDialog.Filter = "image files (*.png)|*.png";
+            openFileDialog.RestoreDirectory = true;
+
+            if (openFileDialog.ShowDialog() == System.Windows.Forms.DialogResult.OK)
+            {
+                ImageBrush brush = new ImageBrush(BitmapFromUri(new Uri(openFileDialog.FileName), Rotation.Rotate0));
+                brush.Stretch = Stretch.UniformToFill;
+                BlueBtn.Background = brush;
+                BlueBtn.ToolTip = openFileDialog.FileName;
+            }
+        }
+
+        private void MaskBtn_Click(object sender, RoutedEventArgs e)
+        {
+            System.Windows.Forms.OpenFileDialog openFileDialog = new System.Windows.Forms.OpenFileDialog();
+            openFileDialog.Filter = "image files (*.png)|*.png";
+            openFileDialog.RestoreDirectory = true;
+
+            if (openFileDialog.ShowDialog() == System.Windows.Forms.DialogResult.OK)
+            {
+                ImageBrush brush = new ImageBrush(BitmapFromUri(new Uri(openFileDialog.FileName), Rotation.Rotate0));
+                brush.Stretch = Stretch.Uniform;
+                MaskBtn.Background = brush;
+                MaskBtn.ToolTip = openFileDialog.FileName;
             }
         }
     }

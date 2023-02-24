@@ -31,6 +31,7 @@ namespace GrEngine_Vulkan
 		void createSkybox(const char* East, const char* West, const char* Top, const char* Bottom, const char* North, const char* South) override;
 
 		float GetDepthAt(float x, float y) override;
+		float GetDepthAt(float x, float y, UINT id = 0) override;
 		void SelectEntityAtCursor() override;
 		std::array<byte, 3> GetPixelColorAtCursor() override;
 		GrEngine::Entity* selectEntity(UINT ID) override;
@@ -39,7 +40,7 @@ namespace GrEngine_Vulkan
 		void SaveScene(const char* path) override;
 		void LoadScene(const char* path) override;
 		void waitForRenderer() override;
-		void LoadTerrain(int resolution, int width, int height, int depth, const char* map) override;
+		void LoadTerrain(int resolution, int width, int height, int depth, std::array<std::string, 6> maps) override;
 
 		void Update() override;
 		VkSampleCountFlagBits GetSampling() { return msaaSamples; };

@@ -18,7 +18,6 @@ namespace GrEngine
 		glm::vec4 color;
 		glm::vec2 uv;
 		uint32_t uv_index;
-		glm::uvec3 inID;
 
 		Vertex()
 		{
@@ -26,12 +25,11 @@ namespace GrEngine
 			uv = glm::vec2(0.f);
 		}
 
-		Vertex(glm::vec4 position, glm::vec2 uv_coordinates, glm::uvec3 color_attach = {0, 0, 0}, uint32_t material_index = 0)
+		Vertex(glm::vec4 position, glm::vec2 uv_coordinates, uint32_t material_index = 0)
 		{
 			pos = position;
 			uv = uv_coordinates;
 			uv_index = material_index;
-			inID = color_attach;
 		}
 
 		bool operator==(const Vertex& other) const

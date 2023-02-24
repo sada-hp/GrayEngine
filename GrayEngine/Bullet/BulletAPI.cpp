@@ -49,9 +49,16 @@ namespace GrEngineBullet
 		objects.push_back(object);
 	}
 
-	void BulletAPI::RemoveObject(void* object)
+	void BulletAPI::RemoveSimulationObject(GrEngine::Physics::PhysicsObject* object)
 	{
-		dynamicsWorld->removeCollisionObject(static_cast<btCollisionObject*>(object));
+		for (int position = 0; position < objects.size(); position++)
+		{
+			if (objects[position] == object)
+			{
+				objects.erase(objects.begin() + position);
+				return;
+			}
+		}
 	}
 
 	void BulletAPI::RemovePhysicsObject(void* object)

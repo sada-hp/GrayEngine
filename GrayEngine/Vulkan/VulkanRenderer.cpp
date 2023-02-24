@@ -272,7 +272,7 @@ namespace GrEngine_Vulkan
 					pixels[offset] = data[offset + 2];
 					pixels[offset + 1] = data[offset + 1];
 					pixels[offset + 2] = data[offset];
-					pixels[offset + 3] = data[offset + 3];
+					pixels[offset + 3] = 255;
 
 					offset += 4;
 				}
@@ -316,19 +316,43 @@ namespace GrEngine_Vulkan
 	{
 		if (pickingMem == nullptr || pickingBuffer.initialized == false) return 0.f;
 
-		PickingInfo id{ x, y };
+		PickingInfo out{ x, y };
 
-		memcpy(pickingMem, &id, sizeof(PickingInfo));
+		memcpy(pickingMem, &out, sizeof(PickingInfo));
 
 		drawFrame(swapChainExtent);
 
-		memcpy(&id, pickingMem, sizeof(PickingInfo));
+		memcpy(&out, pickingMem, sizeof(PickingInfo));
 		float depth = 0.f;
 		for (int i = 0; i < 32; i++)
 		{
-			if (id.id[i] != 0)
+			if (out.id[i] != 0)
 			{
-				depth = id.depth[i];
+				depth = out.depth[i];
+				break;
+			}
+		}
+
+		return depth;
+	}
+
+	float VulkanRenderer::GetDepthAt(float x, float y, UINT id)
+	{
+		if (pickingMem == nullptr || pickingBuffer.initialized == false) return 0.f;
+
+		PickingInfo out{ x, y };
+
+		memcpy(pickingMem, &out, sizeof(PickingInfo));
+
+		drawFrame(swapChainExtent);
+
+		memcpy(&out, pickingMem, sizeof(PickingInfo));
+		float depth = 0.f;
+		for (int i = 0; i < 32; i++)
+		{
+			if (out.id[i] == id)
+			{
+				depth = out.depth[i];
 				break;
 			}
 		}
@@ -1342,7 +1366,7 @@ namespace GrEngine_Vulkan
 		}
 	}
 
-	void VulkanRenderer::LoadTerrain(int resolution, int width, int height, int depth, const char* map)
+	void VulkanRenderer::LoadTerrain(int resolution, int width, int height, int depth, std::array<std::string, 6> maps)
 	{
 		if (terrain != nullptr)
 		{
@@ -1358,7 +1382,7 @@ namespace GrEngine_Vulkan
 
 		terrain->LinkExternalStorageBuffer(VK_SHADER_STAGE_FRAGMENT_BIT, &pickingBuffer);
 
-		terrain->GenerateTerrain(resolution, width, height, depth, map);
+		terrain->GenerateTerrain(resolution, width, height, depth, maps);
 	}
 
 	GrEngine::Entity* VulkanRenderer::addEntity()

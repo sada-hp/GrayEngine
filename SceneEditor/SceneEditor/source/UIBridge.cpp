@@ -187,7 +187,27 @@ void SceneEditor::LoadScene(const char* path)
     SceneEditor::GetApplication()->LoadScene(path);
 }
 
-void SceneEditor::GenerateTerrain(int resolution, int width, int height, int depth, const char* map)
+void SceneEditor::GenerateTerrain(int resolution, int x, int y, int z, const char* height, const char* blend, const char* base, const char* red, const char* green, const char* blue)
 {
-    SceneEditor::GetApplication()->GenerateTerrain(resolution, width, height, depth, map);
+    SceneEditor::GetApplication()->App_GenerateTerrain(resolution, x, y, z, { height, blend, base, red, green, blue });
+}
+
+void SceneEditor::ToggleBrush(int mode, int strength)
+{
+    SceneEditor::GetApplication()->App_ShowBrush(mode, strength);
+}
+
+void SceneEditor::UpdateBrush(int mode, float opacity, float size)
+{
+    SceneEditor::GetApplication()->App_UpdateBrush(mode, opacity, size);
+}
+
+void SceneEditor::SetActiveBrushChannels(bool red, bool green, bool blue)
+{
+    SceneEditor::GetApplication()->App_SetActiveChannels(red, green, blue);
+}
+
+void SceneEditor::ControlKey(bool state)
+{
+    SceneEditor::GetApplication()->ctr_down = state;
 }

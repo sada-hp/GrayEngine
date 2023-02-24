@@ -135,7 +135,7 @@ namespace GrEngine_Vulkan
 			layouts.push_back((*itt).descriptorSetLayout);
 		}
 
-		return VulkanAPI::CreatePipelineLayout(logicalDevice, { pushConstant, pushConstant2 }, layouts, &pipelineLayout) == VK_SUCCESS;
+		return VulkanAPI::CreatePipelineLayout(logicalDevice, { pushConstant, pushConstant2 }, layouts, &pipelineLayout) == true;
 	}
 
 	bool VulkanDrawable::recordCommandBuffer(VkCommandBuffer commandBuffer, VkExtent2D extent, UINT32 mode)
@@ -296,7 +296,7 @@ namespace GrEngine_Vulkan
 		pipelineInfo.basePipelineHandle = VK_NULL_HANDLE; // Optional
 		pipelineInfo.basePipelineIndex = -1; // Optional
 
-		if (VulkanAPI::CreateGraphicsPipeline(logicalDevice, &pipelineInfo, &graphicsPipeline) != VK_SUCCESS)
+		if (VulkanAPI::CreateGraphicsPipeline(logicalDevice, &pipelineInfo, &graphicsPipeline) != true)
 			return false;
 
 		vkDestroyShaderModule(logicalDevice, shaders[0], nullptr);

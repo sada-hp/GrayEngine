@@ -49,7 +49,7 @@ namespace GrEngine
 
 		virtual void SimulateStep() = 0;
 		virtual void AddSimulationObject(PhysicsObject* object) = 0;
-		virtual void RemoveObject(void* object) = 0;
+		virtual void RemoveSimulationObject(PhysicsObject* object) = 0;
 		virtual void RemovePhysicsObject(void* object) = 0;
 		virtual void CleanUp() = 0;
 		virtual void TogglePhysicsState(bool state) = 0;

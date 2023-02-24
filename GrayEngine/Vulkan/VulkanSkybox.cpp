@@ -24,7 +24,7 @@ namespace GrEngine_Vulkan
 			object_mesh = nullptr;
 		}
 
-		auto resource = resources->GetMeshResource("default");
+		auto resource = resources->GetMeshResource("Sky");
 		if (resource == nullptr)
 		{
 			Mesh* default_mesh = new Mesh();
@@ -41,15 +41,15 @@ namespace GrEngine_Vulkan
 				{{{ 0.25, -0.25, -0.25, 1.0f },{ 1.f, 0.0f }}}
 			};
 
-			default_mesh->indices = { 0, 1, 2, 0, 3, 1,
+			default_mesh->indices = { 2, 1, 0, 1, 3, 0,
 				4, 5, 6, 4, 7, 5,
-				0, 2, 6, 0, 4, 6,
+				6, 2, 0, 0, 4, 6,
 				0, 3, 4, 3, 7, 4,
-				1, 3, 7, 1, 5, 7,
-				1, 2, 6, 1, 5, 6,
+				7, 3, 1, 1, 5, 7,
+				1, 2, 6, 6, 5, 1,
 			};
 
-			resource = resources->AddMeshResource("default", default_mesh);
+			resource = resources->AddMeshResource("Sky", default_mesh);
 			object_mesh = resource->AddLink();
 
 			VulkanAPI::m_createVkBuffer(logicalDevice, memAllocator, object_mesh->vertices.data(), sizeof(object_mesh->vertices[0]) * object_mesh->vertices.size(), VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, &object_mesh->vertexBuffer);
