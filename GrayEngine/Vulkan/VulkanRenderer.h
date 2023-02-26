@@ -48,7 +48,8 @@ namespace GrEngine_Vulkan
 		Resource<Texture*>* loadTexture(std::vector<std::string> texture_path, VkImageViewType type_view = VK_IMAGE_VIEW_TYPE_2D, VkImageType type_img = VK_IMAGE_TYPE_2D);
 		bool updateTexture(GrEngine::Entity* target, int textureIndex);
 		bool updateTexture(GrEngine::Entity* target, void* pixels, int textureIndex);
-		bool updateResource(Texture* target, void* pixels);
+		bool updateResource(Texture* target, byte* pixels);
+		bool updateResource(Texture* target, byte* pixels, uint32_t width, uint32_t height, uint32_t offset_x, uint32_t offset_y);
 
 		std::optional<uint32_t> compute_bit;
 		ShaderBuffer pickingBuffer;

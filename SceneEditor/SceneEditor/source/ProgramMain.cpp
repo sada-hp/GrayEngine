@@ -34,7 +34,7 @@ namespace SceneEditor
             app->manip_start = cursor;
             app->App_UpdateUIProperty("EntityPosition");
         }
-        else if (app->manipulation >= 4)
+        else if (app->manipulation >= 4 && app->mouse_down)
         {
             int mInd = app->manipulation - 4;
             auto vec = glm::normalize(glm::vec2(app->obj_center.x - cursor.x, app->obj_center.y - cursor.y));
@@ -98,6 +98,11 @@ namespace SceneEditor
         app->App_PaintMask();
     }
 
+    void TerrainSculpt()
+    {
+        app->App_Sculpt();
+    }
+
     int SceneEditor::EntryPoint()
     {
         Logger::AllowMessages(MessageMode::Allow);
@@ -119,12 +124,12 @@ namespace SceneEditor
                     speed_mod += para[1] * 5;
                     speed_mod = std::max(speed_mod, 1.f);
                 }
-                else if (app->manipulation == 7)
+                else if (app->manipulation == 7 || app->manipulation == 8)
                 {
                     if (app->ctr_down)
-                        app->App_UpdateBrush(app->paint_mode, glm::max(glm::min(app->brush_opacity + para[1] / 10, 1.), 0.01), app->brush_size);
+                        app->App_UpdateBrush(app->paint_mode, glm::max(app->brush_opacity + para[1] / 50, 0.01), app->brush_size, app->brush_falloff);
                     else
-                        app->App_UpdateBrush(app->paint_mode, app->brush_opacity, glm::max(app->brush_size + para[1], 1.));
+                        app->App_UpdateBrush(app->paint_mode, app->brush_opacity, glm::max(app->brush_size + para[1] / 10, 1.), app->brush_falloff);
 
                     app->App_SendBrushInfo();
                 }
@@ -155,6 +160,18 @@ namespace SceneEditor
                 else
                 {
                     app->RemoveInputCallback(3);
+                }
+            });
+
+        app->GetEventListener()->pushEvent("TerrainSculptMask", [](std::vector<std::any> para)
+            {
+                if (std::any_cast<bool>(para[0]))
+                {
+                    app->AddInputCallback(4, TerrainSculpt);
+                }
+                else
+                {
+                    app->RemoveInputCallback(4);
                 }
             });
 
@@ -199,7 +216,6 @@ namespace SceneEditor
                     app->mouse_down = false;
                     app->SetCursorShape(GLFW_ARROW_CURSOR);
                     app->gizmo->ParsePropertyValue("Color", "255:255:255:255");
-                    app->RemoveInputCallback(2);
                 }
             });
 
@@ -222,7 +238,7 @@ namespace SceneEditor
                 int id = static_cast<int>(para[0]);
                 app->App_UpdateSelection(id);
 
-                if (app->transform_target != nullptr && id > 1000000000)
+                if (app->transform_target != nullptr)
                 {
                     app->AddInputCallback(2, Transformation);
                 }

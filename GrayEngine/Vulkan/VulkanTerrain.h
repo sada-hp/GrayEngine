@@ -11,15 +11,6 @@ namespace GrEngine_Vulkan
 			glm::vec4 uv;
 		};
 
-		struct ComputeSize
-		{
-			int resolution;
-			int width;
-			int depth;
-			int height;
-		};
-
-		ComputeSize size;
 		bool ready = false;
 
 	public:
@@ -33,7 +24,10 @@ namespace GrEngine_Vulkan
 		void calculateCollisions() override;
 		void GenerateTerrain(int resolution, int width, int height, int depth, std::array<std::string, 6> images) override;
 		void UpdateFoliageMask(void* pixels) override;
-
+		void UpdateFoliageMask(void* pixels, uint32_t width, uint32_t height, uint32_t offset_x, uint32_t offset_y) override;
+		void OffsetVertices(std::map<UINT, float> offsets) override;
+		void UpdateVertices(std::map<UINT, float> offsets) override;
+		glm::vec4& GetVertexPosition(UINT pos) override;
 	protected:
 		void populateDescriptorSets();
 
@@ -54,6 +48,8 @@ namespace GrEngine_Vulkan
 		VkFence computeFence;
 		Texture* heightMap;
 		Texture* foliageMask;
+
+		btBvhTriangleMeshShape* colShape;
 	};
 }
 

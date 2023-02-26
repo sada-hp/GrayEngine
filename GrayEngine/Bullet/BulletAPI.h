@@ -93,6 +93,12 @@ namespace GrEngineBullet
 				startTransform.setFromOpenGLMatrix(pSource);
 				btVector3 localInertia{ 0,0,0 };
 
+				if (colShape->getShapeType() == 21 && was_updated)
+				{
+					static_cast<btBvhTriangleMeshShape*>(colShape)->buildOptimizedBvh();
+					was_updated = false;
+				}
+
 				if (obj_mass != 0.f)
 					colShape->calculateLocalInertia(obj_mass, localInertia);
 

@@ -192,14 +192,14 @@ void SceneEditor::GenerateTerrain(int resolution, int x, int y, int z, const cha
     SceneEditor::GetApplication()->App_GenerateTerrain(resolution, x, y, z, { height, blend, base, red, green, blue });
 }
 
-void SceneEditor::ToggleBrush(int mode, int strength)
+void SceneEditor::ToggleBrush(int mode)
 {
-    SceneEditor::GetApplication()->App_ShowBrush(mode, strength);
+    SceneEditor::GetApplication()->App_ShowBrush(mode);
 }
 
-void SceneEditor::UpdateBrush(int mode, float opacity, float size)
+void SceneEditor::UpdateBrush(int mode, float opacity, float size, float falloff)
 {
-    SceneEditor::GetApplication()->App_UpdateBrush(mode, opacity, size);
+    SceneEditor::GetApplication()->App_UpdateBrush(mode, opacity, size, falloff);
 }
 
 void SceneEditor::SetActiveBrushChannels(bool red, bool green, bool blue)
@@ -210,4 +210,5 @@ void SceneEditor::SetActiveBrushChannels(bool red, bool green, bool blue)
 void SceneEditor::ControlKey(bool state)
 {
     SceneEditor::GetApplication()->ctr_down = state;
+    SceneEditor::GetApplication()->FocusViewport();
 }

@@ -852,33 +852,31 @@ namespace GrEngine_Vulkan
 									return;
 								}
 
-								uint32_t buf_offset = sizeof(byte) * maxW * maxH * channels * procNum;
 								if (width < maxW || height < maxH)
 								{
 									auto output = (unsigned char*)malloc(sizeof(byte) * maxW * maxH * channels);
 									stbir_resize_uint8(pixels, width, height, 0, output, maxW, maxH, 0, channels);
-									memcpy(data + buf_offset, output, sizeof(byte) * maxW * maxH * channels);
+									memcpy(data + sizeof(byte) * maxW * maxH * channels * procNum, output, sizeof(byte) * maxW * maxH * channels);
 									stbi_image_free(pixels);
 									free(output);
 								}
 								else
 								{
-									memcpy(data + buf_offset, pixels, sizeof(byte) * width * height * channels);
+									memcpy(data + sizeof(byte) * maxW * maxH * channels * procNum, pixels, sizeof(byte) * width * height * channels);
 									stbi_image_free(pixels);
 								}
 							});
 					}
 					else
 					{
-						processes_map[procNum] = std::async(std::launch::async, [data, maxW, maxH, channels, procNum]()
-							{
-								uint32_t buf_offset = sizeof(byte) * maxW * maxH * channels * procNum;
-								unsigned char* pixels = (unsigned char*)malloc(sizeof(byte) * channels * maxW * maxH);
-								memset(pixels, (byte)255, channels * maxW * maxH);
-								memcpy(data + buf_offset, pixels, sizeof(byte) * maxW * maxH * channels);
-								free(pixels);
-							});
+						//processes_map[procNum] = std::async(std::launch::async, [data, maxW, maxH, channels, procNum]()
+						//	{
 
+						//	});
+						unsigned char* pixels = (unsigned char*)malloc(sizeof(byte) * channels * maxW * maxH);
+						memset(pixels, (byte)255, channels * maxW * maxH);
+						memcpy(data + sizeof(byte) * maxW * maxH * channels * procNum, pixels, sizeof(byte) * maxW * maxH * channels);
+						free(pixels);
 						texture_path[procNum] = "empty_texture";
 					}
 
@@ -1221,28 +1219,12 @@ namespace GrEngine_Vulkan
 		}
 	}
 
-	bool VulkanRenderer::updateResource(Texture* target, void* pixels)
+	bool VulkanRenderer::updateResource(Texture* target, byte* pixels)
 	{
 		ShaderBuffer stagingBuffer;
 		VkCommandBuffer commandBuffer;
 		VulkanAPI::m_createVkBuffer(logicalDevice, memAllocator, pixels, sizeof(byte) * target->width * target->height * target->channels * target->texture_collection.size(), VK_BUFFER_USAGE_TRANSFER_SRC_BIT, &stagingBuffer);
 		VkImageSubresourceRange subresourceRange = VulkanAPI::StructSubresourceRange(VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, target->texture_collection.size());
-
-		VulkanAPI::DestroyImageView(target->textureImageView);
-		VulkanAPI::DestroySampler(target->textureSampler);
-		VulkanAPI::DestroyImage(target->newImage.allocatedImage);
-
-		VkExtent3D imageExtent;
-		imageExtent.width = static_cast<uint32_t>(target->width);
-		imageExtent.height = static_cast<uint32_t>(target->height);
-		imageExtent.depth = 1;
-
-		VkImageCreateInfo dimg_info = VulkanAPI::StructImageCreateInfo(imageExtent, VK_FORMAT_R8G8B8A8_SRGB, VK_SAMPLE_COUNT_1_BIT, VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT);
-		dimg_info.arrayLayers = target->texture_collection.size();
-		dimg_info.mipLevels = target->mipLevels;
-		dimg_info.flags = 0;
-
-		VulkanAPI::CreateImage(memAllocator, &dimg_info, &target->newImage.allocatedImage, &target->newImage.allocation);
 
 		VulkanAPI::AllocateCommandBuffers(logicalDevice, commandPool, &commandBuffer, 1);
 		VulkanAPI::BeginCommandBuffer(commandBuffer, VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT);
@@ -1262,10 +1244,70 @@ namespace GrEngine_Vulkan
 		VulkanAPI::TransitionImageLayout(target->newImage.allocatedImage, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, subresourceRange, commandBuffer);
 		VulkanAPI::EndAndSubmitCommandBuffer(logicalDevice, commandPool, commandBuffer, graphicsQueue, graphicsFence);
 
-		VulkanAPI::CreateImageView(logicalDevice, VK_FORMAT_R8G8B8A8_SRGB, target->newImage.allocatedImage, subresourceRange, &target->textureImageView, VK_IMAGE_VIEW_TYPE_2D_ARRAY);
-		VulkanAPI::CreateSampler(physicalDevice, logicalDevice, &target->textureSampler, (float)target->mipLevels);
-
 		VulkanAPI::m_destroyShaderBuffer(logicalDevice, memAllocator, &stagingBuffer);
+		return true;
+	}
+
+
+	bool VulkanRenderer::updateResource(Texture* target, byte* pixels, uint32_t width, uint32_t height, uint32_t offset_x, uint32_t offset_y)
+	{
+		byte* data;
+		ShaderBuffer stagingBuffer;
+		VkCommandBuffer commandBuffer;
+		VkImageSubresourceRange subresourceRange = VulkanAPI::StructSubresourceRange(VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, target->texture_collection.size());
+
+		VulkanAPI::m_createVkBuffer(logicalDevice, memAllocator, nullptr, sizeof(byte) * width * target->channels * height, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, &stagingBuffer);
+		VulkanAPI::AllocateCommandBuffers(logicalDevice, commandPool, &commandBuffer, 1);
+		VulkanAPI::BeginCommandBuffer(commandBuffer, VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT);
+		VulkanAPI::TransitionImageLayout(target->newImage.allocatedImage, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, subresourceRange, commandBuffer);
+		VulkanAPI::EndAndSubmitCommandBuffer(logicalDevice, commandPool, commandBuffer, graphicsQueue, graphicsFence);
+
+		std::vector<VkBufferImageCopy> regions;
+		VkBufferImageCopy region{};
+		region.imageSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+		region.imageSubresource.mipLevel = 0;
+		region.imageSubresource.baseArrayLayer = 0;
+		region.imageSubresource.layerCount = 1;
+		int whole_size = target->width * target->height * target->channels;
+
+		vmaMapMemory(memAllocator, stagingBuffer.Allocation, (void**)&data);
+		for (int i = 0; i < height; i++)
+		{
+			uint32_t offset = (offset_x + (offset_y + i) * target->width) * target->channels;
+			if (offset > whole_size)
+				continue;
+
+			memcpy(data + width * target->channels * i, pixels + offset, sizeof(byte) * width * target->channels);
+
+			region.bufferOffset = width * target->channels * i;
+			region.imageOffset = { (int)offset_x, (int)offset_y + i, 0 };
+			region.imageExtent = {
+				width,
+				1,
+				1
+			};
+
+			regions.push_back(region);
+		}
+		vmaUnmapMemory(memAllocator, stagingBuffer.Allocation);
+
+
+		VulkanAPI::AllocateCommandBuffers(logicalDevice, commandPool, &commandBuffer, 1);
+		VulkanAPI::BeginCommandBuffer(commandBuffer, VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT);
+		vkCmdCopyBufferToImage(commandBuffer, stagingBuffer.Buffer, target->newImage.allocatedImage, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, regions.size(), regions.data());
+		VulkanAPI::EndAndSubmitCommandBuffer(logicalDevice, commandPool, commandBuffer, graphicsQueue, graphicsFence);
+
+
+		generateMipmaps(target->newImage.allocatedImage, target->width, target->height, target->mipLevels, target->texture_collection.size());
+
+
+		subresourceRange.levelCount = target->mipLevels;
+		VulkanAPI::AllocateCommandBuffers(logicalDevice, commandPool, &commandBuffer, 1);
+		VulkanAPI::BeginCommandBuffer(commandBuffer, VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT);
+		VulkanAPI::TransitionImageLayout(target->newImage.allocatedImage, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, subresourceRange, commandBuffer);
+		VulkanAPI::EndAndSubmitCommandBuffer(logicalDevice, commandPool, commandBuffer, graphicsQueue, graphicsFence);
+		VulkanAPI::m_destroyShaderBuffer(logicalDevice, memAllocator, &stagingBuffer);
+
 		return true;
 	}
 

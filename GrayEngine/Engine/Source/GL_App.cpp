@@ -140,6 +140,11 @@ namespace GrEngine
 			glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_HIDDEN);
 	}
 
+	void GL_APP::Focus()
+	{
+		glfwFocusWindow(window);
+	}
+
 	void GL_APP::SetUpEvents(GLFWwindow* target)
 	{
 		glfwSetWindowSizeCallback(target, [](GLFWwindow* win, int width, int height)

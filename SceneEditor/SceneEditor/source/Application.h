@@ -44,14 +44,17 @@ namespace GrEngine
         glm::vec2 obj_center;
         float brush_size = 1;
         float brush_opacity = 1;
+        float brush_falloff = 1;
         std::string brush_opacity_string = "";
         std::string brush_size_string = "";
+        std::string brush_falloff_string = "";
         bool ctr_down = false;
         int paint_mode = 1;
         bool red_channel = true;
         bool green_channel = false;
         bool blue_channel = false;
-        float mask_aspect = 1;
+        float mask_aspect_x = 1;
+        float mask_aspect_y = 1;
 
         Application(const AppParameters& Properties = AppParameters()) : Engine(Properties)
         {
@@ -155,7 +158,7 @@ namespace GrEngine
                 obj_center = glm::project(pos, model, proj, view);
                 direct = glm::normalize(glm::vec2{ obj_center.x - manip_start.x, obj_center.y - manip_start.y });
             }
-            else if (manipulation != 7)
+            else if (manipulation != 7 && manipulation != 8)
             {
                 AddChunk(ChunkType::SELECTION, "", std::to_string(id));
                 transform_target = GetRenderer()->GetSelectedEntity();
@@ -174,30 +177,49 @@ namespace GrEngine
             }
         }
 
-        void App_ShowBrush(int mode, int strength)
+        void App_ShowBrush(int mode)
         {
-            if (foliage_mask != nullptr)
+            if (mode == 1 && manipulation != 7)
             {
-                if (mode > 0)
+                if (foliage_mask != nullptr)
                 {
                     static_cast<DrawableObject*>(brush)->SetVisisibility(true);
                     transform_target = GetRenderer()->selectEntity(100);
                     manipulation = 7;
+                    paint_mode = 1;
                     GetEventListener()->registerEvent("TerrainBlendMask", { true });
+                    GetEventListener()->registerEvent("TerrainSculptMask", { false });
+                    App_SendBrushInfo();
                 }
                 else
                 {
-                    static_cast<DrawableObject*>(brush)->SetVisisibility(false);
+                    Logger::Out("Invalid foliage mask selected!", OutputColor::Red, OutputType::Error);
+                    GetEventListener()->registerEvent("TerrainSculptMask", { false });
                     GetRenderer()->selectEntity(0);
                     manipulation = 0;
-                    GetEventListener()->registerEvent("TerrainBlendMask", { false });
+                    return;
                 }
+            }
+            else if (mode == 2 && manipulation != 8)
+            {
+                static_cast<DrawableObject*>(brush)->SetVisisibility(true);
+                transform_target = GetRenderer()->selectEntity(100);
+                manipulation = 8;
+                paint_mode = 1;
+                GetEventListener()->registerEvent("TerrainSculptMask", { true });
+                GetEventListener()->registerEvent("TerrainBlendMask", { false });
+                App_SendBrushInfo();
             }
             else
             {
-                Logger::Out("Invalid foliage mask selected!", OutputColor::Red, OutputType::Error);
+                static_cast<DrawableObject*>(brush)->SetVisisibility(false);
                 GetRenderer()->selectEntity(0);
+                manipulation = 0;
+                GetEventListener()->registerEvent("TerrainBlendMask", { false });
+                GetEventListener()->registerEvent("TerrainSculptMask", { false });
             }
+
+            FocusViewport();
         }
 
         EditorUI* getEditorUI()
@@ -316,7 +338,8 @@ namespace GrEngine
             }
 
             foliage_mask = stbi_load(maps[1].c_str(), &mask_width, &mask_height, &mask_channels, STBI_rgb_alpha);;
-            mask_aspect = mask_width / 1024;
+            mask_aspect_x = mask_width / 1024;
+            mask_aspect_y = mask_height / 1024;
             GenerateTerrain(resolution, x, y, z, maps);
         }
 
@@ -324,68 +347,198 @@ namespace GrEngine
         {
             if (mouse_down)
             {
+                static bool first_call = true;
                 static auto time = std::chrono::steady_clock::now();
                 auto now = std::chrono::steady_clock::now();
                 auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(now - time).count();
 
-                int radius = brush_size * mask_aspect;
-                if (duration > 65.f)
+                if (duration > 100.f || first_call)
                 {
+                    Terrain::TerrainSize ter_size = static_cast<Terrain*>(transform_target)->GetTerrainSize();
+
+                    int actual_falloff = brush_falloff * mask_aspect_x * mask_aspect_y;
+
+                    float falloff = glm::ceil(actual_falloff);
+                    int radius = glm::ceil(brush_size * mask_aspect_x);
+                    int radiusx = glm::ceil(brush_size * mask_aspect_x) + falloff;
+                    int radiusy = glm::ceil(brush_size * mask_aspect_y) + falloff;
+
                     int sign = paint_mode == 1 ? 1 : -1;
                     int strength = 255 * brush_opacity * paint_mode * sign;
-                    glm::vec3 tset = brush->GetObjectPosition();
-                    int cent_x = (mask_width / 2000.f) * (tset.x + 1000.f);
-                    int cent_y = mask_height - (mask_height / 2000.f) * (tset.z + 1000.f);
+                    int falloff_part = strength / actual_falloff;
 
-                    for (int y = -radius; y <= radius; y++)
+                    glm::vec3 tset = brush->GetObjectPosition();
+                    int cent_x = (mask_width / (float)ter_size.width) * (tset.x + (float)ter_size.width/2);
+                    int cent_y = mask_height - (mask_height / (float)ter_size.depth) * (tset.z + (float)ter_size.depth/2);
+
+                    float radius_sq = brush_size * brush_size * mask_aspect_x * mask_aspect_y;
+                    float falloff_sq = ((brush_size * mask_aspect_x) + actual_falloff) * ((brush_size * mask_aspect_y) + actual_falloff);
+
+                    if ((cent_y - radiusy) >= 0 && (cent_x - radiusx) >= 0 && (cent_x + radiusx) <= mask_width && (cent_y + radiusy) <= mask_height)
                     {
-                        for (int x = -radius; x <= radius; x++)
+                        for (int y = -radiusy; y <= radiusy; y++)
                         {
-                            if (x * x + y * y <= radius * radius)
+                            for (int x = -radiusx; x <= radiusx; x++)
                             {
+                                float point_sq = x * x + y * y;
                                 int row = (cent_y + y) * mask_width * mask_channels;
                                 int col = (cent_x + x) * mask_channels;
 
-                                int red = foliage_mask[row + col] + strength * red_channel;
-                                int green = foliage_mask[row + col + 1] + strength * green_channel;
-                                int blue = foliage_mask[row + col + 2] + strength * blue_channel;
-                                foliage_mask[row + col] = glm::max(glm::min(red, 255), 0);
-                                foliage_mask[row + col + 1] = glm::max(glm::min(green, 255), 0);
-                                foliage_mask[row + col + 2] = glm::max(glm::min(blue, 255), 0);
+                                if (point_sq <= radius_sq)
+                                {
+                                    int red = foliage_mask[row + col] + strength * red_channel;
+                                    int green = foliage_mask[row + col + 1] + strength * green_channel;
+                                    int blue = foliage_mask[row + col + 2] + strength * blue_channel;
+                                    foliage_mask[row + col] = glm::max(glm::min(red, 255), 0);
+                                    foliage_mask[row + col + 1] = glm::max(glm::min(green, 255), 0);
+                                    foliage_mask[row + col + 2] = glm::max(glm::min(blue, 255), 0);
+                                }
+                                else if (point_sq <= falloff_sq)
+                                {
+                                    int falloff_strength = strength - ((float)(glm::sqrt(point_sq) - (float)radius) * falloff_part);
+
+                                    int red = foliage_mask[row + col] + falloff_strength * red_channel;
+                                    int green = foliage_mask[row + col + 1] + falloff_strength * green_channel;
+                                    int blue = foliage_mask[row + col + 2] + falloff_strength * blue_channel;
+                                    foliage_mask[row + col] = glm::max(glm::min(red, 255), 0);
+                                    foliage_mask[row + col + 1] = glm::max(glm::min(green, 255), 0);
+                                    foliage_mask[row + col + 2] = glm::max(glm::min(blue, 255), 0);
+                                }
+                            }
+                        }
+
+                        static_cast<Terrain*>(transform_target)->UpdateFoliageMask(foliage_mask, radiusx * 2, radiusy * 2, cent_x - radiusx, cent_y - radiusy);
+                    }
+                    time = now;
+                    first_call = false;
+                }
+            }
+        }
+
+        void App_Sculpt()
+        {
+            if (mouse_down)
+            {
+                static bool first_call = true;
+                static auto time = std::chrono::steady_clock::now();
+                auto now = std::chrono::steady_clock::now();
+                auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(now - time).count();
+
+                if (duration > 100.f || first_call)
+                {
+                    Terrain::TerrainSize ter_size = static_cast<Terrain*>(transform_target)->GetTerrainSize();
+                    float strength = paint_mode == 2 ? -brush_opacity : brush_opacity;
+                    glm::vec3 tset = brush->GetObjectPosition();
+                    float subdivision = 1.f / ter_size.resolution;
+
+                    float falloff = glm::ceil(brush_falloff);
+                    int radiusx = (brush_size * 2) / (subdivision * ter_size.width) + falloff;
+                    int radiusy = (brush_size * 2) / (subdivision * ter_size.depth) + falloff;
+
+                    int row = (tset.x + ter_size.width/2) / (ter_size.width * subdivision);
+                    int col = (tset.z + ter_size.depth/2) / (ter_size.depth * subdivision);
+                    std::map<UINT, float> offsets;
+
+                    float radius_sq = (brush_size * 2) / (subdivision * ter_size.width) * (brush_size * 2) / (subdivision * ter_size.depth);
+                    float falloff_sq = ((brush_size * 2) / (subdivision * ter_size.width) + brush_falloff) * ((brush_size * 2) / (subdivision * ter_size.depth) + brush_falloff);
+                    int falloff_part = strength / brush_falloff;
+
+                    for (int y = -radiusy; y <= radiusy; y++)
+                    {
+                        for (int x = -radiusx; x <= radiusx; x++)
+                        {
+                            float point_sq = x * x + y * y;
+                            int index = (col + y) * ter_size.resolution + row + x;
+
+                            if (point_sq <= radius_sq)
+                            {
+                                if (paint_mode == 4)
+                                {
+                                    int limit = ter_size.resolution * ter_size.resolution;
+                                    float height = static_cast<Terrain*>(transform_target)->GetVertexPosition(index).y;
+
+                                    std::vector<float> neighbors;
+                                    if (index - 1 >= 0)
+                                        neighbors.push_back(static_cast<Terrain*>(transform_target)->GetVertexPosition(index - 1).y);
+                                    if (index + 1 < limit)
+                                        neighbors.push_back(static_cast<Terrain*>(transform_target)->GetVertexPosition(index + 1).y);
+                                    if (index - ter_size.resolution >= 0)
+                                        neighbors.push_back(static_cast<Terrain*>(transform_target)->GetVertexPosition(index - ter_size.resolution).y);
+                                    if (index + ter_size.resolution < limit)
+                                        neighbors.push_back(static_cast<Terrain*>(transform_target)->GetVertexPosition(index + ter_size.resolution).y);
+
+                                    float average = height;
+                                    for (std::vector<float>::iterator itt = neighbors.begin(); itt != neighbors.end(); ++itt)
+                                    {
+                                        average += *itt;
+                                    }
+                                    average = average / (neighbors.size() + 1);
+                                    float offset = (average - height) * glm::min(strength, 1.f);
+                                    offsets[index] = offset;
+                                }
+                                else
+                                {
+                                    offsets[index] = strength;
+                                }
+                            }
+                            else if (point_sq <= falloff_sq && paint_mode != 4)
+                            {
+                                int falloff_strength = strength - ((float)(glm::sqrt(point_sq) - (float)radiusx) * falloff_part);
+                                offsets[index] = falloff_strength;
                             }
                         }
                     }
 
-                    static_cast<Terrain*>(transform_target)->UpdateFoliageMask(foliage_mask);
+                    switch (paint_mode)
+                    {
+                    case 3:
+                        static_cast<Terrain*>(transform_target)->UpdateVertices(offsets);
+                        break;
+                    default:
+                        static_cast<Terrain*>(transform_target)->OffsetVertices(offsets);
+                        break;
+                    }
                     time = now;
+                    first_call = false;
                 }
             }
         }
 
         void App_UpdateSphere()
         {
-            if (manipulation == 7)
+            if (manipulation >= 7)
             {
                 POINTFLOAT point = GetCursorPosition();
                 float depth = GetRenderer()->GetDepthAt(point.x, point.y, 100);
 
                 if (depth > 0.f && !free_mode)
                 {
+                    Terrain::TerrainSize ter_size = static_cast<Terrain*>(transform_target)->GetTerrainSize();
                     glm::mat4 model = glm::translate(glm::mat4_cast(GetRenderer()->getActiveViewport()->GetObjectOrientation()), -GetRenderer()->getActiveViewport()->GetObjectPosition());
                     glm::mat4 proj = glm::perspective(glm::radians(60.0f), (float)GetWindowSize().x / (float)GetWindowSize().y, 0.1f, 1000.0f);
                     glm::vec4 view(0, 0, GetWindowSize().x, GetWindowSize().y);
                     proj[1][1] *= -1;
                     glm::vec3 tset = glm::unProject(glm::vec3(point.x, point.y, depth), model, proj, view);
                     tset += tset - GetRenderer()->getActiveViewport()->GetObjectPosition();
-                    brush->PositionObjectAt(tset);
+
+                    float subdivision = 1.f / ter_size.resolution;
+                    int row = (tset.x + ter_size.width / 2) / (ter_size.width * subdivision);
+                    int col = (tset.z + ter_size.depth / 2) / (ter_size.depth * subdivision);
+                    int index = col * ter_size.resolution + row;
+                    if (index >= 0 && index < ter_size.resolution * ter_size.resolution)
+                    {
+                        tset.y = static_cast<Terrain*>(transform_target)->GetVertexPosition(index).y;
+                        brush->PositionObjectAt(tset);
+                    }
                 }
             }
         }
 
-        void App_UpdateBrush(int mode, float opacity, float size)
+        void App_UpdateBrush(int mode, float opacity, float size, float falloff)
         {
             brush_size = size > 0 ? size : brush_size;
             brush_opacity = opacity > 0 ? opacity : brush_opacity;
+            brush_falloff = falloff > 0 ? falloff : brush_falloff;
             std::string temp = Globals::FloatToString(brush_size * 2, 5);
             std::string col = Globals::FloatToString(brush_opacity / 2, 5);
             brush->ParsePropertyValue("Scale", (temp + ":" + temp + ":" + temp).c_str());
@@ -397,8 +550,10 @@ namespace GrEngine
         {
             brush_opacity_string = Globals::FloatToString(brush_opacity, 5);
             brush_size_string = Globals::FloatToString(brush_size, 5);
+            brush_falloff_string = Globals::FloatToString(brush_falloff, 5);
             getEditorUI()->SendInfoChunk((int)ChunkType::ENTITY_INFO, (char*)"Opacity", (char*)brush_opacity_string.c_str());
             getEditorUI()->SendInfoChunk((int)ChunkType::ENTITY_INFO, (char*)"Size", (char*)brush_size_string.c_str());
+            getEditorUI()->SendInfoChunk((int)ChunkType::ENTITY_INFO, (char*)"Falloff", (char*)brush_falloff_string.c_str());
         }
 
         void App_SetActiveChannels(bool red, bool green, bool blue)

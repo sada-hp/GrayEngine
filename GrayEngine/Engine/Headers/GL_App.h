@@ -27,6 +27,7 @@ namespace GrEngine
 		void ProccessInputs() override;
 		bool IsKeyDown(int KEY) override;
 		void AppShowCursor(bool show) override;
+		void Focus() override;
 
 		inline AppParameters* WindowProperties() override { return &props; };
 	private:

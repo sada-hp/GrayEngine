@@ -53,7 +53,9 @@ namespace GrEngine
 
 		virtual bool IsKeyDown(int KEY) = 0;
 
-		virtual void AppShowCursor(bool show) { ShowCursor(show); };
+		virtual void AppShowCursor(bool show) = 0;
+
+		virtual void Focus() = 0;
 
 		void AddInputProccess(UINT id, InputCallbackFun lambda)
 		{

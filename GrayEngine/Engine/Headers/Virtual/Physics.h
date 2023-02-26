@@ -34,7 +34,13 @@ namespace GrEngine
 				return initialized;
 			}
 
+			void QueueUpdate()
+			{
+				was_updated = true;
+			}
+
 		protected:
+			bool was_updated = false;
 			bool initialized = false;
 			bool locked;
 			Entity* pOwner;

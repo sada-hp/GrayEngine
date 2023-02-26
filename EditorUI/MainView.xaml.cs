@@ -49,8 +49,6 @@ namespace EditorUI
         System.Windows.Forms.Panel panel = new System.Windows.Forms.Panel();
         ObservableCollection<object> entities = new ObservableCollection<object>();
         ObservableCollection<PropertyItem> ent_props = new ObservableCollection<PropertyItem>();
-        float brushOpacity = 1;
-        float brushSize = 1;
 
         public MainView()
         {
@@ -236,26 +234,40 @@ namespace EditorUI
 
         private void Opacity_callback(object sender)
         {
-            float opac = 0;
-            bool res = float.TryParse(((PropertyControl)sender).Contents, out opac);
-            opac = res ? opac : 1;
-            UIBridge.UpdateBrush(-1, opac, -1);
+            float opac = float.Parse(((PropertyControl)sender).Contents, System.Globalization.CultureInfo.InvariantCulture.NumberFormat);
+            UIBridge.UpdateBrush(-1, opac, -1, -1);
         }
 
         private void Size_callback(object sender)
         {
-            float size = 0;
-            bool res = float.TryParse(((PropertyControl)sender).Contents, out size);
-            size = res ? size : 1;
-            UIBridge.UpdateBrush(-1 , - 1, size);
+            float size = float.Parse(((PropertyControl)sender).Contents, System.Globalization.CultureInfo.InvariantCulture.NumberFormat);
+            UIBridge.UpdateBrush(-1 , - 1, size, -1);
+        }
+
+        private void Falloff_callback(object sender)
+        {
+            float fall = float.Parse(((PropertyControl)sender).Contents, System.Globalization.CultureInfo.InvariantCulture.NumberFormat);
+            UIBridge.UpdateBrush(-1, -1, -1, fall);
         }
 
         private void BrushMode_callback(object sender)
         {
             if ((sender as PropertyControl).Contents == "Paint")
-                UIBridge.UpdateBrush(1, -1, -1);
+                UIBridge.UpdateBrush(1, -1, -1, -1);
             else if ((sender as PropertyControl).Contents == "Erase")
-                UIBridge.UpdateBrush(2, -1, -1);
+                UIBridge.UpdateBrush(2, -1, -1, -1);
+        }
+
+        private void SculptMode_callback(object sender)
+        {
+            if ((sender as PropertyControl).Contents == "Add")
+                UIBridge.UpdateBrush(1, -1, -1, -1);
+            else if ((sender as PropertyControl).Contents == "Subtract")
+                UIBridge.UpdateBrush(2, -1, -1, -1);
+            else if ((sender as PropertyControl).Contents == "Flattern")
+                UIBridge.UpdateBrush(3, -1, -1, -1);
+            else if ((sender as PropertyControl).Contents == "Smooth")
+                UIBridge.UpdateBrush(4, -1, -1, -1);
         }
 
         private void BrushChannels_callback(object sender)
@@ -335,7 +347,7 @@ namespace EditorUI
             }
         }
 
-        internal void LoadBrushInfo()
+        internal void LoadBrushInfo(int brush)
         {
             try
             {
@@ -344,22 +356,38 @@ namespace EditorUI
                 Dictionary<string, string> events = new Dictionary<string, string>();
                 Dictionary<string, string> handlers = new Dictionary<string, string>();
 
-                properties.Add("Mode", "Paint:Erase");
-                types.Add("Mode", typeof(ListControl));
-                events.Add("Mode", "ControlSelectionChanged");
-                handlers.Add("Mode", "BrushMode_callback");
+                switch (brush)
+                {
+                    case 1:
+                        properties.Add("Mode", "Paint:Erase");
+                        types.Add("Mode", typeof(ListControl));
+                        events.Add("Mode", "ControlSelectionChanged");
+                        handlers.Add("Mode", "BrushMode_callback");
 
-                properties.Add("Channels", "Red:Green:Blue:RGB");
-                types.Add("Channels", typeof(ListControl));
-                events.Add("Channels", "ControlSelectionChanged");
-                handlers.Add("Channels", "BrushChannels_callback");
+                        properties.Add("Channels", "Red:Green:Blue:RGB");
+                        types.Add("Channels", typeof(ListControl));
+                        events.Add("Channels", "ControlSelectionChanged");
+                        handlers.Add("Channels", "BrushChannels_callback");
+                        break;
+                    case 2:
+                        properties.Add("Mode", "Add:Subtract:Flattern:Smooth");
+                        types.Add("Mode", typeof(ListControl));
+                        events.Add("Mode", "ControlSelectionChanged");
+                        handlers.Add("Mode", "SculptMode_callback");
+                        break;
+                }
 
-                properties.Add("Opacity", brushOpacity.ToString("0.0000"));
+                properties.Add("Opacity", "1");
                 types.Add("Opacity", typeof(LabelControl));
                 events.Add("Opacity", "TextBoxTextChanged");
                 handlers.Add("Opacity", "Opacity_callback");
 
-                properties.Add("Size", brushSize.ToString("0.0000"));
+                properties.Add("Falloff", "1");
+                types.Add("Falloff", typeof(LabelControl));
+                events.Add("Falloff", "TextBoxTextChanged");
+                handlers.Add("Falloff", "Falloff_callback");
+
+                properties.Add("Size", "1");
                 types.Add("Size", typeof(LabelControl));
                 events.Add("Size", "TextBoxTextChanged");
                 handlers.Add("Size", "Size_callback");
@@ -509,15 +537,16 @@ namespace EditorUI
 
         private void BrushButton_Click(object sender, RoutedEventArgs e)
         {
-            if (brush_mode == 0)
-            {
-                LoadBrushInfo();
-                brush_mode = 1;
-            }
-            else
-                brush_mode = 0;
+            ent_props.Clear();
+            UIBridge.ToggleBrush(1);
+            LoadBrushInfo(1);
+        }
 
-            UIBridge.ToggleBrush(brush_mode, 1);
+        private void SCulptButton_Click(object sender, RoutedEventArgs e)
+        {
+            ent_props.Clear();
+            UIBridge.ToggleBrush(2);
+            LoadBrushInfo(2);
         }
 
         private void Window_KeyDown(object sender, System.Windows.Input.KeyEventArgs e)

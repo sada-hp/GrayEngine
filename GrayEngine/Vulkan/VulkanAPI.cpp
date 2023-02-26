@@ -71,13 +71,13 @@ namespace GrEngine_Vulkan
 		vmaCreateBuffer(allocator, &bufferCreateInfo, &vmaallocInfo, &shaderBuffer->Buffer, &shaderBuffer->Allocation, nullptr);
 		vkGetBufferMemoryRequirements(device, shaderBuffer->Buffer, &shaderBuffer->MemoryRequirements);
 
+		byte* data;
 		if (bufData != nullptr)
 		{
-			vmaMapMemory(allocator, shaderBuffer->Allocation, (void**)&shaderBuffer->pData);
-			memcpy(shaderBuffer->pData, bufData, dataSize);
+			vmaMapMemory(allocator, shaderBuffer->Allocation, (void**)&data);
+			memcpy(data, bufData, dataSize);
 			vmaUnmapMemory(allocator, shaderBuffer->Allocation);
 		}
-
 
 		shaderBuffer->BufferInfo.buffer = shaderBuffer->Buffer;
 		shaderBuffer->BufferInfo.offset = 0;
@@ -102,7 +102,6 @@ namespace GrEngine_Vulkan
 			//vmaUnmapMemory(allocator, shader->Allocation);
 			vmaFreeMemory(allocator, shader->Allocation);
 			vmaFlushAllocation(allocator, shader->Allocation, 0, shader->MappedMemoryRange.size);
-			shader->pData = nullptr;
 			//vkFlushMappedMemoryRanges(device, 1, &(shader->MappedMemoryRange));
 			shader->initialized = false;
 		}

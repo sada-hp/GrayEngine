@@ -48,7 +48,6 @@ namespace GrEngine_Vulkan
 		VkDescriptorBufferInfo BufferInfo;
 		VkMemoryRequirements MemoryRequirements;
 		VkMappedMemoryRange MappedMemoryRange;
-		uint8_t* pData;
 		VmaAllocation Allocation;
 
 		bool initialized = false;

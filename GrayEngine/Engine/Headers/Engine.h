@@ -30,6 +30,7 @@ namespace GrEngine
 		void AddInputCallback(UINT id, InputCallbackFun callback) { pWindow->AddInputProccess(id, callback); };
 		void RemoveInputCallback(UINT id) { pWindow->RemoveInput(id); };
 		bool IsKeyDown(int key) { return pWindow->IsKeyDown(key); }
+		void FocusViewport() { pWindow->Focus(); };
 		void TogglePhysicsState(bool state);
 		POINT GetWindowSize();
 		POINT GetWindowPosition();

@@ -43,7 +43,17 @@ namespace GrEngine_Vulkan
 
 	void VulkanTerrain::UpdateFoliageMask(void* pixels)
 	{
-		static_cast<VulkanRenderer*>(p_Owner)->updateResource(foliageMask, pixels);
+		static_cast<VulkanRenderer*>(p_Owner)->updateResource(foliageMask, (byte*)pixels);
+		VulkanAPI::DestroyPipeline(computePipeline);
+		VulkanAPI::DestroyPipelineLayout(computeLayout);
+		VulkanAPI::DestroyPipeline(graphicsPipeline);
+		VulkanAPI::DestroyPipelineLayout(pipelineLayout);
+		updateObject();
+	}
+
+	void VulkanTerrain::UpdateFoliageMask(void* pixels, uint32_t width, uint32_t height, uint32_t offset_x, uint32_t offset_y)
+	{
+		static_cast<VulkanRenderer*>(p_Owner)->updateResource(foliageMask, (byte*)pixels, width, height, offset_x, offset_y);
 		VulkanAPI::DestroyPipeline(computePipeline);
 		VulkanAPI::DestroyPipelineLayout(computeLayout);
 		VulkanAPI::DestroyPipeline(graphicsPipeline);
@@ -69,7 +79,7 @@ namespace GrEngine_Vulkan
 
 		size = { resolution, width, depth, height };
 
-		VulkanAPI::m_createVkBuffer(logicalDevice, memAllocator, &size, sizeof(ComputeSize), VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, &terIn);
+		VulkanAPI::m_createVkBuffer(logicalDevice, memAllocator, &size, sizeof(TerrainSize), VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, &terIn);
 		VulkanAPI::m_createVkBuffer(logicalDevice, memAllocator, nullptr, size.resolution * size.resolution * sizeof(ComputeVertex), VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, &terOut);
 
 		heightMap = static_cast<VulkanRenderer*>(p_Owner)->loadTexture({ images[0] }, VK_IMAGE_VIEW_TYPE_2D_ARRAY)->AddLink();
@@ -105,6 +115,7 @@ namespace GrEngine_Vulkan
 			GrEngine_Vulkan::Vertex vertex{};
 			vertex.pos = (*itt).pos;
 			vertex.uv = { (*itt).uv.x, (*itt).uv.y };
+			vertex.uv_index = 0;
 
 			if (uniqueVertices.count(vertex) == 0)
 			{
@@ -139,6 +150,59 @@ namespace GrEngine_Vulkan
 		ready = true;
 	}
 
+	void VulkanTerrain::OffsetVertices(std::map<UINT, float> offsets)
+	{
+		byte* vertexbase;
+		byte* indexbase;
+		int numFaces = colMesh->getIndexedMeshArray()[0].m_numTriangles;
+		colShape->getMeshInterface()->getLockedVertexIndexBase(&vertexbase, colMesh->getIndexedMeshArray()[0].m_numVertices, colMesh->getIndexedMeshArray()[0].m_vertexType, colMesh->getIndexedMeshArray()[0].m_vertexStride, &indexbase, colMesh->getIndexedMeshArray()[0].m_triangleIndexStride, numFaces, colMesh->getIndexedMeshArray()[0].m_indexType);
+
+		btVector4* vertArray = (btVector4*)vertexbase;
+		byte* data;
+		vmaMapMemory(memAllocator, object_mesh->vertexBuffer.Allocation, (void**)&data);
+
+
+		for (std::map<UINT, float>::iterator itt = offsets.begin(); itt != offsets.end(); ++itt)
+		{
+			object_mesh->vertices[(*itt).first].pos.y += (*itt).second;
+			memcpy(data + sizeof(Vertex) * (*itt).first, &object_mesh->vertices[(*itt).first], sizeof(Vertex));
+			vertArray[(*itt).first] = btVector4(object_mesh->vertices[(*itt).first].pos.x, object_mesh->vertices[(*itt).first].pos.y, object_mesh->vertices[(*itt).first].pos.z, 1);
+		}
+
+		physComponent->QueueUpdate();
+
+		colShape->getMeshInterface()->unLockVertexBase(0);
+		vmaUnmapMemory(memAllocator, object_mesh->vertexBuffer.Allocation);
+	}
+
+	void VulkanTerrain::UpdateVertices(std::map<UINT, float> offsets)
+	{
+		byte* vertexbase;
+		byte* indexbase;
+		int numFaces = colMesh->getIndexedMeshArray()[0].m_numTriangles;
+
+		colShape->getMeshInterface()->getLockedVertexIndexBase(&vertexbase, colMesh->getIndexedMeshArray()[0].m_numVertices, colMesh->getIndexedMeshArray()[0].m_vertexType, colMesh->getIndexedMeshArray()[0].m_vertexStride, &indexbase, colMesh->getIndexedMeshArray()[0].m_triangleIndexStride, numFaces, colMesh->getIndexedMeshArray()[0].m_indexType);
+		btVector4* vertArray = (btVector4*)vertexbase;
+		byte* data;
+		vmaMapMemory(memAllocator, object_mesh->vertexBuffer.Allocation, (void**)&data);
+
+		for (std::map<UINT, float>::iterator itt = offsets.begin(); itt != offsets.end(); ++itt)
+		{
+			object_mesh->vertices[(*itt).first].pos.y = (*itt).second;
+			memcpy(data + sizeof(Vertex) * (*itt).first, &object_mesh->vertices[(*itt).first], sizeof(Vertex));
+			vertArray[(*itt).first] = btVector4(object_mesh->vertices[(*itt).first].pos.x, object_mesh->vertices[(*itt).first].pos.y, object_mesh->vertices[(*itt).first].pos.z, 1);
+		}
+
+		colShape->getMeshInterface()->unLockVertexBase(0);
+		physComponent->QueueUpdate();
+		vmaUnmapMemory(memAllocator, object_mesh->vertexBuffer.Allocation);
+	}
+
+	glm::vec4& VulkanTerrain::GetVertexPosition(UINT pos)
+	{
+		return object_mesh->vertices[pos].pos;
+	}
+
 	void VulkanTerrain::calculateCollisions()
 	{
 		std::unordered_map<GrEngine_Vulkan::Vertex, uint32_t> uniqueVertices{};
@@ -147,6 +211,7 @@ namespace GrEngine_Vulkan
 		{
 			delete colMesh;
 			colMesh = nullptr;
+			delete colShape;
 		}
 
 		colMesh = new btTriangleMesh();
@@ -161,8 +226,8 @@ namespace GrEngine_Vulkan
 			colMesh->addTriangleIndices(object_mesh->indices[i - 3], object_mesh->indices[i - 2], object_mesh->indices[i - 1]);
 		}
 
-		physComponent->UpdateCollisionShape(new btBvhTriangleMeshShape(colMesh, false));
-		//physComponent->CalculatePhysics();
+		colShape = new btBvhTriangleMeshShape(colMesh, false);
+		physComponent->UpdateCollisionShape(colShape);
 	}
 
 	bool VulkanTerrain::pushConstants(VkCommandBuffer cmd, VkExtent2D extent, UINT32 mode)
@@ -395,7 +460,7 @@ namespace GrEngine_Vulkan
 		VkDescriptorBufferInfo inBuffer{};
 		inBuffer.buffer = terIn.Buffer;
 		inBuffer.offset = 0;
-		inBuffer.range = sizeof(ComputeSize);
+		inBuffer.range = sizeof(TerrainSize);
 		VkDescriptorBufferInfo outBuffer{};
 		outBuffer.buffer = terOut.Buffer;
 		outBuffer.offset = 0;
