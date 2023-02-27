@@ -28,13 +28,9 @@ namespace GrEngine_Vulkan
 		{
 			VulkanAPI::m_destroyShaderBuffer(logicalDevice, memAllocator, &object_mesh->vertexBuffer);
 			VulkanAPI::m_destroyShaderBuffer(logicalDevice, memAllocator, &object_mesh->indexBuffer);
-			VulkanAPI::m_destroyShaderBuffer(logicalDevice, memAllocator, &terIn);
-			VulkanAPI::m_destroyShaderBuffer(logicalDevice, memAllocator, &terOut);
 		}
 		resources->RemoveTexture(heightMap->texture_collection, logicalDevice, memAllocator);
 		resources->RemoveTexture(foliageMask->texture_collection, logicalDevice, memAllocator);
-		VulkanAPI::DestroyPipeline(computePipeline);
-		VulkanAPI::DestroyPipelineLayout(computeLayout);
 		GrEngine::Engine::GetContext()->GetPhysics()->RemoveSimulationObject(physComponent);
 
 		ready = false;
@@ -67,24 +63,24 @@ namespace GrEngine_Vulkan
 		{
 			VulkanAPI::m_destroyShaderBuffer(logicalDevice, memAllocator, &object_mesh->vertexBuffer);
 			VulkanAPI::m_destroyShaderBuffer(logicalDevice, memAllocator, &object_mesh->indexBuffer);
-			VulkanAPI::m_destroyShaderBuffer(logicalDevice, memAllocator, &terIn);
-			VulkanAPI::m_destroyShaderBuffer(logicalDevice, memAllocator, &terOut);
 			VulkanAPI::DestroyImage(heightMap->newImage.allocatedImage);
 			VulkanAPI::DestroyImage(foliageMask->newImage.allocatedImage);
-			VulkanAPI::DestroyPipeline(computePipeline);
-			VulkanAPI::DestroyPipelineLayout(computeLayout);
 
 			ready = false;
 		}
 
 		size = { resolution, width, depth, height };
 
+		use_compute = true;
 		VulkanAPI::m_createVkBuffer(logicalDevice, memAllocator, &size, sizeof(TerrainSize), VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, &terIn);
 		VulkanAPI::m_createVkBuffer(logicalDevice, memAllocator, nullptr, size.resolution * size.resolution * sizeof(ComputeVertex), VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, &terOut);
 
 		heightMap = static_cast<VulkanRenderer*>(p_Owner)->loadTexture({ images[0] }, VK_IMAGE_VIEW_TYPE_2D_ARRAY)->AddLink();
 		foliageMask = static_cast<VulkanRenderer*>(p_Owner)->loadTexture({ images[1] }, VK_IMAGE_VIEW_TYPE_2D_ARRAY)->AddLink();
 		bool res = static_cast<VulkanRenderer*>(p_Owner)->assignTextures({ images[2], images[3], images[4], images[5] }, this);
+
+		createComputeLayout();
+		createComputePipeline();
 
 		VkCommandPoolCreateInfo cmdPoolInfo{};
 		cmdPoolInfo.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
@@ -146,6 +142,12 @@ namespace GrEngine_Vulkan
 
 		VulkanAPI::DestroyCommandPool(computePool);
 		VulkanAPI::DestroyFence(computeFence);
+		VulkanAPI::DestroyPipeline(computePipeline);
+		VulkanAPI::DestroyPipelineLayout(computeLayout);
+		VulkanAPI::m_destroyShaderBuffer(logicalDevice, memAllocator, &terIn);
+		VulkanAPI::m_destroyShaderBuffer(logicalDevice, memAllocator, &terOut);
+		use_compute = false;
+		updateObject();
 
 		ready = true;
 	}
@@ -251,9 +253,17 @@ namespace GrEngine_Vulkan
 		pushConstant.size = sizeof(UniformBufferObject);
 		pushConstant.stageFlags = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_GEOMETRY_BIT;
 
-		bool res = VulkanAPI::CreatePipelineLayout(logicalDevice, { pushConstant }, { descriptorSets[0].descriptorSetLayout }, &pipelineLayout);
-		res = VulkanAPI::CreatePipelineLayout(logicalDevice, {}, { descriptorSets[1].descriptorSetLayout }, &computeLayout) & res;
-		return res;
+		return VulkanAPI::CreatePipelineLayout(logicalDevice, { pushConstant }, { descriptorSets[0].descriptorSetLayout }, &pipelineLayout);
+	}
+
+	bool VulkanTerrain::createComputeLayout()
+	{
+		VkPushConstantRange pushConstant;
+		pushConstant.offset = 0;
+		pushConstant.size = sizeof(UniformBufferObject);
+		pushConstant.stageFlags = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_GEOMETRY_BIT;
+
+		return VulkanAPI::CreatePipelineLayout(logicalDevice, {}, { descriptorSets[1].descriptorSetLayout }, &computeLayout);
 	}
 
 	bool VulkanTerrain::createGraphicsPipeline()
@@ -263,12 +273,11 @@ namespace GrEngine_Vulkan
 		std::vector<char> vertShaderCode = GrEngine::Globals::readFile(solution_path + shader_path + "_vert.spv");
 		std::vector<char> geomShaderCode = GrEngine::Globals::readFile(solution_path + shader_path + "_geom.spv");
 		std::vector<char> fragShaderCode = GrEngine::Globals::readFile(solution_path + shader_path + "_frag.spv");
-		std::vector<char> compShaderCode = GrEngine::Globals::readFile(solution_path + shader_path + "_comp.spv");
+		
 
-		VkShaderModule shaders[4] = { VulkanAPI::m_createShaderModule(logicalDevice, vertShaderCode),
+		VkShaderModule shaders[3] = { VulkanAPI::m_createShaderModule(logicalDevice, vertShaderCode),
 			VulkanAPI::m_createShaderModule(logicalDevice, geomShaderCode),
 			VulkanAPI::m_createShaderModule(logicalDevice, fragShaderCode),
-			VulkanAPI::m_createShaderModule(logicalDevice, compShaderCode)
 		};
 
 		VkPipelineShaderStageCreateInfo vertShaderStageInfo{};
@@ -402,10 +411,24 @@ namespace GrEngine_Vulkan
 		if (VulkanAPI::CreateGraphicsPipeline(logicalDevice, &pipelineInfo, &graphicsPipeline) != true)
 			return false;
 
+		vkDestroyShaderModule(logicalDevice, shaders[0], nullptr);
+		vkDestroyShaderModule(logicalDevice, shaders[1], nullptr);
+		vkDestroyShaderModule(logicalDevice, shaders[2], nullptr);
+
+		return true;
+	}
+
+	bool VulkanTerrain::createComputePipeline()
+	{
+		std::string solution_path = GrEngine::Globals::getExecutablePath();
+
+		std::vector<char> compShaderCode = GrEngine::Globals::readFile(solution_path + shader_path + "_comp.spv");
+		VkShaderModule shader = VulkanAPI::m_createShaderModule(logicalDevice, compShaderCode);
+
 		VkPipelineShaderStageCreateInfo compShaderStageInfo{};
 		compShaderStageInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
 		compShaderStageInfo.stage = VK_SHADER_STAGE_COMPUTE_BIT;
-		compShaderStageInfo.module = shaders[3];
+		compShaderStageInfo.module = shader;
 		compShaderStageInfo.pName = "main";
 
 		VkComputePipelineCreateInfo computeInfo{};
@@ -416,10 +439,7 @@ namespace GrEngine_Vulkan
 		if (VulkanAPI::CreateComputePipeline(logicalDevice, &computeInfo, &computePipeline) != true)
 			return false;
 
-		vkDestroyShaderModule(logicalDevice, shaders[0], nullptr);
-		vkDestroyShaderModule(logicalDevice, shaders[1], nullptr);
-		vkDestroyShaderModule(logicalDevice, shaders[2], nullptr);
-		vkDestroyShaderModule(logicalDevice, shaders[3], nullptr);
+		vkDestroyShaderModule(logicalDevice, shader, nullptr);
 
 		return true;
 	}
@@ -427,9 +447,8 @@ namespace GrEngine_Vulkan
 	void VulkanTerrain::populateDescriptorSets()
 	{
 		descriptorSets.clear();
-		descriptorSets.resize(2);
+		descriptorSets.resize(1 + use_compute);
 		descriptorSets[0].bindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
-		descriptorSets[1].bindPoint = VK_PIPELINE_BIND_POINT_COMPUTE;
 
 		VkDescriptorImageInfo texInfo{};
 		texInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
@@ -457,17 +476,22 @@ namespace GrEngine_Vulkan
 			subscribeDescriptor(buffer.first, binding++, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, bufferInfo);
 		}
 
-		VkDescriptorBufferInfo inBuffer{};
-		inBuffer.buffer = terIn.Buffer;
-		inBuffer.offset = 0;
-		inBuffer.range = sizeof(TerrainSize);
-		VkDescriptorBufferInfo outBuffer{};
-		outBuffer.buffer = terOut.Buffer;
-		outBuffer.offset = 0;
-		outBuffer.range = size.resolution * size.resolution * sizeof(ComputeVertex);
-		subscribeDescriptor(VK_SHADER_STAGE_COMPUTE_BIT, 0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, inBuffer, 1);
-		subscribeDescriptor(VK_SHADER_STAGE_COMPUTE_BIT, 1, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, outBuffer, 1);
-		subscribeDescriptor(VK_SHADER_STAGE_COMPUTE_BIT, 2, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, heightInfo, 1);
+		if (use_compute)
+		{
+			descriptorSets[1].bindPoint = VK_PIPELINE_BIND_POINT_COMPUTE;
+			VkDescriptorBufferInfo inBuffer{};
+			inBuffer.buffer = terIn.Buffer;
+			inBuffer.offset = 0;
+			inBuffer.range = sizeof(TerrainSize);
+			VkDescriptorBufferInfo outBuffer{};
+			outBuffer.buffer = terOut.Buffer;
+			outBuffer.offset = 0;
+			outBuffer.range = size.resolution * size.resolution * sizeof(ComputeVertex);
+			subscribeDescriptor(VK_SHADER_STAGE_COMPUTE_BIT, 0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, inBuffer, 1);
+			subscribeDescriptor(VK_SHADER_STAGE_COMPUTE_BIT, 1, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, outBuffer, 1);
+			subscribeDescriptor(VK_SHADER_STAGE_COMPUTE_BIT, 2, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, heightInfo, 1);
+		}
+
 
 		createDescriptorLayout();
 		createDescriptorPool();

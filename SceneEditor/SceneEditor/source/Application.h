@@ -55,6 +55,9 @@ namespace GrEngine
         bool blue_channel = false;
         float mask_aspect_x = 1;
         float mask_aspect_y = 1;
+        float subdivisions = 1.f;
+
+        bool brush_snap = false;
 
         Application(const AppParameters& Properties = AppParameters()) : Engine(Properties)
         {
@@ -341,6 +344,7 @@ namespace GrEngine
             mask_aspect_x = mask_width / 1024;
             mask_aspect_y = mask_height / 1024;
             GenerateTerrain(resolution, x, y, z, maps);
+            subdivisions = 1.f / resolution;
         }
 
         void App_PaintMask()
@@ -373,42 +377,45 @@ namespace GrEngine
 
                     float radius_sq = brush_size * brush_size * mask_aspect_x * mask_aspect_y;
                     float falloff_sq = ((brush_size * mask_aspect_x) + actual_falloff) * ((brush_size * mask_aspect_y) + actual_falloff);
+                    int limit = mask_width * mask_height * mask_channels;
 
-                    if ((cent_y - radiusy) >= 0 && (cent_x - radiusx) >= 0 && (cent_x + radiusx) <= mask_width && (cent_y + radiusy) <= mask_height)
+                    for (int y = -radiusy; y <= radiusy; y++)
                     {
-                        for (int y = -radiusy; y <= radiusy; y++)
+                        for (int x = -radiusx; x <= radiusx; x++)
                         {
-                            for (int x = -radiusx; x <= radiusx; x++)
+                            float point_sq = x * x + y * y;
+                            int row = (cent_y + y) * mask_width * mask_channels;
+                            int col = (cent_x + x) * mask_channels;
+
+                            if (row + col + 2 >= limit || row + col < 0)
+                                continue;
+
+                            if (point_sq <= radius_sq)
                             {
-                                float point_sq = x * x + y * y;
-                                int row = (cent_y + y) * mask_width * mask_channels;
-                                int col = (cent_x + x) * mask_channels;
+                                int red = foliage_mask[row + col] + strength * red_channel;
+                                int green = foliage_mask[row + col + 1] + strength * green_channel;
+                                int blue = foliage_mask[row + col + 2] + strength * blue_channel;
+                                foliage_mask[row + col] = glm::max(glm::min(red, 255), 0);
+                                foliage_mask[row + col + 1] = glm::max(glm::min(green, 255), 0);
+                                foliage_mask[row + col + 2] = glm::max(glm::min(blue, 255), 0);
+                            }
+                            else if (point_sq <= falloff_sq)
+                            {
+                                int falloff_strength = (strength - ((float)(glm::sqrt(point_sq) - (float)radius) * falloff_part));
 
-                                if (point_sq <= radius_sq)
-                                {
-                                    int red = foliage_mask[row + col] + strength * red_channel;
-                                    int green = foliage_mask[row + col + 1] + strength * green_channel;
-                                    int blue = foliage_mask[row + col + 2] + strength * blue_channel;
-                                    foliage_mask[row + col] = glm::max(glm::min(red, 255), 0);
-                                    foliage_mask[row + col + 1] = glm::max(glm::min(green, 255), 0);
-                                    foliage_mask[row + col + 2] = glm::max(glm::min(blue, 255), 0);
-                                }
-                                else if (point_sq <= falloff_sq)
-                                {
-                                    int falloff_strength = strength - ((float)(glm::sqrt(point_sq) - (float)radius) * falloff_part);
-
-                                    int red = foliage_mask[row + col] + falloff_strength * red_channel;
-                                    int green = foliage_mask[row + col + 1] + falloff_strength * green_channel;
-                                    int blue = foliage_mask[row + col + 2] + falloff_strength * blue_channel;
-                                    foliage_mask[row + col] = glm::max(glm::min(red, 255), 0);
-                                    foliage_mask[row + col + 1] = glm::max(glm::min(green, 255), 0);
-                                    foliage_mask[row + col + 2] = glm::max(glm::min(blue, 255), 0);
-                                }
+                                int red = foliage_mask[row + col] + falloff_strength * red_channel;
+                                int green = foliage_mask[row + col + 1] + falloff_strength * green_channel;
+                                int blue = foliage_mask[row + col + 2] + falloff_strength * blue_channel;
+                                foliage_mask[row + col] = glm::max(glm::min(red, 255), 0);
+                                foliage_mask[row + col + 1] = glm::max(glm::min(green, 255), 0);
+                                foliage_mask[row + col + 2] = glm::max(glm::min(blue, 255), 0);
                             }
                         }
-
-                        static_cast<Terrain*>(transform_target)->UpdateFoliageMask(foliage_mask, radiusx * 2, radiusy * 2, cent_x - radiusx, cent_y - radiusy);
                     }
+
+                    int two_radx = radiusx * 2;
+                    int two_rady = radiusy * 2;
+                    static_cast<Terrain*>(transform_target)->UpdateFoliageMask(foliage_mask, two_radx, two_rady, glm::min(glm::max(cent_x - radiusx, 0), mask_width - two_radx), glm::min(glm::max(cent_y - radiusy, 0), mask_height - two_rady));
                     time = now;
                     first_call = false;
                 }
@@ -429,19 +436,19 @@ namespace GrEngine
                     Terrain::TerrainSize ter_size = static_cast<Terrain*>(transform_target)->GetTerrainSize();
                     float strength = paint_mode == 2 ? -brush_opacity : brush_opacity;
                     glm::vec3 tset = brush->GetObjectPosition();
-                    float subdivision = 1.f / ter_size.resolution;
 
                     float falloff = glm::ceil(brush_falloff);
-                    int radiusx = (brush_size * 2) / (subdivision * ter_size.width) + falloff;
-                    int radiusy = (brush_size * 2) / (subdivision * ter_size.depth) + falloff;
+                    int radiusx = (brush_size * 2) / (subdivisions * ter_size.width) + falloff;
+                    int radiusy = (brush_size * 2) / (subdivisions * ter_size.depth) + falloff;
 
-                    int row = (tset.x + ter_size.width/2) / (ter_size.width * subdivision);
-                    int col = (tset.z + ter_size.depth/2) / (ter_size.depth * subdivision);
+                    int row = (tset.x + ter_size.width/2) / (ter_size.width * subdivisions);
+                    int col = (tset.z + ter_size.depth/2) / (ter_size.depth * subdivisions);
                     std::map<UINT, float> offsets;
+                    UINT limit = ter_size.resolution * ter_size.resolution;
 
-                    float radius_sq = (brush_size * 2) / (subdivision * ter_size.width) * (brush_size * 2) / (subdivision * ter_size.depth);
-                    float falloff_sq = ((brush_size * 2) / (subdivision * ter_size.width) + brush_falloff) * ((brush_size * 2) / (subdivision * ter_size.depth) + brush_falloff);
-                    int falloff_part = strength / brush_falloff;
+                    float radius_sq = (brush_size * 2) / (subdivisions * ter_size.width) * (brush_size * 2) / (subdivisions * ter_size.depth);
+                    float falloff_sq = ((brush_size * 2) / (subdivisions * ter_size.width) + brush_falloff) * ((brush_size * 2) / (subdivisions * ter_size.depth) + brush_falloff);
+                    int falloff_part = strength / falloff;
 
                     for (int y = -radiusy; y <= radiusy; y++)
                     {
@@ -449,6 +456,9 @@ namespace GrEngine
                         {
                             float point_sq = x * x + y * y;
                             int index = (col + y) * ter_size.resolution + row + x;
+
+                            if (index >= limit || index < 0)
+                                continue;
 
                             if (point_sq <= radius_sq)
                             {
@@ -481,10 +491,17 @@ namespace GrEngine
                                     offsets[index] = strength;
                                 }
                             }
-                            else if (point_sq <= falloff_sq && paint_mode != 4)
+                            else if (point_sq <= falloff_sq && paint_mode < 3)
                             {
                                 int falloff_strength = strength - ((float)(glm::sqrt(point_sq) - (float)radiusx) * falloff_part);
                                 offsets[index] = falloff_strength;
+                            }
+                            else if (point_sq <= falloff_sq && paint_mode == 3)
+                            {
+                                float falloff_strength = (falloff - ((float)(glm::sqrt(point_sq) - (float)radiusx))) / falloff;
+                                float height = static_cast<Terrain*>(transform_target)->GetVertexPosition(index).y;
+                                float dist = strength - height;
+                                offsets[index] = height + dist * falloff_strength/2;
                             }
                         }
                     }
@@ -506,31 +523,46 @@ namespace GrEngine
 
         void App_UpdateSphere()
         {
-            if (manipulation >= 7)
+            if (manipulation >= 7 && transform_target != nullptr && !free_mode && transform_target->GetEntityID() == 100)
             {
                 POINTFLOAT point = GetCursorPosition();
-                float depth = GetRenderer()->GetDepthAt(point.x, point.y, 100);
+                float fov = 60.f;
+                POINT vSize = GetWindowSize();
+                Terrain::TerrainSize ter_size = static_cast<Terrain*>(transform_target)->GetTerrainSize();
+                glm::mat4 model = glm::translate(glm::mat4_cast(GetRenderer()->getActiveViewport()->GetObjectOrientation()), -GetRenderer()->getActiveViewport()->GetObjectPosition());
+                glm::mat4 proj = glm::perspective(glm::radians(fov), (float)vSize.x / (float)vSize.y, 0.1f, 1000.0f);
+                glm::vec4 view(0, 0, vSize.x, vSize.y);
+                proj[1][1] *= -1;
 
-                if (depth > 0.f && !free_mode)
+                float dist = GetRenderer()->DistanceToFragment(point.x, point.y, 100);
+                glm::vec3 tset = glm::unProject(glm::vec3(point.x, point.y, 0.9f), model, proj, view);
+                glm::vec3 dir = glm::normalize(tset - GetRenderer()->getActiveViewport()->GetObjectPosition());
+
+                float lens_val = glm::tan(glm::radians(fov/2)) * (glm::distance(glm::vec2(vSize.x/2, vSize.y/2), glm::vec2(point.x, point.y)) / vSize.x);
+                glm::vec3 pos = tset + dir * (dist * (1.f + lens_val));
+
+                if (brush_snap)
                 {
-                    Terrain::TerrainSize ter_size = static_cast<Terrain*>(transform_target)->GetTerrainSize();
-                    glm::mat4 model = glm::translate(glm::mat4_cast(GetRenderer()->getActiveViewport()->GetObjectOrientation()), -GetRenderer()->getActiveViewport()->GetObjectPosition());
-                    glm::mat4 proj = glm::perspective(glm::radians(60.0f), (float)GetWindowSize().x / (float)GetWindowSize().y, 0.1f, 1000.0f);
-                    glm::vec4 view(0, 0, GetWindowSize().x, GetWindowSize().y);
-                    proj[1][1] *= -1;
-                    glm::vec3 tset = glm::unProject(glm::vec3(point.x, point.y, depth), model, proj, view);
-                    tset += tset - GetRenderer()->getActiveViewport()->GetObjectPosition();
-
-                    float subdivision = 1.f / ter_size.resolution;
-                    int row = (tset.x + ter_size.width / 2) / (ter_size.width * subdivision);
-                    int col = (tset.z + ter_size.depth / 2) / (ter_size.depth * subdivision);
+                    int row = (pos.x + ter_size.width / 2) / (ter_size.width * subdivisions);
+                    int col = (pos.z + ter_size.depth / 2) / (ter_size.depth * subdivisions);
                     int index = col * ter_size.resolution + row;
                     if (index >= 0 && index < ter_size.resolution * ter_size.resolution)
                     {
-                        tset.y = static_cast<Terrain*>(transform_target)->GetVertexPosition(index).y;
-                        brush->PositionObjectAt(tset);
+                        pos = static_cast<Terrain*>(transform_target)->GetVertexPosition(index);
                     }
                 }
+                else
+                {
+                    int row = (pos.x + ter_size.width / 2) / (ter_size.width * subdivisions);
+                    int col = (pos.z + ter_size.depth / 2) / (ter_size.depth * subdivisions);
+                    int index = col * ter_size.resolution + row;
+                    if (index >= 0 && index < ter_size.resolution * ter_size.resolution)
+                    {
+                        pos.y = static_cast<Terrain*>(transform_target)->GetVertexPosition(index).y;
+                    }
+                }
+
+                brush->PositionObjectAt(pos);
             }
         }
 
@@ -542,7 +574,7 @@ namespace GrEngine
             std::string temp = Globals::FloatToString(brush_size * 2, 5);
             std::string col = Globals::FloatToString(brush_opacity / 2, 5);
             brush->ParsePropertyValue("Scale", (temp + ":" + temp + ":" + temp).c_str());
-            brush->ParsePropertyValue("Color", ("255:255:255:" + col).c_str());
+            brush->ParsePropertyValue("Color", ("1:1:1:" + col).c_str());
             paint_mode = mode > 0 ? mode : paint_mode;
         }
 

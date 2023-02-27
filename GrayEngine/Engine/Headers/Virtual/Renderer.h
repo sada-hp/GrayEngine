@@ -57,8 +57,8 @@ namespace GrEngine
 		virtual void SaveScreenshot(const char* filepath) = 0;
 		virtual void SelectEntityAtCursor() = 0;
 		virtual std::array<byte, 3> GetPixelColorAtCursor() = 0;
-		virtual float GetDepthAt(float x, float y) = 0;
-		virtual float GetDepthAt(float x, float y, UINT id) = 0;
+		virtual float DistanceToFragment(float x, float y) = 0;
+		virtual float DistanceToFragment(float x, float y, UINT id) = 0;
 		virtual void SetHighlightingMode(bool enabled) = 0;
 		virtual void SaveScene(const char* path) = 0;
 		virtual void LoadScene(const char* path) = 0;

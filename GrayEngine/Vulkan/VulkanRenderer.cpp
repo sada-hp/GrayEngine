@@ -295,11 +295,11 @@ namespace GrEngine_Vulkan
 		PickingInfo id{ cur.x, cur.y };
 
 
-		memcpy(pickingMem, &id, sizeof(PickingInfo));
+		memcpy_s(pickingMem, sizeof(PickingInfo), &id, sizeof(PickingInfo));
 
 		drawFrame(swapChainExtent);
 
-		memcpy(&id, pickingMem, sizeof(PickingInfo));
+		memcpy_s(&id, sizeof(PickingInfo), pickingMem, sizeof(PickingInfo));
 		int selection = 0;
 		for (int i = 0; i < 32; i++)
 		{
@@ -312,21 +312,21 @@ namespace GrEngine_Vulkan
 		selectEntity(selection);
 	}
 
-	float VulkanRenderer::GetDepthAt(float x, float y)
+	float VulkanRenderer::DistanceToFragment(float x, float y)
 	{
 		if (pickingMem == nullptr || pickingBuffer.initialized == false) return 0.f;
 
 		PickingInfo out{ x, y };
 
-		memcpy(pickingMem, &out, sizeof(PickingInfo));
+		memcpy_s(pickingMem, sizeof(PickingInfo) , &out, sizeof(PickingInfo));
 
 		drawFrame(swapChainExtent);
 
-		memcpy(&out, pickingMem, sizeof(PickingInfo));
+		memcpy_s(&out, sizeof(PickingInfo), pickingMem, sizeof(PickingInfo));
 		float depth = 0.f;
 		for (int i = 0; i < 32; i++)
 		{
-			if (out.id[i] != 0)
+			if (out.depth[i] != 0)
 			{
 				depth = out.depth[i];
 				break;
@@ -336,21 +336,21 @@ namespace GrEngine_Vulkan
 		return depth;
 	}
 
-	float VulkanRenderer::GetDepthAt(float x, float y, UINT id)
+	float VulkanRenderer::DistanceToFragment(float x, float y, UINT id)
 	{
 		if (pickingMem == nullptr || pickingBuffer.initialized == false) return 0.f;
 
 		PickingInfo out{ x, y };
 
-		memcpy(pickingMem, &out, sizeof(PickingInfo));
+		memcpy_s(pickingMem, sizeof(PickingInfo), &out, sizeof(PickingInfo));
 
 		drawFrame(swapChainExtent);
 
-		memcpy(&out, pickingMem, sizeof(PickingInfo));
+		memcpy_s(&out, sizeof(PickingInfo), pickingMem, sizeof(PickingInfo));
 		float depth = 0.f;
 		for (int i = 0; i < 32; i++)
 		{
-			if (out.id[i] == id)
+			if (out.depth[i] != 0 && id == out.id[i])
 			{
 				depth = out.depth[i];
 				break;
@@ -600,7 +600,7 @@ namespace GrEngine_Vulkan
 		res = VulkanAPI::CreateImageView(logicalDevice, swapChainImageFormat, samplingImage.allocatedImage, VulkanAPI::StructSubresourceRange(VK_IMAGE_ASPECT_COLOR_BIT), &colorImageView) & res;
 
 		depthFormat = VK_FORMAT_D32_SFLOAT;
-		VkImageCreateInfo depthImageCreateInfo = VulkanAPI::StructImageCreateInfo({ extent.width, extent.height, 1 }, depthFormat, msaaSamples, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT);
+		VkImageCreateInfo depthImageCreateInfo = VulkanAPI::StructImageCreateInfo({ extent.width, extent.height, 1 }, depthFormat, msaaSamples, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT);
 		res = VulkanAPI::CreateImage(memAllocator, &depthImageCreateInfo, &depthImage.allocatedImage, &depthImage.allocation) & res;
 		res = VulkanAPI::CreateImageView(logicalDevice, depthFormat, depthImage.allocatedImage, VulkanAPI::StructSubresourceRange(VK_IMAGE_ASPECT_DEPTH_BIT), &depthImageView) & res;
 
@@ -812,7 +812,7 @@ namespace GrEngine_Vulkan
 				}
 
 
-				data = (unsigned char*)malloc(sizeof(byte) * channels * maxW * maxH * size);
+				data = (unsigned char*)malloc(channels * maxW * maxH * size);
 				memset(data, (byte)255, channels * maxW * maxH * size);
 			}
 			else
@@ -829,16 +829,17 @@ namespace GrEngine_Vulkan
 				}
 
 				std::map<int, std::future<void>> processes_map;
-				data = (unsigned char*)malloc(sizeof(byte) * maxW * maxH * channels * texture_path.size());
+				data = (unsigned char*)malloc(maxW * maxH * channels * texture_path.size());
 
 				//TBD: fix loading same image file on different surfaces
 				int procNum = 0;
+				int image_size = maxW * maxH * channels;
 				for (std::vector<std::string>::iterator itt = texture_path.begin(); itt != texture_path.end(); ++itt)
 				{
 					const char* texture = (*itt).c_str();
 					if ((*itt) != "")
 					{
-						processes_map[procNum] = std::async(std::launch::async, [texture, data, maxW, maxH, procNum]()
+						processes_map[procNum] = std::async(std::launch::async, [texture, data, maxW, maxH, image_size, procNum]()
 							{
 								int width;
 								int height;
@@ -854,28 +855,24 @@ namespace GrEngine_Vulkan
 
 								if (width < maxW || height < maxH)
 								{
-									auto output = (unsigned char*)malloc(sizeof(byte) * maxW * maxH * channels);
+									unsigned char* output = (unsigned char*)malloc(image_size);
 									stbir_resize_uint8(pixels, width, height, 0, output, maxW, maxH, 0, channels);
-									memcpy(data + sizeof(byte) * maxW * maxH * channels * procNum, output, sizeof(byte) * maxW * maxH * channels);
+									memcpy_s(data + image_size * procNum, image_size, output, image_size);
 									stbi_image_free(pixels);
 									free(output);
 								}
 								else
 								{
-									memcpy(data + sizeof(byte) * maxW * maxH * channels * procNum, pixels, sizeof(byte) * width * height * channels);
+									memcpy_s(data + image_size * procNum, image_size, pixels, image_size);
 									stbi_image_free(pixels);
 								}
 							});
 					}
 					else
 					{
-						//processes_map[procNum] = std::async(std::launch::async, [data, maxW, maxH, channels, procNum]()
-						//	{
-
-						//	});
-						unsigned char* pixels = (unsigned char*)malloc(sizeof(byte) * channels * maxW * maxH);
-						memset(pixels, (byte)255, channels * maxW * maxH);
-						memcpy(data + sizeof(byte) * maxW * maxH * channels * procNum, pixels, sizeof(byte) * maxW * maxH * channels);
+						unsigned char* pixels = (unsigned char*)malloc(image_size);
+						memset(pixels, (byte)255, image_size);
+						memcpy_s(data + image_size * procNum, image_size, pixels, image_size);
 						free(pixels);
 						texture_path[procNum] = "empty_texture";
 					}
@@ -1037,13 +1034,13 @@ namespace GrEngine_Vulkan
 			{
 				auto output = (unsigned char*)malloc(sizeof(byte) * maxW * maxH * channels);
 				stbir_resize_uint8(pixels, width, height, 0, output, maxW, maxH, 0, channels);
-				memcpy(data + buf_offset, output, sizeof(byte) * maxW * maxH * channels);
+				memcpy_s(data + buf_offset, maxW * maxH * channels, output, maxW * maxH * channels); //sizeof(byte)
 				free(pixels);
 				free(output);
 			}
 			else
 			{
-				memcpy(data + buf_offset, pixels, sizeof(byte) * width * height * channels);
+				memcpy_s(data + buf_offset, width * height * channels, pixels, width * height * channels); //sizeof(byte)
 				stbi_image_free(pixels);
 			}
 
@@ -1167,7 +1164,7 @@ namespace GrEngine_Vulkan
 			vmaMapMemory(memAllocator, stagingBuffer.Allocation, (void**)&data);
 
 			uint32_t buf_offset = sizeof(byte) * maxW * maxH * channels * textureIndex;
-			memcpy(data + buf_offset, pixels, sizeof(byte) * maxW * maxH * channels);
+			memcpy_s(data + buf_offset, maxW * maxH * channels, pixels, maxW * maxH * channels); //sizeof(byte)
 			vmaUnmapMemory(memAllocator, stagingBuffer.Allocation);
 
 			VulkanAPI::DestroyImageView(object->object_texture->textureImageView);
@@ -1269,17 +1266,19 @@ namespace GrEngine_Vulkan
 		region.imageSubresource.baseArrayLayer = 0;
 		region.imageSubresource.layerCount = 1;
 		int whole_size = target->width * target->height * target->channels;
+		int index = 0;
 
 		vmaMapMemory(memAllocator, stagingBuffer.Allocation, (void**)&data);
+		memset(data, (byte)0, width * target->channels * height);
 		for (int i = 0; i < height; i++)
 		{
 			uint32_t offset = (offset_x + (offset_y + i) * target->width) * target->channels;
 			if (offset > whole_size)
 				continue;
 
-			memcpy(data + width * target->channels * i, pixels + offset, sizeof(byte) * width * target->channels);
+			memcpy_s(data + width * target->channels * index, width * target->channels, pixels + offset,  width * target->channels); //sizeof(byte)
 
-			region.bufferOffset = width * target->channels * i;
+			region.bufferOffset = width * target->channels * index;
 			region.imageOffset = { (int)offset_x, (int)offset_y + i, 0 };
 			region.imageExtent = {
 				width,
@@ -1288,6 +1287,7 @@ namespace GrEngine_Vulkan
 			};
 
 			regions.push_back(region);
+			index++;
 		}
 		vmaUnmapMemory(memAllocator, stagingBuffer.Allocation);
 

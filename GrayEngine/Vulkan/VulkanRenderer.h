@@ -30,8 +30,8 @@ namespace GrEngine_Vulkan
 		void clearDrawables() override;
 		void createSkybox(const char* East, const char* West, const char* Top, const char* Bottom, const char* North, const char* South) override;
 
-		float GetDepthAt(float x, float y) override;
-		float GetDepthAt(float x, float y, UINT id = 0) override;
+		float DistanceToFragment(float x, float y) override;
+		float DistanceToFragment(float x, float y, UINT id = 0) override;
 		void SelectEntityAtCursor() override;
 		std::array<byte, 3> GetPixelColorAtCursor() override;
 		GrEngine::Entity* selectEntity(UINT ID) override;
@@ -69,7 +69,6 @@ namespace GrEngine_Vulkan
 	protected:
 		void SaveScreenshot(const char* filepath);
 		bool updateDrawables(uint32_t index, DrawMode mode, VkExtent2D extent);
-		DrawMode cur_mode = DrawMode::NORMAL;
 	private:
 		VulkanResourceManager resources;
 
@@ -86,7 +85,6 @@ namespace GrEngine_Vulkan
 		const std::vector<const char*> deviceExtensions = { VK_KHR_SWAPCHAIN_EXTENSION_NAME };
 		VkSwapchainKHR swapChain;
 		std::vector<VkImage> swapChainImages;
-		std::vector<VkDeviceMemory> swapChainMemory;
 		VkFormat swapChainImageFormat;
 		VkExtent2D swapChainExtent;
 		std::vector<VkImageView> swapChainImageViews;

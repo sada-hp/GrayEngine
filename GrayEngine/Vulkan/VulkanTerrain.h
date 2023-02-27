@@ -33,6 +33,8 @@ namespace GrEngine_Vulkan
 
 		bool createPipelineLayout() override;
 		bool createGraphicsPipeline() override;
+		bool createComputeLayout();
+		bool createComputePipeline();
 		btTriangleMesh* colMesh;
 
 
@@ -50,6 +52,7 @@ namespace GrEngine_Vulkan
 		Texture* foliageMask;
 
 		btBvhTriangleMeshShape* colShape;
+		bool use_compute = false;
 	};
 }
 

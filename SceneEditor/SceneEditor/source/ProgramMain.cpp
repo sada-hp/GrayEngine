@@ -34,7 +34,7 @@ namespace SceneEditor
             app->manip_start = cursor;
             app->App_UpdateUIProperty("EntityPosition");
         }
-        else if (app->manipulation >= 4 && app->mouse_down)
+        else if (app->manipulation >= 4 && app->manipulation < 7 && app->mouse_down)
         {
             int mInd = app->manipulation - 4;
             auto vec = glm::normalize(glm::vec2(app->obj_center.x - cursor.x, app->obj_center.y - cursor.y));
