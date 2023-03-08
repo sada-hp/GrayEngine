@@ -217,6 +217,11 @@ namespace EditorUI
             UIBridge.UpdateEntityProperty(((PropertyControl)sender).ID, Marshal.StringToHGlobalAnsi("Scale"), Marshal.StringToHGlobalAnsi(((PropertyControl)sender).Contents));
         }
 
+        private void Transparency_callback(object sender)
+        {
+            UIBridge.UpdateEntityProperty(((PropertyControl)sender).ID, Marshal.StringToHGlobalAnsi("Transparency"), Marshal.StringToHGlobalAnsi(((PropertyControl)sender).Contents));
+        }
+
         private void Color_callback(object sender)
         {
             var color = ((PropertyControl)sender).Contents.Split(':');

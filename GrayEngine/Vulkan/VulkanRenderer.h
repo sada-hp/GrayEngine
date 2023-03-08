@@ -19,7 +19,9 @@ namespace GrEngine_Vulkan
 
 		inline VkExtent2D getExtent() { return swapChainExtent; };
 		inline VmaAllocator getMemAllocator() { return memAllocator; };
-		inline VkRenderPass getRenderPass() { return renderPass; };
+		inline VkRenderPass getRenderPass() { 
+			return renderPass; 
+		};
 		bool loadModel(UINT id, const char* mesh_path, std::vector<std::string> textures_vector) override;
 		bool loadModel(UINT id, const char* model_path) override;
 		GrEngine::Entity* addEntity() override;
@@ -61,11 +63,17 @@ namespace GrEngine_Vulkan
 			float depth[32];
 		};
 
+		Texture position;
+		Texture normal;
+		Texture albedo;
+
+		ShaderBuffer transBuffer;
+		ShaderBuffer nodeBfffer;
+		Texture headIndex;
 
 		VkQueue graphicsQueue;
 		VkFence graphicsFence;
 		VkCommandPool commandPool;
-
 	protected:
 		void SaveScreenshot(const char* filepath);
 		bool updateDrawables(uint32_t index, DrawMode mode, VkExtent2D extent);
@@ -118,6 +126,34 @@ namespace GrEngine_Vulkan
 		VkImageView colorImageView;
 		AllocatedImage samplingImage;
 		bool highlight_selection = true;
+
+		struct Node {
+			glm::vec4 color;
+			float depth;
+			uint32_t next;
+		};
+
+		struct GSBO {
+			uint32_t count;
+			uint32_t maxNodeCount;
+		} geometrySBO;
+
+		void createAttachment(VkFormat format, VkImageUsageFlags usage, Texture* attachment);
+		void prepareCompositionPass();
+		void prepareTransparencyPass();
+
+		VkDescriptorPool compositionSetPool;
+		VkDescriptorSetLayout compositionSetLayout;
+		VkDescriptorSet compositionSet;
+		VkPipelineLayout compositionPipelineLayout;
+		VkPipeline compositionPipeline;
+
+		VkDescriptorPool transparencySetPool;
+		VkDescriptorSetLayout transparencySetLayout;
+		VkDescriptorSet transparencySet;
+		VkPipelineLayout transparencyPipelineLayout;
+		VkPipeline transparencyPipeline;
+
 
 #ifdef _DEBUG
 

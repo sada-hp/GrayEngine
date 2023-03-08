@@ -49,7 +49,7 @@ namespace GrEngine_Vulkan
 		return shaderModule;
 	}
 
-	bool VulkanAPI::m_createVkBuffer(VkDevice device, VmaAllocator allocator, const void* bufData, uint32_t dataSize, VkBufferUsageFlags usage, ShaderBuffer* shaderBuffer)
+	bool VulkanAPI::m_createVkBuffer(VkDevice device, VmaAllocator allocator, const void* bufData, uint32_t dataSize, VkBufferUsageFlags usage, ShaderBuffer* shaderBuffer, VkMemoryPropertyFlags memProperty)
 	{
 		/*this function may be called in async manner, so we must check if allocator is currently free, otherwise wait until its free*/
 		static bool is_in_use;
@@ -66,7 +66,7 @@ namespace GrEngine_Vulkan
 
 		VmaAllocationCreateInfo vmaallocInfo = {};
 		vmaallocInfo.usage = VMA_MEMORY_USAGE_CPU_TO_GPU;
-		vmaallocInfo.preferredFlags = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
+		vmaallocInfo.preferredFlags = memProperty;
 
 		vmaCreateBuffer(allocator, &bufferCreateInfo, &vmaallocInfo, &shaderBuffer->Buffer, &shaderBuffer->Allocation, nullptr);
 		vkGetBufferMemoryRequirements(device, shaderBuffer->Buffer, &shaderBuffer->MemoryRequirements);
@@ -117,8 +117,6 @@ namespace GrEngine_Vulkan
 		{
 			VulkanAPI::DestroySampler(texture->textureSampler);
 			VulkanAPI::DestroyImageView(texture->textureImageView);
-			//vmaDestroyImage(allocator, texture->newImage.allocatedImage, texture->newImage.allocation);
-			//vmaFlushAllocation(allocator, texture->newImage.allocation, 0, sizeof(texture->newImage.allocation));
 			VulkanAPI::DestroyImage(texture->newImage.allocatedImage);
 			texture->initialized = false;
 			texture->texture_collection.clear();
@@ -209,80 +207,177 @@ namespace GrEngine_Vulkan
 
 	bool VulkanAPI::CreateRenderPass(VkDevice device, VkFormat swapchainFormat, VkFormat depthFormat, VkSampleCountFlagBits sampleCount, VkRenderPass* outRenderPass)
 	{
-		VkAttachmentDescription colorAttachment{};
-		colorAttachment.format = swapchainFormat;
-		colorAttachment.samples = sampleCount;
-		colorAttachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
-		colorAttachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
-		colorAttachment.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
-		colorAttachment.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
-		colorAttachment.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-		colorAttachment.finalLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
-		VkAttachmentReference colorAttachmentRef{};
-		colorAttachmentRef.attachment = 0;
-		colorAttachmentRef.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+		std::array<VkAttachmentDescription, 5> attachments{};
+		// Color attachment
+		attachments[0].format = swapchainFormat;
+		attachments[0].samples = VK_SAMPLE_COUNT_1_BIT;
+		attachments[0].loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
+		attachments[0].storeOp = VK_ATTACHMENT_STORE_OP_STORE;
+		attachments[0].stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+		attachments[0].stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+		attachments[0].initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+		attachments[0].finalLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
 
-		VkAttachmentDescription depth_attachment{};
-		depth_attachment.flags = 0;
-		depth_attachment.format = depthFormat;
-		depth_attachment.samples = sampleCount;
-		depth_attachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
-		depth_attachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
-		depth_attachment.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
-		depth_attachment.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
-		depth_attachment.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-		depth_attachment.finalLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
-		VkAttachmentReference depth_attachment_ref{};
-		depth_attachment_ref.attachment = 1;
-		depth_attachment_ref.layout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+		// Deferred attachments
+		// Position
+		attachments[1].format = VK_FORMAT_R16G16B16A16_SFLOAT;
+		attachments[1].samples = VK_SAMPLE_COUNT_1_BIT;
+		attachments[1].loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
+		attachments[1].storeOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+		attachments[1].stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+		attachments[1].stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+		attachments[1].initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+		attachments[1].finalLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+		// Normals
+		attachments[2].format = VK_FORMAT_R16G16B16A16_SFLOAT;
+		attachments[2].samples = VK_SAMPLE_COUNT_1_BIT;
+		attachments[2].loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
+		attachments[2].storeOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+		attachments[2].stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+		attachments[2].stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+		attachments[2].initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+		attachments[2].finalLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+		// Albedo
+		attachments[3].format = swapchainFormat;
+		attachments[3].samples = VK_SAMPLE_COUNT_1_BIT;
+		attachments[3].loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
+		attachments[3].storeOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+		attachments[3].stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+		attachments[3].stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+		attachments[3].initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+		attachments[3].finalLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+		// Depth attachment
+		attachments[4].format = depthFormat;
+		attachments[4].samples = VK_SAMPLE_COUNT_1_BIT;
+		attachments[4].loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
+		attachments[4].storeOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+		attachments[4].stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+		attachments[4].stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+		attachments[4].initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+		attachments[4].finalLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
 
-		VkAttachmentDescription colorAttachmentResolve{};
-		colorAttachmentResolve.format = swapchainFormat;
-		colorAttachmentResolve.samples = VK_SAMPLE_COUNT_1_BIT;
-		colorAttachmentResolve.loadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
-		colorAttachmentResolve.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
-		colorAttachmentResolve.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
-		colorAttachmentResolve.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
-		colorAttachmentResolve.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-		colorAttachmentResolve.finalLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
-		VkAttachmentReference colorAttachmentResolveRef{};
-		colorAttachmentResolveRef.attachment = 2;
-		colorAttachmentResolveRef.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+		std::array<VkSubpassDescription, 4> subpassDescriptions{};
 
-		VkSubpassDescription subpass{};
-		subpass.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
-		subpass.colorAttachmentCount = 1;
-		subpass.pColorAttachments = &colorAttachmentRef;
-		subpass.pDepthStencilAttachment = &depth_attachment_ref;
-		subpass.pResolveAttachments = &colorAttachmentResolveRef;
+		// First subpass: Fill G-Buffer components
+		// ----------------------------------------------------------------------------------------
 
-		VkSubpassDependency dependency{};
-		dependency.srcSubpass = VK_SUBPASS_EXTERNAL;
-		dependency.dstSubpass = 0;
-		dependency.srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT | VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT;
-		dependency.srcAccessMask = 0;
-		dependency.dstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT | VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT;
-		dependency.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
+		VkAttachmentReference colorReferences[4];
+		colorReferences[0] = { 0, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL };
+		colorReferences[1] = { 1, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL };
+		colorReferences[2] = { 2, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL };
+		colorReferences[3] = { 3, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL };
+		VkAttachmentReference depthReference = { 4, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL };
 
-		VkSubpassDependency depth_dependency = {};
-		depth_dependency.srcSubpass = VK_SUBPASS_EXTERNAL;
-		depth_dependency.dstSubpass = 0;
-		depth_dependency.srcStageMask = VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT | VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT;
-		depth_dependency.srcAccessMask = 0;
-		depth_dependency.dstStageMask = VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT | VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT;
-		depth_dependency.dstAccessMask = VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
+		subpassDescriptions[0].pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
+		subpassDescriptions[0].colorAttachmentCount = 4;
+		subpassDescriptions[0].pColorAttachments = colorReferences;
+		subpassDescriptions[0].pDepthStencilAttachment = &depthReference;
 
-		VkAttachmentDescription attachments[] = { colorAttachment, depth_attachment, colorAttachmentResolve };
-		VkSubpassDependency dependecies[] = { dependency, depth_dependency };
+		// Second subpass: Final composition (using G-Buffer components)
+		// ----------------------------------------------------------------------------------------
 
-		VkRenderPassCreateInfo renderPassInfo{};
+		VkAttachmentReference colorReference = { 0, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL };
+
+		VkAttachmentReference inputReferences[3];
+		inputReferences[0] = { 1, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL };
+		inputReferences[1] = { 2, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL };
+		inputReferences[2] = { 3, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL };
+
+		uint32_t preserveAttachmentIndex = 1;
+
+		subpassDescriptions[1].pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
+		subpassDescriptions[1].colorAttachmentCount = 1;
+		subpassDescriptions[1].pColorAttachments = &colorReference;
+		subpassDescriptions[1].pDepthStencilAttachment = &depthReference;
+		// Use the color attachments filled in the first pass as input attachments
+		subpassDescriptions[1].inputAttachmentCount = 3;
+		subpassDescriptions[1].pInputAttachments = inputReferences;
+
+		// Third subpass: Forward transparency
+		// ----------------------------------------------------------------------------------------
+		colorReference = { 0, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL };
+
+		inputReferences[0] = { 1, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL };
+
+		subpassDescriptions[2].pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
+		subpassDescriptions[2].colorAttachmentCount = 0;
+		subpassDescriptions[2].pColorAttachments = nullptr;
+		subpassDescriptions[2].pDepthStencilAttachment = &depthReference;
+		// Use the color/depth attachments filled in the first pass as input attachments
+		subpassDescriptions[2].inputAttachmentCount = 1;
+		subpassDescriptions[2].pInputAttachments = inputReferences;
+
+		subpassDescriptions[3].pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
+		subpassDescriptions[3].colorAttachmentCount = 1;
+		subpassDescriptions[3].pColorAttachments = &colorReference;
+		subpassDescriptions[3].pDepthStencilAttachment = &depthReference;
+		subpassDescriptions[3].inputAttachmentCount = 0;
+		subpassDescriptions[3].pInputAttachments = nullptr;
+		subpassDescriptions[3].preserveAttachmentCount = 0;
+		subpassDescriptions[3].pPreserveAttachments = nullptr;
+		subpassDescriptions[3].pResolveAttachments = nullptr;
+
+		// Subpass dependencies for layout transitions
+		std::array<VkSubpassDependency, 6> dependencies;
+
+		// This makes sure that writes to the depth image are done before we try to write to it again
+		dependencies[0].srcSubpass = VK_SUBPASS_EXTERNAL;
+		dependencies[0].dstSubpass = 0;
+		dependencies[0].srcStageMask = VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT | VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT;
+		dependencies[0].dstStageMask = VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT | VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT;
+		dependencies[0].srcAccessMask = VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT;
+		dependencies[0].dstAccessMask = VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT;
+		dependencies[0].dependencyFlags = VK_DEPENDENCY_BY_REGION_BIT;
+
+		dependencies[1].srcSubpass = VK_SUBPASS_EXTERNAL;
+		dependencies[1].dstSubpass = 0;
+		dependencies[1].srcStageMask = VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT;
+		dependencies[1].dstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+		dependencies[1].srcAccessMask = VK_ACCESS_MEMORY_READ_BIT;
+		dependencies[1].dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_READ_BIT | VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+		dependencies[1].dependencyFlags = VK_DEPENDENCY_BY_REGION_BIT;
+
+		// This dependency transitions the input attachment from color attachment to shader read
+		dependencies[2].srcSubpass = 0;
+		dependencies[2].dstSubpass = 1;
+		dependencies[2].srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+		dependencies[2].dstStageMask = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
+		dependencies[2].srcAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+		dependencies[2].dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
+		dependencies[2].dependencyFlags = VK_DEPENDENCY_BY_REGION_BIT;
+
+		dependencies[3].srcSubpass = 1;
+		dependencies[3].dstSubpass = 2;
+		dependencies[3].srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+		dependencies[3].dstStageMask = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
+		dependencies[3].srcAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+		dependencies[3].dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
+		dependencies[3].dependencyFlags = VK_DEPENDENCY_BY_REGION_BIT;
+
+		dependencies[4].srcSubpass = 2;
+		dependencies[4].dstSubpass = 3;
+		dependencies[4].srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+		dependencies[4].dstStageMask = VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT | VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT;
+		dependencies[4].srcAccessMask = VK_ACCESS_COLOR_ATTACHMENT_READ_BIT | VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+		dependencies[4].dstAccessMask = VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
+		dependencies[4].dependencyFlags = VK_DEPENDENCY_BY_REGION_BIT;
+
+		dependencies[5].srcSubpass = 3;
+		dependencies[5].dstSubpass = VK_SUBPASS_EXTERNAL;
+		dependencies[5].srcStageMask = VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT | VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT;
+		dependencies[5].dstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+		dependencies[5].srcAccessMask = VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
+		dependencies[5].dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT | VK_ACCESS_COLOR_ATTACHMENT_READ_BIT;
+		dependencies[5].dependencyFlags = VK_DEPENDENCY_BY_REGION_BIT;
+
+		VkRenderPassCreateInfo renderPassInfo = {};
 		renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
-		renderPassInfo.attachmentCount = 3;
-		renderPassInfo.pAttachments = attachments;
-		renderPassInfo.subpassCount = 1;
-		renderPassInfo.pSubpasses = &subpass;
-		renderPassInfo.dependencyCount = 2;
-		renderPassInfo.pDependencies = dependecies;
+		renderPassInfo.attachmentCount = static_cast<uint32_t>(attachments.size());
+		renderPassInfo.pAttachments = attachments.data();
+		renderPassInfo.subpassCount = static_cast<uint32_t>(subpassDescriptions.size());
+		renderPassInfo.pSubpasses = subpassDescriptions.data();
+		renderPassInfo.dependencyCount = static_cast<uint32_t>(dependencies.size());
+		renderPassInfo.pDependencies = dependencies.data();
 
 		VkResult res = vkCreateRenderPass(device, &renderPassInfo, nullptr, outRenderPass);
 
@@ -958,6 +1053,13 @@ namespace GrEngine_Vulkan
 			sourceStage = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
 			destinationStage = VK_PIPELINE_STAGE_TRANSFER_BIT;
 		}
+		else if (oldLayout == VK_IMAGE_LAYOUT_UNDEFINED && newLayout == VK_IMAGE_LAYOUT_GENERAL) {
+			barrier.srcAccessMask = 0;
+			barrier.dstAccessMask = VK_ACCESS_MEMORY_READ_BIT;
+
+			sourceStage = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
+			destinationStage = VK_PIPELINE_STAGE_TRANSFER_BIT;
+		}
 		else if (oldLayout == VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL && newLayout == VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL) {
 			barrier.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
 			barrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
@@ -1105,6 +1207,7 @@ namespace GrEngine_Vulkan
 		deviceFeatures.fragmentStoresAndAtomics = VK_TRUE;
 		deviceFeatures.tessellationShader = VK_TRUE;
 		deviceFeatures.samplerAnisotropy = VK_TRUE;
+		deviceFeatures.fragmentStoresAndAtomics = VK_TRUE;
 
 		return deviceFeatures;
 	}

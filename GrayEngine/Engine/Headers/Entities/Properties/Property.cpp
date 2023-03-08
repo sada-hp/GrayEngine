@@ -516,3 +516,48 @@ void* Shader::GetValueAdress()
 {
 	return &property_value;
 }
+
+////////////////////////////////////Transparency/////////////////////////////////////////////
+
+Transparency::Transparency(int value, void* parent)
+{
+	property_name = "Transparency";
+	property_value = value;
+	property_type = PropertyType::Shader;
+	owner = parent;
+}
+
+Transparency::~Transparency()
+{
+
+}
+
+const char* Transparency::ValueString()
+{
+	return property_string.c_str();
+}
+
+void Transparency::ParsePropertyValue(const char* value)
+{
+	SetPropertyValue(atoi(value));
+	property_string = value;
+}
+
+void Transparency::SetPropertyValue(int value)
+{
+	property_value = value;
+	property_string = std::to_string(value);
+
+	if (owner != nullptr)
+		static_cast<GrEngine::DrawableObject*>(owner)->Refresh();
+}
+
+std::any Transparency::GetAnyValue()
+{
+	return property_value;
+}
+
+void* Transparency::GetValueAdress()
+{
+	return &property_value;
+}

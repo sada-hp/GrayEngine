@@ -24,14 +24,7 @@ namespace GrEngine_Vulkan
 	enum DrawMode
 	{
 		NORMAL = 0,
-		IDS = 1
-	};
-
-	struct ImageInfo
-	{
-		uint32_t width;
-		uint32_t height;
-		uint32_t channels;
+		TRANSPARENCY = 1
 	};
 
 	using VulkanHandle = void*;
@@ -43,7 +36,7 @@ namespace GrEngine_Vulkan
 		static void Destroy(VkDevice logicalDevice, VmaAllocator allocator);
 
 		static VkShaderModule m_createShaderModule(VkDevice device, const std::vector<char>& code);
-		static bool m_createVkBuffer(VkDevice device, VmaAllocator allocator, const void* bufData, uint32_t dataSize, VkBufferUsageFlags usage, ShaderBuffer* shader);
+		static bool m_createVkBuffer(VkDevice device, VmaAllocator allocator, const void* bufData, uint32_t dataSize, VkBufferUsageFlags usage, ShaderBuffer* shader, VkMemoryPropertyFlags memProperty = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
 		static void m_destroyShaderBuffer(VkDevice device, VmaAllocator allocator, ShaderBuffer* shaderBuf);
 		static void m_destroyTexture(VkDevice device, VmaAllocator allocator, Texture* texture);
 

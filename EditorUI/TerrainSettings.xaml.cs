@@ -60,6 +60,20 @@ namespace EditorUI
             string blue_ch = BlueBtn.ToolTip.ToString();
 
             UIBridge.GenerateTerrain(resolution, width, height, depth, Marshal.StringToHGlobalAnsi(height_map), Marshal.StringToHGlobalAnsi(blend_mask), Marshal.StringToHGlobalAnsi(base_layer), Marshal.StringToHGlobalAnsi(red_ch), Marshal.StringToHGlobalAnsi(green_ch), Marshal.StringToHGlobalAnsi(blue_ch));
+
+            ImgHolder.Source = null;
+            MaskBtn.Background = null;
+            BaseBtn.Background = null;
+            RedBtn.Background = null;
+            GreenBtn.Background = null;
+            BlueBtn.Background = null;
+            ImgHolder.UpdateLayout();
+            MaskBtn.UpdateLayout();
+            BaseBtn.UpdateLayout();
+            RedBtn.UpdateLayout();
+            GreenBtn.UpdateLayout();
+            GreenBtn.UpdateLayout();
+
             Close();
             GC.Collect(GC.MaxGeneration, GCCollectionMode.Forced, true);
         }
@@ -67,6 +81,7 @@ namespace EditorUI
         private void Cancel_Click(object sender, RoutedEventArgs e)
         {
             Close();
+            GC.Collect();
         }
 
         private void TextBox_PreviewTextInput(object sender, TextCompositionEventArgs e)
@@ -104,6 +119,8 @@ namespace EditorUI
                 LoadBtn.Background = null;
                 LoadBtn.Content = "";
             }
+
+            GC.Collect();
         }
 
         private void BaseBtn_Click(object sender, RoutedEventArgs e)
@@ -119,6 +136,8 @@ namespace EditorUI
                 BaseBtn.Background = brush;
                 BaseBtn.ToolTip = openFileDialog.FileName;
             }
+
+            GC.Collect();
         }
 
         private void RedBtn_Click(object sender, RoutedEventArgs e)
@@ -134,6 +153,8 @@ namespace EditorUI
                 RedBtn.Background = brush;
                 RedBtn.ToolTip = openFileDialog.FileName;
             }
+
+            GC.Collect();
         }
 
         private void GreenBtn_Click(object sender, RoutedEventArgs e)
@@ -149,6 +170,8 @@ namespace EditorUI
                 GreenBtn.Background = brush;
                 GreenBtn.ToolTip = openFileDialog.FileName;
             }
+
+            GC.Collect();
         }
 
         private void BlueBtn_Click(object sender, RoutedEventArgs e)
@@ -164,6 +187,8 @@ namespace EditorUI
                 BlueBtn.Background = brush;
                 BlueBtn.ToolTip = openFileDialog.FileName;
             }
+
+            GC.Collect();
         }
 
         private void MaskBtn_Click(object sender, RoutedEventArgs e)
@@ -179,6 +204,8 @@ namespace EditorUI
                 MaskBtn.Background = brush;
                 MaskBtn.ToolTip = openFileDialog.FileName;
             }
+
+            GC.Collect();
         }
     }
 }

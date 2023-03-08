@@ -99,6 +99,7 @@ namespace EditorUI
         private void Cancel_Click(object sender, RoutedEventArgs e)
         {
             Close();
+            GC.Collect();
         }
     }
 }

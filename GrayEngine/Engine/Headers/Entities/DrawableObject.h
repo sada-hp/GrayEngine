@@ -15,6 +15,7 @@ namespace GrEngine
 	struct Vertex
 	{
 		glm::vec4 pos;
+		glm::vec4 norm;
 		glm::vec4 color;
 		glm::vec2 uv;
 		uint32_t uv_index;
@@ -22,14 +23,16 @@ namespace GrEngine
 		Vertex()
 		{
 			pos = glm::vec4(0.f);
+			norm = glm::vec4(0.f);
 			uv = glm::vec2(0.f);
 		}
 
-		Vertex(glm::vec4 position, glm::vec2 uv_coordinates, uint32_t material_index = 0)
+		Vertex(glm::vec4 position, glm::vec4 normal, glm::vec2 uv_coordinates, uint32_t material_index = 0)
 		{
 			pos = position;
 			uv = uv_coordinates;
 			uv_index = material_index;
+			norm = normal;
 		}
 
 		bool operator==(const Vertex& other) const

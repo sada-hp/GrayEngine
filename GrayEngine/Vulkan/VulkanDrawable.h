@@ -43,5 +43,7 @@ namespace GrEngine_Vulkan
 		VkDevice logicalDevice;
 		VmaAllocator memAllocator;
 		std::map<VkShaderStageFlagBits, ShaderBuffer*> globalBuffers;
+
+		int transparency = 0;
 	};
 }

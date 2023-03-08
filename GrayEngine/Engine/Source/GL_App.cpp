@@ -49,7 +49,7 @@ namespace GrEngine
 			nativeWindow = glfwGetWin32Window(window);
 			glfwSetWindowUserPointer(window, &props);
 
-			SetVSync(true);
+			//SetVSync(true);
 			SetUpEvents(window);
 			RECT desktop;
 			GetWindowRect(GetDesktopWindow(), &desktop);
@@ -97,6 +97,18 @@ namespace GrEngine
 
 	void GL_APP::OnStep()
 	{
+		//60 fps hard lock
+		//static auto frame_time = std::chrono::steady_clock::now();
+		//std::chrono::steady_clock::time_point now;
+		//long long duration;
+		//do
+		//{
+		//	now = std::chrono::steady_clock::now();
+		//	duration = std::chrono::duration_cast<std::chrono::milliseconds>(now - frame_time).count();
+		//} while (duration < 1000/60);
+		//frame_time = now;
+		//60 fps hard lock
+
 		glfwPollEvents();
 		props.eventListener->pollEngineEvents();
 		ProccessInputs();

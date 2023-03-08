@@ -469,11 +469,7 @@ namespace GrEngine_Vulkan
 		int binding = 2;
 		for (auto buffer : globalBuffers)
 		{
-			VkDescriptorBufferInfo bufferInfo;
-			bufferInfo.buffer = buffer.second->Buffer;
-			bufferInfo.offset = 0;
-			bufferInfo.range = sizeof(VulkanRenderer::PickingInfo);
-			subscribeDescriptor(buffer.first, binding++, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, bufferInfo);
+			subscribeDescriptor(buffer.first, binding++, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, buffer.second->BufferInfo);
 		}
 
 		if (use_compute)

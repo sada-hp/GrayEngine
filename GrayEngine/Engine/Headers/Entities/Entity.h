@@ -232,6 +232,11 @@ namespace GrEngine
 				properties.push_back(new Color(1.f, 1.f, 1.f, this));
 				return true;
 			}
+			else if (std::string(property_name) == "Transparency")
+			{
+				properties.push_back(new Transparency(1, this));
+				return true;
+			}
 			else
 			{
 				return false;

@@ -11,6 +11,7 @@ namespace GrEngine_Vulkan
 
 	void VulkanObject::initObject(VkDevice device, VmaAllocator allocator, GrEngine::Renderer* owner)
 	{
+		properties.push_back(new Transparency(0, this));
 		properties.push_back(new Shader("Shaders//default", this));
 
 		UINT id = GetEntityID();
@@ -65,32 +66,34 @@ namespace GrEngine_Vulkan
 	bool VulkanObject::createGraphicsPipeline()
 	{
 		shader_path = GetPropertyValue("Shader", std::string(shader_path));
+		transparency = GetPropertyValue("Transparency", 0);
 
 		return VulkanDrawable::createGraphicsPipeline();
 	}
 
 	void VulkanObject::populateDescriptorSets()
 	{
+		transparency = GetPropertyValue("Transparency", 0);
+
 		descriptorSets.clear();
 		descriptorSets.resize(1);
 		descriptorSets[0].bindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
 
-
-		VkDescriptorImageInfo info;
-		info.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-		info.imageView = object_texture->textureImageView;
-		info.sampler = object_texture->textureSampler;
-		subscribeDescriptor(VK_SHADER_STAGE_FRAGMENT_BIT, 0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, info);
+		subscribeDescriptor(VK_SHADER_STAGE_FRAGMENT_BIT, 0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, object_texture->texInfo.descriptor);
 
 		int index = 1;
 		std::vector<VkDescriptorBufferInfo> buffers;
 		for (auto buffer : globalBuffers)
 		{
-			VkDescriptorBufferInfo bufferInfo;
-			bufferInfo.buffer = buffer.second->Buffer;
-			bufferInfo.offset = 0;
-			bufferInfo.range = sizeof(VulkanRenderer::PickingInfo);
-			subscribeDescriptor(VK_SHADER_STAGE_FRAGMENT_BIT, index++, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, bufferInfo);
+			subscribeDescriptor(VK_SHADER_STAGE_FRAGMENT_BIT, index++, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, buffer.second->BufferInfo);
+		}
+
+		if (transparency > 0)
+		{
+			subscribeDescriptor(VK_SHADER_STAGE_FRAGMENT_BIT, index++, VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT, static_cast<VulkanRenderer*>(p_Owner)->position.texInfo.descriptor);
+			subscribeDescriptor(VK_SHADER_STAGE_FRAGMENT_BIT, index++, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, static_cast<VulkanRenderer*>(p_Owner)->transBuffer.BufferInfo);
+			subscribeDescriptor(VK_SHADER_STAGE_FRAGMENT_BIT, index++, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, static_cast<VulkanRenderer*>(p_Owner)->headIndex.texInfo.descriptor);
+			subscribeDescriptor(VK_SHADER_STAGE_FRAGMENT_BIT, index++, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, static_cast<VulkanRenderer*>(p_Owner)->nodeBfffer.BufferInfo);
 		}
 
 		createDescriptorLayout();
@@ -225,6 +228,7 @@ namespace GrEngine_Vulkan
 
 					GrEngine_Vulkan::Vertex vertex{ {
 					{ cur_mesh->mVertices[vert_ind].x, cur_mesh->mVertices[vert_ind].y, cur_mesh->mVertices[vert_ind].z, 1.0f },
+					{ cur_mesh->mNormals[vert_ind].x, cur_mesh->mNormals[vert_ind].y, cur_mesh->mNormals[vert_ind].z, 1.0f },
 					{ coord[vert_ind].x, 1.0f - coord[vert_ind].y },
 					(uint32_t)uv_ind
 					} };
@@ -370,15 +374,15 @@ namespace GrEngine_Vulkan
 			Mesh* target_mesh = new Mesh();
 
 			target_mesh->vertices = {
-				{{{ xcoord, ycoord, zcoord, 1.0f },{ 1.f, 1.0f }}},
-				{{{ -xcoord, ycoord, -zcoord, 1.0f },{ 0.f, 0.0f }}},
-				{{{ -xcoord, ycoord , zcoord, 1.0f },{ 0.f, 1.f }}},
-				{{{ xcoord, ycoord, -zcoord, 1.0f },{ 1.f, 0.0f }}},
+				{{{ xcoord, ycoord, zcoord, 1.0f },{  0.0f,  0.0f,  0.0f, 1.0f },{ 1.f, 1.0f }}},
+				{{{ -xcoord, ycoord, -zcoord, 1.0f },{  0.0f,  0.0f,  0.0f, 1.0f },{ 0.f, 0.0f }}},
+				{{{ -xcoord, ycoord , zcoord, 1.0f },{  0.0f,  0.0f,  0.0f, 1.0f },{ 0.f, 1.f }}},
+				{{{ xcoord, ycoord, -zcoord, 1.0f },{  0.0f,  0.0f,  0.0f, 1.0f },{ 1.f, 0.0f }}},
 
-				{{{ xcoord, -ycoord, zcoord, 1.0f },{ 1.f, 1.0f }}},
-				{{{ -xcoord, -ycoord, -zcoord, 1.0f },{ 0.f, 0.0f }}},
-				{{{ -xcoord, -ycoord, zcoord, 1.0f },{ 0.f, 1.f }}},
-				{{{ xcoord, -ycoord, -zcoord, 1.0f },{ 1.f, 0.0f }}}
+				{{{ xcoord, -ycoord, zcoord, 1.0f },{  0.0f,  0.0f,  0.0f, 1.0f },{ 1.f, 1.0f }}},
+				{{{ -xcoord, -ycoord, -zcoord, 1.0f },{  0.0f,  0.0f,  0.0f, 1.0f },{ 0.f, 0.0f }}},
+				{{{ -xcoord, -ycoord, zcoord, 1.0f },{  0.0f,  0.0f,  0.0f, 1.0f },{ 0.f, 1.f }}},
+				{{{ xcoord, -ycoord, -zcoord, 1.0f },{  0.0f,  0.0f,  0.0f, 1.0f },{ 1.f, 0.0f }}}
 			};
 
 			target_mesh->indices = { 0, 1, 2, 0, 3, 1,

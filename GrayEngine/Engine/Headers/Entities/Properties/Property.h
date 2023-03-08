@@ -13,7 +13,8 @@ enum class PropertyType
 	Color,
 	Drawable,
 	Cubemap,
-	Shader
+	Shader,
+	Transparency
 };
 
 struct EntityProperty
@@ -201,4 +202,20 @@ public:
 	virtual void* GetValueAdress() override;
 
 	std::string property_value;
+};
+
+struct Transparency : public EntityProperty
+{
+public:
+	Transparency(int value, void* parent = nullptr);
+	~Transparency();
+	const char* ValueString() override;
+	void ParsePropertyValue(const char* value) override;
+	void SetPropertyValue(int value);
+	std::any GetAnyValue() override;
+	virtual void* GetValueAdress() override;
+
+	int property_value;
+private:
+	std::string property_string;
 };

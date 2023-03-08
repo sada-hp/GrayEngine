@@ -104,7 +104,7 @@ namespace GrEngine
 
         void App_UpdateSelection(UINT id)
         {
-            if (id == gizmo->GetEntityID())
+            if (id >0 && id == gizmo->GetEntityID())
             {
                 if (GetPhysics()->GetSimulationState()) return;
 
@@ -615,14 +615,14 @@ namespace GrEngine
         void LoadTools()
         {
             //Grid
-            grid = GetRenderer()->addEntity(2000000000);
+            grid = GetRenderer()->addEntity(2000000001);
             static_cast<DrawableObject*>(grid)->DisableCollisions();
             grid->ParsePropertyValue("Shader", "Shaders\\grid");
             static_cast<DrawableObject*>(grid)->GeneratePlaneMesh(1, 1);
             grid->MakeStatic();
 
             //Move
-            gizmo = GetRenderer()->addEntity(2000000001);
+            gizmo = GetRenderer()->addEntity(2000000002);
             static_cast<DrawableObject*>(gizmo)->DisableCollisions();
             static_cast<DrawableObject*>(gizmo)->SetVisisibility(false);
             static_cast<DrawableObject*>(gizmo)->LoadMesh((Globals::getExecutablePath() + "Content\\Editor\\ManipulationTool.obj").c_str(), nullptr);
@@ -633,7 +633,8 @@ namespace GrEngine
             gizmo->MakeStatic();
 
             //Paint
-            brush = GetRenderer()->addEntity(2000000002);
+            brush = GetRenderer()->addEntity(2000000003);
+            brush->ParsePropertyValue("Transparency", "1");
             brush->ParsePropertyValue("Shader", "Shaders\\brush");
             static_cast<DrawableObject*>(brush)->DisableCollisions();
             static_cast<DrawableObject*>(brush)->SetVisisibility(false);

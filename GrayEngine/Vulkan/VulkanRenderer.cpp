@@ -26,6 +26,7 @@ namespace GrEngine_Vulkan
 			entities.erase(pos);
 		}
 
+		cleanupSwapChain();
 		resources.Clean(logicalDevice, memAllocator);
 
 		VulkanAPI::FreeCommandBuffers(commandBuffers.data(), commandBuffers.size());
@@ -61,8 +62,8 @@ namespace GrEngine_Vulkan
 			{
 				physicalDevice = device;
 				vkGetPhysicalDeviceProperties(physicalDevice, &deviceProps);
-				msaaSamples = VulkanAPI::GetMaxSampleCount(physicalDevice);
-				//msaaSamples = VK_SAMPLE_COUNT_1_BIT;
+				//msaaSamples = VulkanAPI::GetMaxSampleCount(physicalDevice);
+				msaaSamples = VK_SAMPLE_COUNT_1_BIT;
 				break;
 			}
 		}
@@ -97,12 +98,17 @@ namespace GrEngine_Vulkan
 		if ((res = VulkanAPI::CreateRenderPass(logicalDevice, swapChainImageFormat, depthFormat, msaaSamples, &renderPass) & res) == false)
 			Logger::Out("[Vk] Failed to create render pass", OutputColor::Red, OutputType::Error);
 
+		createAttachment(VK_FORMAT_R16G16B16A16_SFLOAT, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT, &position);
+		createAttachment(VK_FORMAT_R16G16B16A16_SFLOAT, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT, &normal);
+		createAttachment(swapChainImageFormat, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT, &albedo);
+
+
 		swapChainFramebuffers.resize(swapChainImageViews.size());
 		for (std::size_t i = 0; i < swapChainImageViews.size(); i++)
 		{
-			VkImageView attachments[] = { colorImageView, depthImageView, swapChainImageViews[i] };
+			VkImageView attachments[] = { swapChainImageViews[i], position.textureImageView, normal.textureImageView, albedo.textureImageView, depthImageView, };
 
-			if ((res = VulkanAPI::CreateFrameBuffer(logicalDevice, renderPass, attachments, 3, swapChainExtent, &swapChainFramebuffers[i]) & res) == false)
+			if ((res = VulkanAPI::CreateFrameBuffer(logicalDevice, renderPass, attachments, 5, swapChainExtent, &swapChainFramebuffers[i]) & res) == false)
 				Logger::Out("[Vk] Failed to create framebuffer", OutputColor::Red, OutputType::Error);
 		}
 
@@ -113,6 +119,7 @@ namespace GrEngine_Vulkan
 		if ((res = VulkanAPI::AllocateCommandBuffers(logicalDevice, commandPool, commandBuffers.data(), commandBuffers.size()) & res) == false)
 			Logger::Out("[Vk] Failed to create command buffer", OutputColor::Red, OutputType::Error);
 
+
 		if ((res = VulkanAPI::CreateVkSemaphore(logicalDevice, &renderFinishedSemaphore) & res) == false)
 			Logger::Out("[Vk] Failed to create semaphores", OutputColor::Red, OutputType::Error);
 
@@ -121,6 +128,10 @@ namespace GrEngine_Vulkan
 
 		if ((res = VulkanAPI::CreateVkFence(logicalDevice, &graphicsFence) & res) == false)
 			Logger::Out("[Vk] Failed to create fences", OutputColor::Red, OutputType::Error);
+
+
+		prepareCompositionPass();
+		prepareTransparencyPass();
 
 		sky = new VulkanSkybox(1000000000);
 		sky->initObject(logicalDevice, memAllocator, this);
@@ -135,6 +146,57 @@ namespace GrEngine_Vulkan
 		vkDeviceWaitIdle(logicalDevice);
 
 		return Initialized = res;
+	}
+
+	void VulkanRenderer::createAttachment(VkFormat format, VkImageUsageFlags usage, Texture* attachment)
+	{
+		VkImageAspectFlags aspectMask = 0;
+		VkImageLayout imageLayout;
+
+		VulkanAPI::DestroyImage(attachment->newImage.allocatedImage);
+		VulkanAPI::DestroyImageView(attachment->textureImageView);
+		attachment->initialized = false;
+
+		if (usage & VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT)
+		{
+			aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+			imageLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+		}
+		if (usage & VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT)
+		{
+			aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT;
+			imageLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+		}
+
+		VkImageCreateInfo imageInfo{};
+		imageInfo.imageType = VK_IMAGE_TYPE_2D;
+		imageInfo.format = format;
+		imageInfo.extent.width = swapChainExtent.width;
+		imageInfo.extent.height = swapChainExtent.height;
+		imageInfo.extent.depth = 1;
+		imageInfo.mipLevels = 1;
+		imageInfo.arrayLayers = 1;
+		imageInfo.samples = VK_SAMPLE_COUNT_1_BIT;
+		imageInfo.tiling = VK_IMAGE_TILING_OPTIMAL;
+		imageInfo.usage = usage | VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT;
+		imageInfo.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+
+		VulkanAPI::CreateImage(memAllocator, &imageInfo, &attachment->newImage.allocatedImage, &attachment->newImage.allocation);
+
+		VkImageSubresourceRange imageView{};
+		imageView.aspectMask = aspectMask;
+		imageView.baseMipLevel = 0;
+		imageView.levelCount = 1;
+		imageView.baseArrayLayer = 0;
+		imageView.layerCount = 1;
+		VulkanAPI::CreateImageView(logicalDevice, format, attachment->newImage.allocatedImage, imageView, &attachment->textureImageView);
+
+		attachment->initialized = true;
+		attachment->texInfo.mipLevels = 1;
+		attachment->texInfo.format = format;
+		attachment->texInfo.descriptor.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+		attachment->texInfo.descriptor.imageView = attachment->textureImageView;
+		attachment->texInfo.descriptor.sampler = VK_NULL_HANDLE;
 	}
 
 	void VulkanRenderer::createSkybox(const char* East, const char* West, const char* Top, const char* Bottom, const char* North, const char* South)
@@ -427,31 +489,451 @@ namespace GrEngine_Vulkan
 		return { (byte)r, (byte)g, (byte)b };
 	}
 
+	void VulkanRenderer::prepareCompositionPass()
+	{
+		std::vector<VkDescriptorPoolSize> poolSizes;
+		poolSizes.resize(2);
+		poolSizes[0].descriptorCount = 4;
+		poolSizes[0].type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+		poolSizes[1].descriptorCount = 4;
+		poolSizes[1].type = VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT;
+
+		std::vector<VkDescriptorSetLayoutBinding> setLayoutBindings;
+		setLayoutBindings.resize(3);
+		setLayoutBindings[0].binding = 0;
+		setLayoutBindings[0].stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
+		setLayoutBindings[0].descriptorType = VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT;
+		setLayoutBindings[0].descriptorCount = 1;
+		setLayoutBindings[1].binding = 1;
+		setLayoutBindings[1].stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
+		setLayoutBindings[1].descriptorType = VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT;
+		setLayoutBindings[1].descriptorCount = 1;
+		setLayoutBindings[2].binding = 2;
+		setLayoutBindings[2].stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
+		setLayoutBindings[2].descriptorType = VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT;
+		setLayoutBindings[2].descriptorCount = 1;
+
+		VulkanAPI::CreateDescriptorPool(logicalDevice, poolSizes, &compositionSetPool);
+		VulkanAPI::CreateDescriptorSetLayout(logicalDevice, setLayoutBindings, &compositionSetLayout);
+		VulkanAPI::CreatePipelineLayout(logicalDevice, {}, { compositionSetLayout }, &compositionPipelineLayout);
+		VulkanAPI::AllocateDescriptorSet(logicalDevice, compositionSetPool, compositionSetLayout, &compositionSet);
+
+		std::vector<VkWriteDescriptorSet> writeDescriptorSets;
+		writeDescriptorSets.resize(3);
+		writeDescriptorSets[0].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+		writeDescriptorSets[0].dstBinding = 0;
+		writeDescriptorSets[0].descriptorType = VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT;
+		writeDescriptorSets[0].dstSet = compositionSet;
+		writeDescriptorSets[0].pImageInfo = &position.texInfo.descriptor;
+		writeDescriptorSets[0].descriptorCount = 1;
+		writeDescriptorSets[1].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+		writeDescriptorSets[1].dstBinding = 1;
+		writeDescriptorSets[1].descriptorType = VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT;
+		writeDescriptorSets[1].dstSet = compositionSet;
+		writeDescriptorSets[1].pImageInfo = &normal.texInfo.descriptor;
+		writeDescriptorSets[1].descriptorCount = 1;
+		writeDescriptorSets[2].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+		writeDescriptorSets[2].dstBinding = 2;
+		writeDescriptorSets[2].descriptorType = VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT;
+		writeDescriptorSets[2].dstSet = compositionSet;
+		writeDescriptorSets[2].pImageInfo = &albedo.texInfo.descriptor;
+		writeDescriptorSets[2].descriptorCount = 1;
+
+		vkUpdateDescriptorSets(logicalDevice, static_cast<uint32_t>(writeDescriptorSets.size()), writeDescriptorSets.data(), 0, NULL);
+
+		// Pipeline
+		VkPipelineInputAssemblyStateCreateInfo inputAssembly{};
+		inputAssembly.sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;
+		inputAssembly.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
+		inputAssembly.primitiveRestartEnable = VK_FALSE;
+		VkPipelineRasterizationStateCreateInfo rasterizationState{};
+		rasterizationState.sType = VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO;
+		rasterizationState.depthClampEnable = VK_FALSE;
+		rasterizationState.rasterizerDiscardEnable = VK_FALSE;
+		rasterizationState.polygonMode = VK_POLYGON_MODE_FILL;
+		rasterizationState.lineWidth = 1.0f;
+		rasterizationState.cullMode = VK_CULL_MODE_NONE;
+		rasterizationState.frontFace = VK_FRONT_FACE_COUNTER_CLOCKWISE;
+		rasterizationState.depthBiasEnable = VK_FALSE;
+		rasterizationState.depthBiasConstantFactor = 0.0f;
+		rasterizationState.depthBiasClamp = 0.0f;
+		rasterizationState.depthBiasSlopeFactor = 0.0f;
+		VkPipelineColorBlendAttachmentState blendAttachmentState{};
+		blendAttachmentState.colorWriteMask = VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT;
+		blendAttachmentState.blendEnable = VK_FALSE;
+
+		VkPipelineColorBlendStateCreateInfo colorBlendState{};
+		colorBlendState.sType = VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO;
+		colorBlendState.attachmentCount = 1;
+		colorBlendState.pAttachments = &blendAttachmentState;
+
+		VkPipelineDepthStencilStateCreateInfo depthStencilState{};
+		depthStencilState.sType = VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO;
+		depthStencilState.pNext = nullptr;
+		depthStencilState.depthTestEnable = VK_TRUE;
+		depthStencilState.depthWriteEnable = VK_TRUE;
+		depthStencilState.depthCompareOp = VK_COMPARE_OP_LESS_OR_EQUAL;
+		depthStencilState.depthBoundsTestEnable = VK_FALSE;
+		depthStencilState.minDepthBounds = 0.0f; // Optional
+		depthStencilState.maxDepthBounds = 1.0f; // Optional
+		depthStencilState.stencilTestEnable = VK_FALSE;
+
+		VkPipelineViewportStateCreateInfo viewportState{};
+		viewportState.sType = VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO;
+		viewportState.viewportCount = 1;
+		viewportState.pViewports = nullptr;
+		viewportState.scissorCount = 1;
+		viewportState.pScissors = nullptr;
+
+		VkPipelineMultisampleStateCreateInfo multisampleState{};
+		multisampleState.sType = VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO;
+		multisampleState.rasterizationSamples = VK_SAMPLE_COUNT_1_BIT;
+		multisampleState.sampleShadingEnable = VK_TRUE;
+		multisampleState.minSampleShading = 0;
+
+		std::vector<VkDynamicState> dynamicStateEnables = { VK_DYNAMIC_STATE_VIEWPORT, VK_DYNAMIC_STATE_SCISSOR };
+		std::vector<VkDynamicState> dynamicStates = { VK_DYNAMIC_STATE_VIEWPORT, VK_DYNAMIC_STATE_SCISSOR };
+		VkPipelineDynamicStateCreateInfo dynamicState{};
+		dynamicState.sType = VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO;
+		dynamicState.pNext = nullptr;
+		dynamicState.flags = 0;
+		dynamicState.dynamicStateCount = (uint32_t)dynamicStates.size();
+		dynamicState.pDynamicStates = dynamicStates.data();
+
+		std::string solution_path = GrEngine::Globals::getExecutablePath();
+		std::vector<char> vertShaderCode = GrEngine::Globals::readFile(solution_path + "Shaders//composition_vert.spv");
+		std::vector<char> fragShaderCode = GrEngine::Globals::readFile(solution_path + "Shaders//composition_frag.spv");
+		VkShaderModule shaders[2] = { VulkanAPI::m_createShaderModule(logicalDevice, vertShaderCode) , VulkanAPI::m_createShaderModule(logicalDevice, fragShaderCode) };
+
+		VkPipelineShaderStageCreateInfo vertShaderStageInfo{};
+		vertShaderStageInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+		vertShaderStageInfo.stage = VK_SHADER_STAGE_VERTEX_BIT;
+		vertShaderStageInfo.module = shaders[0];
+		vertShaderStageInfo.pName = "main";
+
+		VkPipelineShaderStageCreateInfo fragShaderStageInfo{};
+		fragShaderStageInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+		fragShaderStageInfo.stage = VK_SHADER_STAGE_FRAGMENT_BIT;
+		fragShaderStageInfo.module = shaders[1];
+		fragShaderStageInfo.pName = "main";
+
+
+		std::array<VkPipelineShaderStageCreateInfo, 2> shaderStages = { vertShaderStageInfo , fragShaderStageInfo };
+
+		VkSpecializationMapEntry specializationEntry{};
+		specializationEntry.constantID = 0;
+		specializationEntry.offset = 0;
+		specializationEntry.size = sizeof(uint32_t);
+
+		uint32_t specializationData = 0;
+
+		VkSpecializationInfo specializationInfo;
+		specializationInfo.mapEntryCount = 1;
+		specializationInfo.pMapEntries = &specializationEntry;
+		specializationInfo.dataSize = sizeof(specializationData);
+		specializationInfo.pData = &specializationData;
+
+		shaderStages[1].pSpecializationInfo = &specializationInfo;
+
+		VkGraphicsPipelineCreateInfo pipelineCI{};
+
+		VkPipelineVertexInputStateCreateInfo emptyInputState{};
+		emptyInputState.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
+		pipelineCI.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
+		pipelineCI.layout = compositionPipelineLayout;
+		pipelineCI.renderPass = renderPass;
+		pipelineCI.basePipelineIndex = 0;
+		pipelineCI.pVertexInputState = &emptyInputState;
+		pipelineCI.pInputAssemblyState = &inputAssembly;
+		pipelineCI.pRasterizationState = &rasterizationState;
+		pipelineCI.pColorBlendState = &colorBlendState;
+		pipelineCI.pMultisampleState = &multisampleState;
+		pipelineCI.pViewportState = &viewportState;
+		pipelineCI.pDepthStencilState = &depthStencilState;
+		pipelineCI.pDynamicState = &dynamicState;
+		pipelineCI.stageCount = static_cast<uint32_t>(shaderStages.size());
+		pipelineCI.pStages = shaderStages.data();
+		pipelineCI.subpass = 1;
+		depthStencilState.depthWriteEnable = VK_FALSE;
+
+		VulkanAPI::CreateGraphicsPipeline(logicalDevice, &pipelineCI, &compositionPipeline);
+
+		vkDestroyShaderModule(logicalDevice, shaders[0], nullptr);
+		vkDestroyShaderModule(logicalDevice, shaders[1], nullptr);
+	}
+
+	void VulkanRenderer::prepareTransparencyPass()
+	{
+		VkCommandBuffer cmd;
+
+		const int node_count = 20;
+		geometrySBO.count = 0;
+		geometrySBO.maxNodeCount = node_count * swapChainExtent.width * swapChainExtent.height;
+		VulkanAPI::m_createVkBuffer(logicalDevice, memAllocator, &geometrySBO, sizeof(geometrySBO), VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT, &transBuffer, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+		VulkanAPI::m_createVkBuffer(logicalDevice, memAllocator, nullptr, sizeof(Node) * node_count* swapChainExtent.width* swapChainExtent.height, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, &nodeBfffer);
+
+		VkImageCreateInfo imageInfo = VulkanAPI::StructImageCreateInfo({ swapChainExtent.width,  swapChainExtent.height, 1 }, VK_FORMAT_R32_UINT, VK_SAMPLE_COUNT_1_BIT, VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_STORAGE_BIT);
+		imageInfo.imageType = VK_IMAGE_TYPE_2D;
+		imageInfo.extent.depth = 1;
+		imageInfo.mipLevels = 1;
+		imageInfo.arrayLayers = 1;
+		imageInfo.tiling = VK_IMAGE_TILING_OPTIMAL;
+		imageInfo.usage = VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_STORAGE_BIT;
+		VulkanAPI::CreateImage(memAllocator, &imageInfo, &headIndex.newImage.allocatedImage, &headIndex.newImage.allocation);
+
+		VkImageSubresourceRange viewRange{};
+		viewRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+		viewRange.baseMipLevel = 0;
+		viewRange.levelCount = 1;
+		viewRange.baseArrayLayer = 0;
+		viewRange.layerCount = 1;
+		VulkanAPI::CreateImageView(logicalDevice, VK_FORMAT_R32_UINT, headIndex.newImage.allocatedImage, viewRange, &headIndex.textureImageView);
+
+		headIndex.srcInfo.channels = 1;
+		headIndex.srcInfo.width = swapChainExtent.width;
+		headIndex.srcInfo.height = swapChainExtent.height;
+		headIndex.textureSampler = VK_NULL_HANDLE;
+		headIndex.texInfo.descriptor.imageLayout = VK_IMAGE_LAYOUT_GENERAL;
+		headIndex.texInfo.descriptor.imageView = headIndex.textureImageView;
+		headIndex.texInfo.mipLevels = 1;
+		headIndex.texInfo.format = VK_FORMAT_R32_UINT;
+		headIndex.initialized = true;
+
+		VulkanAPI::AllocateCommandBuffers(logicalDevice, commandPool, &cmd, 1);
+		VulkanAPI::BeginCommandBuffer(cmd, VK_COMMAND_BUFFER_LEVEL_PRIMARY);
+		VulkanAPI::TransitionImageLayout(headIndex.newImage.allocatedImage, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_GENERAL, VulkanAPI::StructSubresourceRange(VK_IMAGE_ASPECT_COLOR_BIT), cmd);
+		VulkanAPI::EndAndSubmitCommandBuffer(logicalDevice, commandPool, cmd, graphicsQueue, graphicsFence);
+
+		std::vector<VkDescriptorPoolSize> poolSizes;
+		poolSizes.resize(2);
+		poolSizes[0].descriptorCount = 1;
+		poolSizes[0].type = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
+		poolSizes[1].descriptorCount = 1;
+		poolSizes[1].type = VK_DESCRIPTOR_TYPE_STORAGE_IMAGE;
+
+		std::vector<VkDescriptorSetLayoutBinding> setLayoutBindings;
+		setLayoutBindings.resize(2);
+		setLayoutBindings[0].binding = 0;
+		setLayoutBindings[0].stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
+		setLayoutBindings[0].descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_IMAGE;
+		setLayoutBindings[0].descriptorCount = 1;
+		setLayoutBindings[1].binding = 1;
+		setLayoutBindings[1].stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
+		setLayoutBindings[1].descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
+		setLayoutBindings[1].descriptorCount = 1;
+
+		VulkanAPI::CreateDescriptorPool(logicalDevice, poolSizes, &transparencySetPool);
+		VulkanAPI::CreateDescriptorSetLayout(logicalDevice, setLayoutBindings, &transparencySetLayout);
+		VulkanAPI::CreatePipelineLayout(logicalDevice, {}, { transparencySetLayout }, &transparencyPipelineLayout);
+		VulkanAPI::AllocateDescriptorSet(logicalDevice, transparencySetPool, transparencySetLayout, &transparencySet);
+
+		// Image descriptors for the offscreen color attachments
+		VkDescriptorImageInfo texDescriptorHead{};
+		texDescriptorHead.imageView = headIndex.textureImageView;
+		texDescriptorHead.imageLayout = VK_IMAGE_LAYOUT_GENERAL;
+		texDescriptorHead.sampler = VK_NULL_HANDLE;
+
+		std::vector<VkWriteDescriptorSet> writeDescriptorSets;
+		writeDescriptorSets.resize(2);
+		writeDescriptorSets[0].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+		writeDescriptorSets[0].dstBinding = 0;
+		writeDescriptorSets[0].descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_IMAGE;
+		writeDescriptorSets[0].dstSet = transparencySet;
+		writeDescriptorSets[0].pImageInfo = &texDescriptorHead;
+		writeDescriptorSets[0].descriptorCount = 1;
+		writeDescriptorSets[1].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+		writeDescriptorSets[1].dstBinding = 1;
+		writeDescriptorSets[1].descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
+		writeDescriptorSets[1].dstSet = transparencySet;
+		writeDescriptorSets[1].pBufferInfo = &nodeBfffer.BufferInfo;
+		writeDescriptorSets[1].descriptorCount = 1;
+
+		vkUpdateDescriptorSets(logicalDevice, static_cast<uint32_t>(writeDescriptorSets.size()), writeDescriptorSets.data(), 0, NULL);
+
+		// Pipeline
+		VkPipelineInputAssemblyStateCreateInfo inputAssembly{};
+		inputAssembly.sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;
+		inputAssembly.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
+		inputAssembly.primitiveRestartEnable = VK_FALSE;
+		VkPipelineRasterizationStateCreateInfo rasterizationState{};
+		rasterizationState.sType = VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO;
+		rasterizationState.depthClampEnable = VK_FALSE;
+		rasterizationState.rasterizerDiscardEnable = VK_FALSE;
+		rasterizationState.polygonMode = VK_POLYGON_MODE_FILL;
+		rasterizationState.lineWidth = 1.0f;
+		rasterizationState.cullMode = VK_CULL_MODE_FRONT_BIT;
+		rasterizationState.frontFace = VK_FRONT_FACE_COUNTER_CLOCKWISE;
+		rasterizationState.depthBiasEnable = VK_FALSE;
+		rasterizationState.depthBiasConstantFactor = 0.0f;
+		rasterizationState.depthBiasClamp = 0.0f;
+		rasterizationState.depthBiasSlopeFactor = 0.0f;
+		VkPipelineColorBlendAttachmentState blendAttachmentState{};
+		blendAttachmentState.colorWriteMask = VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT;
+		blendAttachmentState.blendEnable = VK_FALSE;
+
+		VkPipelineColorBlendStateCreateInfo colorBlendState{};
+		colorBlendState.sType = VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO;
+		colorBlendState.attachmentCount = 1;
+		colorBlendState.pAttachments = &blendAttachmentState;
+
+		VkPipelineDepthStencilStateCreateInfo depthStencilState{};
+		depthStencilState.sType = VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO;
+		depthStencilState.pNext = nullptr;
+		depthStencilState.depthTestEnable = VK_FALSE;
+		depthStencilState.depthWriteEnable = VK_FALSE;
+		depthStencilState.depthCompareOp = VK_COMPARE_OP_LESS_OR_EQUAL;
+		depthStencilState.depthBoundsTestEnable = VK_FALSE;
+		depthStencilState.minDepthBounds = 0.0f; // Optional
+		depthStencilState.maxDepthBounds = 1.0f; // Optional
+		depthStencilState.stencilTestEnable = VK_FALSE;
+
+		VkPipelineViewportStateCreateInfo viewportState{};
+		viewportState.sType = VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO;
+		viewportState.viewportCount = 1;
+		viewportState.pViewports = nullptr;
+		viewportState.scissorCount = 1;
+		viewportState.pScissors = nullptr;
+
+		VkPipelineMultisampleStateCreateInfo multisampleState{};
+		multisampleState.sType = VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO;
+		multisampleState.rasterizationSamples = VK_SAMPLE_COUNT_1_BIT;
+		multisampleState.sampleShadingEnable = VK_TRUE;
+		multisampleState.minSampleShading = 0;
+
+		std::vector<VkDynamicState> dynamicStateEnables = { VK_DYNAMIC_STATE_VIEWPORT, VK_DYNAMIC_STATE_SCISSOR };
+		std::vector<VkDynamicState> dynamicStates = { VK_DYNAMIC_STATE_VIEWPORT, VK_DYNAMIC_STATE_SCISSOR };
+		VkPipelineDynamicStateCreateInfo dynamicState{};
+		dynamicState.sType = VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO;
+		dynamicState.pNext = nullptr;
+		dynamicState.flags = 0;
+		dynamicState.dynamicStateCount = (uint32_t)dynamicStates.size();
+		dynamicState.pDynamicStates = dynamicStates.data();
+
+		std::string solution_path = GrEngine::Globals::getExecutablePath();
+		std::vector<char> vertShaderCode = GrEngine::Globals::readFile(solution_path + "Shaders//composition_vert_transparent.spv");
+		std::vector<char> fragShaderCode = GrEngine::Globals::readFile(solution_path + "Shaders//composition_frag_transparent.spv");
+		VkShaderModule shaders[2] = { VulkanAPI::m_createShaderModule(logicalDevice, vertShaderCode) , VulkanAPI::m_createShaderModule(logicalDevice, fragShaderCode) };
+
+		VkPipelineShaderStageCreateInfo vertShaderStageInfo{};
+		vertShaderStageInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+		vertShaderStageInfo.stage = VK_SHADER_STAGE_VERTEX_BIT;
+		vertShaderStageInfo.module = shaders[0];
+		vertShaderStageInfo.pName = "main";
+
+		VkPipelineShaderStageCreateInfo fragShaderStageInfo{};
+		fragShaderStageInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+		fragShaderStageInfo.stage = VK_SHADER_STAGE_FRAGMENT_BIT;
+		fragShaderStageInfo.module = shaders[1];
+		fragShaderStageInfo.pName = "main";
+
+
+		std::array<VkPipelineShaderStageCreateInfo, 2> shaderStages = { vertShaderStageInfo , fragShaderStageInfo };
+
+		std::vector<VkPipelineColorBlendAttachmentState> blendAttachmentStates;
+		blendAttachmentStates.resize(1);
+		blendAttachmentStates[0].blendEnable = VK_TRUE;
+		blendAttachmentStates[0].srcColorBlendFactor = VK_BLEND_FACTOR_SRC_ALPHA;
+		blendAttachmentStates[0].dstColorBlendFactor = VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA;
+		blendAttachmentStates[0].colorBlendOp = VK_BLEND_OP_ADD;
+		blendAttachmentStates[0].srcAlphaBlendFactor = VK_BLEND_FACTOR_ONE;
+		blendAttachmentStates[0].dstAlphaBlendFactor = VK_BLEND_FACTOR_ZERO;
+		blendAttachmentStates[0].alphaBlendOp = VK_BLEND_OP_ADD;
+		blendAttachmentStates[0].colorWriteMask = VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT;
+
+		colorBlendState.attachmentCount = static_cast<uint32_t>(blendAttachmentStates.size());
+		colorBlendState.pAttachments = blendAttachmentStates.data();
+
+		// Use specialization constants to pass number of lights to the shader
+		VkSpecializationMapEntry specializationEntry{};
+		specializationEntry.constantID = 0;
+		specializationEntry.offset = 0;
+		specializationEntry.size = sizeof(uint32_t);
+
+		uint32_t specializationData = 0;
+
+		VkSpecializationInfo specializationInfo;
+		specializationInfo.mapEntryCount = 1;
+		specializationInfo.pMapEntries = &specializationEntry;
+		specializationInfo.dataSize = sizeof(specializationData);
+		specializationInfo.pData = &specializationData;
+
+		shaderStages[1].pSpecializationInfo = &specializationInfo;
+
+		VkGraphicsPipelineCreateInfo pipelineCI{};
+
+		VkPipelineVertexInputStateCreateInfo emptyInputState{};
+		emptyInputState.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
+
+		pipelineCI.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
+		pipelineCI.layout = transparencyPipelineLayout;
+		pipelineCI.renderPass = renderPass;
+		pipelineCI.basePipelineIndex = 0;
+		pipelineCI.pVertexInputState = &emptyInputState;
+		pipelineCI.pInputAssemblyState = &inputAssembly;
+		pipelineCI.pRasterizationState = &rasterizationState;
+		pipelineCI.pColorBlendState = &colorBlendState;
+		pipelineCI.pMultisampleState = &multisampleState;
+		pipelineCI.pViewportState = &viewportState;
+		pipelineCI.pDepthStencilState = &depthStencilState;
+		pipelineCI.pDynamicState = &dynamicState;
+		pipelineCI.stageCount = static_cast<uint32_t>(shaderStages.size());
+		pipelineCI.pStages = shaderStages.data();
+		// Index of the subpass that this pipeline will be used in
+		pipelineCI.subpass = 3;
+
+		depthStencilState.depthWriteEnable = VK_FALSE;
+
+		VulkanAPI::CreateGraphicsPipeline(logicalDevice, &pipelineCI, &transparencyPipeline);
+
+		vkDestroyShaderModule(logicalDevice, shaders[0], nullptr);
+		vkDestroyShaderModule(logicalDevice, shaders[1], nullptr);
+	}
+
 	bool VulkanRenderer::updateDrawables(uint32_t index, DrawMode mode, VkExtent2D extent)
 	{
-		VkCommandBufferBeginInfo beginInfo{};
-		beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+		VkClearValue clearValues[5];
+		clearValues[0].color = { { 0.0f, 0.0f, 0.0f, 0.0f } };
+		clearValues[1].color = { { 0.0f, 0.0f, 0.0f, 0.0f } };
+		clearValues[2].color = { { 0.0f, 0.0f, 0.0f, 0.0f } };
+		clearValues[3].color = { { 0.0f, 0.0f, 0.0f, 0.0f } };
+		clearValues[4].depthStencil = { 1.0f, 0 };
 
-		if (vkBeginCommandBuffer(commandBuffers[index], &beginInfo) != VK_SUCCESS)
-			return false;
-
-		VkClearValue clearColor = { {{0.0f, 0.0f, 0.0f, 0.0f}} };
-		VkClearValue depthClear;
-		depthClear.depthStencil.depth = 1.f;
-
-		VkClearValue clearValues[] = { clearColor , depthClear };
 
 		VkRenderPassBeginInfo renderPassInfo{};
 		VkViewport viewport{};
 		VkRect2D scissor{};
 
 		renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
-		renderPassInfo.renderPass = renderPass;
 		renderPassInfo.framebuffer = swapChainFramebuffers[index];
+		renderPassInfo.renderPass = renderPass;
 		renderPassInfo.renderArea.offset = { 0, 0 };
 		renderPassInfo.renderArea.extent = extent;
-		renderPassInfo.clearValueCount = 2;
+		renderPassInfo.clearValueCount = 5;
 		renderPassInfo.pClearValues = clearValues;
+
+		VkCommandBufferBeginInfo beginInfo{};
+		beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+
+		if (vkBeginCommandBuffer(commandBuffers[index], &beginInfo) != VK_SUCCESS)
+			return false;
+
+		VkClearColorValue clearColor;
+		clearColor.uint32[0] = 0xffffffff;
+
+		VkImageSubresourceRange subresRange = {};
+		subresRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+		subresRange.levelCount = 1;
+		subresRange.layerCount = 1;
+		vkCmdClearColorImage(commandBuffers[index], headIndex.newImage.allocatedImage, VK_IMAGE_LAYOUT_GENERAL, &clearColor, 1, &subresRange);
+
+		vkCmdFillBuffer(commandBuffers[index], transBuffer.Buffer, 0, sizeof(uint32_t), 0);
+
+		// We need a barrier to make sure all writes are finished before starting to write again
+		VkMemoryBarrier memoryBarrier{};
+		memoryBarrier.sType = VK_STRUCTURE_TYPE_MEMORY_BARRIER;
+		memoryBarrier.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
+		memoryBarrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_SHADER_WRITE_BIT;
+		vkCmdPipelineBarrier(commandBuffers[index], VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT, 0, 1, &memoryBarrier, 0, nullptr, 0, nullptr);
 
 		vkCmdBeginRenderPass(commandBuffers[index], &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
 
@@ -470,17 +952,39 @@ namespace GrEngine_Vulkan
 		{
 			if ((*itt).second->GetEntityType() == "Object" && dynamic_cast<VulkanObject*>((*itt).second)->IsVisible())
 			{
-				static_cast<VulkanObject*>((*itt).second)->recordCommandBuffer(commandBuffers[index], swapChainExtent, mode);
+				static_cast<VulkanObject*>((*itt).second)->recordCommandBuffer(commandBuffers[index], swapChainExtent, DrawMode::NORMAL);
 			}
-			else if ((*itt).second->GetEntityType() == "Skybox" && mode != DrawMode::IDS)
+			else if ((*itt).second->GetEntityType() == "Skybox")
 			{
-				static_cast<VulkanSkybox*>((*itt).second)->recordCommandBuffer(commandBuffers[index], swapChainExtent, mode);
+				static_cast<VulkanSkybox*>((*itt).second)->recordCommandBuffer(commandBuffers[index], swapChainExtent, DrawMode::NORMAL);
 			}
-			else if ((*itt).second->GetEntityType() == "Terrain" && mode != DrawMode::IDS)
+			else if ((*itt).second->GetEntityType() == "Terrain")
 			{
-				static_cast<VulkanTerrain*>((*itt).second)->recordCommandBuffer(commandBuffers[index], swapChainExtent, mode);
+				static_cast<VulkanTerrain*>((*itt).second)->recordCommandBuffer(commandBuffers[index], swapChainExtent, DrawMode::NORMAL);
 			}
 		}
+
+		vkCmdNextSubpass(commandBuffers[index], VK_SUBPASS_CONTENTS_INLINE);
+
+		vkCmdBindPipeline(commandBuffers[index], VK_PIPELINE_BIND_POINT_GRAPHICS, compositionPipeline);
+		vkCmdBindDescriptorSets(commandBuffers[index], VK_PIPELINE_BIND_POINT_GRAPHICS, compositionPipelineLayout, 0, 1, &compositionSet, 0, NULL);
+		vkCmdDraw(commandBuffers[index], 3, 1, 0, 0);
+
+		vkCmdNextSubpass(commandBuffers[index], VK_SUBPASS_CONTENTS_INLINE);
+
+		for (std::map<UINT, GrEngine::Entity*>::iterator itt = entities.begin(); itt != entities.end(); ++itt)
+		{
+			if ((*itt).second->GetEntityType() == "Object" && dynamic_cast<VulkanObject*>((*itt).second)->IsVisible())
+			{
+				static_cast<VulkanObject*>((*itt).second)->recordCommandBuffer(commandBuffers[index], swapChainExtent, DrawMode::TRANSPARENCY);
+			}
+		}
+
+		vkCmdNextSubpass(commandBuffers[index], VK_SUBPASS_CONTENTS_INLINE);
+
+		vkCmdBindPipeline(commandBuffers[index], VK_PIPELINE_BIND_POINT_GRAPHICS, transparencyPipeline);
+		vkCmdBindDescriptorSets(commandBuffers[index], VK_PIPELINE_BIND_POINT_GRAPHICS, transparencyPipelineLayout, 0, 1, &transparencySet, 0, nullptr);
+		vkCmdDraw(commandBuffers[index], 3, 1, 0, 0);
 
 		vkCmdEndRenderPass(commandBuffers[index]);
 
@@ -639,19 +1143,26 @@ namespace GrEngine_Vulkan
 			VulkanAPI::CreateImageView(logicalDevice, swapChainImageFormat, swapChainImages[i], subresourceRange, &swapChainImageViews[i]);
 		}
 
+		createAttachment(VK_FORMAT_R16G16B16A16_SFLOAT, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT, &position);
+		createAttachment(VK_FORMAT_R16G16B16A16_SFLOAT, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT, &normal);
+		createAttachment(swapChainImageFormat, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT, &albedo);
+
 		VulkanAPI::CreateRenderPass(logicalDevice, swapChainImageFormat, depthFormat, msaaSamples, &renderPass);
+		prepareCompositionPass();
+		prepareTransparencyPass();
 
 		swapChainFramebuffers.resize(swapChainImageViews.size());
 		for (std::size_t i = 0; i < swapChainImageViews.size(); i++) {
-			VkImageView attachments[] = {
-				colorImageView, depthImageView, swapChainImageViews[i]
-			};
+			VkImageView attachments[] = { swapChainImageViews[i], position.textureImageView, normal.textureImageView, albedo.textureImageView, depthImageView, };
 
-			VulkanAPI::CreateFrameBuffer(logicalDevice, renderPass, attachments, 3, swapChainExtent, &swapChainFramebuffers[i]);
+
+			VulkanAPI::CreateFrameBuffer(logicalDevice, renderPass, attachments, 5, swapChainExtent, &swapChainFramebuffers[i]);
 		}
 
 		commandBuffers.resize(swapChainFramebuffers.size());
 		VulkanAPI::AllocateCommandBuffers(logicalDevice, commandPool, commandBuffers.data(), commandBuffers.size());
+
+
 
 		Initialized = swapChainExtent.height != 0;
 	}
@@ -663,6 +1174,32 @@ namespace GrEngine_Vulkan
 			VulkanAPI::DestroyFramebuffer(swapChainFramebuffers[i]);
 		}
 		swapChainFramebuffers.resize(0);
+
+		VulkanAPI::FreeDescriptorSet(compositionSet);
+		VulkanAPI::DestroyDescriptorLayout(compositionSetLayout);
+		VulkanAPI::DestroyDescriptorPool(compositionSetPool);
+		VulkanAPI::DestroyPipeline(compositionPipeline);
+		VulkanAPI::DestroyPipelineLayout(compositionPipelineLayout);
+
+		VulkanAPI::FreeDescriptorSet(transparencySet);
+		VulkanAPI::DestroyDescriptorLayout(transparencySetLayout);
+		VulkanAPI::DestroyDescriptorPool(transparencySetPool);
+		VulkanAPI::DestroyPipeline(transparencyPipeline);
+		VulkanAPI::DestroyPipelineLayout(transparencyPipelineLayout);
+
+		VulkanAPI::DestroyImageView(headIndex.textureImageView);
+		VulkanAPI::DestroyImage(headIndex.newImage.allocatedImage);
+
+		if (transBuffer.initialized == true)
+		{
+			VulkanAPI::m_destroyShaderBuffer(logicalDevice, memAllocator, &transBuffer);
+		}
+
+		if (nodeBfffer.initialized == true)
+		{
+			VulkanAPI::m_destroyShaderBuffer(logicalDevice, memAllocator, &nodeBfffer);
+			nodeBfffer.Buffer = nullptr;
+		}
 
 		VulkanAPI::FreeCommandBuffers(commandBuffers.data(), commandBuffers.size());
 		commandBuffers.resize(0);
@@ -930,10 +1467,14 @@ namespace GrEngine_Vulkan
 			VulkanAPI::CreateSampler(physicalDevice, logicalDevice, &new_texture->textureSampler, (float)mipLevels);
 
 			new_texture->texture_collection = texture_path;
-			new_texture->width = maxW;
-			new_texture->height = maxH;
-			new_texture->channels = channels;
-			new_texture->mipLevels = mipLevels;
+			new_texture->srcInfo.width = maxW;
+			new_texture->srcInfo.height = maxH;
+			new_texture->srcInfo.channels = channels;
+			new_texture->texInfo.mipLevels = mipLevels;
+			new_texture->texInfo.format = VK_FORMAT_R8G8B8A8_SRGB;
+			new_texture->texInfo.descriptor.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+			new_texture->texInfo.descriptor.sampler = new_texture->textureSampler;
+			new_texture->texInfo.descriptor.imageView = new_texture->textureImageView;
 			new_texture->initialized = true;
 
 			if (resource != nullptr)
@@ -974,10 +1515,10 @@ namespace GrEngine_Vulkan
 
 		if (resource != nullptr)
 		{
-			int maxW = object->object_texture->width;
-			int maxH = object->object_texture->height;
-			int channels = object->object_texture->channels;
-			uint32_t mipLevels = object->object_texture->mipLevels;
+			int maxW = object->object_texture->srcInfo.width;
+			int maxH = object->object_texture->srcInfo.height;
+			int channels = object->object_texture->srcInfo.channels;
+			uint32_t mipLevels = object->object_texture->texInfo.mipLevels;
 
 			VkCommandBuffer commandBuffer;
 			std::vector<VkBufferImageCopy> regions;
@@ -1049,6 +1590,7 @@ namespace GrEngine_Vulkan
 			VulkanAPI::DestroyImageView(object->object_texture->textureImageView);
 			VulkanAPI::DestroySampler(object->object_texture->textureSampler);
 			VulkanAPI::DestroyImage(object->object_texture->newImage.allocatedImage);
+			object->object_texture->initialized = false;
 
 			VkExtent3D imageExtent;
 			imageExtent.width = static_cast<uint32_t>(maxW);
@@ -1084,6 +1626,15 @@ namespace GrEngine_Vulkan
 			VulkanAPI::CreateSampler(physicalDevice, logicalDevice, &object->object_texture->textureSampler, (float)mipLevels);
 
 			object->object_texture->texture_collection = object->object_texture->texture_collection;
+			object->object_texture->srcInfo.width = maxW;
+			object->object_texture->srcInfo.height = maxH;
+			object->object_texture->srcInfo.channels = channels;
+			object->object_texture->texInfo.mipLevels = mipLevels;
+			object->object_texture->texInfo.format = VK_FORMAT_R8G8B8A8_SRGB;
+			object->object_texture->texInfo.descriptor.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+			object->object_texture->texInfo.descriptor.sampler = object->object_texture->textureSampler;
+			object->object_texture->texInfo.descriptor.imageView = object->object_texture->textureImageView;
+			object->object_texture->initialized = true;
 			object->updateObject();
 
 			VulkanAPI::m_destroyShaderBuffer(logicalDevice, memAllocator, &stagingBuffer);
@@ -1120,10 +1671,10 @@ namespace GrEngine_Vulkan
 
 		if (resource != nullptr)
 		{
-			int maxW = object->object_texture->width;
-			int maxH = object->object_texture->height;
-			int channels = object->object_texture->channels;
-			uint32_t mipLevels = object->object_texture->mipLevels;
+			int maxW = object->object_texture->srcInfo.width;
+			int maxH = object->object_texture->srcInfo.height;
+			int channels = object->object_texture->srcInfo.channels;
+			uint32_t mipLevels = object->object_texture->texInfo.mipLevels;
 
 			VkCommandBuffer commandBuffer;
 			std::vector<VkBufferImageCopy> regions;
@@ -1170,6 +1721,7 @@ namespace GrEngine_Vulkan
 			VulkanAPI::DestroyImageView(object->object_texture->textureImageView);
 			VulkanAPI::DestroySampler(object->object_texture->textureSampler);
 			VulkanAPI::DestroyImage(object->object_texture->newImage.allocatedImage);
+			object->object_texture->initialized = false;
 
 			VkExtent3D imageExtent;
 			imageExtent.width = static_cast<uint32_t>(maxW);
@@ -1205,6 +1757,15 @@ namespace GrEngine_Vulkan
 			VulkanAPI::CreateSampler(physicalDevice, logicalDevice, &object->object_texture->textureSampler, (float)mipLevels);
 
 			object->object_texture->texture_collection = object->object_texture->texture_collection;
+			object->object_texture->srcInfo.width = maxW;
+			object->object_texture->srcInfo.height = maxH;
+			object->object_texture->srcInfo.channels = channels;
+			object->object_texture->texInfo.mipLevels = mipLevels;
+			object->object_texture->texInfo.format = VK_FORMAT_R8G8B8A8_SRGB;
+			object->object_texture->texInfo.descriptor.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+			object->object_texture->texInfo.descriptor.sampler = object->object_texture->textureSampler;
+			object->object_texture->texInfo.descriptor.imageView = object->object_texture->textureImageView;
+			object->object_texture->initialized = true;
 			object->updateObject();
 
 			VulkanAPI::m_destroyShaderBuffer(logicalDevice, memAllocator, &stagingBuffer);
@@ -1220,7 +1781,7 @@ namespace GrEngine_Vulkan
 	{
 		ShaderBuffer stagingBuffer;
 		VkCommandBuffer commandBuffer;
-		VulkanAPI::m_createVkBuffer(logicalDevice, memAllocator, pixels, sizeof(byte) * target->width * target->height * target->channels * target->texture_collection.size(), VK_BUFFER_USAGE_TRANSFER_SRC_BIT, &stagingBuffer);
+		VulkanAPI::m_createVkBuffer(logicalDevice, memAllocator, pixels, sizeof(byte) * target->srcInfo.width * target->srcInfo.height * target->srcInfo.channels * target->texture_collection.size(), VK_BUFFER_USAGE_TRANSFER_SRC_BIT, &stagingBuffer);
 		VkImageSubresourceRange subresourceRange = VulkanAPI::StructSubresourceRange(VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, target->texture_collection.size());
 
 		VulkanAPI::AllocateCommandBuffers(logicalDevice, commandPool, &commandBuffer, 1);
@@ -1229,13 +1790,13 @@ namespace GrEngine_Vulkan
 		VulkanAPI::EndAndSubmitCommandBuffer(logicalDevice, commandPool, commandBuffer, graphicsQueue, graphicsFence);
 
 
-		VulkanAPI::CopyBufferToImage(logicalDevice, commandPool, stagingBuffer.Buffer, target->newImage.allocatedImage, graphicsQueue, graphicsFence, { (uint32_t)target->width, (uint32_t)target->height, (uint32_t)target->channels }, target->texture_collection.size());
+		VulkanAPI::CopyBufferToImage(logicalDevice, commandPool, stagingBuffer.Buffer, target->newImage.allocatedImage, graphicsQueue, graphicsFence, target->srcInfo, target->texture_collection.size());
 
 
-		generateMipmaps(target->newImage.allocatedImage, target->width, target->height, target->mipLevels, target->texture_collection.size());
+		generateMipmaps(target->newImage.allocatedImage, target->srcInfo.width, target->srcInfo.height, target->texInfo.mipLevels, target->texture_collection.size());
 
 
-		subresourceRange.levelCount = target->mipLevels;
+		subresourceRange.levelCount = target->texInfo.mipLevels;
 		VulkanAPI::AllocateCommandBuffers(logicalDevice, commandPool, &commandBuffer, 1);
 		VulkanAPI::BeginCommandBuffer(commandBuffer, VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT);
 		VulkanAPI::TransitionImageLayout(target->newImage.allocatedImage, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, subresourceRange, commandBuffer);
@@ -1253,7 +1814,7 @@ namespace GrEngine_Vulkan
 		VkCommandBuffer commandBuffer;
 		VkImageSubresourceRange subresourceRange = VulkanAPI::StructSubresourceRange(VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, target->texture_collection.size());
 
-		VulkanAPI::m_createVkBuffer(logicalDevice, memAllocator, nullptr, sizeof(byte) * width * target->channels * height, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, &stagingBuffer);
+		VulkanAPI::m_createVkBuffer(logicalDevice, memAllocator, nullptr, sizeof(byte) * width * target->srcInfo.channels * height, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, &stagingBuffer);
 		VulkanAPI::AllocateCommandBuffers(logicalDevice, commandPool, &commandBuffer, 1);
 		VulkanAPI::BeginCommandBuffer(commandBuffer, VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT);
 		VulkanAPI::TransitionImageLayout(target->newImage.allocatedImage, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, subresourceRange, commandBuffer);
@@ -1265,20 +1826,20 @@ namespace GrEngine_Vulkan
 		region.imageSubresource.mipLevel = 0;
 		region.imageSubresource.baseArrayLayer = 0;
 		region.imageSubresource.layerCount = 1;
-		int whole_size = target->width * target->height * target->channels;
+		int whole_size = target->srcInfo.width * target->srcInfo.height * target->srcInfo.channels;
 		int index = 0;
 
 		vmaMapMemory(memAllocator, stagingBuffer.Allocation, (void**)&data);
-		memset(data, (byte)0, width * target->channels * height);
+		memset(data, (byte)0, width * target->srcInfo.channels * height);
 		for (int i = 0; i < height; i++)
 		{
-			uint32_t offset = (offset_x + (offset_y + i) * target->width) * target->channels;
+			uint32_t offset = (offset_x + (offset_y + i) * target->srcInfo.width) * target->srcInfo.channels;
 			if (offset > whole_size)
 				continue;
 
-			memcpy_s(data + width * target->channels * index, width * target->channels, pixels + offset,  width * target->channels); //sizeof(byte)
+			memcpy_s(data + width * target->srcInfo.channels * index, width * target->srcInfo.channels, pixels + offset,  width * target->srcInfo.channels); //sizeof(byte)
 
-			region.bufferOffset = width * target->channels * index;
+			region.bufferOffset = width * target->srcInfo.channels * index;
 			region.imageOffset = { (int)offset_x, (int)offset_y + i, 0 };
 			region.imageExtent = {
 				width,
@@ -1298,10 +1859,10 @@ namespace GrEngine_Vulkan
 		VulkanAPI::EndAndSubmitCommandBuffer(logicalDevice, commandPool, commandBuffer, graphicsQueue, graphicsFence);
 
 
-		generateMipmaps(target->newImage.allocatedImage, target->width, target->height, target->mipLevels, target->texture_collection.size());
+		generateMipmaps(target->newImage.allocatedImage, target->srcInfo.width, target->srcInfo.height, target->texInfo.mipLevels, target->texture_collection.size());
 
 
-		subresourceRange.levelCount = target->mipLevels;
+		subresourceRange.levelCount = target->texInfo.mipLevels;
 		VulkanAPI::AllocateCommandBuffers(logicalDevice, commandPool, &commandBuffer, 1);
 		VulkanAPI::BeginCommandBuffer(commandBuffer, VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT);
 		VulkanAPI::TransitionImageLayout(target->newImage.allocatedImage, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, subresourceRange, commandBuffer);

@@ -20,8 +20,8 @@ namespace GrEngine_Vulkan
 			return bindingDescription;
 		}
 
-		static std::array<VkVertexInputAttributeDescription, 3> getAttributeDescriptions() {
-			std::array<VkVertexInputAttributeDescription, 3> attributeDescriptions{};
+		static std::array<VkVertexInputAttributeDescription, 4> getAttributeDescriptions() {
+			std::array<VkVertexInputAttributeDescription, 4> attributeDescriptions{};
 
 			attributeDescriptions[0].binding = 0;
 			attributeDescriptions[0].location = 0;
@@ -29,14 +29,19 @@ namespace GrEngine_Vulkan
 			attributeDescriptions[0].offset = offsetof(Vertex, pos);
 
 			attributeDescriptions[1].binding = 0;
-			attributeDescriptions[1].location = 2;
-			attributeDescriptions[1].format = VK_FORMAT_R32G32_SFLOAT;
-			attributeDescriptions[1].offset = offsetof(Vertex, uv);
+			attributeDescriptions[1].location = 1;
+			attributeDescriptions[1].format = VK_FORMAT_R32G32B32_SFLOAT;
+			attributeDescriptions[1].offset = offsetof(Vertex, norm);
 
 			attributeDescriptions[2].binding = 0;
-			attributeDescriptions[2].location = 3;
-			attributeDescriptions[2].format = VK_FORMAT_R32_UINT;
-			attributeDescriptions[2].offset = offsetof(Vertex, uv_index);
+			attributeDescriptions[2].location = 2;
+			attributeDescriptions[2].format = VK_FORMAT_R32G32_SFLOAT;
+			attributeDescriptions[2].offset = offsetof(Vertex, uv);
+
+			attributeDescriptions[3].binding = 0;
+			attributeDescriptions[3].location = 3;
+			attributeDescriptions[3].format = VK_FORMAT_R32_UINT;
+			attributeDescriptions[3].offset = offsetof(Vertex, uv_index);
 
 			return attributeDescriptions;
 		}
@@ -89,6 +94,20 @@ namespace GrEngine_Vulkan
 		glm::vec4 colors{ 1.f };
 	};
 
+	struct ImageInfo
+	{
+		uint32_t width;
+		uint32_t height;
+		uint32_t channels;
+	};
+
+	struct TextureInfo
+	{
+		uint32_t mipLevels = 0;
+		VkFormat format;
+		VkDescriptorImageInfo descriptor;
+	};
+
 	struct AllocatedImage {
 		VkImage allocatedImage;
 		VmaAllocation allocation;
@@ -99,10 +118,8 @@ namespace GrEngine_Vulkan
 		AllocatedImage newImage;
 		VkImageView textureImageView;
 		VkSampler textureSampler;
-		uint32_t width = 1;
-		uint32_t height = 1;
-		uint32_t channels = 1;
-		uint32_t mipLevels = 0;
+		ImageInfo srcInfo;
+		TextureInfo texInfo;
 	};
 
 
