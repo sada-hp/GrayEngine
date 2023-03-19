@@ -24,13 +24,21 @@ namespace GrEngine_Vulkan
 		static uint32_t selected_id;
 		void destroyObject() override;
 
-
+		void recordSelection(VkCommandBuffer cmd, VkExtent2D extent, UINT32 mode);
 	protected:
 		void populateDescriptorSets() override;
 		bool createGraphicsPipeline() override;
 
 		PickingBufferObject opo;
 		btTriangleMesh* colMesh;
+
+	private:
+		void updateSelectionPipeline();
+
+		VkPipelineLayout selectionLayout;
+		VkPipeline selectionPipeline;
+
+		bool selectable = false;
 	};
 }
 

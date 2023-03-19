@@ -90,7 +90,7 @@ namespace GrEngine_Vulkan
 	};
 
 	struct PickingBufferObject {
-		uint32_t draw_mode = 0;
+		uint32_t object_id = 0;
 		glm::vec4 colors{ 1.f };
 	};
 

@@ -27,7 +27,11 @@ namespace GrEngine_Vulkan
 		void UpdateFoliageMask(void* pixels, uint32_t width, uint32_t height, uint32_t offset_x, uint32_t offset_y) override;
 		void OffsetVertices(std::map<UINT, float> offsets) override;
 		void UpdateVertices(std::map<UINT, float> offsets) override;
-		glm::vec4& GetVertexPosition(UINT pos) override;
+		void UpdateCollision() override;
+		glm::vec4& GetVertexPosition(UINT at) override;
+		void SaveTerrain(const char* filepath) override;
+		bool LoadTerrain(const char* filepath) override;
+
 	protected:
 		void populateDescriptorSets();
 
@@ -36,7 +40,6 @@ namespace GrEngine_Vulkan
 		bool createComputeLayout();
 		bool createComputePipeline();
 		btTriangleMesh* colMesh;
-
 
 		void* terI;
 		ShaderBuffer terOut;
@@ -53,6 +56,8 @@ namespace GrEngine_Vulkan
 
 		btBvhTriangleMeshShape* colShape;
 		bool use_compute = false;
+		float maxAABB = 0.f;
+		float minAABB = 0.f;
 	};
 }
 

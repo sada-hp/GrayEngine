@@ -5,6 +5,12 @@
 
 namespace GrEngine
 {
+	struct RayCastResult
+	{
+		bool hasHit = false;
+		glm::vec3 hitPos;
+	};
+
 	class Physics
 	{
 	public:
@@ -39,6 +45,16 @@ namespace GrEngine
 				was_updated = true;
 			}
 
+			bool IsUpdateNeeded()
+			{
+				return was_updated;
+			}
+
+			UINT GetID()
+			{
+				return pOwner->GetEntityID();
+			}
+
 		protected:
 			bool was_updated = false;
 			bool initialized = false;
@@ -59,6 +75,8 @@ namespace GrEngine
 		virtual void RemovePhysicsObject(void* object) = 0;
 		virtual void CleanUp() = 0;
 		virtual void TogglePhysicsState(bool state) = 0;
+		virtual const RayCastResult CastRayGetHit(glm::vec3 startPoint, glm::vec3 endPoint) = 0;
+		virtual const RayCastResult CastRayToObject(glm::vec3 startPoint, glm::vec3 endPoint, UINT id) = 0;
 
 		inline bool GetSimulationState() { return simulate; };
 	protected:

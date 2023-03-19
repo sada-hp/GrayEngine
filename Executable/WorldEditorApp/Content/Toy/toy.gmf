@@ -1,8 +1,0 @@
-mesh
-{
-   Content\Toy\toy.obj
-}
-textures
-{
-   Content\Toy\toy_Col.png
-}

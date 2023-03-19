@@ -1,5 +1,6 @@
 #pragma once
 #include <btBulletDynamicsCommon.h>
+#include "BulletCollision/NarrowPhaseCollision/btRaycastCallback.h"
 #include "Virtual/Physics.h"
 #include "Engine/Headers/Core/Globals.h"
 #include "Engine/Headers/Core/Logger.h"
@@ -107,14 +108,13 @@ namespace GrEngineBullet
 
 				myMotionState = new btDefaultMotionState(startTransform);
 				btRigidBody::btRigidBodyConstructionInfo rbInfo(obj_mass, myMotionState, colShape, localInertia);
-				//rbInfo.m_angularDamping = .2f;
-				//rbInfo.m_linearDamping = .2f;
 				body = new btRigidBody(rbInfo);
 				initialized = true;
 				
 				return true;
 			}
 		};
+
 
 		BulletAPI()
 		{
@@ -137,6 +137,8 @@ namespace GrEngineBullet
 		void RemoveSimulationObject(GrEngine::Physics::PhysicsObject* object) override;
 		void RemovePhysicsObject(void* object) override;
 		void TogglePhysicsState(bool state) override;
+		const GrEngine::RayCastResult CastRayGetHit(glm::vec3 startPoint, glm::vec3 endPoint) override;
+		const GrEngine::RayCastResult CastRayToObject(glm::vec3 startPoint, glm::vec3 endPoint, UINT id) override;
 
 		void CleanUp() override;
 	};

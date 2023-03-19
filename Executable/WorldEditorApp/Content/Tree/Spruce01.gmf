@@ -1,0 +1,9 @@
+mesh
+{
+   Content\Tree\Spruce01.obj
+}
+textures
+{
+   Content\Tree\BarkDark.png
+   Content\Tree\SpruceAtlas.png
+}

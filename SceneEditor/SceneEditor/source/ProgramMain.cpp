@@ -143,12 +143,14 @@ namespace SceneEditor
         app->GetEventListener()->pushEvent("LoadModel", [](std::vector<std::any> para)
             {
                 std::string model_path = "";
+                std::string solution = GrEngine::Globals::getExecutablePath();
+
                 for (auto chr : para)
                 {
                     model_path += std::any_cast<char>(chr);
                 }
 
-                app->LoadFromGMF(app->transform_target->GetEntityID(), model_path.c_str());
+                app->LoadFromGMF(app->transform_target->GetEntityID(), model_path.erase(0, solution.size()).c_str());
             });
 
         app->GetEventListener()->pushEvent("TerrainBlendMask", [](std::vector<std::any> para)
@@ -216,6 +218,12 @@ namespace SceneEditor
                     app->mouse_down = false;
                     app->SetCursorShape(GLFW_ARROW_CURSOR);
                     app->gizmo->ParsePropertyValue("Color", "255:255:255:255");
+                    app->manipulation = app->manipulation < 7 ? 0 : app->manipulation;
+
+                    if (app->manipulation == 8)
+                    {
+                        app->App_RecalculateTerrain();
+                    }
                 }
             });
 

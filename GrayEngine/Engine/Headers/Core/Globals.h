@@ -35,8 +35,9 @@ namespace GrEngine
 
 			if (!file.is_open())
 			{
-				file.close();
-				file.open(filename, std::ios::ate | std::ios::binary);
+				/*file.close();
+				file.open(filename, std::ios::ate | std::ios::binary);*/
+				return {};
 			}
 
 			std::size_t fileSize = (std::size_t)file.tellg();
@@ -66,7 +67,7 @@ namespace GrEngine
 		{
 			std::string stream = "";
 			std::string distro = getExecutablePath();
-			std::ifstream file(filepath, std::ios::ate | std::ios::binary);
+			std::ifstream file(distro + filepath, std::ios::ate | std::ios::binary);
 
 			if (!file.is_open())
 			{
@@ -92,11 +93,11 @@ namespace GrEngine
 				{
 					if (value)
 					{
-						mesh->append(distro + stream);
+						mesh->append(stream);
 					}
 					else
 					{
-						textures->push_back(distro + stream);
+						textures->push_back(stream);
 					}
 				}
 				else if (!block_open && stream == "mesh")

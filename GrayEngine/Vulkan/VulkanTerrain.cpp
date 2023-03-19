@@ -29,7 +29,7 @@ namespace GrEngine_Vulkan
 			VulkanAPI::m_destroyShaderBuffer(logicalDevice, memAllocator, &object_mesh->vertexBuffer);
 			VulkanAPI::m_destroyShaderBuffer(logicalDevice, memAllocator, &object_mesh->indexBuffer);
 		}
-		resources->RemoveTexture(heightMap->texture_collection, logicalDevice, memAllocator);
+		//resources->RemoveTexture(heightMap->texture_collection, logicalDevice, memAllocator);
 		resources->RemoveTexture(foliageMask->texture_collection, logicalDevice, memAllocator);
 		GrEngine::Engine::GetContext()->GetPhysics()->RemoveSimulationObject(physComponent);
 
@@ -63,8 +63,9 @@ namespace GrEngine_Vulkan
 		{
 			VulkanAPI::m_destroyShaderBuffer(logicalDevice, memAllocator, &object_mesh->vertexBuffer);
 			VulkanAPI::m_destroyShaderBuffer(logicalDevice, memAllocator, &object_mesh->indexBuffer);
-			VulkanAPI::DestroyImage(heightMap->newImage.allocatedImage);
+			resources->RemoveTexture(foliageMask->texture_collection, logicalDevice, memAllocator);
 			VulkanAPI::DestroyImage(foliageMask->newImage.allocatedImage);
+			delete object_mesh;
 
 			ready = false;
 		}
@@ -146,6 +147,8 @@ namespace GrEngine_Vulkan
 		VulkanAPI::DestroyPipelineLayout(computeLayout);
 		VulkanAPI::m_destroyShaderBuffer(logicalDevice, memAllocator, &terIn);
 		VulkanAPI::m_destroyShaderBuffer(logicalDevice, memAllocator, &terOut);
+		resources->RemoveTexture(heightMap->texture_collection, logicalDevice, memAllocator);
+		VulkanAPI::DestroyImage(heightMap->newImage.allocatedImage);
 		use_compute = false;
 		updateObject();
 
@@ -163,18 +166,52 @@ namespace GrEngine_Vulkan
 		byte* data;
 		vmaMapMemory(memAllocator, object_mesh->vertexBuffer.Allocation, (void**)&data);
 
+		std::optional<float> max_width = 0.f;
+		std::optional<float> min_width = 0.f;
+
+		std::optional<float> max_length = 0.f;
+		std::optional<float> min_length = 0.f;
 
 		for (std::map<UINT, float>::iterator itt = offsets.begin(); itt != offsets.end(); ++itt)
 		{
+			if (!max_width.has_value() || object_mesh->vertices[(*itt).first].pos.x > max_width.value())
+			{
+				max_width = object_mesh->vertices[(*itt).first].pos.x;
+			}
+
+			if (!min_width.has_value() || object_mesh->vertices[(*itt).first].pos.x < min_width.value())
+			{
+				min_width = glm::floor(object_mesh->vertices[(*itt).first].pos.x);
+			}
+
+			if (!max_length.has_value() || object_mesh->vertices[(*itt).first].pos.z > max_length.value())
+			{
+				max_length = object_mesh->vertices[(*itt).first].pos.z;
+			}
+
+			if (!min_length.has_value() || object_mesh->vertices[(*itt).first].pos.z < min_length.value())
+			{
+				min_length = object_mesh->vertices[(*itt).first].pos.z;
+			}
+
 			object_mesh->vertices[(*itt).first].pos.y += (*itt).second;
 			memcpy(data + sizeof(Vertex) * (*itt).first, &object_mesh->vertices[(*itt).first], sizeof(Vertex));
 			vertArray[(*itt).first] = btVector4(object_mesh->vertices[(*itt).first].pos.x, object_mesh->vertices[(*itt).first].pos.y, object_mesh->vertices[(*itt).first].pos.z, 1);
-		}
 
-		physComponent->QueueUpdate();
+			maxAABB = glm::max(maxAABB, object_mesh->vertices[(*itt).first].pos.y);
+			minAABB = glm::min(minAABB, object_mesh->vertices[(*itt).first].pos.y);
+		}
 
 		colShape->getMeshInterface()->unLockVertexBase(0);
 		vmaUnmapMemory(memAllocator, object_mesh->vertexBuffer.Allocation);
+
+		btVector3 aabbMax = colShape->getLocalAabbMax();
+		btVector3 aabbMin = colShape->getLocalAabbMin();
+		aabbMax.setY(maxAABB);
+		aabbMin.setY(minAABB);
+		colMesh->setPremadeAabb(aabbMin, aabbMax);
+		colShape->getOptimizedBvh()->setQuantizationValues(aabbMin, aabbMax);
+		colShape->partialRefitTree(btVector3(min_width.value(), aabbMin.y(), min_width.value()), btVector3(max_width.value(), aabbMax.y(), max_length.value()));
 	}
 
 	void VulkanTerrain::UpdateVertices(std::map<UINT, float> offsets)
@@ -188,21 +225,205 @@ namespace GrEngine_Vulkan
 		byte* data;
 		vmaMapMemory(memAllocator, object_mesh->vertexBuffer.Allocation, (void**)&data);
 
+		std::optional<float> max_width = 0.f;
+		std::optional<float> min_width = 0.f;
+
+		std::optional<float> max_length = 0.f;
+		std::optional<float> min_length = 0.f;
+
 		for (std::map<UINT, float>::iterator itt = offsets.begin(); itt != offsets.end(); ++itt)
 		{
 			object_mesh->vertices[(*itt).first].pos.y = (*itt).second;
 			memcpy(data + sizeof(Vertex) * (*itt).first, &object_mesh->vertices[(*itt).first], sizeof(Vertex));
 			vertArray[(*itt).first] = btVector4(object_mesh->vertices[(*itt).first].pos.x, object_mesh->vertices[(*itt).first].pos.y, object_mesh->vertices[(*itt).first].pos.z, 1);
+
+			if (!max_width.has_value() || object_mesh->vertices[(*itt).first].pos.x > max_width.value())
+			{
+				max_width = object_mesh->vertices[(*itt).first].pos.x;
+			}
+
+			if (!min_width.has_value() || object_mesh->vertices[(*itt).first].pos.x < min_width.value())
+			{
+				min_width = glm::floor(object_mesh->vertices[(*itt).first].pos.x);
+			}
+
+			if (!max_length.has_value() || object_mesh->vertices[(*itt).first].pos.z > max_length.value())
+			{
+				max_length = object_mesh->vertices[(*itt).first].pos.z;
+			}
+
+			if (!min_length.has_value() || object_mesh->vertices[(*itt).first].pos.z < min_length.value())
+			{
+				min_length = object_mesh->vertices[(*itt).first].pos.z;
+			}
+
+			maxAABB = glm::max(maxAABB, object_mesh->vertices[(*itt).first].pos.y);
+			minAABB = glm::min(minAABB, object_mesh->vertices[(*itt).first].pos.y);
 		}
 
+		
 		colShape->getMeshInterface()->unLockVertexBase(0);
-		physComponent->QueueUpdate();
 		vmaUnmapMemory(memAllocator, object_mesh->vertexBuffer.Allocation);
+
+		btVector3 aabbMax = colShape->getLocalAabbMax();
+		btVector3 aabbMin = colShape->getLocalAabbMin();
+		aabbMax.setY(maxAABB);
+		aabbMin.setY(minAABB);
+		colMesh->setPremadeAabb(aabbMin, aabbMax);
+		colShape->getOptimizedBvh()->setQuantizationValues(aabbMin, aabbMax);
+		colShape->partialRefitTree(btVector3(min_width.value(), aabbMin.y(), min_width.value()), btVector3(max_width.value(), aabbMax.y(), max_length.value()));
 	}
 
-	glm::vec4& VulkanTerrain::GetVertexPosition(UINT pos)
+	glm::vec4& VulkanTerrain::GetVertexPosition(UINT at)
 	{
-		return object_mesh->vertices[pos].pos;
+		return object_mesh->vertices[at].pos;
+	}
+
+	void VulkanTerrain::SaveTerrain(const char* filepath)
+	{
+		std::fstream new_file;
+		new_file.open(filepath, std::fstream::out | std::ios::trunc);
+
+		if (!new_file)
+		{
+			Logger::Out("Couldn't create file for saving!", OutputColor::Red, OutputType::Error);
+			return;
+		}
+
+		new_file << "w " << size.width << std::endl;
+		new_file << "h " << size.height << std::endl;
+		new_file << "d " << size.depth << std::endl;
+		new_file << "r " << size.resolution << std::endl;
+		new_file << "m " << (foliageMask->texture_collection[0] == "" ? "empty_texture" : foliageMask->texture_collection[0]) << std::endl;
+
+		for (std::vector<std::string>::iterator itt = object_texture->texture_collection.begin(); itt != object_texture->texture_collection.end(); ++itt)
+		{
+			new_file << "t " << (*itt == "" ? "empty_texture" : *itt) << std::endl;
+		}
+
+		for (std::vector<GrEngine_Vulkan::Vertex>::iterator itt = object_mesh->vertices.begin(); itt != object_mesh->vertices.end(); ++itt)
+		{
+			new_file << "v " << (*itt).pos.x << " " << (*itt).pos.y << " " << (*itt).pos.z << std::endl;
+			new_file << "u " << (*itt).uv.x << " " << (*itt).uv.y << std::endl;
+			new_file << "ev" << std::endl;
+		}
+
+		new_file << '\0';
+		new_file.close();
+	}
+
+	bool VulkanTerrain::LoadTerrain(const char* filepath)
+	{
+		if (ready)
+		{
+			VulkanAPI::m_destroyShaderBuffer(logicalDevice, memAllocator, &object_mesh->vertexBuffer);
+			VulkanAPI::m_destroyShaderBuffer(logicalDevice, memAllocator, &object_mesh->indexBuffer);
+			resources->RemoveTexture(foliageMask->texture_collection, logicalDevice, memAllocator);
+			VulkanAPI::DestroyImage(heightMap->newImage.allocatedImage);
+			VulkanAPI::DestroyImage(foliageMask->newImage.allocatedImage);
+			delete object_mesh;
+
+			ready = false;
+		}
+
+		object_mesh = new Mesh();
+		std::ifstream file(filepath, std::ios::ate | std::ios::binary);
+
+		if (!file)
+		{
+			Logger::Out("Couldn't open terrain %s", OutputColor::Red, OutputType::Error, filepath);
+			return false;
+		}
+
+		file.seekg(0);
+		std::string stream;
+		int vertex = 0;
+		Vertex vert{};
+		size = { 1, 1, 1, 1 };
+		std::array<std::string, 4> textures;
+		int map_index = 0;
+
+		while (file >> stream && !file.eof())
+		{
+			if (stream == "v")
+			{
+				file >> stream;
+				vert.pos[0] = std::atof(stream.c_str());
+				file >> stream;
+				vert.pos[1] = std::atof(stream.c_str());
+				file >> stream;
+				vert.pos[2] = std::atof(stream.c_str());
+			}
+			else if (stream == "u")
+			{
+				file >> stream;
+				vert.uv[0] = std::atof(stream.c_str());
+				file >> stream;
+				vert.uv[1] = std::atof(stream.c_str());
+			}
+			else if (stream == "w")
+			{
+				file >> stream;
+				size.width = std::atof(stream.c_str());
+			}
+			else if (stream == "h")
+			{
+				file >> stream;
+				size.height = std::atof(stream.c_str());
+			}
+			else if (stream == "d")
+			{
+				file >> stream;
+				size.depth = std::atof(stream.c_str());
+			}
+			else if (stream == "r")
+			{
+				file >> stream;
+				size.resolution = std::atof(stream.c_str());
+			}
+			else if (stream == "ev")
+			{
+				if ((vertex + 1) / size.resolution < size.resolution - 1 && (vertex + 1) % size.resolution > 0)
+				{
+					object_mesh->indices.push_back(vertex);
+					object_mesh->indices.push_back(vertex + 1);
+					object_mesh->indices.push_back(vertex + size.resolution);
+
+					object_mesh->indices.push_back(vertex + size.resolution);
+					object_mesh->indices.push_back(vertex + 1);
+					object_mesh->indices.push_back(vertex + size.resolution + 1);
+				}
+
+				vertex++;
+				object_mesh->vertices.push_back(vert);
+				vert = {};
+			}
+			else if (stream == "m")
+			{
+				file >> stream;
+				foliageMask = static_cast<VulkanRenderer*>(p_Owner)->loadTexture({ stream }, VK_IMAGE_VIEW_TYPE_2D_ARRAY)->AddLink();
+			}
+			else if (stream == "t" && map_index < 4)
+			{
+				file >> stream;
+				if (stream != "empty_texture")
+				{
+					textures[map_index] = stream;
+				}
+
+				map_index++;
+			}
+		}
+		file.close();
+
+		static_cast<VulkanRenderer*>(p_Owner)->assignTextures({ textures[0], textures[1], textures[2], textures[3] }, this);
+		VulkanAPI::m_createVkBuffer(logicalDevice, memAllocator, object_mesh->vertices.data(), sizeof(object_mesh->vertices[0]) * object_mesh->vertices.size(), VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, &object_mesh->vertexBuffer);
+		VulkanAPI::m_createVkBuffer(logicalDevice, memAllocator, object_mesh->indices.data(), sizeof(object_mesh->indices[0]) * object_mesh->indices.size(), VK_BUFFER_USAGE_INDEX_BUFFER_BIT, &object_mesh->indexBuffer);
+		calculateCollisions();
+		updateObject();
+		ready = true;
+
+		return true;
 	}
 
 	void VulkanTerrain::calculateCollisions()
@@ -218,9 +439,13 @@ namespace GrEngine_Vulkan
 
 		colMesh = new btTriangleMesh();
 		int index = 0;
+		maxAABB = object_mesh->vertices.front().pos.y;
+		minAABB = object_mesh->vertices.front().pos.y;
 		for (std::vector<GrEngine_Vulkan::Vertex>::iterator itt = object_mesh->vertices.begin(); itt != object_mesh->vertices.end(); ++itt)
 		{
 			colMesh->findOrAddVertex(btVector3((*itt).pos.x, (*itt).pos.y, (*itt).pos.z), false);
+			maxAABB = glm::max(maxAABB, (*itt).pos.y);
+			minAABB = glm::min(minAABB, (*itt).pos.y);
 		}
 
 		for (int i = 3; i < object_mesh->indices.size(); i += 3)
@@ -228,8 +453,16 @@ namespace GrEngine_Vulkan
 			colMesh->addTriangleIndices(object_mesh->indices[i - 3], object_mesh->indices[i - 2], object_mesh->indices[i - 1]);
 		}
 
-		colShape = new btBvhTriangleMeshShape(colMesh, false);
+		colShape = new btBvhTriangleMeshShape(colMesh, true);
 		physComponent->UpdateCollisionShape(colShape);
+	}
+
+	void VulkanTerrain::UpdateCollision()
+	{
+		btVector3 aabbMax = colShape->getLocalAabbMax();
+		btVector3 aabbMin = colShape->getLocalAabbMin();
+
+		colShape->refitTree(aabbMin, aabbMax);
 	}
 
 	bool VulkanTerrain::pushConstants(VkCommandBuffer cmd, VkExtent2D extent, UINT32 mode)
@@ -338,34 +571,31 @@ namespace GrEngine_Vulkan
 		rasterizer.depthBiasClamp = 0.0f;
 		rasterizer.depthBiasSlopeFactor = 0.0f;
 
-		VkPipelineMultisampleStateCreateInfo multisampling{};
-		multisampling.sType = VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO;
-		multisampling.sampleShadingEnable = VK_FALSE;
-		multisampling.rasterizationSamples = dynamic_cast<VulkanRenderer*>(p_Owner)->GetSampling();
-		multisampling.minSampleShading = 1.0f;
-		multisampling.sampleShadingEnable = VK_TRUE;
-		multisampling.minSampleShading = .35f;
+		VkPipelineMultisampleStateCreateInfo multisampleState{};
+		multisampleState.sType = VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO;
+		multisampleState.rasterizationSamples = VK_SAMPLE_COUNT_1_BIT;
+		multisampleState.sampleShadingEnable = VK_FALSE;
+		multisampleState.minSampleShading = 0;
 
-		VkPipelineColorBlendAttachmentState colorBlendAttachment{};
-		colorBlendAttachment.colorWriteMask = VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT;
-		colorBlendAttachment.blendEnable = VK_TRUE;
-		colorBlendAttachment.srcColorBlendFactor = VK_BLEND_FACTOR_SRC_ALPHA;
-		colorBlendAttachment.dstColorBlendFactor = VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA;
-		colorBlendAttachment.colorBlendOp = VK_BLEND_OP_ADD;
-		colorBlendAttachment.srcAlphaBlendFactor = VK_BLEND_FACTOR_ONE;
-		colorBlendAttachment.dstAlphaBlendFactor = VK_BLEND_FACTOR_ZERO;
-		colorBlendAttachment.alphaBlendOp = VK_BLEND_OP_ADD;
+		std::vector<VkPipelineColorBlendAttachmentState> blendAttachmentStates;
+		blendAttachmentStates.resize(5);
+		blendAttachmentStates[0].colorWriteMask = VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT;
+		blendAttachmentStates[0].blendEnable = VK_FALSE;
+		blendAttachmentStates[1].colorWriteMask = VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT;
+		blendAttachmentStates[1].blendEnable = VK_FALSE;
+		blendAttachmentStates[2].colorWriteMask = VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT;
+		blendAttachmentStates[2].blendEnable = VK_FALSE;
+		blendAttachmentStates[3].colorWriteMask = VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT;
+		blendAttachmentStates[3].blendEnable = VK_FALSE;
+		blendAttachmentStates[4].colorWriteMask = VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT;
+		blendAttachmentStates[4].blendEnable = VK_FALSE;
 
-		VkPipelineColorBlendStateCreateInfo colorBlending{};
-		colorBlending.sType = VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO;
-		colorBlending.logicOpEnable = VK_FALSE;
-		colorBlending.logicOp = VK_LOGIC_OP_COPY; // Optional
-		colorBlending.attachmentCount = 1;
-		colorBlending.pAttachments = &colorBlendAttachment;
-		colorBlending.blendConstants[0] = 1.0f; // Optional
-		colorBlending.blendConstants[1] = 1.0f; // Optional
-		colorBlending.blendConstants[2] = 1.0f; // Optional
-		colorBlending.blendConstants[3] = 1.0f; // Optional
+		VkPipelineColorBlendStateCreateInfo colorBlendState{};
+		colorBlendState.sType = VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO;
+		colorBlendState.logicOpEnable = VK_FALSE;
+		colorBlendState.logicOp = VK_LOGIC_OP_COPY; // Optional
+		colorBlendState.attachmentCount = static_cast<uint32_t>(blendAttachmentStates.size());
+		colorBlendState.pAttachments = blendAttachmentStates.data();
 
 		std::vector<VkDynamicState> dynamicStates = { VK_DYNAMIC_STATE_VIEWPORT, VK_DYNAMIC_STATE_SCISSOR };
 		VkPipelineDynamicStateCreateInfo dynamicCreateInfo{};
@@ -397,8 +627,8 @@ namespace GrEngine_Vulkan
 		pipelineInfo.pInputAssemblyState = &inputAssembly;
 		pipelineInfo.pViewportState = &viewportState;
 		pipelineInfo.pRasterizationState = &rasterizer;
-		pipelineInfo.pMultisampleState = &multisampling;
-		pipelineInfo.pColorBlendState = &colorBlending;
+		pipelineInfo.pMultisampleState = &multisampleState;
+		pipelineInfo.pColorBlendState = &colorBlendState;
 		pipelineInfo.pDynamicState = &dynamicCreateInfo;
 		//pipelineInfo.pTessellationState = &tesselationInfo;
 		pipelineInfo.layout = pipelineLayout;
@@ -454,10 +684,6 @@ namespace GrEngine_Vulkan
 		texInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
 		texInfo.imageView = object_texture->textureImageView;
 		texInfo.sampler = object_texture->textureSampler;
-		VkDescriptorImageInfo heightInfo{};
-		heightInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-		heightInfo.imageView = heightMap->textureImageView;
-		heightInfo.sampler = heightMap->textureSampler;
 		VkDescriptorImageInfo maskInfo{};
 		maskInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
 		maskInfo.imageView = foliageMask->textureImageView;
@@ -467,13 +693,13 @@ namespace GrEngine_Vulkan
 		subscribeDescriptor(VK_SHADER_STAGE_FRAGMENT_BIT, 1, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, maskInfo);
 
 		int binding = 2;
-		for (auto buffer : globalBuffers)
-		{
-			subscribeDescriptor(buffer.first, binding++, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, buffer.second->BufferInfo);
-		}
 
 		if (use_compute)
 		{
+			VkDescriptorImageInfo heightInfo{};
+			heightInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+			heightInfo.imageView = heightMap->textureImageView;
+			heightInfo.sampler = heightMap->textureSampler;
 			descriptorSets[1].bindPoint = VK_PIPELINE_BIND_POINT_COMPUTE;
 			VkDescriptorBufferInfo inBuffer{};
 			inBuffer.buffer = terIn.Buffer;
@@ -487,7 +713,6 @@ namespace GrEngine_Vulkan
 			subscribeDescriptor(VK_SHADER_STAGE_COMPUTE_BIT, 1, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, outBuffer, 1);
 			subscribeDescriptor(VK_SHADER_STAGE_COMPUTE_BIT, 2, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, heightInfo, 1);
 		}
-
 
 		createDescriptorLayout();
 		createDescriptorPool();

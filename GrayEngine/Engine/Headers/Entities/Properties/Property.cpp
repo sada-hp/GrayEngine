@@ -523,7 +523,7 @@ Transparency::Transparency(int value, void* parent)
 {
 	property_name = "Transparency";
 	property_value = value;
-	property_type = PropertyType::Shader;
+	property_type = PropertyType::Transparency;
 	owner = parent;
 }
 
@@ -561,3 +561,50 @@ void* Transparency::GetValueAdress()
 {
 	return &property_value;
 }
+
+
+////////////////////////////////////Double sided/////////////////////////////////////////////
+
+DoubleSided::DoubleSided(bool value, void* parent)
+{
+	property_name = "DoubleSided";
+	property_value = value;
+	property_type = PropertyType::DoubleSided;
+	owner = parent;
+}
+
+DoubleSided::~DoubleSided()
+{
+
+}
+
+const char* DoubleSided::ValueString()
+{
+	return property_string.c_str();
+}
+
+void DoubleSided::ParsePropertyValue(const char* value)
+{
+	SetPropertyValue(atoi(value));
+	property_string = value;
+}
+
+void DoubleSided::SetPropertyValue(int value)
+{
+	property_value = value;
+	property_string = std::to_string(value);
+
+	if (owner != nullptr)
+		static_cast<GrEngine::DrawableObject*>(owner)->Refresh();
+}
+
+std::any DoubleSided::GetAnyValue()
+{
+	return property_value;
+}
+
+void* DoubleSided::GetValueAdress()
+{
+	return &property_value;
+}
+

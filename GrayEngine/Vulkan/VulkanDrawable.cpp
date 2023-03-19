@@ -59,11 +59,6 @@ namespace GrEngine_Vulkan
 		populateDescriptorSets();
 	}
 
-	void VulkanDrawable::LinkExternalStorageBuffer(VkShaderStageFlagBits stage, ShaderBuffer* buffer)
-	{
-		globalBuffers[stage] = buffer;
-	}
-
 	void VulkanDrawable::destroyObject()
 	{
 		if (object_mesh != nullptr)
@@ -87,8 +82,6 @@ namespace GrEngine_Vulkan
 			VulkanAPI::DestroyDescriptorPool((*itt).descriptorPool);
 			VulkanAPI::DestroyDescriptorLayout((*itt).descriptorSetLayout);
 		}
-
-		globalBuffers.clear();
 	}
 
 	void VulkanDrawable::updateObject()
@@ -204,7 +197,7 @@ namespace GrEngine_Vulkan
 		rasterizationState.rasterizerDiscardEnable = VK_FALSE;
 		rasterizationState.polygonMode = VK_POLYGON_MODE_FILL;
 		rasterizationState.lineWidth = 1.0f;
-		rasterizationState.cullMode = VK_CULL_MODE_BACK_BIT;
+		rasterizationState.cullMode = double_sided == 1 ? VK_CULL_MODE_NONE : VK_CULL_MODE_BACK_BIT;
 		rasterizationState.frontFace = VK_FRONT_FACE_COUNTER_CLOCKWISE;
 		rasterizationState.depthBiasEnable = VK_FALSE;
 		rasterizationState.depthBiasConstantFactor = 0.0f;
@@ -279,9 +272,8 @@ namespace GrEngine_Vulkan
 		std::array<VkPipelineShaderStageCreateInfo, 2> shaderStages;
 		std::vector<VkPipelineColorBlendAttachmentState> blendAttachmentStates;
 
-		switch (transparency)
+		if (transparency == 0)
 		{
-		case 0:
 			vertShaderCode = GrEngine::Globals::readFile(solution_path + shader_path + "_vert.spv");
 			fragShaderCode = GrEngine::Globals::readFile(solution_path + shader_path + "_frag.spv");
 
@@ -304,36 +296,12 @@ namespace GrEngine_Vulkan
 			blendAttachmentStates.resize(4);
 			blendAttachmentStates[0].colorWriteMask = VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT;
 			blendAttachmentStates[0].blendEnable = VK_FALSE;
-			blendAttachmentStates[0].srcColorBlendFactor = VK_BLEND_FACTOR_SRC_ALPHA;
-			blendAttachmentStates[0].dstColorBlendFactor = VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA;
-			blendAttachmentStates[0].colorBlendOp = VK_BLEND_OP_ADD;
-			blendAttachmentStates[0].srcAlphaBlendFactor = VK_BLEND_FACTOR_ONE;
-			blendAttachmentStates[0].dstAlphaBlendFactor = VK_BLEND_FACTOR_ZERO;
-			blendAttachmentStates[0].alphaBlendOp = VK_BLEND_OP_ADD;
 			blendAttachmentStates[1].colorWriteMask = VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT;
 			blendAttachmentStates[1].blendEnable = VK_FALSE;
-			blendAttachmentStates[1].srcColorBlendFactor = VK_BLEND_FACTOR_SRC_ALPHA;
-			blendAttachmentStates[1].dstColorBlendFactor = VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA;
-			blendAttachmentStates[1].colorBlendOp = VK_BLEND_OP_ADD;
-			blendAttachmentStates[1].srcAlphaBlendFactor = VK_BLEND_FACTOR_ONE;
-			blendAttachmentStates[1].dstAlphaBlendFactor = VK_BLEND_FACTOR_ZERO;
-			blendAttachmentStates[1].alphaBlendOp = VK_BLEND_OP_ADD;
 			blendAttachmentStates[2].colorWriteMask = VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT;
 			blendAttachmentStates[2].blendEnable = VK_FALSE;
-			blendAttachmentStates[2].srcColorBlendFactor = VK_BLEND_FACTOR_SRC_ALPHA;
-			blendAttachmentStates[2].dstColorBlendFactor = VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA;
-			blendAttachmentStates[2].colorBlendOp = VK_BLEND_OP_ADD;
-			blendAttachmentStates[2].srcAlphaBlendFactor = VK_BLEND_FACTOR_ONE;
-			blendAttachmentStates[2].dstAlphaBlendFactor = VK_BLEND_FACTOR_ZERO;
-			blendAttachmentStates[2].alphaBlendOp = VK_BLEND_OP_ADD;
 			blendAttachmentStates[3].colorWriteMask = VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT;
 			blendAttachmentStates[3].blendEnable = VK_FALSE;
-			blendAttachmentStates[3].srcColorBlendFactor = VK_BLEND_FACTOR_SRC_ALPHA;
-			blendAttachmentStates[3].dstColorBlendFactor = VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA;
-			blendAttachmentStates[3].colorBlendOp = VK_BLEND_OP_ADD;
-			blendAttachmentStates[3].srcAlphaBlendFactor = VK_BLEND_FACTOR_ONE;
-			blendAttachmentStates[3].dstAlphaBlendFactor = VK_BLEND_FACTOR_ZERO;
-			blendAttachmentStates[3].alphaBlendOp = VK_BLEND_OP_ADD;
 
 			colorBlendState.attachmentCount = static_cast<uint32_t>(blendAttachmentStates.size());
 			colorBlendState.pAttachments = blendAttachmentStates.data();
@@ -342,8 +310,9 @@ namespace GrEngine_Vulkan
 
 			vkDestroyShaderModule(logicalDevice, shaders[0], nullptr);
 			vkDestroyShaderModule(logicalDevice, shaders[1], nullptr);
-			break;
-		case 1:
+		}
+		else
+		{
 			vertShaderCode = GrEngine::Globals::readFile(solution_path + shader_path + "_vert_transparent.spv");
 			fragShaderCode = GrEngine::Globals::readFile(solution_path + shader_path + "_frag_transparent.spv");
 
@@ -372,16 +341,16 @@ namespace GrEngine_Vulkan
 			depthStencilState.minDepthBounds = 0.0f; // Optional
 			depthStencilState.maxDepthBounds = 1.0f; // Optional
 			depthStencilState.stencilTestEnable = VK_FALSE;
-			rasterizationState.cullMode = VK_CULL_MODE_NONE;
 
-			colorBlendState.attachmentCount = 0;
-			colorBlendState.pAttachments = nullptr;
+			blendAttachmentStates.resize(0);
+
+			colorBlendState.attachmentCount = static_cast<uint32_t>(blendAttachmentStates.size());
+			colorBlendState.pAttachments = blendAttachmentStates.data();
 
 			pipelineCI.subpass = 2;
 			VulkanAPI::CreateGraphicsPipeline(logicalDevice, &pipelineCI, &graphicsPipeline);
 			vkDestroyShaderModule(logicalDevice, shaders[0], nullptr);
 			vkDestroyShaderModule(logicalDevice, shaders[1], nullptr);
-			break;
 		}
 		
 		return true;

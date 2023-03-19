@@ -35,6 +35,7 @@ namespace GrEngine
 		}
 		virtual void Update() = 0;
 		virtual void LoadTerrain(int resolution, int width, int height, int depth, std::array<std::string, 6> maps) = 0;
+		virtual void LoadTerrain(const char* filepath) = 0;
 		virtual void createSkybox(const char* East, const char* West, const char* Top, const char* Bottom, const char* North, const char* South) = 0;
 		virtual void DeleteEntity(UINT id) = 0;
 		inline Camera* getActiveViewport() { return &viewport_camera; };
@@ -57,8 +58,6 @@ namespace GrEngine
 		virtual void SaveScreenshot(const char* filepath) = 0;
 		virtual void SelectEntityAtCursor() = 0;
 		virtual std::array<byte, 3> GetPixelColorAtCursor() = 0;
-		virtual float DistanceToFragment(float x, float y) = 0;
-		virtual float DistanceToFragment(float x, float y, UINT id) = 0;
 		virtual void SetHighlightingMode(bool enabled) = 0;
 		virtual void SaveScene(const char* path) = 0;
 		virtual void LoadScene(const char* path) = 0;

@@ -32,8 +32,6 @@ namespace GrEngine_Vulkan
 		void clearDrawables() override;
 		void createSkybox(const char* East, const char* West, const char* Top, const char* Bottom, const char* North, const char* South) override;
 
-		float DistanceToFragment(float x, float y) override;
-		float DistanceToFragment(float x, float y, UINT id = 0) override;
 		void SelectEntityAtCursor() override;
 		std::array<byte, 3> GetPixelColorAtCursor() override;
 		GrEngine::Entity* selectEntity(UINT ID) override;
@@ -43,6 +41,7 @@ namespace GrEngine_Vulkan
 		void LoadScene(const char* path) override;
 		void waitForRenderer() override;
 		void LoadTerrain(int resolution, int width, int height, int depth, std::array<std::string, 6> maps) override;
+		void LoadTerrain(const char* filepath) override;
 
 		void Update() override;
 		VkSampleCountFlagBits GetSampling() { return msaaSamples; };
@@ -54,18 +53,11 @@ namespace GrEngine_Vulkan
 		bool updateResource(Texture* target, byte* pixels, uint32_t width, uint32_t height, uint32_t offset_x, uint32_t offset_y);
 
 		std::optional<uint32_t> compute_bit;
-		ShaderBuffer pickingBuffer;
-		void* pickingMem = nullptr;
-		struct PickingInfo
-		{
-			float xpos, ypos;
-			int id[32];
-			float depth[32];
-		};
 
 		Texture position;
 		Texture normal;
 		Texture albedo;
+		Texture identity;
 
 		ShaderBuffer transBuffer;
 		ShaderBuffer nodeBfffer;
@@ -74,6 +66,8 @@ namespace GrEngine_Vulkan
 		VkQueue graphicsQueue;
 		VkFence graphicsFence;
 		VkCommandPool commandPool;
+
+		VkRenderPass selectionPass;
 	protected:
 		void SaveScreenshot(const char* filepath);
 		bool updateDrawables(uint32_t index, DrawMode mode, VkExtent2D extent);
@@ -123,8 +117,8 @@ namespace GrEngine_Vulkan
 		VkFormat depthFormat;
 
 		VkSampleCountFlagBits msaaSamples = VK_SAMPLE_COUNT_1_BIT;
-		VkImageView colorImageView;
-		AllocatedImage samplingImage;
+
+		Texture colorImage;
 		bool highlight_selection = true;
 
 		struct Node {
@@ -141,6 +135,11 @@ namespace GrEngine_Vulkan
 		void createAttachment(VkFormat format, VkImageUsageFlags usage, Texture* attachment);
 		void prepareCompositionPass();
 		void prepareTransparencyPass();
+		void prepareSamplingPass();
+		void prepareSelectionPass();
+
+		VkFramebuffer defferFramebuffer;
+		VkFramebuffer selectionFramebuffer;
 
 		VkDescriptorPool compositionSetPool;
 		VkDescriptorSetLayout compositionSetLayout;
@@ -153,6 +152,15 @@ namespace GrEngine_Vulkan
 		VkDescriptorSet transparencySet;
 		VkPipelineLayout transparencyPipelineLayout;
 		VkPipeline transparencyPipeline;
+
+		VkDescriptorPool samplingSetPool;
+		VkDescriptorSetLayout samplingSetLayout;
+		VkDescriptorSet samplingSet;
+		VkPipelineLayout samplingPipelineLayout;
+		VkPipeline samplingPipeline;
+		VkRenderPass samplingPass;
+		ShaderBuffer frameInfo;
+		glm::vec2 frameSize;
 
 
 #ifdef _DEBUG

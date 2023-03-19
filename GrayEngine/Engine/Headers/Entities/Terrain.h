@@ -38,10 +38,13 @@ namespace GrEngine
 
 		virtual void GenerateTerrain(int resolution, int width, int height, int depth, std::array<std::string, 6> images) = 0;
 		virtual void calculateCollisions() = 0;
+		virtual void UpdateCollision() = 0;
 		virtual void UpdateFoliageMask(void* pixels) = 0;
 		virtual void UpdateFoliageMask(void* pixels, uint32_t width, uint32_t height, uint32_t offset_x, uint32_t offset_y) = 0;
 		virtual void OffsetVertices(std::map<UINT, float> offsets) = 0;
 		virtual void UpdateVertices(std::map<UINT, float> offsets) = 0;
+		virtual void SaveTerrain(const char* filepath) = 0;
+		virtual bool LoadTerrain(const char* filepath) = 0;
 		virtual glm::vec4& GetVertexPosition(UINT pos) = 0;
 		TerrainSize& GetTerrainSize() { return size; }
 

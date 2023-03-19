@@ -18,7 +18,6 @@ namespace GrEngine_Vulkan
 		virtual void invalidateTexture();
 		virtual bool pushConstants(VkCommandBuffer cmd, VkExtent2D extent, UINT32 mode);
 		virtual bool recordCommandBuffer(VkCommandBuffer commandBuffer, VkExtent2D extent, UINT32 mode);
-		void LinkExternalStorageBuffer(VkShaderStageFlagBits stage, ShaderBuffer* buffer);
 
 	protected:
 		void subscribeDescriptor(VkShaderStageFlags shaderStage, uint8_t binding, VkDescriptorType descType, VkDescriptorImageInfo imageInfo, int targetLayout = 0);
@@ -42,8 +41,8 @@ namespace GrEngine_Vulkan
 		VulkanResourceManager* resources;
 		VkDevice logicalDevice;
 		VmaAllocator memAllocator;
-		std::map<VkShaderStageFlagBits, ShaderBuffer*> globalBuffers;
 
 		int transparency = 0;
+		int double_sided = 0;
 	};
 }

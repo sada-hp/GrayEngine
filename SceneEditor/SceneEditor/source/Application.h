@@ -441,8 +441,10 @@ namespace GrEngine
                     int radiusx = (brush_size * 2) / (subdivisions * ter_size.width) + falloff;
                     int radiusy = (brush_size * 2) / (subdivisions * ter_size.depth) + falloff;
 
-                    int row = (tset.x + ter_size.width/2) / (ter_size.width * subdivisions);
-                    int col = (tset.z + ter_size.depth/2) / (ter_size.depth * subdivisions);
+                    float x_sub = ter_size.width * subdivisions;
+                    float z_sub = ter_size.depth * subdivisions;
+                    int row = 0.5f + (tset.x + ter_size.width/2) / x_sub;
+                    int col = 0.5f + (tset.z + ter_size.depth/2) / z_sub;
                     std::map<UINT, float> offsets;
                     UINT limit = ter_size.resolution * ter_size.resolution;
 
@@ -521,6 +523,11 @@ namespace GrEngine
             }
         }
 
+        void App_RecalculateTerrain()
+        {
+            static_cast<Terrain*>(GetRenderer()->selectEntity(100))->UpdateCollision();
+        }
+
         void App_UpdateSphere()
         {
             if (manipulation >= 7 && transform_target != nullptr && !free_mode && transform_target->GetEntityID() == 100)
@@ -528,41 +535,17 @@ namespace GrEngine
                 POINTFLOAT point = GetCursorPosition();
                 float fov = 60.f;
                 POINT vSize = GetWindowSize();
-                Terrain::TerrainSize ter_size = static_cast<Terrain*>(transform_target)->GetTerrainSize();
                 glm::mat4 model = glm::translate(glm::mat4_cast(GetRenderer()->getActiveViewport()->GetObjectOrientation()), -GetRenderer()->getActiveViewport()->GetObjectPosition());
                 glm::mat4 proj = glm::perspective(glm::radians(fov), (float)vSize.x / (float)vSize.y, 0.1f, 1000.0f);
                 glm::vec4 view(0, 0, vSize.x, vSize.y);
                 proj[1][1] *= -1;
 
-                float dist = GetRenderer()->DistanceToFragment(point.x, point.y, 100);
                 glm::vec3 tset = glm::unProject(glm::vec3(point.x, point.y, 0.9f), model, proj, view);
                 glm::vec3 dir = glm::normalize(tset - GetRenderer()->getActiveViewport()->GetObjectPosition());
+                const RayCastResult res = GetPhysics()->CastRayToObject(GetRenderer()->getActiveViewport()->GetObjectPosition(), tset + dir * 1000.f, 100);
 
-                float lens_val = glm::tan(glm::radians(fov/2)) * (glm::distance(glm::vec2(vSize.x/2, vSize.y/2), glm::vec2(point.x, point.y)) / vSize.x);
-                glm::vec3 pos = tset + dir * (dist * (1.f + lens_val));
-
-                if (brush_snap)
-                {
-                    int row = (pos.x + ter_size.width / 2) / (ter_size.width * subdivisions);
-                    int col = (pos.z + ter_size.depth / 2) / (ter_size.depth * subdivisions);
-                    int index = col * ter_size.resolution + row;
-                    if (index >= 0 && index < ter_size.resolution * ter_size.resolution)
-                    {
-                        pos = static_cast<Terrain*>(transform_target)->GetVertexPosition(index);
-                    }
-                }
-                else
-                {
-                    int row = (pos.x + ter_size.width / 2) / (ter_size.width * subdivisions);
-                    int col = (pos.z + ter_size.depth / 2) / (ter_size.depth * subdivisions);
-                    int index = col * ter_size.resolution + row;
-                    if (index >= 0 && index < ter_size.resolution * ter_size.resolution)
-                    {
-                        pos.y = static_cast<Terrain*>(transform_target)->GetVertexPosition(index).y;
-                    }
-                }
-
-                brush->PositionObjectAt(pos);
+                if (res.hasHit)
+                    brush->PositionObjectAt(res.hitPos);
             }
         }
 
@@ -615,17 +598,19 @@ namespace GrEngine
         void LoadTools()
         {
             //Grid
-            grid = GetRenderer()->addEntity(2000000001);
+            grid = GetRenderer()->addEntity();
             static_cast<DrawableObject*>(grid)->DisableCollisions();
+            grid->ParsePropertyValue("Transparency", "1");
+            //static_cast<DrawableObject*>(grid)->SetVisisibility(false);
             grid->ParsePropertyValue("Shader", "Shaders\\grid");
             static_cast<DrawableObject*>(grid)->GeneratePlaneMesh(1, 1);
             grid->MakeStatic();
 
             //Move
-            gizmo = GetRenderer()->addEntity(2000000002);
+            gizmo = GetRenderer()->addEntity();
             static_cast<DrawableObject*>(gizmo)->DisableCollisions();
             static_cast<DrawableObject*>(gizmo)->SetVisisibility(false);
-            static_cast<DrawableObject*>(gizmo)->LoadMesh((Globals::getExecutablePath() + "Content\\Editor\\ManipulationTool.obj").c_str(), nullptr);
+            static_cast<DrawableObject*>(gizmo)->LoadMesh("Content\\Editor\\ManipulationTool.obj", nullptr);
             gizmo->ParsePropertyValue("Shader", "Shaders\\gizmo");
             gizmo->AddNewProperty("Color");
             gizmo->ParsePropertyValue("Color", "1:1:1:1");
@@ -633,17 +618,24 @@ namespace GrEngine
             gizmo->MakeStatic();
 
             //Paint
-            brush = GetRenderer()->addEntity(2000000003);
-            brush->ParsePropertyValue("Transparency", "1");
+            brush = GetRenderer()->addEntity();
+            brush->ParsePropertyValue("Transparency", "2");
             brush->ParsePropertyValue("Shader", "Shaders\\brush");
             static_cast<DrawableObject*>(brush)->DisableCollisions();
             static_cast<DrawableObject*>(brush)->SetVisisibility(false);
-            static_cast<DrawableObject*>(brush)->LoadMesh((Globals::getExecutablePath() + "Content\\Editor\\PaintingSphere.obj").c_str(), nullptr);
+            static_cast<DrawableObject*>(brush)->LoadMesh("Content\\Editor\\PaintingSphere.obj", nullptr);
             brush->AddNewProperty("Color");
             brush->ParsePropertyValue("Color", "1:1:1:0.5");
             brush->AddNewProperty("Scale");
             brush->ParsePropertyValue("Scale", "2:2:2");
             brush->MakeStatic();
+
+            //auto shrek = GetRenderer()->addEntity();
+            //static_cast<DrawableObject*>(shrek)->LoadModel((Globals::getExecutablePath() + "Content\\Shrek\\shrek.gmf").c_str());
+            //shrek->MoveObject(-1, -4, 0);
+            //shrek->Rotate(0, 15, 0);
+
+            //GetRenderer()->getActiveViewport()->Rotate(-90, 0, 0);
         }
 
         void UnloadTools()
