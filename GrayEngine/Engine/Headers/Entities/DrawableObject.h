@@ -16,6 +16,7 @@ namespace GrEngine
 	{
 		glm::vec4 pos;
 		glm::vec4 norm;
+		glm::vec4 tang;
 		glm::vec4 color;
 		glm::vec2 uv;
 		uint32_t uv_index;
@@ -24,6 +25,7 @@ namespace GrEngine
 		{
 			pos = glm::vec4(0.f);
 			norm = glm::vec4(0.f);
+			tang = glm::vec4(0.f);
 			uv = glm::vec2(0.f);
 		}
 
@@ -33,6 +35,7 @@ namespace GrEngine
 			uv = uv_coordinates;
 			uv_index = material_index;
 			norm = normal;
+			tang = glm::vec4(0.f);
 		}
 
 		bool operator==(const Vertex& other) const
@@ -81,6 +84,7 @@ namespace GrEngine
 		virtual void GeneratePlaneMesh(float width, int subdivisions) = 0;
 		virtual void GenerateBoxMesh(float width, float height, float depth) = 0;
 		virtual void Refresh() = 0;
+		virtual void CalculateNormals() = 0;
 
 		virtual glm::vec3 GetObjectPosition() override
 		{

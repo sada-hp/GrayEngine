@@ -375,7 +375,10 @@ namespace GrEngine_Vulkan
 		VkResult res = vkCreateRenderPass(device, &renderPassInfo, nullptr, outRenderPass);
 
 		if (res != VK_SUCCESS)
+		{
 			Logger::Out("[VK] Failed to create render pass with code %d", OutputColor::Red, OutputType::Error, res);
+			return false;
+		}
 
 		destructors.insert_or_assign(destructors.begin(), *outRenderPass, (Destructor*)DestroyRenderPass);
 		devices[*outRenderPass] = device;
@@ -397,7 +400,10 @@ namespace GrEngine_Vulkan
 		VkResult res = vkCreateFramebuffer(device, &framebufferInfo, nullptr, outFrameBuffer);
 
 		if (res != VK_SUCCESS)
+		{
 			Logger::Out("[VK] Failed to create framebuffer with code %d", OutputColor::Red, OutputType::Error, res);
+			return false;
+		}
 
 		destructors.insert_or_assign(destructors.begin(), *outFrameBuffer, (Destructor*)DestroyFramebuffer);
 		devices[*outFrameBuffer] = device;
@@ -415,7 +421,10 @@ namespace GrEngine_Vulkan
 		VkResult res = vkCreateCommandPool(device, &poolInfo, nullptr, outPool);
 
 		if (res != VK_SUCCESS)
+		{
 			Logger::Out("[VK] Failed to create command pool with code %d", OutputColor::Red, OutputType::Error, res);
+			return false;
+		}
 
 		destructors.insert_or_assign(destructors.begin(), *outPool, (Destructor*)DestroyCommandPool);
 		devices[*outPool] = device;
@@ -431,7 +440,10 @@ namespace GrEngine_Vulkan
 		VkResult res = vkCreateSemaphore(device, &semaphoreInfo, nullptr, outSemaphore);
 
 		if (res != VK_SUCCESS)
+		{
 			Logger::Out("[VK] Failed to create semaphore with code %d", OutputColor::Red, OutputType::Error, res);
+			return false;
+		}
 
 		destructors.insert_or_assign(destructors.begin(), *outSemaphore, (Destructor*)DestroySemaphore);
 		devices[*outSemaphore] = device;
@@ -448,7 +460,10 @@ namespace GrEngine_Vulkan
 		VkResult res = vkCreateFence(device, &fenceInfo, nullptr, outFence);
 
 		if (res != VK_SUCCESS)
+		{
 			Logger::Out("[VK] Failed to create fence with code %d", OutputColor::Red, OutputType::Error, res);
+			return false;
+		}
 
 		destructors.insert_or_assign(destructors.begin(), *outFence, (Destructor*)DestroyFence);
 		devices[*outFence] = device;
@@ -466,7 +481,10 @@ namespace GrEngine_Vulkan
 		VkResult res = vmaCreateImage(allocator, createInfo, &imageAllocationCreateInfo, outImage, outAllocation, nullptr);
 
 		if (res != VK_SUCCESS)
+		{
 			Logger::Out("[VK] Failed to create image with code %d", OutputColor::Red, OutputType::Error, res);
+			return false;
+		}
 
 		destructors.insert_or_assign(destructors.begin(), *outImage, (Destructor*)DestroyImage);
 		allocations[*outImage] = *outAllocation;
@@ -489,9 +507,11 @@ namespace GrEngine_Vulkan
 		createInfo.image = image;
 
 		VkResult res = vkCreateImageView(device, &createInfo, nullptr, target);
-
 		if (res != VK_SUCCESS)
+		{
 			Logger::Out("[VK] Failed to create image with code %d", OutputColor::Red, OutputType::Error, res);
+			return false;
+		}
 
 		destructors.insert_or_assign(destructors.begin(), *target, (Destructor*)DestroyImageView);
 		devices[*target] = device;
@@ -511,7 +531,10 @@ namespace GrEngine_Vulkan
 		VkResult res = vkCreatePipelineLayout(device, &pipelineLayoutInfo, NULL, outLayout);
 
 		if (res != VK_SUCCESS)
+		{
 			Logger::Out("[VK] Failed to create pipeline layout with code %d", OutputColor::Red, OutputType::Error, res);
+			return false;
+		}
 
 		destructors.insert_or_assign(destructors.begin(), *outLayout, (Destructor*)DestroyPipelineLayout);
 		devices[*outLayout] = device;
@@ -524,7 +547,10 @@ namespace GrEngine_Vulkan
 		VkResult res = vkCreateGraphicsPipelines(device, NULL, 1, info, nullptr, outPipeline);
 
 		if (res != VK_SUCCESS)
+		{
 			Logger::Out("[VK] Failed to create pipeline with code %d", OutputColor::Red, OutputType::Error, res);
+			return false;
+		}
 
 		destructors.insert_or_assign(destructors.begin(), *outPipeline, (Destructor*)DestroyPipeline);
 		devices[*outPipeline] = device;
@@ -537,7 +563,10 @@ namespace GrEngine_Vulkan
 		VkResult res = vkCreateComputePipelines(device, NULL, 1, info, nullptr, outPipeline);
 
 		if (res != VK_SUCCESS)
+		{
 			Logger::Out("[VK] Failed to create pipeline with code %d", OutputColor::Red, OutputType::Error, res);
+			return false;
+		}
 
 		destructors.insert_or_assign(destructors.begin(), *outPipeline, (Destructor*)DestroyPipeline);
 		devices[*outPipeline] = device;
@@ -603,7 +632,26 @@ namespace GrEngine_Vulkan
 		VkResult res = vkCreateSampler(logicalDevice, &samplerInfo, nullptr, outSampler);
 
 		if (res != VK_SUCCESS)
+		{
 			Logger::Out("[VK] Failed to create sampler with code %d", OutputColor::Red, OutputType::Error, res);
+			return false;
+		}
+
+		destructors[*outSampler] = (Destructor*)DestroySampler;
+		devices[*outSampler] = logicalDevice;
+
+		return res == VK_SUCCESS;
+	}
+
+	bool VulkanAPI::CreateSampler(VkPhysicalDevice physicalDevice, VkDevice logicalDevice, VkSamplerCreateInfo* info, VkSampler* outSampler)
+	{
+		VkResult res = vkCreateSampler(logicalDevice, info, nullptr, outSampler);
+
+		if (res != VK_SUCCESS)
+		{
+			Logger::Out("[VK] Failed to create sampler with code %d", OutputColor::Red, OutputType::Error, res);
+			return false;
+		}
 
 		destructors[*outSampler] = (Destructor*)DestroySampler;
 		devices[*outSampler] = logicalDevice;
@@ -623,7 +671,7 @@ namespace GrEngine_Vulkan
 
 	void VulkanAPI::DestroyImageView(VkImageView view)
 	{
-		if (destructors.erase(view) > 0)
+		if (view != nullptr && destructors.erase(view) > 0)
 		{
 			vkDestroyImageView(devices[view], view, nullptr);
 			devices.erase(view);
@@ -632,7 +680,7 @@ namespace GrEngine_Vulkan
 
 	void VulkanAPI::DestroyFence(VkFence fence)
 	{
-		if (destructors.erase(fence) > 0)
+		if (fence != nullptr && destructors.erase(fence) > 0)
 		{
 			vkDestroyFence(devices[fence], fence, nullptr);
 			devices.erase(fence);
@@ -641,7 +689,7 @@ namespace GrEngine_Vulkan
 
 	void VulkanAPI::DestroySemaphore(VkSemaphore semaphore)
 	{
-		if (destructors.erase(semaphore) > 0)
+		if (semaphore != nullptr && destructors.erase(semaphore) > 0)
 		{
 			vkDestroySemaphore(devices[semaphore], semaphore, nullptr);
 			devices.erase(semaphore);
@@ -650,7 +698,7 @@ namespace GrEngine_Vulkan
 
 	void VulkanAPI::DestroyCommandPool(VkCommandPool pool)
 	{
-		if (destructors.erase(pool) > 0)
+		if (pool != nullptr && destructors.erase(pool) > 0)
 		{
 			vkDestroyCommandPool(devices[pool], pool, nullptr);
 			devices.erase(pool);
@@ -659,7 +707,7 @@ namespace GrEngine_Vulkan
 
 	void VulkanAPI::DestroyFramebuffer(VkFramebuffer frameBuffer)
 	{
-		if (destructors.erase(frameBuffer) > 0)
+		if (frameBuffer != nullptr && destructors.erase(frameBuffer) > 0)
 		{
 			vkDestroyFramebuffer(devices[frameBuffer], frameBuffer, nullptr);
 			devices.erase(frameBuffer);
@@ -668,7 +716,7 @@ namespace GrEngine_Vulkan
 
 	void VulkanAPI::DestroyRenderPass(VkRenderPass renderPass)
 	{
-		if (destructors.erase(renderPass) > 0)
+		if (renderPass != nullptr && destructors.erase(renderPass) > 0)
 		{
 			vkDestroyRenderPass(devices[renderPass], renderPass, nullptr);
 			devices.erase(renderPass);
@@ -677,7 +725,7 @@ namespace GrEngine_Vulkan
 
 	void VulkanAPI::DestroySwapchainKHR(VkSwapchainKHR swapChain)
 	{
-		if (destructors.erase(swapChain) > 0)
+		if (swapChain != nullptr && destructors.erase(swapChain) > 0)
 		{
 			vkDestroySwapchainKHR(devices[swapChain], swapChain, nullptr);
 			devices.erase(swapChain);
@@ -686,7 +734,7 @@ namespace GrEngine_Vulkan
 
 	void VulkanAPI::DestroyImage(VkImage image)
 	{
-		if (destructors.erase(image) > 0)
+		if (image != nullptr && destructors.erase(image) > 0)
 		{
 			VmaAllocation alloc = allocations[image];
 			VmaAllocator allocator = allocators[alloc];
@@ -699,7 +747,7 @@ namespace GrEngine_Vulkan
 
 	void  VulkanAPI::DestroyPipelineLayout(VkPipelineLayout layout)
 	{
-		if (destructors.erase(layout) > 0)
+		if (layout != nullptr && destructors.erase(layout) > 0)
 		{
 			vkDestroyPipelineLayout(devices[layout], layout, nullptr);
 			devices.erase(layout);
@@ -708,7 +756,7 @@ namespace GrEngine_Vulkan
 
 	void VulkanAPI::DestroyPipeline(VkPipeline pipeline)
 	{
-		if (destructors.erase(pipeline) > 0)
+		if (pipeline != nullptr && destructors.erase(pipeline) > 0)
 		{
 			vkDestroyPipeline(devices[pipeline], pipeline, nullptr);
 			devices.erase(pipeline);
@@ -717,7 +765,7 @@ namespace GrEngine_Vulkan
 
 	void VulkanAPI::DestroyDescriptorLayout(VkDescriptorSetLayout layout)
 	{
-		if (destructors.erase(layout) > 0)
+		if (layout != nullptr && destructors.erase(layout) > 0)
 		{
 			vkDestroyDescriptorSetLayout(devices[layout], layout, nullptr);
 			devices.erase(layout);
@@ -726,7 +774,7 @@ namespace GrEngine_Vulkan
 
 	void VulkanAPI::DestroyDescriptorPool(VkDescriptorPool pool)
 	{
-		if (destructors.erase(pool) > 0)
+		if (pool != nullptr && destructors.erase(pool) > 0)
 		{
 			vkDestroyDescriptorPool(devices[pool], pool, nullptr);
 			devices.erase(pool);
@@ -735,7 +783,7 @@ namespace GrEngine_Vulkan
 
 	void VulkanAPI::DestroySampler(VkSampler sampler)
 	{
-		if (destructors.erase(sampler) > 0)
+		if (sampler != nullptr && destructors.erase(sampler) > 0)
 		{
 			vkDestroySampler(devices[sampler], sampler, nullptr);
 			devices.erase(sampler);
@@ -744,7 +792,7 @@ namespace GrEngine_Vulkan
 
 	void VulkanAPI::FreeCommandBuffer(VkCommandBuffer buffer)
 	{
-		if (destructors.erase(buffer) > 0)
+		if (buffer != nullptr && destructors.erase(buffer) > 0)
 		{
 			vkFreeCommandBuffers(devices[buffer], cmdPools[buffer], 1, &buffer);
 			devices.erase(buffer);
@@ -756,7 +804,7 @@ namespace GrEngine_Vulkan
 	{
 		for (int i = 0; i < buffersCount; i++)
 		{
-			if (destructors.erase(buffers[i]) > 0)
+			if (buffers[i] != nullptr && destructors.erase(buffers[i]) > 0)
 			{
 				vkFreeCommandBuffers(devices[buffers[i]], cmdPools[buffers[i]], 1, &buffers[i]);
 				devices.erase(buffers[i]);
@@ -767,7 +815,7 @@ namespace GrEngine_Vulkan
 
 	void VulkanAPI::FreeDescriptorSet(VkDescriptorSet set)
 	{
-		if (destructors.erase(set) > 0)
+		if (set != nullptr && destructors.erase(set) > 0)
 		{
 			vkFreeDescriptorSets(devices[set], descriptors[set], 1, &set);
 			devices.erase(set);
@@ -779,7 +827,7 @@ namespace GrEngine_Vulkan
 	{
 		for (int i = 0; i < setCount; i++)
 		{
-			if (destructors.erase(sets[i]) > 0)
+			if (sets[i] != nullptr && destructors.erase(sets[i]) > 0)
 			{
 				vkFreeDescriptorSets(devices[sets[i]], descriptors[sets[i]], 1, &sets[i]);
 				devices.erase(sets[i]);

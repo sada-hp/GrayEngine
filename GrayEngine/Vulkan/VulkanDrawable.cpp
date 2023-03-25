@@ -114,11 +114,11 @@ namespace GrEngine_Vulkan
 	{
 		VkPushConstantRange pushConstant;
 		pushConstant.offset = 0;
-		pushConstant.size = sizeof(UniformBufferObject);
+		pushConstant.size = sizeof(VertexConstants);
 		pushConstant.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
 
 		VkPushConstantRange pushConstant2;
-		pushConstant2.offset = sizeof(UniformBufferObject);
+		pushConstant2.offset = sizeof(VertexConstants);
 		pushConstant2.size = sizeof(PickingBufferObject);
 		pushConstant2.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
 
@@ -139,22 +139,13 @@ namespace GrEngine_Vulkan
 		{
 			vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, graphicsPipeline);
 
-			VkDeviceSize offsets[] = { 0 };
-			vkCmdBindVertexBuffers(commandBuffer, 0, 1, &object_mesh->vertexBuffer.Buffer, offsets);
-			vkCmdBindIndexBuffer(commandBuffer, object_mesh->indexBuffer.Buffer, 0, VK_INDEX_TYPE_UINT32);
-
 			//UpdateObjectPosition();
 			//UpdateObjectOrientation();
-			pushConstants(commandBuffer, extent, mode);
+			pushConstants(commandBuffer);
 
-			for (std::vector<DescriptorSet>::iterator itt = descriptorSets.begin(); itt != descriptorSets.end(); ++itt)
-			{
-				if ((*itt).bindPoint == VK_PIPELINE_BIND_POINT_GRAPHICS)
-					vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout, 0, 1, &(*itt).set, 0, NULL);
-			}
+			vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout, 0, 1, &descriptorSets[0].set, 0, NULL);
 
-			//vkCmdDraw(commandBuffer, static_cast<uint32_t>(object_mesh.vertices.size()), 1, 0, 0);
-			vkCmdDrawIndexed(commandBuffer, static_cast<uint32_t>(object_mesh->indices.size()), 1, 0, 0, 0);
+			draw(commandBuffer);
 			return true;
 		}
 
@@ -162,9 +153,20 @@ namespace GrEngine_Vulkan
 		return false;
 	}
 
-	bool VulkanDrawable::pushConstants(VkCommandBuffer cmd, VkExtent2D extent, UINT32 mode)
+	bool VulkanDrawable::draw(VkCommandBuffer commandBuffer)
 	{
-		vkCmdPushConstants(cmd, pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(UniformBufferObject), &ubo);
+		VkDeviceSize offsets[] = { 0 };
+		vkCmdBindVertexBuffers(commandBuffer, 0, 1, &object_mesh->vertexBuffer.Buffer, offsets);
+		vkCmdBindIndexBuffer(commandBuffer, object_mesh->indexBuffer.Buffer, 0, VK_INDEX_TYPE_UINT32);
+		//vkCmdDraw(commandBuffer, static_cast<uint32_t>(object_mesh.vertices.size()), 1, 0, 0);
+		vkCmdDrawIndexed(commandBuffer, static_cast<uint32_t>(object_mesh->indices.size()), 1, 0, 0, 0);
+
+		return true;
+	}
+
+	bool VulkanDrawable::pushConstants(VkCommandBuffer cmd)
+	{
+		vkCmdPushConstants(cmd, pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(VertexConstants), &ubo);
 		return true;
 	}
 
@@ -437,7 +439,7 @@ namespace GrEngine_Vulkan
 				write.descriptorType = descriptorSets[i].type[j];
 				write.descriptorCount = 1;
 
-				if (descriptorSets[i].type[j] == VK_DESCRIPTOR_TYPE_STORAGE_BUFFER)
+				if (descriptorSets[i].type[j] == VK_DESCRIPTOR_TYPE_STORAGE_BUFFER || descriptorSets[i].type[j] == VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER)
 				{
 					write.pBufferInfo = &descriptorSets[i].bufferInfos[buffOff++];
 				}

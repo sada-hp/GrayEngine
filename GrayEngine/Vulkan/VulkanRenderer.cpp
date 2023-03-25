@@ -23,6 +23,25 @@ namespace GrEngine_Vulkan
 			entities.erase(pos);
 		}
 
+		vmaUnmapMemory(memAllocator, viewProjUBO.Allocation);
+		VulkanAPI::m_destroyShaderBuffer(logicalDevice, memAllocator, &viewProjUBO);
+		VulkanAPI::m_destroyShaderBuffer(logicalDevice, memAllocator, &shadowBuffer);
+
+		VulkanAPI::DestroyFramebuffer(shadowFramebuffer);
+		VulkanAPI::FreeDescriptorSet(shadowSet);
+		VulkanAPI::DestroyDescriptorLayout(shadowSetLayout);
+		VulkanAPI::DestroyDescriptorPool(shadowSetPool);
+		VulkanAPI::DestroyPipeline(shadowPipeline);
+		VulkanAPI::DestroyPipelineLayout(shadowPipelineLayout);
+		VulkanAPI::DestroySampler(shadowMap.textureSampler);
+		VulkanAPI::DestroyImageView(shadowMap.textureImageView);
+		VulkanAPI::DestroyImage(shadowMap.newImage.allocatedImage);
+
+		if (shadowPass != nullptr)
+		{
+			vkDestroyRenderPass(logicalDevice, shadowPass, nullptr);
+		}
+
 		cleanupSwapChain();
 		resources.Clean(logicalDevice, memAllocator);
 
@@ -115,6 +134,10 @@ namespace GrEngine_Vulkan
 		createAttachment(VK_FORMAT_R16G16B16A16_SFLOAT, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT, &normal);
 		createAttachment(swapChainImageFormat, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT, &albedo);
 
+		getActiveViewport()->PositionObjectAt(0, 3, 4);
+		getActiveViewport()->Rotate(0, 30, 0);
+
+		prepareShadowPass();
 		prepareCompositionPass();
 		prepareTransparencyPass();
 		prepareSamplingPass();
@@ -133,6 +156,9 @@ namespace GrEngine_Vulkan
 			if ((res = VulkanAPI::CreateFrameBuffer(logicalDevice, samplingPass, ppattachments, 2, swapChainExtent, &swapChainFramebuffers[i]) & res) == false)
 				Logger::Out("[Vk] Failed to create framebuffer", OutputColor::Red, OutputType::Error);
 		}
+
+		VulkanAPI::m_createVkBuffer(logicalDevice, memAllocator, nullptr, sizeof(vpUBO), VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, &viewProjUBO, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
+		vmaMapMemory(memAllocator, viewProjUBO.Allocation, (void**)&uboData);
 
 		sky = new VulkanSkybox(1000000000);
 		sky->initObject(logicalDevice, memAllocator, this);
@@ -528,15 +554,19 @@ namespace GrEngine_Vulkan
 
 	void VulkanRenderer::prepareCompositionPass()
 	{
+		//VulkanAPI::m_createVkBuffer(logicalDevice, memAllocator, &uboShadowGeometryShader, sizeof(uboShadowGeometryShader), VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, &shadowUBO, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
+
 		std::vector<VkDescriptorPoolSize> poolSizes;
-		poolSizes.resize(2);
-		poolSizes[0].descriptorCount = 4;
+		poolSizes.resize(3);
+		poolSizes[0].descriptorCount = 5;
 		poolSizes[0].type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
 		poolSizes[1].descriptorCount = 4;
 		poolSizes[1].type = VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT;
+		poolSizes[2].descriptorCount = 1;
+		poolSizes[2].type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
 
 		std::vector<VkDescriptorSetLayoutBinding> setLayoutBindings;
-		setLayoutBindings.resize(3);
+		setLayoutBindings.resize(5);
 		setLayoutBindings[0].binding = 0;
 		setLayoutBindings[0].stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
 		setLayoutBindings[0].descriptorType = VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT;
@@ -549,6 +579,14 @@ namespace GrEngine_Vulkan
 		setLayoutBindings[2].stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
 		setLayoutBindings[2].descriptorType = VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT;
 		setLayoutBindings[2].descriptorCount = 1;
+		setLayoutBindings[3].binding = 3;
+		setLayoutBindings[3].stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
+		setLayoutBindings[3].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+		setLayoutBindings[3].descriptorCount = 1;
+		setLayoutBindings[4].binding = 4;
+		setLayoutBindings[4].stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
+		setLayoutBindings[4].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+		setLayoutBindings[4].descriptorCount = 1;
 
 		VulkanAPI::CreateDescriptorPool(logicalDevice, poolSizes, &compositionSetPool);
 		VulkanAPI::CreateDescriptorSetLayout(logicalDevice, setLayoutBindings, &compositionSetLayout);
@@ -556,7 +594,7 @@ namespace GrEngine_Vulkan
 		VulkanAPI::AllocateDescriptorSet(logicalDevice, compositionSetPool, compositionSetLayout, &compositionSet);
 
 		std::vector<VkWriteDescriptorSet> writeDescriptorSets;
-		writeDescriptorSets.resize(3);
+		writeDescriptorSets.resize(5);
 		writeDescriptorSets[0].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
 		writeDescriptorSets[0].dstBinding = 0;
 		writeDescriptorSets[0].descriptorType = VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT;
@@ -575,6 +613,18 @@ namespace GrEngine_Vulkan
 		writeDescriptorSets[2].dstSet = compositionSet;
 		writeDescriptorSets[2].pImageInfo = &albedo.texInfo.descriptor;
 		writeDescriptorSets[2].descriptorCount = 1;
+		writeDescriptorSets[3].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+		writeDescriptorSets[3].dstBinding = 3;
+		writeDescriptorSets[3].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+		writeDescriptorSets[3].dstSet = compositionSet;
+		writeDescriptorSets[3].pImageInfo = &shadowMap.texInfo.descriptor;
+		writeDescriptorSets[3].descriptorCount = 1;
+		writeDescriptorSets[4].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+		writeDescriptorSets[4].dstBinding = 4;
+		writeDescriptorSets[4].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+		writeDescriptorSets[4].dstSet = compositionSet;
+		writeDescriptorSets[4].pBufferInfo = &shadowBuffer.BufferInfo;
+		writeDescriptorSets[4].descriptorCount = 1;
 
 		vkUpdateDescriptorSets(logicalDevice, static_cast<uint32_t>(writeDescriptorSets.size()), writeDescriptorSets.data(), 0, NULL);
 
@@ -1216,20 +1266,310 @@ namespace GrEngine_Vulkan
 		VulkanAPI::CreateFrameBuffer(logicalDevice, selectionPass, clrattachments, 2, swapChainExtent, &selectionFramebuffer);
 	}
 
+	void VulkanRenderer::prepareShadowPass()
+	{
+		lightPerspective.model = getActiveViewport()->GetObjectTransformation();
+		lightPerspective.view = glm::translate(glm::mat4_cast(getActiveViewport()->UpdateCameraOrientation(0.2)), -getActiveViewport()->UpdateCameraPosition(0.65));
+		lightPerspective.proj = glm::perspective(glm::radians(60.f), 1.f, 0.001f, 15.f);
+		lightPerspective.proj[1][1] *= -1;
+		VulkanAPI::m_createVkBuffer(logicalDevice, memAllocator, &lightPerspective, sizeof(ShadowProjection), VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, &shadowBuffer, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
+		VkImageAspectFlags aspectMask = 0;
+		VkImageLayout imageLayout;
+
+		aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
+		imageLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL;
+
+		VkImageCreateInfo imageInfo = VulkanAPI::StructImageCreateInfo({ 2048, 2048, 1 }, depthFormat, msaaSamples, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT);
+
+		VulkanAPI::CreateImage(memAllocator, &imageInfo, &shadowMap.newImage.allocatedImage, &shadowMap.newImage.allocation);
+
+		VkImageSubresourceRange imageView{};
+		imageView.aspectMask = aspectMask;
+		imageView.baseMipLevel = 0;
+		imageView.levelCount = 1;
+		imageView.baseArrayLayer = 0;
+		imageView.layerCount = 1;
+		VulkanAPI::CreateImageView(logicalDevice, depthFormat, shadowMap.newImage.allocatedImage, imageView, &shadowMap.textureImageView);
+
+
+		VkSamplerCreateInfo samplerInfo{};
+		samplerInfo.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
+		samplerInfo.magFilter = VK_FILTER_LINEAR;
+		samplerInfo.minFilter = VK_FILTER_LINEAR;
+		samplerInfo.addressModeU = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER;
+		samplerInfo.addressModeV = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER;
+		samplerInfo.addressModeW = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER;
+		samplerInfo.anisotropyEnable = VK_TRUE;
+		samplerInfo.maxAnisotropy = msaaSamples;
+		samplerInfo.borderColor = VK_BORDER_COLOR_INT_OPAQUE_BLACK;
+		samplerInfo.unnormalizedCoordinates = VK_FALSE;
+		samplerInfo.compareEnable = VK_FALSE;
+		samplerInfo.compareOp = VK_COMPARE_OP_ALWAYS;
+		samplerInfo.mipmapMode = VK_SAMPLER_MIPMAP_MODE_LINEAR;
+		samplerInfo.mipLodBias = 0.0f;
+		samplerInfo.minLod = 0.0f;
+		samplerInfo.maxLod = 1.f;
+		VulkanAPI::CreateSampler(physicalDevice, logicalDevice, &samplerInfo, &shadowMap.textureSampler);
+
+		shadowMap.initialized = true;
+		shadowMap.texInfo.mipLevels = 1;
+		shadowMap.texInfo.format = depthFormat;
+		shadowMap.texInfo.descriptor.imageLayout = imageLayout;
+		shadowMap.texInfo.descriptor.imageView = shadowMap.textureImageView;
+		shadowMap.texInfo.descriptor.sampler = shadowMap.textureSampler;
+
+		std::vector<VkDescriptorPoolSize> poolSizes;
+		poolSizes.resize(1);
+		poolSizes[0].descriptorCount = 1;
+		poolSizes[0].type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+
+		std::vector<VkDescriptorSetLayoutBinding> setLayoutBindings;
+		setLayoutBindings.resize(1);
+		setLayoutBindings[0].binding = 0;
+		setLayoutBindings[0].stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
+		setLayoutBindings[0].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+		setLayoutBindings[0].descriptorCount = 1;
+
+		VkPushConstantRange pushConstant;
+		pushConstant.offset = 0;
+		pushConstant.size = sizeof(VertexConstants);
+		pushConstant.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
+
+		VulkanAPI::CreateDescriptorPool(logicalDevice, poolSizes, &shadowSetPool);
+		VulkanAPI::CreateDescriptorSetLayout(logicalDevice, setLayoutBindings, &shadowSetLayout);
+		VulkanAPI::CreatePipelineLayout(logicalDevice, { pushConstant }, { shadowSetLayout }, &shadowPipelineLayout);
+		VulkanAPI::AllocateDescriptorSet(logicalDevice, shadowSetPool, shadowSetLayout, &shadowSet);
+
+		std::vector<VkWriteDescriptorSet> writeDescriptorSets;
+		writeDescriptorSets.resize(1);
+		writeDescriptorSets[0].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+		writeDescriptorSets[0].dstBinding = 0;
+		writeDescriptorSets[0].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+		writeDescriptorSets[0].dstSet = shadowSet;
+		writeDescriptorSets[0].pBufferInfo = &shadowBuffer.BufferInfo;
+		writeDescriptorSets[0].descriptorCount = 1;
+
+		vkUpdateDescriptorSets(logicalDevice, static_cast<uint32_t>(writeDescriptorSets.size()), writeDescriptorSets.data(), 0, NULL);
+
+		std::array<VkAttachmentDescription, 1> attchmentDescriptions = {};
+		// Color attachment
+		attchmentDescriptions[0].format = depthFormat;
+		attchmentDescriptions[0].samples = VK_SAMPLE_COUNT_1_BIT;
+		attchmentDescriptions[0].loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
+		attchmentDescriptions[0].storeOp = VK_ATTACHMENT_STORE_OP_STORE;
+		attchmentDescriptions[0].stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+		attchmentDescriptions[0].stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+		attchmentDescriptions[0].initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+		attchmentDescriptions[0].finalLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL;
+
+		VkAttachmentReference depthReference = { 0, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL };
+
+		VkSubpassDescription subpassDescription = {};
+		subpassDescription.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
+		subpassDescription.colorAttachmentCount = 0;
+		subpassDescription.pColorAttachments = nullptr;
+		subpassDescription.pDepthStencilAttachment = &depthReference;
+
+		std::array<VkSubpassDependency, 2> dependencies;
+
+		dependencies[0].srcSubpass = VK_SUBPASS_EXTERNAL;
+		dependencies[0].dstSubpass = 0;
+		dependencies[0].srcStageMask = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
+		dependencies[0].dstStageMask = VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT;
+		dependencies[0].srcAccessMask = VK_ACCESS_SHADER_READ_BIT;
+		dependencies[0].dstAccessMask = VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
+		dependencies[0].dependencyFlags = VK_DEPENDENCY_BY_REGION_BIT;
+
+		dependencies[1].srcSubpass = 0;
+		dependencies[1].dstSubpass = VK_SUBPASS_EXTERNAL;
+		dependencies[1].srcStageMask = VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT;
+		dependencies[1].dstStageMask = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
+		dependencies[1].srcAccessMask = VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
+		dependencies[1].dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
+		dependencies[1].dependencyFlags = VK_DEPENDENCY_BY_REGION_BIT;
+
+		VkRenderPassCreateInfo renderPassInfo = {};
+		renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
+		renderPassInfo.attachmentCount = static_cast<uint32_t>(attchmentDescriptions.size());
+		renderPassInfo.pAttachments = attchmentDescriptions.data();
+		renderPassInfo.subpassCount = 1;
+		renderPassInfo.pSubpasses = &subpassDescription;
+		renderPassInfo.dependencyCount = static_cast<uint32_t>(dependencies.size());
+		renderPassInfo.pDependencies = dependencies.data();
+
+		vkCreateRenderPass(logicalDevice, &renderPassInfo, nullptr, &shadowPass);
+
+		VkImageView attachments[] = { shadowMap.textureImageView };
+		VulkanAPI::CreateFrameBuffer(logicalDevice, shadowPass, attachments, 1, { 2048, 2048 }, &shadowFramebuffer);
+
+		VkPipelineVertexInputStateCreateInfo vertexInputInfo{};
+		vertexInputInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
+
+		auto bindingDescription = Vertex::getBindingDescription();
+		auto attributeDescriptions = Vertex::getAttributeDescriptions();
+
+		vertexInputInfo.vertexBindingDescriptionCount = 1;
+		vertexInputInfo.vertexAttributeDescriptionCount = static_cast<uint32_t>(attributeDescriptions.size());
+		vertexInputInfo.pVertexBindingDescriptions = &bindingDescription;
+		vertexInputInfo.pVertexAttributeDescriptions = attributeDescriptions.data();
+
+		VkPipelineInputAssemblyStateCreateInfo inputAssembly{};
+		inputAssembly.sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;
+		inputAssembly.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
+		inputAssembly.primitiveRestartEnable = VK_FALSE;
+		VkPipelineRasterizationStateCreateInfo rasterizationState{};
+		rasterizationState.sType = VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO;
+		rasterizationState.depthClampEnable = VK_FALSE;
+		rasterizationState.rasterizerDiscardEnable = VK_FALSE;
+		rasterizationState.polygonMode = VK_POLYGON_MODE_FILL;
+		rasterizationState.lineWidth = 1.0f;
+		rasterizationState.cullMode = VK_CULL_MODE_NONE;
+		rasterizationState.frontFace = VK_FRONT_FACE_COUNTER_CLOCKWISE;
+		rasterizationState.depthBiasEnable = VK_TRUE;
+		rasterizationState.depthBiasConstantFactor = 7.5f; 
+		rasterizationState.depthBiasClamp = 0.0f;
+		rasterizationState.depthBiasSlopeFactor = 2.5f;
+
+		VkPipelineColorBlendStateCreateInfo colorBlendState{};
+		colorBlendState.sType = VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO;
+		colorBlendState.attachmentCount = 0;
+		colorBlendState.pAttachments = nullptr;
+
+		VkPipelineDepthStencilStateCreateInfo depthStencilState{};
+		depthStencilState.sType = VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO;
+		depthStencilState.pNext = nullptr;
+		depthStencilState.depthTestEnable = VK_TRUE;
+		depthStencilState.depthWriteEnable = VK_TRUE;
+		depthStencilState.depthCompareOp = VK_COMPARE_OP_LESS_OR_EQUAL;
+		depthStencilState.depthBoundsTestEnable = VK_FALSE;
+		depthStencilState.minDepthBounds = 0.0f; // Optional
+		depthStencilState.maxDepthBounds = 1.0f; // Optional
+		depthStencilState.stencilTestEnable = VK_FALSE;
+
+		std::vector<VkDynamicState> dynamicStates = { VK_DYNAMIC_STATE_VIEWPORT, VK_DYNAMIC_STATE_SCISSOR };
+		VkPipelineDynamicStateCreateInfo dynamicState{};
+		dynamicState.sType = VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO;
+		dynamicState.pNext = nullptr;
+		dynamicState.flags = 0;
+		dynamicState.dynamicStateCount = (uint32_t)dynamicStates.size();
+		dynamicState.pDynamicStates = dynamicStates.data();
+
+		VkPipelineViewportStateCreateInfo viewportState{};
+		viewportState.sType = VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO;
+		viewportState.viewportCount = 0;
+		viewportState.pViewports = nullptr;
+		viewportState.scissorCount = 0;
+		viewportState.pScissors = nullptr;
+
+		VkPipelineMultisampleStateCreateInfo multisampleState{};
+		multisampleState.sType = VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO;
+		multisampleState.rasterizationSamples = VK_SAMPLE_COUNT_1_BIT;
+		multisampleState.sampleShadingEnable = VK_FALSE;
+		multisampleState.minSampleShading = 0;
+
+		std::string solution_path = GrEngine::Globals::getExecutablePath();
+		std::vector<char> vertShaderCode = GrEngine::Globals::readFile(solution_path + "Shaders//shadows_vert.spv");
+		VkShaderModule shaders[1] = { VulkanAPI::m_createShaderModule(logicalDevice, vertShaderCode) };
+
+		VkPipelineShaderStageCreateInfo vertShaderStageInfo{};
+		vertShaderStageInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+		vertShaderStageInfo.stage = VK_SHADER_STAGE_VERTEX_BIT;
+		vertShaderStageInfo.module = shaders[0];
+		vertShaderStageInfo.pName = "main";
+
+		std::array<VkPipelineShaderStageCreateInfo, 1> shaderStages = { vertShaderStageInfo };
+
+		VkGraphicsPipelineCreateInfo pipelineCI{};
+
+		pipelineCI.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
+		pipelineCI.layout = shadowPipelineLayout;
+		pipelineCI.renderPass = shadowPass;
+		pipelineCI.basePipelineIndex = 0;
+		pipelineCI.pVertexInputState = &vertexInputInfo;
+		pipelineCI.pInputAssemblyState = &inputAssembly;
+		pipelineCI.pRasterizationState = &rasterizationState;
+		pipelineCI.pColorBlendState = &colorBlendState;
+		pipelineCI.pMultisampleState = &multisampleState;
+		pipelineCI.pViewportState = &viewportState;
+		pipelineCI.pDepthStencilState = &depthStencilState;
+		pipelineCI.pDynamicState = &dynamicState;
+		pipelineCI.stageCount = static_cast<uint32_t>(shaderStages.size());
+		pipelineCI.pStages = shaderStages.data();
+		pipelineCI.subpass = 0;
+
+		VulkanAPI::CreateGraphicsPipeline(logicalDevice, &pipelineCI, &shadowPipeline);
+
+		vkDestroyShaderModule(logicalDevice, shaders[0], nullptr);
+	}
+
 	bool VulkanRenderer::updateDrawables(uint32_t index, DrawMode mode, VkExtent2D extent)
 	{
+		VkViewport viewport{};
+		VkRect2D scissor{};
+		VkCommandBufferBeginInfo beginInfo{};
+		beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+
+		if (vkBeginCommandBuffer(commandBuffers[index], &beginInfo) != VK_SUCCESS)
+			return false;
+
+		VkClearValue shadowClear[1];
+		shadowClear->depthStencil = { 1.f, 0 };
+		VkRenderPassBeginInfo shadowPassInfo{};
+		shadowPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
+		shadowPassInfo.framebuffer = shadowFramebuffer;
+		shadowPassInfo.renderPass = shadowPass;
+		shadowPassInfo.renderArea.offset = { 0, 0 };
+		shadowPassInfo.renderArea.extent = { 2048, 2048 };
+		shadowPassInfo.clearValueCount = 1;
+		shadowPassInfo.pClearValues = shadowClear;
+
+
+
+		vkCmdBeginRenderPass(commandBuffers[index], &shadowPassInfo, VK_SUBPASS_CONTENTS_INLINE);
+
+		viewport.x = 0;
+		viewport.y = 0;
+		viewport.width = (float)2048;
+		viewport.height = (float)2048;
+		viewport.minDepth = 0.0f;
+		viewport.maxDepth = 1.0f;
+		vkCmdSetViewport(commandBuffers[index], 0, 1, &viewport);
+		scissor.offset = { 0, 0 };
+		scissor.extent = { 2048, 2048 };
+		vkCmdSetScissor(commandBuffers[index], 0, 1, &scissor);
+
+		vkCmdBindPipeline(commandBuffers[index], VK_PIPELINE_BIND_POINT_GRAPHICS, shadowPipeline);
+		vkCmdBindDescriptorSets(commandBuffers[index], VK_PIPELINE_BIND_POINT_GRAPHICS, shadowPipelineLayout, 0, 1, &shadowSet, 0, NULL);
+
+		for (std::map<UINT, GrEngine::Entity*>::iterator itt = entities.begin(); itt != entities.end(); ++itt)
+		{
+			if ((*itt).second->GetEntityType() == "Object" && dynamic_cast<VulkanObject*>((*itt).second)->IsVisible())
+			{
+				VertexConstants ubo{};
+				ubo.model = (*itt).second->GetObjectTransformation();
+				ubo.scale = (*itt).second->GetPropertyValue("Scale", glm::vec3(1.f));
+				vkCmdPushConstants(commandBuffers[index], shadowPipelineLayout, VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(VertexConstants), &ubo);
+				static_cast<VulkanObject*>((*itt).second)->draw(commandBuffers[index]);
+			}
+		}
+
+		vkCmdEndRenderPass(commandBuffers[index]);
+
 		VkClearValue clearValues[6];
+
+		vpUBO.view = glm::translate(glm::mat4_cast(getActiveViewport()->UpdateCameraOrientation(0.2)), -getActiveViewport()->UpdateCameraPosition(0.65));
+		vpUBO.proj = glm::perspective(glm::radians(60.0f), (float)extent.width / (float)extent.height, 0.1f, 1000.f);
+		vpUBO.proj[1][1] *= -1;
+
+		memcpy_s(uboData, sizeof(ViewProjection), &vpUBO, sizeof(ViewProjection));
+
+		VkRenderPassBeginInfo renderPassInfo{};
 		clearValues[0].color = { { 0.0f, 0.0f, 0.0f, 0.0f } };
 		clearValues[1].color = { { 0.0f, 0.0f, 0.0f, 0.0f } };
 		clearValues[2].color = { { 0.0f, 0.0f, 0.0f, 0.0f } };
 		clearValues[3].color = { { 0.0f, 0.0f, 0.0f, 0.0f } };
 		clearValues[4].depthStencil = { 1.0f, 0 };
 		clearValues[5].color = { 0.0f };
-
-
-		VkRenderPassBeginInfo renderPassInfo{};
-		VkViewport viewport{};
-		VkRect2D scissor{};
 
 		renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
 		renderPassInfo.framebuffer = defferFramebuffer;
@@ -1238,12 +1578,6 @@ namespace GrEngine_Vulkan
 		renderPassInfo.renderArea.extent = extent;
 		renderPassInfo.clearValueCount = 6;
 		renderPassInfo.pClearValues = clearValues;
-
-		VkCommandBufferBeginInfo beginInfo{};
-		beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
-
-		if (vkBeginCommandBuffer(commandBuffers[index], &beginInfo) != VK_SUCCESS)
-			return false;
 
 		VkClearColorValue clearColor;
 		clearColor.uint32[0] = 0xffffffff;
@@ -1273,22 +1607,22 @@ namespace GrEngine_Vulkan
 		viewport.maxDepth = 1.0f;
 		vkCmdSetViewport(commandBuffers[index], 0, 1, &viewport);
 		scissor.offset = { 0, 0 };
-		scissor.extent = swapChainExtent;
+		scissor.extent = extent;
 		vkCmdSetScissor(commandBuffers[index], 0, 1, &scissor);
 
 		for (std::map<UINT, GrEngine::Entity*>::iterator itt = entities.begin(); itt != entities.end(); ++itt)
 		{
-			if ((*itt).second->GetEntityType() == "Object" && dynamic_cast<VulkanObject*>((*itt).second)->IsVisible())
+			if ((*itt).second->GetEntityType() == "Object" && static_cast<VulkanObject*>((*itt).second)->IsVisible())
 			{
-				static_cast<VulkanObject*>((*itt).second)->recordCommandBuffer(commandBuffers[index], swapChainExtent, DrawMode::NORMAL);
+				static_cast<VulkanObject*>((*itt).second)->recordCommandBuffer(commandBuffers[index], extent, DrawMode::NORMAL);
 			}
 			else if ((*itt).second->GetEntityType() == "Skybox")
 			{
-				static_cast<VulkanSkybox*>((*itt).second)->recordCommandBuffer(commandBuffers[index], swapChainExtent, DrawMode::NORMAL);
+				static_cast<VulkanSkybox*>((*itt).second)->recordCommandBuffer(commandBuffers[index], extent, DrawMode::NORMAL);
 			}
 			else if ((*itt).second->GetEntityType() == "Terrain")
 			{
-				static_cast<VulkanTerrain*>((*itt).second)->recordCommandBuffer(commandBuffers[index], swapChainExtent, DrawMode::NORMAL);
+				static_cast<VulkanTerrain*>((*itt).second)->recordCommandBuffer(commandBuffers[index], extent, DrawMode::NORMAL);
 			}
 		}
 
@@ -1304,7 +1638,7 @@ namespace GrEngine_Vulkan
 		{
 			if ((*itt).second->GetEntityType() == "Object" && dynamic_cast<VulkanObject*>((*itt).second)->IsVisible())
 			{
-				static_cast<VulkanObject*>((*itt).second)->recordCommandBuffer(commandBuffers[index], swapChainExtent, DrawMode::TRANSPARENCY);
+				static_cast<VulkanObject*>((*itt).second)->recordCommandBuffer(commandBuffers[index], extent, DrawMode::TRANSPARENCY);
 			}
 		}
 
@@ -1501,6 +1835,7 @@ namespace GrEngine_Vulkan
 		prepareTransparencyPass();
 		prepareSamplingPass();
 		prepareSelectionPass();
+		//prepareShadowPass();
 
 		swapChainFramebuffers.resize(swapChainImageViews.size());
 		for (std::size_t i = 0; i < swapChainImageViews.size(); i++) {
@@ -1530,6 +1865,16 @@ namespace GrEngine_Vulkan
 				static_cast<VulkanTerrain*>((*itt).second)->updateObject();
 			}
 		}
+
+		lightPerspective.model = getActiveViewport()->GetObjectTransformation();
+		lightPerspective.view = glm::translate(glm::mat4_cast(getActiveViewport()->UpdateCameraOrientation(0.2)), -getActiveViewport()->UpdateCameraPosition(0.65));
+		lightPerspective.proj = glm::perspective(glm::radians(60.f), 1.f, 0.001f, 15.f);
+		lightPerspective.proj[1][1] *= -1;
+
+		void* data;
+		vmaMapMemory(memAllocator, shadowBuffer.Allocation, (void**)&data);
+		memcpy(data, &lightPerspective, sizeof(ShadowProjection));
+		vmaUnmapMemory(memAllocator, shadowBuffer.Allocation);
 
 		Initialized = swapChainExtent.height != 0;
 	}
@@ -1561,6 +1906,8 @@ namespace GrEngine_Vulkan
 		VulkanAPI::DestroyPipeline(samplingPipeline);
 		VulkanAPI::DestroyPipelineLayout(samplingPipelineLayout);
 
+
+
 		VulkanAPI::DestroyImageView(headIndex.textureImageView);
 		VulkanAPI::DestroyImage(headIndex.newImage.allocatedImage);
 
@@ -1568,6 +1915,7 @@ namespace GrEngine_Vulkan
 		{
 			vkDestroyRenderPass(logicalDevice, samplingPass, nullptr);
 		}
+
 
 		if (frameInfo.initialized == true)
 		{

@@ -82,10 +82,8 @@ namespace GrEngine_Vulkan
 		glm::uvec3 bounds;
 	};
 
-	struct UniformBufferObject {
+	struct VertexConstants {
 		glm::mat4 model{ 1.f };
-		glm::mat4 view{ 1.f };
-		glm::mat4 proj{ 1.f };
 		glm::vec3 scale = { 1.f, 1.f, 1.f };
 	};
 
@@ -287,6 +285,6 @@ namespace GrEngine_Vulkan
 
 template<> struct std::hash<GrEngine_Vulkan::Vertex> {
 	size_t operator()(GrEngine_Vulkan::Vertex const& vertex) const {
-		return ((std::hash<glm::vec4>()(vertex.pos)) ^ (std::hash<glm::vec2>()(vertex.uv)) >> 1);
+		return ((std::hash<glm::vec4>()(vertex.pos)) ^ (std::hash<glm::vec4>()(vertex.norm)) ^ (std::hash<glm::vec2>()(vertex.uv)) >> 1);
 	}
 };

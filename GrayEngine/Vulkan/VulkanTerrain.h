@@ -19,7 +19,7 @@ namespace GrEngine_Vulkan
 		VulkanTerrain(UINT id) : Terrain(id) {};
 
 		virtual void initObject(VkDevice device, VmaAllocator allocator, GrEngine::Renderer* owner) override;
-		virtual bool pushConstants(VkCommandBuffer cmd, VkExtent2D extent, UINT32 mode) override;
+		virtual bool pushConstants(VkCommandBuffer cmd) override;
 		void destroyObject() override;
 		void calculateCollisions() override;
 		void GenerateTerrain(int resolution, int width, int height, int depth, std::array<std::string, 6> images) override;

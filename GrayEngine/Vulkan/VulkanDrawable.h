@@ -16,8 +16,9 @@ namespace GrEngine_Vulkan
 		virtual void destroyObject();
 		virtual void updateObject();
 		virtual void invalidateTexture();
-		virtual bool pushConstants(VkCommandBuffer cmd, VkExtent2D extent, UINT32 mode);
+		virtual bool pushConstants(VkCommandBuffer cmd);
 		virtual bool recordCommandBuffer(VkCommandBuffer commandBuffer, VkExtent2D extent, UINT32 mode);
+		virtual bool draw(VkCommandBuffer commandBuffer);
 
 	protected:
 		void subscribeDescriptor(VkShaderStageFlags shaderStage, uint8_t binding, VkDescriptorType descType, VkDescriptorImageInfo imageInfo, int targetLayout = 0);
@@ -31,7 +32,7 @@ namespace GrEngine_Vulkan
 		VkPipelineLayout pipelineLayout;
 		VkPipeline graphicsPipeline;
 
-		UniformBufferObject ubo{};
+		VertexConstants ubo{};
 
 		virtual bool createDescriptorLayout();
 		virtual bool createDescriptorPool();

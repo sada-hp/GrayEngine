@@ -56,6 +56,7 @@ namespace GrEngine_Vulkan
 		static bool CreateDescriptorSetLayout(VkDevice device, std::vector<VkDescriptorSetLayoutBinding> bindings, VkDescriptorSetLayout* outLayout);
 		static bool CreateDescriptorPool(VkDevice device, std::vector<VkDescriptorPoolSize> pools, VkDescriptorPool* outDescriptorPool);
 		static bool CreateSampler(VkPhysicalDevice physicalDevice, VkDevice logicalDevice, VkSampler* outSampler, float mipLevels = 0.f);
+		static bool CreateSampler(VkPhysicalDevice physicalDevice, VkDevice logicalDevice, VkSamplerCreateInfo* info, VkSampler* outSampler);
 
 		static void DestroyLogicalDevice(VkDevice device);
 		static void DestroyMemoryAllocator(VmaAllocator allocator);

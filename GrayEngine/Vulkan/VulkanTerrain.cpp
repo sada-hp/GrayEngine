@@ -465,17 +465,14 @@ namespace GrEngine_Vulkan
 		colShape->refitTree(aabbMin, aabbMax);
 	}
 
-	bool VulkanTerrain::pushConstants(VkCommandBuffer cmd, VkExtent2D extent, UINT32 mode)
+	bool VulkanTerrain::pushConstants(VkCommandBuffer cmd)
 	{
 		/*orientation relative to the position in a 3D space (?)*/
 		ubo.model = glm::mat4{ 1.f };
 		/*Math for Game Programmers: Understanding Homogeneous Coordinates GDC 2015*/
-		ubo.view = glm::translate(glm::mat4_cast(p_Owner->getActiveViewport()->GetObjectOrientation()), -p_Owner->getActiveViewport()->GetObjectPosition()); // [ix iy iz w1( = 0)]-direction [jx jy jz w2( = 0)]-direction [kx ky kz w3( = 0)]-direction [tx ty tz w ( = 1)]-position
-		ubo.proj = glm::perspective(glm::radians(60.0f), (float)extent.width / (float)extent.height, near_plane, far_plane); //fov, aspect ratio, near clipping plane, far clipping plane
-		ubo.proj[1][1] *= -1; //reverse Y coordinate
 		ubo.scale = glm::vec3(size.width, size.height, size.depth);
 
-		vkCmdPushConstants(cmd, pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_GEOMETRY_BIT, 0, sizeof(UniformBufferObject), &ubo);
+		vkCmdPushConstants(cmd, pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_GEOMETRY_BIT, 0, sizeof(VertexConstants), &ubo);
 		return true;
 	}
 
@@ -483,7 +480,7 @@ namespace GrEngine_Vulkan
 	{
 		VkPushConstantRange pushConstant;
 		pushConstant.offset = 0;
-		pushConstant.size = sizeof(UniformBufferObject);
+		pushConstant.size = sizeof(VertexConstants);
 		pushConstant.stageFlags = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_GEOMETRY_BIT;
 
 		return VulkanAPI::CreatePipelineLayout(logicalDevice, { pushConstant }, { descriptorSets[0].descriptorSetLayout }, &pipelineLayout);
@@ -493,7 +490,7 @@ namespace GrEngine_Vulkan
 	{
 		VkPushConstantRange pushConstant;
 		pushConstant.offset = 0;
-		pushConstant.size = sizeof(UniformBufferObject);
+		pushConstant.size = sizeof(VertexConstants);
 		pushConstant.stageFlags = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_GEOMETRY_BIT;
 
 		return VulkanAPI::CreatePipelineLayout(logicalDevice, {}, { descriptorSets[1].descriptorSetLayout }, &computeLayout);
@@ -689,10 +686,11 @@ namespace GrEngine_Vulkan
 		maskInfo.imageView = foliageMask->textureImageView;
 		maskInfo.sampler = foliageMask->textureSampler;
 
-		subscribeDescriptor(VK_SHADER_STAGE_FRAGMENT_BIT, 0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, texInfo);
-		subscribeDescriptor(VK_SHADER_STAGE_FRAGMENT_BIT, 1, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, maskInfo);
+		subscribeDescriptor(VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_GEOMETRY_BIT, 0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, static_cast<VulkanRenderer*>(p_Owner)->viewProjUBO.BufferInfo);
+		subscribeDescriptor(VK_SHADER_STAGE_FRAGMENT_BIT, 1, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, texInfo);
+		subscribeDescriptor(VK_SHADER_STAGE_FRAGMENT_BIT, 2, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, maskInfo);
 
-		int binding = 2;
+		int binding = 3;
 
 		if (use_compute)
 		{

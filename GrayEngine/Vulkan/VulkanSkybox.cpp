@@ -30,15 +30,15 @@ namespace GrEngine_Vulkan
 			Mesh* default_mesh = new Mesh();
 
 			default_mesh->vertices = {
-				{{{ 0.25, 0.25, 0.25, 1.0f },{  0.0f,  0.0f,  0.0f, 1.0f },{ 1.f, 1.0f }}},
-				{{{ -0.25, 0.25, -0.25, 1.0f },{  0.0f,  0.0f,  0.0f, 1.0f },{ 0.f, 0.0f }}},
-				{{{ -0.25, 0.25 , 0.25, 1.0f },{  0.0f,  0.0f,  0.0f, 1.0f },{ 0.f, 1.f }}},
-				{{{ 0.25, 0.25, -0.25, 1.0f },{  0.0f,  0.0f,  0.0f, 1.0f },{ 1.f, 0.0f }}},
+				{{{ 0.25, 0.25, 0.25, 1.0f },{  1.0f,  1.0f,  1.0f, 1.0f },{ 1.f, 1.0f }}},
+				{{{ -0.25, 0.25, -0.25, 1.0f },{  1.0f,  1.0f,  1.0f, 1.0f },{ 0.f, 0.0f }}},
+				{{{ -0.25, 0.25 , 0.25, 1.0f },{  1.0f,  1.0f,  1.0f, 1.0f },{ 0.f, 1.f }}},
+				{{{ 0.25, 0.25, -0.25, 1.0f },{  1.0f,  1.0f,  1.0f, 1.0f },{ 1.f, 0.0f }}},
 
-				{{{ 0.25, -0.25, 0.25, 1.0f },{  0.0f,  0.0f,  0.0f, 1.0f },{ 1.f, 1.0f }}},
-				{{{ -0.25, -0.25, -0.25, 1.0f },{  0.0f,  0.0f,  0.0f, 1.0f },{ 0.f, 0.0f }}},
-				{{{ -0.25, -0.25 , 0.25, 1.0f },{  0.0f,  0.0f,  0.0f, 1.0f },{ 0.f, 1.f }}},
-				{{{ 0.25, -0.25, -0.25, 1.0f },{  0.0f,  0.0f,  0.0f, 1.0f },{ 1.f, 0.0f }}}
+				{{{ 0.25, -0.25, 0.25, 1.0f },{  1.0f,  1.0f,  1.0f, 1.0f },{ 1.f, 1.0f }}},
+				{{{ -0.25, -0.25, -0.25, 1.0f },{  1.0f,  1.0f,  1.0f, 1.0f },{ 0.f, 0.0f }}},
+				{{{ -0.25, -0.25 , 0.25, 1.0f },{  1.0f,  1.0f,  1.0f, 1.0f },{ 0.f, 1.f }}},
+				{{{ 0.25, -0.25, -0.25, 1.0f },{  1.0f,  1.0f,  1.0f, 1.0f },{ 1.f, 0.0f }}}
 			};
 
 			default_mesh->indices = { 2, 1, 0, 1, 3, 0,
@@ -82,15 +82,12 @@ namespace GrEngine_Vulkan
 		filled = true;
 	}
 
-	bool VulkanSkybox::pushConstants(VkCommandBuffer cmd, VkExtent2D extent, UINT32 mode)
+	bool VulkanSkybox::pushConstants(VkCommandBuffer cmd)
 	{
 		/*orientation relative to the position in a 3D space (?)*/
 		ubo.model = glm::translate(glm::mat4(1.f), GetObjectPosition()) * glm::mat4_cast(GetObjectOrientation());
 		/*Math for Game Programmers: Understanding Homogeneous Coordinates GDC 2015*/
-		ubo.view = glm::translate(glm::mat4_cast(p_Owner->getActiveViewport()->UpdateCameraOrientation(0.2)), -p_Owner->getActiveViewport()->UpdateCameraPosition(0.65)); // [ix iy iz w1( = 0)]-direction [jx jy jz w2( = 0)]-direction [kx ky kz w3( = 0)]-direction [tx ty tz w ( = 1)]-position
-		ubo.proj = glm::perspective(glm::radians(60.0f), (float)extent.width / (float)extent.height, near_plane, far_plane); //fov, aspect ratio, near clipping plane, far clipping plane
-		ubo.proj[1][1] *= -1; //reverse Y coordinate
-		vkCmdPushConstants(cmd, pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(UniformBufferObject), &ubo);
+		vkCmdPushConstants(cmd, pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(VertexConstants), &ubo);
 		return true;
 	}
 
@@ -104,7 +101,8 @@ namespace GrEngine_Vulkan
 		info.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
 		info.imageView = object_texture->textureImageView;
 		info.sampler = object_texture->textureSampler;
-		subscribeDescriptor(VK_SHADER_STAGE_FRAGMENT_BIT, 0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, info);
+		subscribeDescriptor(VK_SHADER_STAGE_VERTEX_BIT, 0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, static_cast<VulkanRenderer*>(p_Owner)->viewProjUBO.BufferInfo);
+		subscribeDescriptor(VK_SHADER_STAGE_FRAGMENT_BIT, 1, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, info);
 
 		createDescriptorLayout();
 		createDescriptorPool();

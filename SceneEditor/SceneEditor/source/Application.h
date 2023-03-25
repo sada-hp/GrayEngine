@@ -283,7 +283,7 @@ namespace GrEngine
 
             for (auto obj : ent_vec)
             {
-                if (obj.second->GetEntityType() == "Object")
+                if (obj.second->GetEntityType() == "Object" && !obj.second->IsStatic())
                 {
                     App_UpdateEntity(obj.second);
                 }

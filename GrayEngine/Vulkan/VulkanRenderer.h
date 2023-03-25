@@ -68,6 +68,17 @@ namespace GrEngine_Vulkan
 		VkCommandPool commandPool;
 
 		VkRenderPass selectionPass;
+
+		struct ViewProjection {
+			glm::mat4 view;
+			glm::mat4 proj;
+		} vpUBO;
+		ShaderBuffer viewProjUBO;
+		ShaderBuffer shadowBuffer;
+		Texture shadowMap;
+
+		void* uboData;
+
 	protected:
 		void SaveScreenshot(const char* filepath);
 		bool updateDrawables(uint32_t index, DrawMode mode, VkExtent2D extent);
@@ -137,6 +148,7 @@ namespace GrEngine_Vulkan
 		void prepareTransparencyPass();
 		void prepareSamplingPass();
 		void prepareSelectionPass();
+		void prepareShadowPass();
 
 		VkFramebuffer defferFramebuffer;
 		VkFramebuffer selectionFramebuffer;
@@ -162,6 +174,24 @@ namespace GrEngine_Vulkan
 		ShaderBuffer frameInfo;
 		glm::vec2 frameSize;
 
+
+		VkDescriptorPool shadowSetPool;
+		VkDescriptorSetLayout shadowSetLayout;
+		VkDescriptorSet shadowSet;
+		VkPipelineLayout shadowPipelineLayout;
+		VkPipeline shadowPipeline;
+		VkRenderPass shadowPass;
+		VkFramebuffer shadowFramebuffer;
+		//struct Light
+		//{
+		//	glm::vec4 pos = { 0, 0, -1, 1 };
+		//} light;
+		struct ShadowProjection
+		{
+			glm::mat4 view;
+			glm::mat4 proj;
+			glm::mat4 model;
+		} lightPerspective;
 
 #ifdef _DEBUG
 

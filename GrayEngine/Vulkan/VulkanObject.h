@@ -12,8 +12,9 @@ namespace GrEngine_Vulkan
 		VulkanObject(UINT id) : DrawableObject(id) {};
 
 		virtual void initObject(VkDevice device, VmaAllocator allocator, GrEngine::Renderer* owner) override;
-		virtual bool pushConstants(VkCommandBuffer cmd, VkExtent2D extent, UINT32 mode) override;
+		virtual bool pushConstants(VkCommandBuffer cmd) override;
 		void Refresh() override;
+		void CalculateNormals() override;
 
 		void updateCollisions() override;
 		bool LoadMesh(const char* mesh_path, std::vector<std::string>* out_materials) override;

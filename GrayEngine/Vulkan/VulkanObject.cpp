@@ -26,9 +26,9 @@ namespace GrEngine_Vulkan
 		memAllocator = allocator;
 
 		GenerateBoxMesh(0.5, 0.5, 0.5);
-		updateSelectionPipeline();
 
 		static_cast<VulkanRenderer*>(p_Owner)->assignTextures({""}, this);
+		updateSelectionPipeline();
 	}
 
 	void VulkanObject::destroyObject()
@@ -58,23 +58,21 @@ namespace GrEngine_Vulkan
 
 			//UpdateObjectPosition();
 			//UpdateObjectOrientation();
-			pushConstants(cmd, extent, mode);
+			vkCmdBindDescriptorSets(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, selectionLayout, 0, 1, &descriptorSets[1].set, 0, NULL);
+			pushConstants(cmd);
 
 			//vkCmdDraw(commandBuffer, static_cast<uint32_t>(object_mesh.vertices.size()), 1, 0, 0);
 			vkCmdDrawIndexed(cmd, static_cast<uint32_t>(object_mesh->indices.size()), 1, 0, 0, 0);
 		}
 	}
 
-	bool VulkanObject::pushConstants(VkCommandBuffer cmd, VkExtent2D extent, UINT32 mode)
+	bool VulkanObject::pushConstants(VkCommandBuffer cmd)
 	{
 		/*orientation relative to the position in a 3D space (?)*/
 		ubo.model = GetObjectTransformation();
 		/*Math for Game Programmers: Understanding Homogeneous Coordinates GDC 2015*/
-		ubo.view = glm::translate(glm::mat4_cast(p_Owner->getActiveViewport()->UpdateCameraOrientation(0.2)), -p_Owner->getActiveViewport()->UpdateCameraPosition(0.65)); // [ix iy iz w1( = 0)]-direction [jx jy jz w2( = 0)]-direction [kx ky kz w3( = 0)]-direction [tx ty tz w ( = 1)]-position
-		ubo.proj = glm::perspective(glm::radians(60.0f), (float)extent.width / (float)extent.height, near_plane, far_plane); //fov, aspect ratio, near clipping plane, far clipping plane
-		ubo.proj[1][1] *= -1; //reverse Y coordinate
 		ubo.scale = GetPropertyValue("Scale", glm::vec3(1.f));
-		vkCmdPushConstants(cmd, pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(UniformBufferObject), &ubo);
+		vkCmdPushConstants(cmd, pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(VertexConstants), &ubo);
 
 		opo.object_id = GetEntityID();
 		opo.colors = GetPropertyValue("Color", glm::vec4(1));
@@ -83,7 +81,7 @@ namespace GrEngine_Vulkan
 			opo.colors *= glm::vec4(0.5, 0.75, 2, opo.colors.w);
 		}
 
-		vkCmdPushConstants(cmd, pipelineLayout, VK_SHADER_STAGE_FRAGMENT_BIT, sizeof(UniformBufferObject), sizeof(PickingBufferObject), &opo);
+		vkCmdPushConstants(cmd, pipelineLayout, VK_SHADER_STAGE_FRAGMENT_BIT, sizeof(VertexConstants), sizeof(PickingBufferObject), &opo);
 		return true;
 	}
 
@@ -106,16 +104,11 @@ namespace GrEngine_Vulkan
 		selectable = true;
 		VkPushConstantRange pushConstant;
 		pushConstant.offset = 0;
-		pushConstant.size = sizeof(UniformBufferObject);
+		pushConstant.size = sizeof(VertexConstants);
 		pushConstant.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
 
-		VkPushConstantRange pushConstant2;
-		pushConstant2.offset = sizeof(UniformBufferObject);
-		pushConstant2.size = sizeof(PickingBufferObject);
-		pushConstant2.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
 
-
-		VulkanAPI::CreatePipelineLayout(logicalDevice, { pushConstant, pushConstant2 }, {}, &selectionLayout);
+		VulkanAPI::CreatePipelineLayout(logicalDevice, { pushConstant }, { descriptorSets[1].descriptorSetLayout }, &selectionLayout);
 
 
 		std::array<VkShaderModule, 2> shaders;
@@ -260,12 +253,15 @@ namespace GrEngine_Vulkan
 		transparency = GetPropertyValue("Transparency", 0);
 
 		descriptorSets.clear();
-		descriptorSets.resize(1);
+		descriptorSets.resize(2);
 		descriptorSets[0].bindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
+		descriptorSets[1].bindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
 
-		subscribeDescriptor(VK_SHADER_STAGE_FRAGMENT_BIT, 0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, object_texture->texInfo.descriptor);
+		subscribeDescriptor(VK_SHADER_STAGE_VERTEX_BIT, 0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, static_cast<VulkanRenderer*>(p_Owner)->viewProjUBO.BufferInfo);
+		subscribeDescriptor(VK_SHADER_STAGE_VERTEX_BIT, 0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, static_cast<VulkanRenderer*>(p_Owner)->viewProjUBO.BufferInfo, 1);
+		subscribeDescriptor(VK_SHADER_STAGE_FRAGMENT_BIT, 1, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, object_texture->texInfo.descriptor);
 
-		int index = 1;
+		int index = 2;
 
 		if (transparency > 0)
 		{
@@ -274,6 +270,9 @@ namespace GrEngine_Vulkan
 			subscribeDescriptor(VK_SHADER_STAGE_FRAGMENT_BIT, index++, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, static_cast<VulkanRenderer*>(p_Owner)->headIndex.texInfo.descriptor);
 			subscribeDescriptor(VK_SHADER_STAGE_FRAGMENT_BIT, index++, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, static_cast<VulkanRenderer*>(p_Owner)->nodeBfffer.BufferInfo);
 		}
+
+		//subscribeDescriptor(VK_SHADER_STAGE_VERTEX_BIT, index++, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, static_cast<VulkanRenderer*>(p_Owner)->shadowBuffer.BufferInfo);
+		//subscribeDescriptor(VK_SHADER_STAGE_FRAGMENT_BIT, index++, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, static_cast<VulkanRenderer*>(p_Owner)->shadowMap.texInfo.descriptor);
 
 		createDescriptorLayout();
 		createDescriptorPool();
@@ -299,6 +298,28 @@ namespace GrEngine_Vulkan
 		}
 
 		physComponent->UpdateCollisionShape(new btBvhTriangleMeshShape(colMesh, false));
+	}
+
+	void VulkanObject::CalculateNormals()
+	{
+		if (object_mesh != nullptr)
+		{
+			for (int i = 0; i < object_mesh->indices.size(); i += 3)
+			{
+				glm::vec3 A = object_mesh->vertices[object_mesh->indices[i]].pos;
+				glm::vec3 B = object_mesh->vertices[object_mesh->indices[i + 1]].pos;
+				glm::vec3 C = object_mesh->vertices[object_mesh->indices[i + 2]].pos;
+				glm::vec3 faceNormal = glm::cross(B - A, C - A);
+				object_mesh->vertices[object_mesh->indices[i]].norm += glm::vec4(faceNormal, 1.f);
+				object_mesh->vertices[object_mesh->indices[i + 1]].norm += glm::vec4(faceNormal, 1.f);
+				object_mesh->vertices[object_mesh->indices[i + 2]].norm += glm::vec4(faceNormal, 1.f);
+			}
+
+			for (std::vector<Vertex>::iterator itt = object_mesh->vertices.begin(); itt != object_mesh->vertices.end(); ++itt)
+			{
+				(*itt).norm = glm::normalize((*itt).norm);
+			}
+		}
 	}
 
 	bool VulkanObject::LoadModel(const char* model_path)
@@ -406,13 +427,14 @@ namespace GrEngine_Vulkan
 				{
 					auto coord = model->mMeshes[mesh_ind]->mTextureCoords[0];
 
-					GrEngine_Vulkan::Vertex vertex{ {
-					{ cur_mesh->mVertices[vert_ind].x, cur_mesh->mVertices[vert_ind].y, cur_mesh->mVertices[vert_ind].z, 1.0f },
-					{ cur_mesh->mNormals[vert_ind].x, cur_mesh->mNormals[vert_ind].y, cur_mesh->mNormals[vert_ind].z, 1.0f },
-					{ coord[vert_ind].x, 1.0f - coord[vert_ind].y },
-					(uint32_t)uv_ind
-					} };
-
+					GrEngine_Vulkan::Vertex vertex{};
+					vertex.pos = { cur_mesh->mVertices[vert_ind].x, cur_mesh->mVertices[vert_ind].y, cur_mesh->mVertices[vert_ind].z, 1.0f };
+					vertex.uv = { coord[vert_ind].x, 1.0f - coord[vert_ind].y };
+					vertex.uv_index = uv_ind;
+					if (cur_mesh->HasNormals())
+						vertex.norm = { cur_mesh->mNormals[vert_ind].x, cur_mesh->mNormals[vert_ind].y, cur_mesh->mNormals[vert_ind].z, 1.0f };
+					if (cur_mesh->HasTangentsAndBitangents())
+						vertex.tang = { cur_mesh->mTangents[vert_ind].x, cur_mesh->mTangents[vert_ind].y, cur_mesh->mTangents[vert_ind].z, 1.0f };
 
 					if (uniqueVertices.count(vertex) == 0)
 					{
@@ -554,24 +576,31 @@ namespace GrEngine_Vulkan
 			Mesh* target_mesh = new Mesh();
 
 			target_mesh->vertices = {
-				{{{ xcoord, ycoord, zcoord, 1.0f },{  0.0f,  0.0f,  0.0f, 1.0f },{ 1.f, 1.0f }}},
-				{{{ -xcoord, ycoord, -zcoord, 1.0f },{  0.0f,  0.0f,  0.0f, 1.0f },{ 0.f, 0.0f }}},
-				{{{ -xcoord, ycoord , zcoord, 1.0f },{  0.0f,  0.0f,  0.0f, 1.0f },{ 0.f, 1.f }}},
-				{{{ xcoord, ycoord, -zcoord, 1.0f },{  0.0f,  0.0f,  0.0f, 1.0f },{ 1.f, 0.0f }}},
-
-				{{{ xcoord, -ycoord, zcoord, 1.0f },{  0.0f,  0.0f,  0.0f, 1.0f },{ 1.f, 1.0f }}},
-				{{{ -xcoord, -ycoord, -zcoord, 1.0f },{  0.0f,  0.0f,  0.0f, 1.0f },{ 0.f, 0.0f }}},
-				{{{ -xcoord, -ycoord, zcoord, 1.0f },{  0.0f,  0.0f,  0.0f, 1.0f },{ 0.f, 1.f }}},
-				{{{ xcoord, -ycoord, -zcoord, 1.0f },{  0.0f,  0.0f,  0.0f, 1.0f },{ 1.f, 0.0f }}}
+				{{{xcoord, ycoord, -zcoord, 1.f},{0.577400, 0.577400, -0.577300, 1.f},{ 1.f, 1.0f }}},
+				{{{xcoord, ycoord, zcoord, 1.f},{0.577400, 0.577400, 0.577300, 1.f},{ 1.f, 1.0f }}},
+				{{{xcoord, -ycoord, zcoord, 1.f},{0.577400, -0.577300, 0.577400, 1.f},{ 1.f, 1.0f }}},
+				{{{-xcoord, ycoord, -zcoord, 1.f},{-0.577300, 0.577400, -0.577400, 1.f},{ 1.f, 1.0f }}},
+				{{{xcoord, -ycoord, -zcoord, 1.f},{0.577400, -0.577300, -0.577400, 1.f},{ 1.f, 1.0f }}},
+				{{{-xcoord, -ycoord, -zcoord, 1.f},{-0.577400, -0.577300, -0.577400, 1.f},{ 1.f, 1.0f }}},
+				{{{xcoord, ycoord, -zcoord, 1.f},{0.577300, 0.577400, -0.577400, 1.f},{ 1.f, 1.0f }}},
+				{{{xcoord, ycoord, zcoord, 1.f},{0.577300, 0.577400, 0.577400, 1.f},{ 1.f, 1.0f }}},
+				{{{-xcoord, ycoord, zcoord, 1.f},{-0.577300, 0.577400, 0.577400, 1.f},{ 1.f, 1.0f }}},
+				{{{-xcoord, -ycoord, zcoord, 1.f},{-0.577400, -0.577300, 0.577400, 1.f},{ 1.f, 1.0f }}},
+				{{{-xcoord, ycoord, zcoord, 1.f},{-0.577400, 0.577400, 0.577300, 1.f},{ 1.f, 1.0f }}},
+				{{{-xcoord, ycoord, -zcoord, 1.f},{-0.577400, 0.577300, -0.577400, 1.f},{ 1.f, 1.0f }}},
+				{{{-xcoord, -ycoord, -zcoord, 1.f},{-0.577400, -0.577300, -0.577400, 1.f},{ 1.f, 1.0f }}},
+				{{{-xcoord, ycoord, -zcoord, 1.f},{-0.577300, 0.577400, -0.577400, 1.f},{ 1.f, 1.0f }}},
+				{{{-xcoord, ycoord, zcoord, 1.f},{-0.577300, 0.577400, 0.577400, 1.f},{ 1.f, 1.0f }}},
+				{{{xcoord, -ycoord, zcoord, 1.f},{0.577400, -0.577300, 0.577400, 1.f},{ 1.f, 1.0f }}},
+				{{{-xcoord, -ycoord, zcoord, 1.f},{-0.577400, -0.577300, 0.577400, 1.f},{ 1.f, 1.0f }}},
+				{{{xcoord, ycoord, -zcoord, 1.f},{0.577300, 0.577400, -0.577400, 1.f},{ 1.f, 1.0f }}},
+				{{{xcoord, -ycoord, -zcoord, 1.f},{0.577400, -0.577400, -0.577300, 1.f},{ 1.f, 1.0f }}},
+				{{{-xcoord, -ycoord, zcoord, 1.f},{-0.577400, -0.577400, 0.577300, 1.f},{ 1.f, 1.0f }}},
+				{{{-xcoord, -ycoord, -zcoord, 1.f},{-0.577300, -0.577400, -0.577400, 1.f},{ 1.f, 1.0f }}},
+				{{ {xcoord, -ycoord, zcoord, 1.f},{0.577300, -0.577400, 0.577400, 1.f},{ 1.f, 1.0f }}}
 			};
 
-			target_mesh->indices = { 0, 1, 2, 0, 3, 1,
-				6, 5, 4, 5, 7, 4,
-				0, 2, 6, 6, 4, 0,
-				4, 3, 0, 4, 7, 3,
-				1, 3, 7, 7, 5, 1,
-				6, 2, 1, 1, 5, 6,
-			};
+			target_mesh->indices = { 0, 1, 2, 3, 4, 5, 3, 6, 4, 7, 8, 9, 10, 11, 12, 13, 14, 7, 0, 2, 4, 7, 9, 15, 10, 12, 16, 13, 7, 17, 18, 19, 20, 18, 21, 19 };
 
 			resource = resources->AddMeshResource("default", target_mesh);
 			object_mesh = resource->AddLink();
