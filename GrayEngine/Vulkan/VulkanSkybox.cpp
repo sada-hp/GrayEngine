@@ -11,7 +11,9 @@ namespace GrEngine_Vulkan
 	{
 		UINT id = GetEntityID();
 		shader_path = "Shaders//background";
-		Type = "Skybox";
+		AddNewProperty("CastShadow");
+		ParsePropertyValue("CastShadow", "0");
+		//Type = GrEngine::EntityType::SkyboxEntity;
 
 		p_Owner = owner;
 		resources = &static_cast<VulkanRenderer*>(owner)->GetResourceManager();
@@ -63,11 +65,11 @@ namespace GrEngine_Vulkan
 		static_cast<VulkanRenderer*>(p_Owner)->assignTextures({ }, this);
 	}
 
-	bool VulkanSkybox::recordCommandBuffer(VkCommandBuffer commandBuffer, VkExtent2D extent, UINT32 mode)
+	bool VulkanSkybox::recordCommandBuffer(VkCommandBuffer commandBuffer, UINT32 mode)
 	{
 		if (object_mesh->vertexBuffer.initialized == true && filled)
 		{
-			VulkanDrawable::recordCommandBuffer(commandBuffer, extent, mode);
+			VulkanDrawable::recordCommandBuffer(commandBuffer, mode);
 			return true;
 		}
 

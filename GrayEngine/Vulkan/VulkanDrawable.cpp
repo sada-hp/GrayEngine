@@ -131,7 +131,7 @@ namespace GrEngine_Vulkan
 		return VulkanAPI::CreatePipelineLayout(logicalDevice, { pushConstant, pushConstant2 }, layouts, &pipelineLayout) == true;
 	}
 
-	bool VulkanDrawable::recordCommandBuffer(VkCommandBuffer commandBuffer, VkExtent2D extent, UINT32 mode)
+	bool VulkanDrawable::recordCommandBuffer(VkCommandBuffer commandBuffer, UINT32 mode)
 	{
 		if (mode == DrawMode::NORMAL && transparency > 0 || mode == DrawMode::TRANSPARENCY && transparency == 0) return false;
 
@@ -445,6 +445,7 @@ namespace GrEngine_Vulkan
 				}
 				else
 				{
+					auto a = &descriptorSets[i].imageInfos[imgOff];
 					write.pImageInfo = &descriptorSets[i].imageInfos[imgOff++];
 				}
 				writes.push_back(write);

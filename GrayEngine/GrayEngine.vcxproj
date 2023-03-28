@@ -12,7 +12,9 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Bullet\BulletAPI.h" />
+    <ClInclude Include="Engine\Headers\Entities\Properties\Drawable.h" />
     <ClInclude Include="Engine\Headers\Entities\Properties\Property.h" />
+    <ClInclude Include="Engine\Headers\Entities\Properties\Spotlight.h" />
     <ClInclude Include="Engine\Headers\Entities\Skybox.h" />
     <ClInclude Include="Engine\Headers\Virtual\AppWindow.h" />
     <ClInclude Include="Engine\Headers\Entities\Camera.h" />

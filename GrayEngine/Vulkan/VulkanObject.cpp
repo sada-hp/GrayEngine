@@ -11,13 +11,12 @@ namespace GrEngine_Vulkan
 
 	void VulkanObject::initObject(VkDevice device, VmaAllocator allocator, GrEngine::Renderer* owner)
 	{
-		properties.push_back(new Transparency(0, this));
-		properties.push_back(new DoubleSided(0, this));
-		properties.push_back(new Shader("Shaders//default", this));
+		UINT id = ownerEntity->GetEntityID();
+		ownerEntity->AddNewProperty("Transparency");
+		ownerEntity->AddNewProperty("DoubleSided");
+		ownerEntity->AddNewProperty("Shader");
 
-		UINT id = GetEntityID();
-
-		physComponent = new GrEngineBullet::BulletAPI::BulletPhysObject(this);
+		physComponent = new GrEngineBullet::BulletAPI::BulletPhysObject(ownerEntity);
 		GrEngine::Engine::GetContext()->GetPhysics()->AddSimulationObject(physComponent);
 
 		p_Owner = owner;
@@ -27,7 +26,7 @@ namespace GrEngine_Vulkan
 
 		GenerateBoxMesh(0.5, 0.5, 0.5);
 
-		static_cast<VulkanRenderer*>(p_Owner)->assignTextures({""}, this);
+		static_cast<VulkanRenderer*>(p_Owner)->assignTextures({""}, ownerEntity);
 		updateSelectionPipeline();
 	}
 
@@ -71,12 +70,12 @@ namespace GrEngine_Vulkan
 		/*orientation relative to the position in a 3D space (?)*/
 		ubo.model = GetObjectTransformation();
 		/*Math for Game Programmers: Understanding Homogeneous Coordinates GDC 2015*/
-		ubo.scale = GetPropertyValue("Scale", glm::vec3(1.f));
+		ubo.scale = ownerEntity->GetPropertyValue("Scale", glm::vec3(1.f));
 		vkCmdPushConstants(cmd, pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(VertexConstants), &ubo);
 
-		opo.object_id = GetEntityID();
-		opo.colors = GetPropertyValue("Color", glm::vec4(1));
-		if (opo.object_id == selected_id && IsStatic() == false)
+		opo.object_id = ownerEntity->GetEntityID();
+		opo.colors = ownerEntity->GetPropertyValue("Color", glm::vec4(1));
+		if (opo.object_id == selected_id && ownerEntity->IsStatic() == false)
 		{
 			opo.colors *= glm::vec4(0.5, 0.75, 2, opo.colors.w);
 		}
@@ -241,16 +240,16 @@ namespace GrEngine_Vulkan
 
 	bool VulkanObject::createGraphicsPipeline()
 	{
-		shader_path = GetPropertyValue("Shader", std::string(shader_path));
-		transparency = GetPropertyValue("Transparency", 0);
-		double_sided = GetPropertyValue("DoubleSided", 0);
+		shader_path = ownerEntity->GetPropertyValue("Shader", std::string(shader_path));
+		transparency = ownerEntity->GetPropertyValue("Transparency", 0);
+		double_sided = ownerEntity->GetPropertyValue("DoubleSided", 0);
 
 		return VulkanDrawable::createGraphicsPipeline();
 	}
 
 	void VulkanObject::populateDescriptorSets()
 	{
-		transparency = GetPropertyValue("Transparency", 0);
+		transparency = ownerEntity->GetPropertyValue("Transparency", 0);
 
 		descriptorSets.clear();
 		descriptorSets.resize(2);
@@ -265,6 +264,10 @@ namespace GrEngine_Vulkan
 
 		if (transparency > 0)
 		{
+			auto a = static_cast<VulkanRenderer*>(p_Owner)->position.texInfo.descriptor;
+			auto b = static_cast<VulkanRenderer*>(p_Owner)->transBuffer.BufferInfo;
+			auto c = static_cast<VulkanRenderer*>(p_Owner)->headIndex.texInfo.descriptor;
+			auto d = static_cast<VulkanRenderer*>(p_Owner)->nodeBfffer.BufferInfo;
 			subscribeDescriptor(VK_SHADER_STAGE_FRAGMENT_BIT, index++, VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT, static_cast<VulkanRenderer*>(p_Owner)->position.texInfo.descriptor);
 			subscribeDescriptor(VK_SHADER_STAGE_FRAGMENT_BIT, index++, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, static_cast<VulkanRenderer*>(p_Owner)->transBuffer.BufferInfo);
 			subscribeDescriptor(VK_SHADER_STAGE_FRAGMENT_BIT, index++, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, static_cast<VulkanRenderer*>(p_Owner)->headIndex.texInfo.descriptor);
@@ -344,6 +347,7 @@ namespace GrEngine_Vulkan
 	bool VulkanObject::LoadModel(const char* mesh_path, std::vector<std::string> textures_vector)
 	{
 		VulkanObject* ref_obj = this;
+		GrEngine::Entity* ref_own = ownerEntity;
 
 		VulkanRenderer* inst = static_cast<VulkanRenderer*>(p_Owner);
 		std::vector<std::string>* out_materials_collection = &material_names;
@@ -353,9 +357,9 @@ namespace GrEngine_Vulkan
 		material_names.clear();
 		texture_names.clear();
 
-		processes_map[processes_map.size()] = std::async(std::launch::async, [textures_vector, ref_obj, inst]()
+		processes_map[processes_map.size()] = std::async(std::launch::async, [textures_vector, ref_own, inst]()
 			{
-				inst->assignTextures(textures_vector, ref_obj);
+				inst->assignTextures(textures_vector, ref_own);
 			});
 
 		processes_map[processes_map.size()] = std::async(std::launch::async, [mesh_path, textures_vector, ref_obj, out_materials_collection, inst]()

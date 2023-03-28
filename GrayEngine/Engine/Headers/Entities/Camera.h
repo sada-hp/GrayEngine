@@ -16,7 +16,7 @@ namespace GrEngine
 			obj_orientation_target = glm::normalize(qPitch * qYaw * qRoll);
 			static_cast<EntityOrientation*>(properties[3])->SetPropertyValue(glm::normalize(qPitch * qYaw * qRoll));
 
-			Type = "Camera";
+			Type |= EntityType::CameraEntity;
 			static_cast<EntityID*>(properties[1])->SetPropertyValue(std::rand() % 10000 + 1000);
 		};
 		virtual ~Camera() {};

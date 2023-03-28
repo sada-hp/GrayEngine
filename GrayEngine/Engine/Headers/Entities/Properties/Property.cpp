@@ -384,6 +384,12 @@ Drawable::Drawable(const char* path, void* parent)
 	property_name = "Drawable";
 	property_type = PropertyType::Drawable;
 	owner = parent;
+	drawable = GrEngine::Engine::GetContext()->GetRenderer()->InitDrawableObject(static_cast<GrEngine::Entity*>(owner));
+
+	if (path != "" && path != "nil")
+	{
+		static_cast<GrEngine::Object*>(drawable)->LoadModel(path);
+	}
 }
 
 Drawable::~Drawable()
@@ -405,18 +411,18 @@ void Drawable::SetPropertyValue(std::string value)
 {
 	property_value = value;
 
-	if (owner != nullptr)
-		static_cast<GrEngine::DrawableObject*>(owner)->LoadModel(value.c_str());
+	if (owner != nullptr && value != "nil")
+		static_cast<GrEngine::Object*>(drawable)->LoadModel(value.c_str());
 }
 
 std::any Drawable::GetAnyValue()
 {
-	return property_value;
+	return drawable;
 }
 
 void* Drawable::GetValueAdress()
 {
-	return &property_value;
+	return drawable;
 }
 
 ////////////////////////////////////CubemapProperty/////////////////////////////////////////////
@@ -504,7 +510,13 @@ void Shader::SetPropertyValue(std::string value)
 	property_value = value;
 
 	if (owner != nullptr)
-		static_cast<GrEngine::DrawableObject*>(owner)->Refresh();
+	{
+		GrEngine::Object* mesh = GGetMesh(static_cast<GrEngine::Entity*>(owner));
+		if (mesh != nullptr)
+		{
+			mesh->Refresh();
+		}
+	}
 }
 
 std::any Shader::GetAnyValue()
@@ -549,7 +561,13 @@ void Transparency::SetPropertyValue(int value)
 	property_string = std::to_string(value);
 
 	if (owner != nullptr)
-		static_cast<GrEngine::DrawableObject*>(owner)->Refresh();
+	{
+		GrEngine::Object* mesh = GGetMesh(static_cast<GrEngine::Entity*>(owner));
+		if (mesh != nullptr)
+		{
+			mesh->Refresh();
+		}
+	}
 }
 
 std::any Transparency::GetAnyValue()
@@ -595,7 +613,13 @@ void DoubleSided::SetPropertyValue(int value)
 	property_string = std::to_string(value);
 
 	if (owner != nullptr)
-		static_cast<GrEngine::DrawableObject*>(owner)->Refresh();
+	{
+		GrEngine::Object* mesh = GGetMesh(static_cast<GrEngine::Entity*>(owner));
+		if (mesh != nullptr)
+		{
+			mesh->Refresh();
+		}
+	}
 }
 
 std::any DoubleSided::GetAnyValue()
@@ -604,6 +628,48 @@ std::any DoubleSided::GetAnyValue()
 }
 
 void* DoubleSided::GetValueAdress()
+{
+	return &property_value;
+}
+
+////////////////////////////////////Cast shadow/////////////////////////////////////////////
+
+CastShadow::CastShadow(bool value, void* parent)
+{
+	property_name = "CastShadow";
+	property_value = value;
+	property_type = PropertyType::DoubleSided;
+	owner = parent;
+}
+
+CastShadow::~CastShadow()
+{
+
+}
+
+const char* CastShadow::ValueString()
+{
+	return property_string.c_str();
+}
+
+void CastShadow::ParsePropertyValue(const char* value)
+{
+	SetPropertyValue(atoi(value));
+	property_string = value;
+}
+
+void CastShadow::SetPropertyValue(int value)
+{
+	property_value = value;
+	property_string = std::to_string(value);
+}
+
+std::any CastShadow::GetAnyValue()
+{
+	return property_value;
+}
+
+void* CastShadow::GetValueAdress()
 {
 	return &property_value;
 }

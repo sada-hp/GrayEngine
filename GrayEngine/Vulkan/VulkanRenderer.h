@@ -26,6 +26,7 @@ namespace GrEngine_Vulkan
 		bool loadModel(UINT id, const char* model_path) override;
 		GrEngine::Entity* addEntity() override;
 		GrEngine::Entity* addEntity(UINT ID) override;
+		GrEngine::Object* InitDrawableObject(GrEngine::Entity* ownerEntity);
 
 		void addEntity(GrEngine::Entity* entity) override;
 		bool assignTextures(std::vector<std::string> textures, GrEngine::Entity* target) override;

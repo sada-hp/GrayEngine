@@ -19,12 +19,12 @@ namespace GrEngine
 
 		Terrain()
 		{
-			Type = "Terrain";
+			Type |= EntityType::TerrainEntity;
 		}
 
 		Terrain(UINT ID) : Entity(ID)
 		{
-			Type = "Terrain";
+			Type |= EntityType::TerrainEntity;
 		}
 
 		virtual ~Terrain()

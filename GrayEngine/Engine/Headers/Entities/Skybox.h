@@ -9,14 +9,14 @@ namespace GrEngine
 	public:
 		Skybox()
 		{
-			Type = "Skybox";
+			Type |= EntityType::SkyboxEntity;
 			prop = new CubemapProperty({"","","","","",""}, this);
 			properties.push_back(prop);
 		};
 
 		Skybox(UINT id) : Entity(id)
 		{
-			Type = "Skybox";
+			Type |= EntityType::SkyboxEntity;
 			prop = new CubemapProperty({ "","","","","","" }, this);
 			properties.push_back(prop);
 		};

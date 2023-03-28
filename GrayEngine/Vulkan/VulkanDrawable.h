@@ -17,7 +17,7 @@ namespace GrEngine_Vulkan
 		virtual void updateObject();
 		virtual void invalidateTexture();
 		virtual bool pushConstants(VkCommandBuffer cmd);
-		virtual bool recordCommandBuffer(VkCommandBuffer commandBuffer, VkExtent2D extent, UINT32 mode);
+		virtual bool recordCommandBuffer(VkCommandBuffer commandBuffer, UINT32 mode);
 		virtual bool draw(VkCommandBuffer commandBuffer);
 
 	protected:

@@ -15,7 +15,7 @@ namespace GrEngine_Vulkan
 	class VulkanSkybox : public VulkanDrawable, public GrEngine::Skybox
 	{
 	public:
-		VulkanSkybox()
+		VulkanSkybox() : GrEngine::Skybox()
 		{
 
 		}
@@ -26,7 +26,7 @@ namespace GrEngine_Vulkan
 		}
 
 		void UpdateTextures(std::array<std::string, 6> sky) override;
-		bool recordCommandBuffer(VkCommandBuffer commandBuffer, VkExtent2D extent, UINT32 mode) override;
+		bool recordCommandBuffer(VkCommandBuffer commandBuffer, UINT32 mode) override;
 		void initObject(VkDevice device, VmaAllocator allocator, GrEngine::Renderer* owner) override;
 		bool pushConstants(VkCommandBuffer cmd) override;
 

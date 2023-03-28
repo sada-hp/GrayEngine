@@ -8,6 +8,41 @@
 
 namespace GrEngine
 {
+	enum EntityType
+	{
+		DefaultEntity = 0,
+		ObjectEntity = 1,
+		SkyboxEntity = 2,
+		TerrainEntity = 4,
+		CameraEntity = 8,
+		SpotlightEntity = 16,
+	};
+
+	inline EntityType operator|(EntityType a, EntityType b)
+	{
+		return static_cast<EntityType>(static_cast<int>(a) | static_cast<int>(b));
+	}
+
+	inline EntityType operator&(EntityType a, EntityType b)
+	{
+		return static_cast<EntityType>(static_cast<int>(a) & static_cast<int>(b));
+	}
+
+	inline void operator&=(EntityType& a, EntityType b)
+	{
+		a = static_cast<EntityType>(static_cast<int>(a) & static_cast<int>(b));
+	}
+
+	inline void operator|=(EntityType& a, EntityType b)
+	{
+		a = static_cast<EntityType>(static_cast<int>(a) | static_cast<int>(b));
+	}
+
+	inline bool operator==(EntityType a, EntityType b)
+	{
+		return (a & b) != 0 || (static_cast<int>(a) == 0 && static_cast<int>(b) == 0);
+	}
+
 	class DllExport Entity
 	{
 	public:
@@ -134,9 +169,10 @@ namespace GrEngine
 		template<typename T>
 		T GetPropertyValue(const char* property_name, T default_value)
 		{
+			std::string prop_str = std::string(property_name);
 			for (std::vector<EntityProperty*>::iterator itt = properties.begin(); itt != properties.end(); ++itt)
 			{
-				if ((*itt)->property_name == std::string(property_name))
+				if ((*itt)->property_name == prop_str)
 				{
 					return std::any_cast<T>((*itt)->GetAnyValue());
 				}
@@ -147,9 +183,10 @@ namespace GrEngine
 
 		inline EntityProperty* GetProperty(const char* property_name)
 		{
+			std::string prop_str = std::string(property_name);
 			for (std::vector<EntityProperty*>::iterator itt = properties.begin(); itt != properties.end(); ++itt)
 			{
-				if ((*itt)->property_name == std::string(property_name))
+				if ((*itt)->property_name == prop_str)
 				{
 					return (*itt);
 				}
@@ -160,9 +197,10 @@ namespace GrEngine
 
 		inline bool HasProperty(const char* property_name)
 		{
+			std::string prop_str = std::string(property_name);
 			for (std::vector<EntityProperty*>::iterator itt = properties.begin(); itt != properties.end(); ++itt)
 			{
-				if ((*itt)->property_name == std::string(property_name))
+				if ((*itt)->property_name == prop_str)
 				{
 					return true;
 				}
@@ -173,9 +211,10 @@ namespace GrEngine
 
 		virtual void ParsePropertyValue(const char* property_name, const char* property_value)
 		{
+			std::string prop_str = std::string(property_name);
 			for (std::vector<EntityProperty*>::iterator itt = properties.begin(); itt != properties.end(); ++itt)
 			{
-				if ((*itt)->property_name == std::string(property_name))
+				if ((*itt)->property_name == prop_str)
 				{
 					(*itt)->ParsePropertyValue(property_value);
 				}
@@ -184,9 +223,10 @@ namespace GrEngine
 
 		void* FindPropertyAdress(const char* property_name)
 		{
+			std::string prop_str = std::string(property_name);
 			for (std::vector<EntityProperty*>::iterator itt = properties.begin(); itt != properties.end(); ++itt)
 			{
-				if ((*itt)->property_name == std::string(property_name))
+				if ((*itt)->property_name == prop_str)
 				{
 					return (*itt)->GetValueAdress();
 				}
@@ -210,47 +250,91 @@ namespace GrEngine
 			return *obj_id;
 		};
 
-		bool AddNewProperty(const char* property_name)
+		EntityProperty* AddNewProperty(const char* property_name)
 		{
-			if (std::string(property_name) == "Mass")
+			if (!HasProperty(property_name))
 			{
-				properties.push_back(new Mass(0.f, this));
-				return true;
-			}
-			else if (std::string(property_name) == "Mesh" || std::string(property_name) == "Drawable")
-			{
-				properties.push_back(new Drawable("", this));
-				return true;
-			}
-			else if (std::string(property_name) == "Scale")
-			{
-				properties.push_back(new Scale(1.f, 1.f, 1.f, this));
-				return true;
-			}
-			else if (std::string(property_name) == "Color")
-			{
-				properties.push_back(new Color(1.f, 1.f, 1.f, this));
-				return true;
-			}
-			else if (std::string(property_name) == "Transparency")
-			{
-				properties.push_back(new Transparency(1, this));
-				return true;
+				std::string prop_str = std::string(property_name);
+				if (prop_str == "Mass")
+				{
+					properties.push_back(new Mass(0.f, this));
+					return properties.back();
+				}
+				else if (prop_str == "Mesh" || std::string(property_name) == "Drawable")
+				{
+					properties.push_back(new Drawable("nil", this));
+					Type |= EntityType::ObjectEntity;
+					return properties.back();
+				}
+				else if (prop_str == "Scale")
+				{
+					properties.push_back(new Scale(1.f, 1.f, 1.f, this));
+					return properties.back();
+				}
+				else if (prop_str == "Color")
+				{
+					properties.push_back(new Color(1.f, 1.f, 1.f, this));
+					return properties.back();
+				}
+				else if (prop_str == "Transparency")
+				{
+					properties.push_back(new Transparency(0, this));
+					return properties.back();
+				}
+				else if (prop_str == "DoubleSided")
+				{
+					properties.push_back(new DoubleSided(0, this));
+					return properties.back();
+				}
+				else if (prop_str == "Shader")
+				{
+					properties.push_back(new Shader("Shaders//default", this));
+					return properties.back();
+				}
+				else if (prop_str == "CastShadow")
+				{
+					properties.push_back(new CastShadow(1, this));
+					return properties.back();
+				}
+				else
+				{
+					return nullptr;
+				}
 			}
 			else
 			{
-				return false;
+				return GetProperty(property_name);
 			}
 		};
 
-		inline std::vector<EntityProperty*>& GetProperties()
+		inline const std::vector<EntityProperty*>& GetProperties()
 		{
 			return properties;
 		}
 
-		inline std::string& GetEntityType()
+		inline EntityType& GetEntityType()
 		{
 			return Type;
+		};
+
+		const std::string GetTypeString()
+		{
+			switch (Type)
+			{
+			case 2:
+				return "Skybox";
+				break;
+			case 4:
+				return "Terrain";
+				break;
+			case 8:
+				return "Camera";
+				break;
+			default:
+				return "Entity";
+			}
+
+			return "";
 		};
 
 		inline const char* GetEntityNameTag() 
@@ -275,7 +359,7 @@ namespace GrEngine
 		UINT* obj_id;
 		glm::quat* obj_orientation;
 		glm::vec3* object_origin;
-		std::string Type = "Entity";
+		EntityType Type = EntityType::DefaultEntity;
 
 		glm::vec3 pitch_yaw_roll = { 0.f, 0.f, 0.f };
 		bool isPrivated = false;

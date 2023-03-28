@@ -10,6 +10,7 @@ namespace GrEngine
     {
         EditorUI editorUI;
         Entity* dummy_entity;
+        Object* dummy_mesh;
 
     public:
         ModelBrowser(const AppParameters& Properties = AppParameters()) : Engine(Properties)
@@ -27,6 +28,7 @@ namespace GrEngine
             initModelBrowser();
             GetRenderer()->SetHighlightingMode(false);
             dummy_entity = AddEntity();
+            dummy_mesh = static_cast<Object*>(dummy_entity->AddNewProperty("Drawable")->GetValueAdress());
             SelectEntity(dummy_entity->GetEntityID());
             AddInputCallback(0, Inputs);
 
@@ -49,7 +51,7 @@ namespace GrEngine
         {
             static float rotation = 0;
             Renderer* render = GetContext()->GetRenderer();
-            DrawableObject* drawable = (DrawableObject*)render->GetSelectedEntity();
+            Object* drawable = GGetMesh(render->GetSelectedEntity());
             Camera* camera = render->getActiveViewport();
 
             if (drawable != NULL)

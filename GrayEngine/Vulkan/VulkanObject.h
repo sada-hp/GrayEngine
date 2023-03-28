@@ -4,12 +4,10 @@
 
 namespace GrEngine_Vulkan
 {
-	class VulkanObject : public GrEngine::DrawableObject, public VulkanDrawable
+	class VulkanObject : public GrEngine::Object, public VulkanDrawable
 	{
 	public:
-		VulkanObject() {};
-		VulkanObject(std::vector<Vertex> vertices, std::vector<uint8_t> indices, std::string resource_name) {};
-		VulkanObject(UINT id) : DrawableObject(id) {};
+		VulkanObject(GrEngine::Entity* owningEntity) : GrEngine::Object(owningEntity)  {};
 
 		virtual void initObject(VkDevice device, VmaAllocator allocator, GrEngine::Renderer* owner) override;
 		virtual bool pushConstants(VkCommandBuffer cmd) override;

@@ -55,6 +55,8 @@ namespace GrEngine
 				return pOwner->GetEntityID();
 			}
 
+
+
 		protected:
 			bool was_updated = false;
 			bool initialized = false;

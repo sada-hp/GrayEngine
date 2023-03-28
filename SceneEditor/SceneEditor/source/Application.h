@@ -104,7 +104,7 @@ namespace GrEngine
 
         void App_UpdateSelection(UINT id)
         {
-            if (id >0 && id == gizmo->GetEntityID())
+            if (id > 0 && id == gizmo->GetEntityID())
             {
                 if (GetPhysics()->GetSimulationState()) return;
 
@@ -114,6 +114,7 @@ namespace GrEngine
                 glm::vec4 view(0, 0, GetWindowSize().x, GetWindowSize().y);
                 proj[1][1] *= -1;
                 auto pos = gizmo->GetObjectPosition();
+                Object* gizmo_object = static_cast<Object*>(gizmo->GetProperty("Drawable")->GetValueAdress());
 
                 std::array<byte, 3> rgb = GetRenderer()->GetPixelColorAtCursor();
                 if (rgb[0] == 255)
@@ -136,21 +137,21 @@ namespace GrEngine
                     manipulation = 4;
                     gizmo->ParsePropertyValue("Color", "255:10:10:255");
                     glm::vec3 dir = glm::normalize(glm::vec3(gizmo->GetObjectTransformation()[0][0], gizmo->GetObjectTransformation()[0][1], gizmo->GetObjectTransformation()[0][2]));
-                    pos = pos + dir * glm::vec3(static_cast<DrawableObject*>(gizmo)->GetObjectBounds().x) * gizmo->GetPropertyValue("Scale", glm::vec3(1.f));
+                    pos = pos + dir * glm::vec3(gizmo_object->GetObjectBounds().x) * gizmo->GetPropertyValue("Scale", glm::vec3(1.f));
                 }
                 else if (rgb[1] == 254)
                 {
                     manipulation = 5;
                     gizmo->ParsePropertyValue("Color", "10:255:10:255");
                     glm::vec3 dir = glm::vec3(gizmo->GetObjectTransformation()[1][0], gizmo->GetObjectTransformation()[1][1], gizmo->GetObjectTransformation()[1][2]);
-                    pos = pos + dir * glm::vec3(static_cast<DrawableObject*>(gizmo)->GetObjectBounds().y) * gizmo->GetPropertyValue("Scale", glm::vec3(1.f));
+                    pos = pos + dir * glm::vec3(gizmo_object->GetObjectBounds().y) * gizmo->GetPropertyValue("Scale", glm::vec3(1.f));
                 }
                 else if (rgb[2] == 254)
                 {
                     manipulation = 6;
                     gizmo->ParsePropertyValue("Color", "10:10:255:255");
                     glm::vec3 dir = glm::vec3(gizmo->GetObjectTransformation()[2][0], gizmo->GetObjectTransformation()[2][1], gizmo->GetObjectTransformation()[2][2]);
-                    pos = pos + dir * glm::vec3(static_cast<DrawableObject*>(gizmo)->GetObjectBounds().z) * gizmo->GetPropertyValue("Scale", glm::vec3(1.f));
+                    pos = pos + dir * glm::vec3(gizmo_object->GetObjectBounds().z) * gizmo->GetPropertyValue("Scale", glm::vec3(1.f));
                 }
                 else
                 {
@@ -168,14 +169,16 @@ namespace GrEngine
 
                 if (transform_target != nullptr && transform_target != gizmo && transform_target != grid && transform_target->GetEntityID() != 100)
                 {
-                    static_cast<DrawableObject*>(gizmo)->SetVisisibility(true);
+                    Object* gizmo_object = static_cast<Object*>(gizmo->GetProperty("Drawable")->GetValueAdress());
+                    gizmo_object->SetVisisibility(true);
                     gizmo->PositionObjectAt(transform_target->GetObjectPosition());
                     gizmo->SetRotation(transform_target->GetObjectOrientation());
                 }
                 else if (transform_target == nullptr || transform_target->GetEntityID() == 100)
                 {
+                    Object* gizmo_object = static_cast<Object*>(gizmo->GetProperty("Drawable")->GetValueAdress());
                     manipulation = 0;
-                    static_cast<DrawableObject*>(gizmo)->SetVisisibility(false);
+                    gizmo_object->SetVisisibility(false);
                 }
             }
         }
@@ -261,6 +264,7 @@ namespace GrEngine
 
         void App_UpdateEntity(Entity* target)
         {
+            int id = target->GetEntityID();
             getEditorUI()->UpdateEntity(target->GetEntityID(), (char*)target->GetEntityNameTag());
         }
 
@@ -278,12 +282,10 @@ namespace GrEngine
         void App_GetAllEntities()
         {
             auto ent_vec = GetRenderer()->GetEntitiesList();
-            ent_vec.erase(grid->GetEntityID());
-            ent_vec.erase(gizmo->GetEntityID());
 
             for (auto obj : ent_vec)
             {
-                if (obj.second->GetEntityType() == "Object" && !obj.second->IsStatic())
+                if ((obj.second->GetEntityType() != EntityType::SkyboxEntity || obj.second->GetEntityType() == EntityType::TerrainEntity) && !obj.second->IsStatic())
                 {
                     App_UpdateEntity(obj.second);
                 }
@@ -599,43 +601,45 @@ namespace GrEngine
         {
             //Grid
             grid = GetRenderer()->addEntity();
-            static_cast<DrawableObject*>(grid)->DisableCollisions();
+            Object* grid_object = static_cast<Object*>(grid->AddNewProperty("Drawable")->GetValueAdress());
+            grid_object->GeneratePlaneMesh(1, 1);
+            grid_object->DisableCollisions();
+            //grid_object->SetVisisibility(false);
             grid->ParsePropertyValue("Transparency", "1");
-            //static_cast<DrawableObject*>(grid)->SetVisisibility(false);
             grid->ParsePropertyValue("Shader", "Shaders\\grid");
-            static_cast<DrawableObject*>(grid)->GeneratePlaneMesh(1, 1);
             grid->MakeStatic();
+            grid->AddNewProperty("CastShadow");
+            grid->ParsePropertyValue("CastShadow", "0");
 
             //Move
             gizmo = GetRenderer()->addEntity();
-            static_cast<DrawableObject*>(gizmo)->DisableCollisions();
-            static_cast<DrawableObject*>(gizmo)->SetVisisibility(false);
-            static_cast<DrawableObject*>(gizmo)->LoadMesh("Content\\Editor\\ManipulationTool.obj", nullptr);
+            Object* gizmo_object = static_cast<Object*>(gizmo->AddNewProperty("Drawable")->GetValueAdress());
+            gizmo_object->DisableCollisions();
+            gizmo_object->SetVisisibility(false);
+            gizmo_object->LoadMesh("Content\\Editor\\ManipulationTool.obj", nullptr);
             gizmo->ParsePropertyValue("Shader", "Shaders\\gizmo");
             gizmo->AddNewProperty("Color");
             gizmo->ParsePropertyValue("Color", "1:1:1:1");
             gizmo->AddNewProperty("Scale");
             gizmo->MakeStatic();
+            gizmo->AddNewProperty("CastShadow");
+            gizmo->ParsePropertyValue("CastShadow", "0");
 
             //Paint
             brush = GetRenderer()->addEntity();
-            brush->ParsePropertyValue("Transparency", "2");
+            Object* brush_object = static_cast<Object*>(brush->AddNewProperty("Drawable")->GetValueAdress());
+            brush->ParsePropertyValue("Transparency", "1");
             brush->ParsePropertyValue("Shader", "Shaders\\brush");
-            static_cast<DrawableObject*>(brush)->DisableCollisions();
-            static_cast<DrawableObject*>(brush)->SetVisisibility(false);
-            static_cast<DrawableObject*>(brush)->LoadMesh("Content\\Editor\\PaintingSphere.obj", nullptr);
+            brush_object->DisableCollisions();
+            brush_object->SetVisisibility(false);
+            brush_object->LoadMesh("Content\\Editor\\PaintingSphere.obj", nullptr);
             brush->AddNewProperty("Color");
             brush->ParsePropertyValue("Color", "1:1:1:0.5");
             brush->AddNewProperty("Scale");
             brush->ParsePropertyValue("Scale", "2:2:2");
             brush->MakeStatic();
-
-            //auto shrek = GetRenderer()->addEntity();
-            //static_cast<DrawableObject*>(shrek)->LoadModel((Globals::getExecutablePath() + "Content\\Shrek\\shrek.gmf").c_str());
-            //shrek->MoveObject(-1, -4, 0);
-            //shrek->Rotate(0, 15, 0);
-
-            //GetRenderer()->getActiveViewport()->Rotate(-90, 0, 0);
+            brush->AddNewProperty("CastShadow");
+            brush->ParsePropertyValue("CastShadow", "0");
         }
 
         void UnloadTools()
@@ -692,7 +696,7 @@ namespace GrEngine
             auto props = ent->GetProperties();
             int numProps = props.size();
 
-            if (ent->GetEntityType() == "Object")
+            if (ent->GetEntityType() != EntityType::SkyboxEntity || ent->GetEntityType() == EntityType::TerrainEntity)
             {
                 for (int i = 0; i < numProps; i++)
                 {

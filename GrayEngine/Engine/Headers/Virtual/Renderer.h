@@ -2,6 +2,7 @@
 #include "Entities/Camera.h"
 #include "Entities/Entity.h"
 #include "Entities/Skybox.h"
+#include "Entities/Properties/Drawable.h"
 #include "Core/Logger.h"
 
 namespace GrEngine
@@ -29,6 +30,7 @@ namespace GrEngine
 		virtual Entity* addEntity() = 0;
 		virtual Entity* addEntity(UINT ID) = 0;
 		virtual void addEntity(Entity* entity) = 0;
+		virtual Object* InitDrawableObject(Entity* ownerEntity) = 0;
 		std::map<UINT, Entity*>& GetEntitiesList()
 		{
 			return entities;
@@ -65,6 +67,7 @@ namespace GrEngine
 	protected:
 		UINT32 selected_entity = 0;
 		std::map<UINT, Entity*> entities;
+		std::map<UINT, Object*> drawables;
 		glm::lowp_uvec3 next_id = {0, 0, 1};
 		std::vector<UINT> free_ids;
 	};

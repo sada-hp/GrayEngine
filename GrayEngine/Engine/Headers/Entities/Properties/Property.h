@@ -15,7 +15,8 @@ enum class PropertyType
 	Cubemap,
 	Shader,
 	Transparency,
-	DoubleSided
+	DoubleSided,
+	CastShadow
 };
 
 struct EntityProperty
@@ -173,7 +174,24 @@ public:
 	virtual void* GetValueAdress() override;
 
 	std::string property_value;
+	void* drawable = nullptr;
 };
+
+struct SpotLight : public EntityProperty
+{
+public:
+	SpotLight(void* parent = nullptr);
+	~SpotLight();
+	const char* ValueString() override;
+	void ParsePropertyValue(const char* value) override;
+	void SetPropertyValue(std::string value);
+	std::any GetAnyValue() override;
+	virtual void* GetValueAdress() override;
+
+	std::string property_value;
+	void* spotlight = nullptr;
+};
+
 
 struct CubemapProperty : public EntityProperty
 {
@@ -226,6 +244,22 @@ struct DoubleSided : public EntityProperty
 public:
 	DoubleSided(bool value, void* parent = nullptr);
 	~DoubleSided();
+	const char* ValueString() override;
+	void ParsePropertyValue(const char* value) override;
+	void SetPropertyValue(int value);
+	std::any GetAnyValue() override;
+	virtual void* GetValueAdress() override;
+
+	int property_value;
+private:
+	std::string property_string;
+};
+
+struct CastShadow : public EntityProperty
+{
+public:
+	CastShadow(bool value, void* parent = nullptr);
+	~CastShadow();
 	const char* ValueString() override;
 	void ParsePropertyValue(const char* value) override;
 	void SetPropertyValue(int value);

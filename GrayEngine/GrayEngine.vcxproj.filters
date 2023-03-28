@@ -37,6 +37,8 @@
     <ClInclude Include="Engine\Headers\Entities\Terrain.h" />
     <ClInclude Include="Vulkan\VulkanTerrain.h" />
     <ClInclude Include="Vulkan\VulkanRenderer.h" />
+    <ClInclude Include="Engine\Headers\Entities\Properties\Drawable.h" />
+    <ClInclude Include="Engine\Headers\Entities\Properties\Spotlight.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Engine\Source\GL_App.cpp" />

@@ -18,9 +18,23 @@ namespace GrEngine_Vulkan
 		while (entities.size() > 0)
 		{
 			std::map<UINT, GrEngine::Entity*>::iterator pos = entities.begin();
-			dynamic_cast<VulkanDrawable*>((*pos).second)->destroyObject();
+			switch ((*pos).second->GetEntityType())
+			{
+			case GrEngine::EntityType::ObjectEntity:
+				static_cast<VulkanObject*>(drawables[(*pos).first])->destroyObject();
+				delete drawables[(*pos).first];
+				drawables.erase((*pos).first);
+				break;
+			case GrEngine::EntityType::SkyboxEntity:
+				static_cast<VulkanSkybox*>((*pos).second)->destroyObject();
+				break;
+			case GrEngine::EntityType::TerrainEntity:
+				static_cast<VulkanTerrain*>((*pos).second)->destroyObject();
+				break;
+			}
+
 			delete (*pos).second;
-			entities.erase(pos);
+			entities.erase((*pos).first);
 		}
 
 		vmaUnmapMemory(memAllocator, viewProjUBO.Allocation);
@@ -398,9 +412,9 @@ namespace GrEngine_Vulkan
 		scissor.extent = swapChainExtent;
 		vkCmdSetScissor(commandBuffers[index], 0, 1, &scissor);
 
-		for (std::map<UINT, GrEngine::Entity*>::iterator itt = entities.begin(); itt != entities.end(); ++itt)
+		for (std::map<UINT, GrEngine::Object*>::iterator itt = drawables.begin(); itt != drawables.end(); ++itt)
 		{
-			if ((*itt).second->GetEntityType() == "Object" && dynamic_cast<VulkanObject*>((*itt).second)->IsVisible())
+			if (static_cast<VulkanObject*>((*itt).second)->IsVisible())
 			{
 				static_cast<VulkanObject*>((*itt).second)->recordSelection(commandBuffers[index], swapChainExtent, DrawMode::NORMAL);
 			}
@@ -554,8 +568,6 @@ namespace GrEngine_Vulkan
 
 	void VulkanRenderer::prepareCompositionPass()
 	{
-		//VulkanAPI::m_createVkBuffer(logicalDevice, memAllocator, &uboShadowGeometryShader, sizeof(uboShadowGeometryShader), VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, &shadowUBO, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
-
 		std::vector<VkDescriptorPoolSize> poolSizes;
 		poolSizes.resize(3);
 		poolSizes[0].descriptorCount = 5;
@@ -1523,8 +1535,6 @@ namespace GrEngine_Vulkan
 		shadowPassInfo.clearValueCount = 1;
 		shadowPassInfo.pClearValues = shadowClear;
 
-
-
 		vkCmdBeginRenderPass(commandBuffers[index], &shadowPassInfo, VK_SUBPASS_CONTENTS_INLINE);
 
 		viewport.x = 0;
@@ -1541,13 +1551,13 @@ namespace GrEngine_Vulkan
 		vkCmdBindPipeline(commandBuffers[index], VK_PIPELINE_BIND_POINT_GRAPHICS, shadowPipeline);
 		vkCmdBindDescriptorSets(commandBuffers[index], VK_PIPELINE_BIND_POINT_GRAPHICS, shadowPipelineLayout, 0, 1, &shadowSet, 0, NULL);
 
-		for (std::map<UINT, GrEngine::Entity*>::iterator itt = entities.begin(); itt != entities.end(); ++itt)
+		for (std::map<UINT, GrEngine::Object*>::iterator itt = drawables.begin(); itt != drawables.end(); ++itt)
 		{
-			if ((*itt).second->GetEntityType() == "Object" && dynamic_cast<VulkanObject*>((*itt).second)->IsVisible())
+			if (static_cast<VulkanObject*>((*itt).second)->GetOwnerEntity()->GetPropertyValue("CastShadow", 1) && static_cast<VulkanObject*>((*itt).second)->IsVisible())
 			{
 				VertexConstants ubo{};
-				ubo.model = (*itt).second->GetObjectTransformation();
-				ubo.scale = (*itt).second->GetPropertyValue("Scale", glm::vec3(1.f));
+				ubo.model = (*itt).second->GetOwnerEntity()->GetObjectTransformation();
+				ubo.scale = (*itt).second->GetOwnerEntity()->GetPropertyValue("Scale", glm::vec3(1.f));
 				vkCmdPushConstants(commandBuffers[index], shadowPipelineLayout, VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(VertexConstants), &ubo);
 				static_cast<VulkanObject*>((*itt).second)->draw(commandBuffers[index]);
 			}
@@ -1612,17 +1622,20 @@ namespace GrEngine_Vulkan
 
 		for (std::map<UINT, GrEngine::Entity*>::iterator itt = entities.begin(); itt != entities.end(); ++itt)
 		{
-			if ((*itt).second->GetEntityType() == "Object" && static_cast<VulkanObject*>((*itt).second)->IsVisible())
+			switch ((*itt).second->GetEntityType())
 			{
-				static_cast<VulkanObject*>((*itt).second)->recordCommandBuffer(commandBuffers[index], extent, DrawMode::NORMAL);
-			}
-			else if ((*itt).second->GetEntityType() == "Skybox")
-			{
-				static_cast<VulkanSkybox*>((*itt).second)->recordCommandBuffer(commandBuffers[index], extent, DrawMode::NORMAL);
-			}
-			else if ((*itt).second->GetEntityType() == "Terrain")
-			{
-				static_cast<VulkanTerrain*>((*itt).second)->recordCommandBuffer(commandBuffers[index], extent, DrawMode::NORMAL);
+			case GrEngine::EntityType::ObjectEntity:
+				if (static_cast<VulkanObject*>(drawables[(*itt).second->GetEntityID()])->IsVisible())
+					static_cast<VulkanObject*>(drawables[(*itt).second->GetEntityID()])->recordCommandBuffer(commandBuffers[index], DrawMode::NORMAL);
+				break;
+			case GrEngine::EntityType::SkyboxEntity:
+				static_cast<VulkanSkybox*>((*itt).second)->recordCommandBuffer(commandBuffers[index], DrawMode::NORMAL);
+				break;
+			case GrEngine::EntityType::TerrainEntity:
+				static_cast<VulkanTerrain*>((*itt).second)->recordCommandBuffer(commandBuffers[index], DrawMode::NORMAL);
+				break;
+			default:
+				continue;
 			}
 		}
 
@@ -1634,11 +1647,11 @@ namespace GrEngine_Vulkan
 
 		vkCmdNextSubpass(commandBuffers[index], VK_SUBPASS_CONTENTS_INLINE);
 
-		for (std::map<UINT, GrEngine::Entity*>::iterator itt = entities.begin(); itt != entities.end(); ++itt)
+		for (std::map<UINT, GrEngine::Object*>::iterator itt = drawables.begin(); itt != drawables.end(); ++itt)
 		{
-			if ((*itt).second->GetEntityType() == "Object" && dynamic_cast<VulkanObject*>((*itt).second)->IsVisible())
+			if (static_cast<VulkanObject*>((*itt).second)->IsVisible())
 			{
-				static_cast<VulkanObject*>((*itt).second)->recordCommandBuffer(commandBuffers[index], extent, DrawMode::TRANSPARENCY);
+				static_cast<VulkanObject*>((*itt).second)->recordCommandBuffer(commandBuffers[index], DrawMode::TRANSPARENCY);
 			}
 		}
 
@@ -1852,17 +1865,19 @@ namespace GrEngine_Vulkan
 
 		for (std::map<UINT, GrEngine::Entity*>::iterator itt = entities.begin(); itt != entities.end(); ++itt)
 		{
-			if ((*itt).second->GetEntityType() == "Object" && dynamic_cast<VulkanObject*>((*itt).second)->IsVisible())
+			switch ((*itt).second->GetEntityType())
 			{
-				static_cast<VulkanObject*>((*itt).second)->updateObject();
-			}
-			else if ((*itt).second->GetEntityType() == "Skybox")
-			{
+			case GrEngine::EntityType::ObjectEntity:
+				static_cast<VulkanObject*>(drawables[(*itt).second->GetEntityID()])->updateObject();
+				break;
+			case GrEngine::EntityType::SkyboxEntity:
 				static_cast<VulkanSkybox*>((*itt).second)->updateObject();
-			}
-			else if ((*itt).second->GetEntityType() == "Terrain")
-			{
+				break;
+			case GrEngine::EntityType::TerrainEntity:
 				static_cast<VulkanTerrain*>((*itt).second)->updateObject();
+				break;
+			default:
+				continue;
 			}
 		}
 
@@ -1973,7 +1988,12 @@ namespace GrEngine_Vulkan
 
 			if ((*pos).second->IsStatic() == false)
 			{
-				dynamic_cast<VulkanDrawable*>((*pos).second)->destroyObject();
+				if (drawables.count((*pos).first) > 0)
+				{
+					static_cast<VulkanObject*>(drawables[(*pos).first])->destroyObject();
+					delete drawables[(*pos).first];
+					drawables.erase((*pos).first);
+				}
 				delete (*pos).second;
 				entities.erase((*pos).first);
 			}
@@ -1999,16 +2019,19 @@ namespace GrEngine_Vulkan
 	bool VulkanRenderer::loadModel(UINT id, const char* model_path)
 	{
 		Initialized = false;
-		VulkanObject* ref_obj = static_cast<VulkanObject*>(entities[id]);
+		VulkanObject* ref_obj = static_cast<VulkanObject*>(drawables[id]);
 
-		if (ref_obj->HasProperty("Drawable"))
+		if (ref_obj != nullptr)
 		{
-			ref_obj->ParsePropertyValue("Drawable", model_path);
-		}
-		else
-		{
-			ref_obj->AddNewProperty("Drawable");
-			ref_obj->ParsePropertyValue("Drawable", model_path);
+			if (ref_obj->GetOwnerEntity()->HasProperty("Drawable"))
+			{
+				ref_obj->GetOwnerEntity()->ParsePropertyValue("Drawable", model_path);
+			}
+			else
+			{
+				ref_obj->GetOwnerEntity()->AddNewProperty("Drawable");
+				ref_obj->GetOwnerEntity()->ParsePropertyValue("Drawable", model_path);
+			}
 		}
 
 		Initialized = true;
@@ -2017,19 +2040,7 @@ namespace GrEngine_Vulkan
 
 	bool VulkanRenderer::assignTextures(std::vector<std::string> textures, GrEngine::Entity* target)
 	{
-		if (target->GetEntityType() == "Object")
-		{
-			VulkanObject* object = static_cast<VulkanObject*>(target);
-			if (object->object_texture != nullptr)
-			{
-				resources.RemoveTexture(object->object_texture->texture_collection, logicalDevice, memAllocator);
-				object->object_texture = nullptr;
-			}
-
-			object->object_texture = loadTexture(textures, VK_IMAGE_VIEW_TYPE_2D_ARRAY, VK_IMAGE_TYPE_2D)->AddLink();
-			object->updateObject();
-		}
-		else if (target->GetEntityType() == "Skybox")
+		if (target->GetEntityType() == GrEngine::EntityType::SkyboxEntity)
 		{
 			VulkanSkybox* object = static_cast<VulkanSkybox*>(target);
 			if (object->object_texture != nullptr)
@@ -2041,10 +2052,21 @@ namespace GrEngine_Vulkan
 			object->object_texture = loadTexture(textures, VK_IMAGE_VIEW_TYPE_CUBE, VK_IMAGE_TYPE_2D)->AddLink();
 			object->updateObject();
 		}
-
-		else if (target->GetEntityType() == "Terrain")
+		else if (target->GetEntityType() == GrEngine::EntityType::TerrainEntity)
 		{
 			VulkanTerrain* object = static_cast<VulkanTerrain*>(target);
+			if (object->object_texture != nullptr)
+			{
+				resources.RemoveTexture(object->object_texture->texture_collection, logicalDevice, memAllocator);
+				object->object_texture = nullptr;
+			}
+
+			object->object_texture = loadTexture(textures, VK_IMAGE_VIEW_TYPE_2D_ARRAY, VK_IMAGE_TYPE_2D)->AddLink();
+			object->updateObject();
+		}
+		else if (drawables.count(target->GetEntityID()) > 0)
+		{
+			VulkanObject* object = static_cast<VulkanObject*>(drawables[target->GetEntityID()]);
 			if (object->object_texture != nullptr)
 			{
 				resources.RemoveTexture(object->object_texture->texture_collection, logicalDevice, memAllocator);
@@ -2227,18 +2249,18 @@ namespace GrEngine_Vulkan
 	bool VulkanRenderer::updateTexture(GrEngine::Entity* target, int textureIndex)
 	{
 		VulkanDrawable* object = nullptr;
-		if (target->GetEntityType() == "Object")
-		{
-			object = static_cast<VulkanObject*>(target);
-		}
-		else if (target->GetEntityType() == "Skybox")
+
+		if (target->GetEntityType() == GrEngine::EntityType::SkyboxEntity)
 		{
 			object = static_cast<VulkanSkybox*>(target);
 		}
-
-		else if (target->GetEntityType() == "Terrain")
+		else if (target->GetEntityType() == GrEngine::EntityType::TerrainEntity)
 		{
 			object = static_cast<VulkanTerrain*>(target);
+		}
+		else if (drawables.count(target->GetEntityID()) > 0)
+		{
+			object = static_cast<VulkanObject*>(drawables[target->GetEntityID()]);
 		}
 		else
 		{
@@ -2384,18 +2406,18 @@ namespace GrEngine_Vulkan
 	bool VulkanRenderer::updateTexture(GrEngine::Entity* target, void* pixels, int textureIndex)
 	{
 		VulkanDrawable* object = nullptr;
-		if (target->GetEntityType() == "Object")
-		{
-			object = static_cast<VulkanObject*>(target);
-		}
-		else if (target->GetEntityType() == "Skybox")
+
+		if (target->GetEntityType() == GrEngine::EntityType::SkyboxEntity)
 		{
 			object = static_cast<VulkanSkybox*>(target);
 		}
-
-		else if (target->GetEntityType() == "Terrain")
+		else if (target->GetEntityType() == GrEngine::EntityType::TerrainEntity)
 		{
 			object = static_cast<VulkanTerrain*>(target);
+		}
+		else if (drawables.count(target->GetEntityID()) > 0)
+		{
+			object = static_cast<VulkanObject*>(drawables[target->GetEntityID()]);
 		}
 		else
 		{
@@ -2741,6 +2763,8 @@ namespace GrEngine_Vulkan
 
 	GrEngine::Entity* VulkanRenderer::addEntity()
 	{
+		GrEngine::Entity* ent = nullptr;
+
 		UINT id;
 		if (free_ids.size() > 0)
 		{
@@ -2758,9 +2782,10 @@ namespace GrEngine_Vulkan
 			id = std::atoi(_buf);
 		}
 
-		GrEngine::Entity* ent = new VulkanObject(id);
+		ent = new GrEngine::Entity(id);
+		//GrEngine::Entity* ent = new VulkanObject(id);
 
-		dynamic_cast<VulkanObject*>(ent)->initObject(logicalDevice, memAllocator, this);
+		//dynamic_cast<VulkanObject*>(ent)->initObject(logicalDevice, memAllocator, this);
 		std::string new_name = std::string("Entity") + std::to_string(entities.size());
 		ent->UpdateNameTag(new_name.c_str());
 		entities[id] = ent;
@@ -2770,6 +2795,7 @@ namespace GrEngine_Vulkan
 
 	GrEngine::Entity* VulkanRenderer::addEntity(UINT id)
 	{
+		GrEngine::Entity* ent = nullptr;
 		char _buf[11];
 		std::snprintf(_buf, sizeof(_buf), "1%03d%03d%03d", next_id[0], next_id[1], next_id[2]);
 
@@ -2782,22 +2808,36 @@ namespace GrEngine_Vulkan
 			next_id[2] %= 255;
 		}
 
-		GrEngine::Entity* ent = new VulkanObject(id);
-
-		static_cast<VulkanObject*>(ent)->initObject(logicalDevice, memAllocator, this);
-		std::string new_name = std::string("Entity") + std::to_string(entities.size() + 1);
+		ent = new GrEngine::Entity(id);
+		std::string new_name = std::string("Entity") + std::to_string(entities.size());
 		ent->UpdateNameTag(new_name.c_str());
-		entities[ent->GetEntityID()] = ent;
+		entities[id] = ent;
+
+		//GrEngine::Entity* ent = new VulkanObject(id);
+
+		//static_cast<VulkanObject*>(ent)->initObject(logicalDevice, memAllocator, this);
+		//std::string new_name = std::string("Entity") + std::to_string(entities.size() + 1);
+		//ent->UpdateNameTag(new_name.c_str());
+		//entities[ent->GetEntityID()] = ent;
 
 		return ent;
 	}
 
 	void VulkanRenderer::addEntity(GrEngine::Entity* entity)
 	{
-		static_cast<VulkanObject*>(entity)->initObject(logicalDevice, memAllocator, this);
+		//static_cast<VulkanObject*>(entity)->initObject(logicalDevice, memAllocator, this);
 		std::string new_name = std::string("Entity") + std::to_string(entities.size() + 1);
 		entity->UpdateNameTag(new_name.c_str());
 		entities[entity->GetEntityID()] = entity;
+	}
+
+	GrEngine::Object* VulkanRenderer::InitDrawableObject(GrEngine::Entity* ownerEntity)
+	{
+		VulkanObject* drawable = new VulkanObject(ownerEntity);
+		drawables[ownerEntity->GetEntityID()] = drawable;
+		drawable->initObject(logicalDevice, memAllocator, this);
+
+		return drawable;
 	}
 
 	GrEngine::Entity* VulkanRenderer::selectEntity(UINT ID)
@@ -2825,10 +2865,14 @@ namespace GrEngine_Vulkan
 	{
 		waitForRenderer();
 
-		auto object = entities.at(id);
-		if (object != nullptr)
+		if (entities.at(id) != nullptr)
 		{
-			dynamic_cast<VulkanObject*>(object)->destroyObject();
+			auto object = drawables.at(id);
+			if (object != nullptr)
+			{
+				dynamic_cast<VulkanObject*>(object)->destroyObject();
+				drawables.erase(id);
+			}
 			entities.erase(id);
 			free_ids.push_back(id);
 		}
@@ -2870,7 +2914,7 @@ namespace GrEngine_Vulkan
 		{
 			if ((*itt).second->IsStatic() == false || (*itt).second == sky)
 			{
-				new_file << (*itt).second->GetEntityType() << " " << (*itt).second->GetEntityID() << "\n{\n";
+				new_file << (*itt).second->GetTypeString() << " " << (*itt).second->GetEntityID() << "\n{\n";
 				cur_props = (*itt).second->GetProperties();
 				for (std::vector<EntityProperty*>::iterator itt = cur_props.begin(); itt != cur_props.end(); ++itt)
 				{
@@ -2934,7 +2978,7 @@ namespace GrEngine_Vulkan
 					value = false;
 				}
 			}
-			else if (!block_open && stream == "Object")
+			else if (!block_open && stream == "Entity")
 			{
 				file >> stream;
 				cur_ent = addEntity(std::atoi(stream.c_str()));

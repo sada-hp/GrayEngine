@@ -57,7 +57,7 @@ void SceneEditor::LoadModelFile(const char* model_path)
     }
 
     GrEngine::Engine::GetContext()->LoadFromGMF(GrEngine::Engine::GetContext()->GetSelectedEntityID(), std::string(model_path).erase(0, solution.size()).c_str());
-    materials = static_cast<GrEngine::DrawableObject*>(GrEngine::Engine::GetContext()->GetRenderer()->GetSelectedEntity())->GetMaterials();
+    materials = GGetMesh(GrEngine::Engine::GetContext()->GetRenderer()->GetSelectedEntity())->GetMaterials();
 
     std::string out_materials;
     std::string out_textures;
@@ -133,7 +133,7 @@ void SceneEditor::AssignTextures(const char* textures_path)
             continue;
         }
     }
-    GrEngine::Engine::GetContext()->AssignTextures(mat_vector, GrEngine::Engine::GetContext()->GetRenderer()->GetSelectedEntity());
+    //GrEngine::Engine::GetContext()->AssignTextures(mat_vector, GrEngine::Engine::GetContext()->GetRenderer()->GetSelectedEntity());
 }
 
 void SceneEditor::CloseContext()
