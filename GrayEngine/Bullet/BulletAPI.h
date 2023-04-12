@@ -87,7 +87,7 @@ namespace GrEngineBullet
 				if (!CollisionEnabled)
 					return false;
 
-				float obj_mass = pOwner->GetPropertyValue<float>("Mass", 0.f);
+				float obj_mass = pOwner->GetPropertyValue(PropertyType::Mass, 0.f);
 				btTransform startTransform;
 				glm::mat4 transformation = pOwner->GetObjectTransformation();
 				const float* pSource = (const float*)glm::value_ptr(transformation);
@@ -103,12 +103,18 @@ namespace GrEngineBullet
 				if (obj_mass != 0.f)
 					colShape->calculateLocalInertia(obj_mass, localInertia);
 
-				glm::vec3 scale = pOwner->GetPropertyValue("Scale", glm::vec3(1.0f));
+				glm::vec3 scale = pOwner->GetPropertyValue(PropertyType::Scale, glm::vec3(1.0f));
 				colShape->setLocalScaling(btVector3(scale.x + 0.0001f, scale.y + 0.0001f, scale.z + 0.0001f));
 
 				myMotionState = new btDefaultMotionState(startTransform);
 				btRigidBody::btRigidBodyConstructionInfo rbInfo(obj_mass, myMotionState, colShape, localInertia);
 				body = new btRigidBody(rbInfo);
+				//body->setCollisionFlags(body->getCollisionFlags() | btCollisionObject::CF_CHARACTER_OBJECT);
+				//if (body->getCollisionFlags() & btCollisionObject::CF_KINEMATIC_OBJECT != 0)
+				//{
+				//	body->setActivationState(DISABLE_DEACTIVATION);
+				//}
+
 				initialized = true;
 				
 				return true;

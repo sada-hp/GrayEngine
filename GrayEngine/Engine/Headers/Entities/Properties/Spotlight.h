@@ -4,6 +4,14 @@
 #include "Entities/Entity.h"
 #include "Engine/Headers/Virtual/Physics.h"
 
+#define SHADOW_MAP_DIM 2048
+
+enum LightType
+{
+	Spot = 1,
+	Cascade
+};
+
 namespace GrEngine
 {
 	class SpotlightObject
@@ -20,7 +28,13 @@ namespace GrEngine
 
 		};
 
+		virtual const LightType GetLightType()
+		{
+			return type;
+		}
+
 	protected:
 		Entity* ownerEntity = nullptr;
+		LightType type;
 	};
 };

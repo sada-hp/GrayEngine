@@ -1,6 +1,5 @@
 #include "pch.h"
 #include "BulletAPI.h"
-#include "Entities/DrawableObject.h"
 
 namespace GrEngineBullet
 {
@@ -8,7 +7,7 @@ namespace GrEngineBullet
 	{
 		if (simulate)
 		{
-			dynamicsWorld->stepSimulation(GrEngine::Globals::delta_time, 10);
+			dynamicsWorld->stepSimulation(GrEngine::Globals::delta_time);
 		}
 	}
 

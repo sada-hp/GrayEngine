@@ -109,6 +109,9 @@
     <Compile Include="ColorControl.xaml.cs">
       <DependentUpon>ColorControl.xaml</DependentUpon>
     </Compile>
+    <Compile Include="CheckBoxControl.xaml.cs">
+      <DependentUpon>CheckBoxControl.xaml</DependentUpon>
+    </Compile>
     <Compile Include="Components\ListBoxEx.cs" />
     <Compile Include="EditorWindow.cs" />
     <Compile Include="EntityItem.xaml.cs">
@@ -163,6 +166,10 @@
       <Generator>MSBuild:Compile</Generator>
     </Page>
     <Page Include="ColorControl.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="CheckBoxControl.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>

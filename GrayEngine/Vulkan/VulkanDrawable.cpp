@@ -164,6 +164,17 @@ namespace GrEngine_Vulkan
 		return true;
 	}
 
+	bool VulkanDrawable::draw(VkCommandBuffer commandBuffer, int instances)
+	{
+		VkDeviceSize offsets[] = { 0 };
+		vkCmdBindVertexBuffers(commandBuffer, 0, 1, &object_mesh->vertexBuffer.Buffer, offsets);
+		vkCmdBindIndexBuffer(commandBuffer, object_mesh->indexBuffer.Buffer, 0, VK_INDEX_TYPE_UINT32);
+		//vkCmdDraw(commandBuffer, static_cast<uint32_t>(object_mesh.vertices.size()), 1, 0, 0);
+		vkCmdDrawIndexed(commandBuffer, static_cast<uint32_t>(object_mesh->indices.size()), instances, 0, 0, 0);
+
+		return true;
+	}
+
 	bool VulkanDrawable::pushConstants(VkCommandBuffer cmd)
 	{
 		vkCmdPushConstants(cmd, pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(VertexConstants), &ubo);
@@ -274,6 +285,21 @@ namespace GrEngine_Vulkan
 		std::array<VkPipelineShaderStageCreateInfo, 2> shaderStages;
 		std::vector<VkPipelineColorBlendAttachmentState> blendAttachmentStates;
 
+		std::array<float, 2> specs = { VulkanRenderer::NearPlane, VulkanRenderer::FarPlane };
+		std::array<VkSpecializationMapEntry, 2> entries;
+		entries[0].constantID = 0;
+		entries[0].offset = 0;
+		entries[0].size = sizeof(float);
+		entries[1].constantID = 1;
+		entries[1].offset = sizeof(float);
+		entries[1].size = sizeof(float);
+
+		VkSpecializationInfo specializationInfo;
+		specializationInfo.mapEntryCount = entries.size();
+		specializationInfo.pMapEntries = entries.data();
+		specializationInfo.dataSize = sizeof(float) * 2;
+		specializationInfo.pData = &specs;
+
 		if (transparency == 0)
 		{
 			vertShaderCode = GrEngine::Globals::readFile(solution_path + shader_path + "_vert.spv");
@@ -292,6 +318,8 @@ namespace GrEngine_Vulkan
 			fragShaderStageInfo.pName = "main";
 
 			shaderStages = { vertShaderStageInfo, fragShaderStageInfo };
+			shaderStages[1].pSpecializationInfo = &specializationInfo;
+
 			pipelineCI.stageCount = static_cast<uint32_t>(shaderStages.size());
 			pipelineCI.pStages = shaderStages.data();
 
@@ -331,6 +359,8 @@ namespace GrEngine_Vulkan
 			fragShaderStageInfo.pName = "main";
 
 			shaderStages = { vertShaderStageInfo, fragShaderStageInfo };
+			shaderStages[1].pSpecializationInfo = &specializationInfo;
+
 			pipelineCI.stageCount = static_cast<uint32_t>(shaderStages.size());
 			pipelineCI.pStages = shaderStages.data();
 

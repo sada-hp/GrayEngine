@@ -21,7 +21,7 @@ namespace SceneEditor
         glm::mat4 trans = app->transform_target->GetObjectTransformation();
         POINTFLOAT cursor = app->GetCursorPosition();
         float dist = (float)glm::length(camera->GetObjectPosition() - tPos);
-        std::string gizmo_scale = std::to_string(dist * 0.185f);
+        std::string gizmo_scale = std::to_string(dist * 0.25f);
 
         if (app->manipulation > 0 && app->manipulation < 4 && app->mouse_down)
         {
@@ -74,8 +74,8 @@ namespace SceneEditor
 
         POINTFLOAT cur = app->GetCursorPosition();
 
-        orientation.x -= (old_cursor_pos.x - cur.x) * senstivity;
-        orientation.y -= (old_cursor_pos.y - cur.y) * senstivity;
+        orientation.y -= (old_cursor_pos.x - cur.x) * senstivity;
+        orientation.x -= (old_cursor_pos.y - cur.y) * senstivity;
         camera->Rotate(orientation);
         SetCursorPos(vPos.x + (vSize.x / 2), vPos.y + (vSize.y / 2));
 
@@ -129,7 +129,7 @@ namespace SceneEditor
                     if (app->ctr_down)
                         app->App_UpdateBrush(app->paint_mode, glm::max(app->brush_opacity + para[1] / 50, 0.01), app->brush_size, app->brush_falloff);
                     else
-                        app->App_UpdateBrush(app->paint_mode, app->brush_opacity, glm::max(app->brush_size + para[1] / 10, 1.), app->brush_falloff);
+                        app->App_UpdateBrush(app->paint_mode, app->brush_opacity, glm::max(app->brush_size + para[1] / 10, 0.), app->brush_falloff);
 
                     app->App_SendBrushInfo();
                 }

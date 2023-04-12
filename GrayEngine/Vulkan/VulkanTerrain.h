@@ -11,8 +11,6 @@ namespace GrEngine_Vulkan
 			glm::vec4 uv;
 		};
 
-		bool ready = false;
-
 	public:
 		VulkanTerrain() {};
 		VulkanTerrain(std::vector<Vertex> vertices, std::vector<uint8_t> indices, std::string resource_name) {};
@@ -31,6 +29,7 @@ namespace GrEngine_Vulkan
 		glm::vec4& GetVertexPosition(UINT at) override;
 		void SaveTerrain(const char* filepath) override;
 		bool LoadTerrain(const char* filepath) override;
+		const std::string& GetBlendMask() override;
 
 	protected:
 		void populateDescriptorSets();
@@ -55,9 +54,11 @@ namespace GrEngine_Vulkan
 		Texture* foliageMask;
 
 		btBvhTriangleMeshShape* colShape;
+	private:
 		bool use_compute = false;
 		float maxAABB = 0.f;
 		float minAABB = 0.f;
+		bool ready = false;
 	};
 }
 

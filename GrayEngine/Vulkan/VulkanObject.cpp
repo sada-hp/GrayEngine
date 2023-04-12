@@ -28,6 +28,7 @@ namespace GrEngine_Vulkan
 
 		static_cast<VulkanRenderer*>(p_Owner)->assignTextures({""}, ownerEntity);
 		updateSelectionPipeline();
+		updateShadowPipeline();
 	}
 
 	void VulkanObject::destroyObject()
@@ -35,6 +36,8 @@ namespace GrEngine_Vulkan
 		GrEngine::Engine::GetContext()->GetPhysics()->RemoveSimulationObject(physComponent);
 		VulkanAPI::DestroyPipeline(selectionPipeline);
 		VulkanAPI::DestroyPipelineLayout(selectionLayout);
+		VulkanAPI::DestroyPipeline(shadowPipeline);
+		VulkanAPI::DestroyPipelineLayout(shadowLayout);
 
 		VulkanDrawable::destroyObject();
 	}
@@ -43,6 +46,7 @@ namespace GrEngine_Vulkan
 	{
 		updateObject();
 		updateSelectionPipeline();
+		updateShadowPipeline();
 	}
 
 	void VulkanObject::recordSelection(VkCommandBuffer cmd, VkExtent2D extent, UINT32 mode)
@@ -57,7 +61,7 @@ namespace GrEngine_Vulkan
 
 			//UpdateObjectPosition();
 			//UpdateObjectOrientation();
-			vkCmdBindDescriptorSets(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, selectionLayout, 0, 1, &descriptorSets[1].set, 0, NULL);
+			vkCmdBindDescriptorSets(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, selectionLayout, 0, 1, &descriptorSets[2].set, 0, NULL);
 			pushConstants(cmd);
 
 			//vkCmdDraw(commandBuffer, static_cast<uint32_t>(object_mesh.vertices.size()), 1, 0, 0);
@@ -65,17 +69,29 @@ namespace GrEngine_Vulkan
 		}
 	}
 
+	void VulkanObject::recordShadowPass(VkCommandBuffer cmd, int instances)
+	{
+		vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, shadowPipeline);
+		VkDeviceSize offsets[] = { 0 };
+		vkCmdBindVertexBuffers(cmd, 0, 1, &object_mesh->vertexBuffer.Buffer, offsets);
+		vkCmdBindIndexBuffer(cmd, object_mesh->indexBuffer.Buffer, 0, VK_INDEX_TYPE_UINT32);
+		vkCmdBindDescriptorSets(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, shadowLayout, 0, 1, &descriptorSets[1].set, 0, NULL);
+		ubo.model = GetObjectTransformation();
+		ubo.scale = glm::vec4(ownerEntity->GetPropertyValue(PropertyType::Scale, glm::vec3(1.f)), 1.f);
+		vkCmdPushConstants(cmd, pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(VertexConstants), &ubo);
+		vkCmdDrawIndexed(cmd, static_cast<uint32_t>(object_mesh->indices.size()), instances, 0, 0, 0);
+	}
+
 	bool VulkanObject::pushConstants(VkCommandBuffer cmd)
 	{
 		/*orientation relative to the position in a 3D space (?)*/
 		ubo.model = GetObjectTransformation();
 		/*Math for Game Programmers: Understanding Homogeneous Coordinates GDC 2015*/
-		ubo.scale = ownerEntity->GetPropertyValue("Scale", glm::vec3(1.f));
+		ubo.scale = glm::vec4(ownerEntity->GetPropertyValue(PropertyType::Scale, glm::vec3(1.f)), 1.f);
 		vkCmdPushConstants(cmd, pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(VertexConstants), &ubo);
 
-		opo.object_id = ownerEntity->GetEntityID();
-		opo.colors = ownerEntity->GetPropertyValue("Color", glm::vec4(1));
-		if (opo.object_id == selected_id && ownerEntity->IsStatic() == false)
+		opo.colors = ownerEntity->GetPropertyValue(PropertyType::Color, glm::vec4(1));
+		if (ownerEntity->GetEntityID() == selected_id && ownerEntity->IsStatic() == false)
 		{
 			opo.colors *= glm::vec4(0.5, 0.75, 2, opo.colors.w);
 		}
@@ -107,7 +123,7 @@ namespace GrEngine_Vulkan
 		pushConstant.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
 
 
-		VulkanAPI::CreatePipelineLayout(logicalDevice, { pushConstant }, { descriptorSets[1].descriptorSetLayout }, &selectionLayout);
+		VulkanAPI::CreatePipelineLayout(logicalDevice, { pushConstant }, { descriptorSets[2].descriptorSetLayout }, &selectionLayout);
 
 
 		std::array<VkShaderModule, 2> shaders;
@@ -222,6 +238,21 @@ namespace GrEngine_Vulkan
 		fragShaderStageInfo.pName = "main";
 
 		shaderStages = { vertShaderStageInfo, fragShaderStageInfo };
+
+		uint32_t obj_id = ownerEntity->GetEntityID();
+		std::array<VkSpecializationMapEntry, 1> entries;
+		entries[0].constantID = 0;
+		entries[0].offset = 0;
+		entries[0].size = sizeof(uint32_t);
+
+		VkSpecializationInfo specializationInfo;
+		specializationInfo.mapEntryCount = entries.size();
+		specializationInfo.pMapEntries = entries.data();
+		specializationInfo.dataSize = sizeof(uint32_t);
+		specializationInfo.pData = &obj_id;
+
+		shaderStages[1].pSpecializationInfo = &specializationInfo;
+
 		pipelineCI.stageCount = static_cast<uint32_t>(shaderStages.size());
 		pipelineCI.pStages = shaderStages.data();
 
@@ -238,36 +269,179 @@ namespace GrEngine_Vulkan
 		vkDestroyShaderModule(logicalDevice, shaders[1], nullptr);
 	}
 
+	void VulkanObject::updateShadowPipeline()
+	{
+		VulkanAPI::DestroyPipeline(shadowPipeline);
+		VulkanAPI::DestroyPipelineLayout(shadowLayout);
+
+		VkPushConstantRange pushConstant;
+		pushConstant.offset = 0;
+		pushConstant.size = sizeof(VertexConstants);
+		pushConstant.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
+
+
+		VulkanAPI::CreatePipelineLayout(logicalDevice, { pushConstant }, { descriptorSets[1].descriptorSetLayout }, &shadowLayout);
+
+		VkPipelineVertexInputStateCreateInfo vertexInputInfo{};
+		vertexInputInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
+
+		auto bindingDescription = Vertex::getBindingDescription();
+		auto attributeDescriptions = Vertex::getAttributeDescriptions();
+
+		vertexInputInfo.vertexBindingDescriptionCount = 1;
+		vertexInputInfo.vertexAttributeDescriptionCount = static_cast<uint32_t>(attributeDescriptions.size());
+		vertexInputInfo.pVertexBindingDescriptions = &bindingDescription;
+		vertexInputInfo.pVertexAttributeDescriptions = attributeDescriptions.data();
+
+		VkPipelineInputAssemblyStateCreateInfo inputAssembly{};
+		inputAssembly.sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;
+		inputAssembly.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
+		inputAssembly.primitiveRestartEnable = VK_FALSE;
+		VkPipelineRasterizationStateCreateInfo rasterizationState{};
+		rasterizationState.sType = VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO;
+		rasterizationState.depthClampEnable = VK_TRUE;
+		rasterizationState.rasterizerDiscardEnable = VK_FALSE;
+		rasterizationState.polygonMode = VK_POLYGON_MODE_FILL;
+		rasterizationState.lineWidth = 1.0f;
+		rasterizationState.cullMode = double_sided == 1 ? VK_CULL_MODE_NONE : VK_CULL_MODE_FRONT_BIT;
+		//rasterizationState.cullMode = VK_CULL_MODE_FRONT_BIT;
+		rasterizationState.frontFace = VK_FRONT_FACE_COUNTER_CLOCKWISE;
+		rasterizationState.depthBiasEnable = VK_TRUE;
+		rasterizationState.depthBiasConstantFactor = 5.f;
+		rasterizationState.depthBiasClamp = 0.01f;
+		rasterizationState.depthBiasSlopeFactor = 5.f;
+
+		VkPipelineColorBlendStateCreateInfo colorBlendState{};
+		colorBlendState.sType = VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO;
+		colorBlendState.attachmentCount = 0;
+		colorBlendState.pAttachments = nullptr;
+
+		VkPipelineDepthStencilStateCreateInfo depthStencilState{};
+		depthStencilState.sType = VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO;
+		depthStencilState.pNext = nullptr;
+		depthStencilState.depthTestEnable = VK_TRUE;
+		depthStencilState.depthWriteEnable = VK_TRUE;
+		depthStencilState.depthCompareOp = VK_COMPARE_OP_LESS_OR_EQUAL;
+		depthStencilState.depthBoundsTestEnable = VK_FALSE;
+		depthStencilState.minDepthBounds = 0.0f; // Optional
+		depthStencilState.maxDepthBounds = 1.0f; // Optional
+		depthStencilState.stencilTestEnable = VK_FALSE;
+
+		std::vector<VkDynamicState> dynamicStates = { VK_DYNAMIC_STATE_VIEWPORT, VK_DYNAMIC_STATE_SCISSOR };
+		VkPipelineDynamicStateCreateInfo dynamicState{};
+		dynamicState.sType = VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO;
+		dynamicState.pNext = nullptr;
+		dynamicState.flags = 0;
+		dynamicState.dynamicStateCount = (uint32_t)dynamicStates.size();
+		dynamicState.pDynamicStates = dynamicStates.data();
+
+		VkPipelineViewportStateCreateInfo viewportState{};
+		viewportState.sType = VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO;
+		viewportState.viewportCount = 1;
+		viewportState.pViewports = nullptr;
+		viewportState.scissorCount = 1;
+		viewportState.pScissors = nullptr;
+
+		VkPipelineMultisampleStateCreateInfo multisampleState{};
+		multisampleState.sType = VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO;
+		multisampleState.rasterizationSamples = VK_SAMPLE_COUNT_1_BIT;
+		multisampleState.sampleShadingEnable = VK_FALSE;
+		multisampleState.minSampleShading = 0;
+
+		std::string solution_path = GrEngine::Globals::getExecutablePath();
+		std::vector<char> vertShaderCode = GrEngine::Globals::readFile(solution_path + "Shaders//shadows_vert.spv");
+		std::vector<char> geomShaderCode = GrEngine::Globals::readFile(solution_path + "Shaders//shadows_geom.spv");
+		std::vector<char> fragShaderCode = GrEngine::Globals::readFile(solution_path + "Shaders//shadows_frag.spv");
+		VkShaderModule shaders[3] = { VulkanAPI::m_createShaderModule(logicalDevice, vertShaderCode), VulkanAPI::m_createShaderModule(logicalDevice, geomShaderCode), VulkanAPI::m_createShaderModule(logicalDevice, fragShaderCode) };
+
+		VkPipelineShaderStageCreateInfo vertShaderStageInfo{};
+		vertShaderStageInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+		vertShaderStageInfo.stage = VK_SHADER_STAGE_VERTEX_BIT;
+		vertShaderStageInfo.module = shaders[0];
+		vertShaderStageInfo.pName = "main";
+
+		VkPipelineShaderStageCreateInfo geomShaderStageInfo{};
+		geomShaderStageInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+		geomShaderStageInfo.stage = VK_SHADER_STAGE_GEOMETRY_BIT;
+		geomShaderStageInfo.module = shaders[1];
+		geomShaderStageInfo.pName = "main";
+
+		VkPipelineShaderStageCreateInfo fragShaderStageInfo{};
+		fragShaderStageInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+		fragShaderStageInfo.stage = VK_SHADER_STAGE_FRAGMENT_BIT;
+		fragShaderStageInfo.module = shaders[2];
+		fragShaderStageInfo.pName = "main";
+
+		std::array<VkPipelineShaderStageCreateInfo, 3> shaderStages = { vertShaderStageInfo, geomShaderStageInfo, fragShaderStageInfo };
+
+		uint32_t spec = static_cast<VulkanRenderer*>(p_Owner)->lightsCount();
+		std::array<VkSpecializationMapEntry, 1> entries;
+		entries[0].constantID = 0;
+		entries[0].offset = 0;
+		entries[0].size = sizeof(uint32_t);
+
+		VkSpecializationInfo specializationInfo;
+		specializationInfo.mapEntryCount = entries.size();
+		specializationInfo.pMapEntries = entries.data();
+		specializationInfo.dataSize = sizeof(uint32_t);
+		specializationInfo.pData = &spec;
+
+		shaderStages[0].pSpecializationInfo = &specializationInfo;
+
+		VkGraphicsPipelineCreateInfo pipelineCI{};
+
+		pipelineCI.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
+		pipelineCI.layout = shadowLayout;
+		pipelineCI.renderPass = static_cast<VulkanRenderer*>(p_Owner)->shadowPass;
+		pipelineCI.basePipelineIndex = 0;
+		pipelineCI.pVertexInputState = &vertexInputInfo;
+		pipelineCI.pInputAssemblyState = &inputAssembly;
+		pipelineCI.pRasterizationState = &rasterizationState;
+		pipelineCI.pColorBlendState = &colorBlendState;
+		pipelineCI.pMultisampleState = &multisampleState;
+		pipelineCI.pViewportState = &viewportState;
+		pipelineCI.pDepthStencilState = &depthStencilState;
+		pipelineCI.pDynamicState = &dynamicState;
+		pipelineCI.stageCount = static_cast<uint32_t>(shaderStages.size());
+		pipelineCI.pStages = shaderStages.data();
+		pipelineCI.subpass = 0;
+
+		bool res = VulkanAPI::CreateGraphicsPipeline(logicalDevice, &pipelineCI, &shadowPipeline);
+
+		vkDestroyShaderModule(logicalDevice, shaders[0], nullptr);
+		vkDestroyShaderModule(logicalDevice, shaders[1], nullptr);
+		vkDestroyShaderModule(logicalDevice, shaders[2], nullptr);
+	}
+
 	bool VulkanObject::createGraphicsPipeline()
 	{
-		shader_path = ownerEntity->GetPropertyValue("Shader", std::string(shader_path));
-		transparency = ownerEntity->GetPropertyValue("Transparency", 0);
-		double_sided = ownerEntity->GetPropertyValue("DoubleSided", 0);
+		shader_path = ownerEntity->GetPropertyValue(PropertyType::Shader, std::string(shader_path));
+		transparency = ownerEntity->GetPropertyValue(PropertyType::Transparency, 0);
+		double_sided = ownerEntity->GetPropertyValue(PropertyType::DoubleSided, 0);
 
 		return VulkanDrawable::createGraphicsPipeline();
 	}
 
 	void VulkanObject::populateDescriptorSets()
 	{
-		transparency = ownerEntity->GetPropertyValue("Transparency", 0);
+		transparency = ownerEntity->GetPropertyValue(PropertyType::Transparency, 0);
 
 		descriptorSets.clear();
-		descriptorSets.resize(2);
+		descriptorSets.resize(3);
 		descriptorSets[0].bindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
 		descriptorSets[1].bindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
+		descriptorSets[2].bindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
 
 		subscribeDescriptor(VK_SHADER_STAGE_VERTEX_BIT, 0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, static_cast<VulkanRenderer*>(p_Owner)->viewProjUBO.BufferInfo);
-		subscribeDescriptor(VK_SHADER_STAGE_VERTEX_BIT, 0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, static_cast<VulkanRenderer*>(p_Owner)->viewProjUBO.BufferInfo, 1);
 		subscribeDescriptor(VK_SHADER_STAGE_FRAGMENT_BIT, 1, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, object_texture->texInfo.descriptor);
+		subscribeDescriptor(VK_SHADER_STAGE_VERTEX_BIT, 0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, static_cast<VulkanRenderer*>(p_Owner)->shadowBuffer.BufferInfo, 1);
+		subscribeDescriptor(VK_SHADER_STAGE_FRAGMENT_BIT, 1, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, object_texture->texInfo.descriptor, 1);
+		subscribeDescriptor(VK_SHADER_STAGE_VERTEX_BIT, 0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, static_cast<VulkanRenderer*>(p_Owner)->viewProjUBO.BufferInfo, 2);
 
 		int index = 2;
 
 		if (transparency > 0)
 		{
-			auto a = static_cast<VulkanRenderer*>(p_Owner)->position.texInfo.descriptor;
-			auto b = static_cast<VulkanRenderer*>(p_Owner)->transBuffer.BufferInfo;
-			auto c = static_cast<VulkanRenderer*>(p_Owner)->headIndex.texInfo.descriptor;
-			auto d = static_cast<VulkanRenderer*>(p_Owner)->nodeBfffer.BufferInfo;
 			subscribeDescriptor(VK_SHADER_STAGE_FRAGMENT_BIT, index++, VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT, static_cast<VulkanRenderer*>(p_Owner)->position.texInfo.descriptor);
 			subscribeDescriptor(VK_SHADER_STAGE_FRAGMENT_BIT, index++, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, static_cast<VulkanRenderer*>(p_Owner)->transBuffer.BufferInfo);
 			subscribeDescriptor(VK_SHADER_STAGE_FRAGMENT_BIT, index++, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, static_cast<VulkanRenderer*>(p_Owner)->headIndex.texInfo.descriptor);
@@ -606,7 +780,7 @@ namespace GrEngine_Vulkan
 
 			target_mesh->indices = { 0, 1, 2, 3, 4, 5, 3, 6, 4, 7, 8, 9, 10, 11, 12, 13, 14, 7, 0, 2, 4, 7, 9, 15, 10, 12, 16, 13, 7, 17, 18, 19, 20, 18, 21, 19 };
 
-			resource = resources->AddMeshResource("default", target_mesh);
+			resource = resources->AddMeshResource(res_name.c_str(), target_mesh);
 			object_mesh = resource->AddLink();
 
 			VulkanAPI::m_createVkBuffer(logicalDevice, memAllocator, target_mesh->vertices.data(), sizeof(target_mesh->vertices[0]) * target_mesh->vertices.size(), VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, &target_mesh->vertexBuffer);

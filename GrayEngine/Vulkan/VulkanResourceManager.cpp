@@ -88,8 +88,8 @@ namespace GrEngine_Vulkan
 					VulkanAPI::m_destroyTexture(device, allocator, resource->PopResource());
 					delete resource;
 					texResources.erase(itt);
-					break;
 				}
+				break;
 			}
 		}
 	}

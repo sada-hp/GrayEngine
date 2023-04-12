@@ -7,6 +7,10 @@
 #define STB_IMAGE_WRITE_IMPLEMENTATION
 #include "VulkanRenderer.h"
 
+
+float GrEngine::Renderer::NearPlane = 0.1f;
+float GrEngine::Renderer::FarPlane = 1000.f;
+
 namespace GrEngine_Vulkan
 {
 	void VulkanRenderer::destroy()
@@ -31,6 +35,11 @@ namespace GrEngine_Vulkan
 			case GrEngine::EntityType::TerrainEntity:
 				static_cast<VulkanTerrain*>((*pos).second)->destroyObject();
 				break;
+			case GrEngine::EntityType::SpotlightEntity:
+				static_cast<VulkanSpotlight*>(lights[(*pos).first])->destroyLight();
+				delete lights[(*pos).first];
+				lights.erase((*pos).first);
+				break;
 			}
 
 			delete (*pos).second;
@@ -38,23 +47,17 @@ namespace GrEngine_Vulkan
 		}
 
 		vmaUnmapMemory(memAllocator, viewProjUBO.Allocation);
+		vmaUnmapMemory(memAllocator, shadowBuffer.Allocation);
+		vmaUnmapMemory(memAllocator, cascadeBuffer.Allocation);
+
 		VulkanAPI::m_destroyShaderBuffer(logicalDevice, memAllocator, &viewProjUBO);
 		VulkanAPI::m_destroyShaderBuffer(logicalDevice, memAllocator, &shadowBuffer);
+		VulkanAPI::m_destroyShaderBuffer(logicalDevice, memAllocator, &cascadeBuffer);
 
 		VulkanAPI::DestroyFramebuffer(shadowFramebuffer);
-		VulkanAPI::FreeDescriptorSet(shadowSet);
-		VulkanAPI::DestroyDescriptorLayout(shadowSetLayout);
-		VulkanAPI::DestroyDescriptorPool(shadowSetPool);
-		VulkanAPI::DestroyPipeline(shadowPipeline);
-		VulkanAPI::DestroyPipelineLayout(shadowPipelineLayout);
 		VulkanAPI::DestroySampler(shadowMap.textureSampler);
 		VulkanAPI::DestroyImageView(shadowMap.textureImageView);
 		VulkanAPI::DestroyImage(shadowMap.newImage.allocatedImage);
-
-		if (shadowPass != nullptr)
-		{
-			vkDestroyRenderPass(logicalDevice, shadowPass, nullptr);
-		}
 
 		cleanupSwapChain();
 		resources.Clean(logicalDevice, memAllocator);
@@ -144,12 +147,20 @@ namespace GrEngine_Vulkan
 		if ((res = VulkanAPI::CreateVkFence(logicalDevice, &graphicsFence) & res) == false)
 			Logger::Out("[Vk] Failed to create fences", OutputColor::Red, OutputType::Error);
 
-		createAttachment(VK_FORMAT_R16G16B16A16_SFLOAT, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT, &position);
-		createAttachment(VK_FORMAT_R16G16B16A16_SFLOAT, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT, &normal);
-		createAttachment(swapChainImageFormat, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT, &albedo);
+		createAttachment(VK_FORMAT_R32G32B32A32_SFLOAT, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT, &position);
+		createAttachment(VK_FORMAT_R16G16B16A16_SFLOAT, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT, &normal);
+		createAttachment(swapChainImageFormat, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT, &albedo);
 
 		getActiveViewport()->PositionObjectAt(0, 3, 4);
-		getActiveViewport()->Rotate(0, 30, 0);
+		getActiveViewport()->SetRotation(30, 0, 0);
+
+		casent = addEntity();
+		casent->PositionObjectAt(0, 3, 4);
+		casent->SetRotation(-30, 180, 0);
+		spot = new VulkanCascade(casent);
+		spot->initLight(logicalDevice, memAllocator);
+		lights[casent->GetEntityID()] = spot;
+		cascade_count++;
 
 		prepareShadowPass();
 		prepareCompositionPass();
@@ -172,7 +183,7 @@ namespace GrEngine_Vulkan
 		}
 
 		VulkanAPI::m_createVkBuffer(logicalDevice, memAllocator, nullptr, sizeof(vpUBO), VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, &viewProjUBO, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
-		vmaMapMemory(memAllocator, viewProjUBO.Allocation, (void**)&uboData);
+		vmaMapMemory(memAllocator, viewProjUBO.Allocation, (void**)&viewProjUBO.data);
 
 		sky = new VulkanSkybox(1000000000);
 		sky->initObject(logicalDevice, memAllocator, this);
@@ -205,7 +216,7 @@ namespace GrEngine_Vulkan
 			imageLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
 		}
 
-		VkImageCreateInfo imageInfo = VulkanAPI::StructImageCreateInfo({ swapChainExtent.width, swapChainExtent.height, 1 }, format, VK_SAMPLE_COUNT_1_BIT, usage | VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT);
+		VkImageCreateInfo imageInfo = VulkanAPI::StructImageCreateInfo({ swapChainExtent.width, swapChainExtent.height, 1 }, format, VK_SAMPLE_COUNT_1_BIT, usage);
 
 		VulkanAPI::CreateImage(memAllocator, &imageInfo, &attachment->newImage.allocatedImage, &attachment->newImage.allocation);
 
@@ -230,7 +241,7 @@ namespace GrEngine_Vulkan
 		Initialized = false;
 
 		std::array<std::string, 6> mat_vector = { East, West, Top, Bottom, North, South };
-		static_cast<CubemapProperty*>(sky->GetProperty("CubemapProperty"))->SetPropertyValue(mat_vector);
+		static_cast<CubemapProperty*>(sky->GetProperty(PropertyType::Cubemap))->SetPropertyValue(mat_vector);
 
 		Initialized = true;
 	}
@@ -526,7 +537,7 @@ namespace GrEngine_Vulkan
 		VulkanAPI::AllocateCommandBuffers(logicalDevice, commandPool, &cmd, 1);
 		VulkanAPI::BeginCommandBuffer(cmd, VK_COMMAND_BUFFER_LEVEL_PRIMARY);
 		VulkanAPI::TransitionImageLayout(dstImage, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VulkanAPI::StructSubresourceRange(VK_IMAGE_ASPECT_COLOR_BIT), cmd);
-		VulkanAPI::TransitionImageLayout(srcImage, VK_IMAGE_LAYOUT_PRESENT_SRC_KHR, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, VulkanAPI::StructSubresourceRange(VK_IMAGE_ASPECT_COLOR_BIT), cmd);
+		VulkanAPI::TransitionImageLayout(srcImage, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, VulkanAPI::StructSubresourceRange(VK_IMAGE_ASPECT_COLOR_BIT), cmd);
 
 		VkImageCopy imageCopyRegion{};
 		imageCopyRegion.srcSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
@@ -540,7 +551,7 @@ namespace GrEngine_Vulkan
 		vkCmdCopyImage(cmd, srcImage, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, dstImage, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &imageCopyRegion);
 
 		VulkanAPI::TransitionImageLayout(dstImage, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_GENERAL, VulkanAPI::StructSubresourceRange(VK_IMAGE_ASPECT_COLOR_BIT), cmd);
-		VulkanAPI::TransitionImageLayout(srcImage, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, VK_IMAGE_LAYOUT_PRESENT_SRC_KHR, VulkanAPI::StructSubresourceRange(VK_IMAGE_ASPECT_COLOR_BIT), cmd);
+		VulkanAPI::TransitionImageLayout(srcImage, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL, VulkanAPI::StructSubresourceRange(VK_IMAGE_ASPECT_COLOR_BIT), cmd);
 		VulkanAPI::EndAndSubmitCommandBuffer(logicalDevice, commandPool, cmd, graphicsQueue, graphicsFence);
 
 		VkImageSubresource subResource{ VK_IMAGE_ASPECT_COLOR_BIT, 0, 0 };
@@ -574,11 +585,11 @@ namespace GrEngine_Vulkan
 		poolSizes[0].type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
 		poolSizes[1].descriptorCount = 4;
 		poolSizes[1].type = VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT;
-		poolSizes[2].descriptorCount = 1;
+		poolSizes[2].descriptorCount = 3;
 		poolSizes[2].type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
 
 		std::vector<VkDescriptorSetLayoutBinding> setLayoutBindings;
-		setLayoutBindings.resize(5);
+		setLayoutBindings.resize(7);
 		setLayoutBindings[0].binding = 0;
 		setLayoutBindings[0].stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
 		setLayoutBindings[0].descriptorType = VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT;
@@ -599,6 +610,14 @@ namespace GrEngine_Vulkan
 		setLayoutBindings[4].stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
 		setLayoutBindings[4].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
 		setLayoutBindings[4].descriptorCount = 1;
+		setLayoutBindings[5].binding = 5;
+		setLayoutBindings[5].stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
+		setLayoutBindings[5].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+		setLayoutBindings[5].descriptorCount = 1;
+		setLayoutBindings[6].binding = 6;
+		setLayoutBindings[6].stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
+		setLayoutBindings[6].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+		setLayoutBindings[6].descriptorCount = 1;
 
 		VulkanAPI::CreateDescriptorPool(logicalDevice, poolSizes, &compositionSetPool);
 		VulkanAPI::CreateDescriptorSetLayout(logicalDevice, setLayoutBindings, &compositionSetLayout);
@@ -606,7 +625,7 @@ namespace GrEngine_Vulkan
 		VulkanAPI::AllocateDescriptorSet(logicalDevice, compositionSetPool, compositionSetLayout, &compositionSet);
 
 		std::vector<VkWriteDescriptorSet> writeDescriptorSets;
-		writeDescriptorSets.resize(5);
+		writeDescriptorSets.resize(7);
 		writeDescriptorSets[0].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
 		writeDescriptorSets[0].dstBinding = 0;
 		writeDescriptorSets[0].descriptorType = VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT;
@@ -637,6 +656,18 @@ namespace GrEngine_Vulkan
 		writeDescriptorSets[4].dstSet = compositionSet;
 		writeDescriptorSets[4].pBufferInfo = &shadowBuffer.BufferInfo;
 		writeDescriptorSets[4].descriptorCount = 1;
+		writeDescriptorSets[5].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+		writeDescriptorSets[5].dstBinding = 5;
+		writeDescriptorSets[5].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+		writeDescriptorSets[5].dstSet = compositionSet;
+		writeDescriptorSets[5].pBufferInfo = &cascadeBuffer.BufferInfo;
+		writeDescriptorSets[5].descriptorCount = 1;
+		writeDescriptorSets[6].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+		writeDescriptorSets[6].dstBinding = 6;
+		writeDescriptorSets[6].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+		writeDescriptorSets[6].dstSet = compositionSet;
+		writeDescriptorSets[6].pBufferInfo = &viewProjUBO.BufferInfo;
+		writeDescriptorSets[6].descriptorCount = 1;
 
 		vkUpdateDescriptorSets(logicalDevice, static_cast<uint32_t>(writeDescriptorSets.size()), writeDescriptorSets.data(), 0, NULL);
 
@@ -718,18 +749,35 @@ namespace GrEngine_Vulkan
 
 		std::array<VkPipelineShaderStageCreateInfo, 2> shaderStages = { vertShaderStageInfo , fragShaderStageInfo };
 
-		VkSpecializationMapEntry specializationEntry{};
-		specializationEntry.constantID = 0;
-		specializationEntry.offset = 0;
-		specializationEntry.size = sizeof(uint32_t);
-
-		uint32_t specializationData = 0;
+		struct SpecializationData {
+			float near_p;
+			float far_p;
+			uint32_t lights_count;
+			int cascade_count;
+		} specs;
+		specs.near_p = NearPlane;
+		specs.far_p = FarPlane;
+		specs.lights_count = lights.size() + cascade_count * (SHADOW_MAP_CASCADE_COUNT - 1);
+		specs.cascade_count = SHADOW_MAP_CASCADE_COUNT;
+		std::array<VkSpecializationMapEntry, 4> entries;
+		entries[0].constantID = 0;
+		entries[0].offset = 0;
+		entries[0].size = sizeof(float);
+		entries[1].constantID = 1;
+		entries[1].offset = sizeof(float);
+		entries[1].size = sizeof(float);
+		entries[2].constantID = 2;
+		entries[2].offset = sizeof(float) * 2;
+		entries[2].size = sizeof(uint32_t);
+		entries[3].constantID = 3;
+		entries[3].offset = sizeof(float) * 2 + sizeof(uint32_t);
+		entries[3].size = sizeof(int);
 
 		VkSpecializationInfo specializationInfo;
-		specializationInfo.mapEntryCount = 1;
-		specializationInfo.pMapEntries = &specializationEntry;
-		specializationInfo.dataSize = sizeof(specializationData);
-		specializationInfo.pData = &specializationData;
+		specializationInfo.mapEntryCount = entries.size();
+		specializationInfo.pMapEntries = entries.data();
+		specializationInfo.dataSize = sizeof(SpecializationData);
+		specializationInfo.pData = &specs;
 
 		shaderStages[1].pSpecializationInfo = &specializationInfo;
 
@@ -938,21 +986,6 @@ namespace GrEngine_Vulkan
 
 		colorBlendState.attachmentCount = static_cast<uint32_t>(blendAttachmentStates.size());
 		colorBlendState.pAttachments = blendAttachmentStates.data();
-
-		VkSpecializationMapEntry specializationEntry{};
-		specializationEntry.constantID = 0;
-		specializationEntry.offset = 0;
-		specializationEntry.size = sizeof(uint32_t);
-
-		uint32_t specializationData = 0;
-
-		VkSpecializationInfo specializationInfo;
-		specializationInfo.mapEntryCount = 1;
-		specializationInfo.pMapEntries = &specializationEntry;
-		specializationInfo.dataSize = sizeof(specializationData);
-		specializationInfo.pData = &specializationData;
-
-		shaderStages[1].pSpecializationInfo = &specializationInfo;
 
 		VkGraphicsPipelineCreateInfo pipelineCI{};
 
@@ -1167,21 +1200,6 @@ namespace GrEngine_Vulkan
 
 		std::array<VkPipelineShaderStageCreateInfo, 2> shaderStages = { vertShaderStageInfo , fragShaderStageInfo };
 
-		VkSpecializationMapEntry specializationEntry{};
-		specializationEntry.constantID = 0;
-		specializationEntry.offset = 0;
-		specializationEntry.size = sizeof(uint32_t);
-
-		uint32_t specializationData = 0;
-
-		VkSpecializationInfo specializationInfo;
-		specializationInfo.mapEntryCount = 1;
-		specializationInfo.pMapEntries = &specializationEntry;
-		specializationInfo.dataSize = sizeof(specializationData);
-		specializationInfo.pData = &specializationData;
-
-		shaderStages[1].pSpecializationInfo = &specializationInfo;
-
 		VkGraphicsPipelineCreateInfo pipelineCI{};
 
 		VkPipelineVertexInputStateCreateInfo emptyInputState{};
@@ -1272,7 +1290,7 @@ namespace GrEngine_Vulkan
 
 		vkCreateRenderPass(logicalDevice, &renderPassInfo, nullptr, &selectionPass);
 
-		createAttachment(VK_FORMAT_R32_UINT, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_BUFFER_USAGE_TRANSFER_SRC_BIT, &identity);
+		createAttachment(VK_FORMAT_R32_UINT, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT, &identity);
 
 		VkImageView clrattachments[] = { identity.textureImageView, depthImageView };
 		VulkanAPI::CreateFrameBuffer(logicalDevice, selectionPass, clrattachments, 2, swapChainExtent, &selectionFramebuffer);
@@ -1280,19 +1298,15 @@ namespace GrEngine_Vulkan
 
 	void VulkanRenderer::prepareShadowPass()
 	{
-		lightPerspective.model = getActiveViewport()->GetObjectTransformation();
-		lightPerspective.view = glm::translate(glm::mat4_cast(getActiveViewport()->UpdateCameraOrientation(0.2)), -getActiveViewport()->UpdateCameraPosition(0.65));
-		lightPerspective.proj = glm::perspective(glm::radians(60.f), 1.f, 0.001f, 15.f);
-		lightPerspective.proj[1][1] *= -1;
-		VulkanAPI::m_createVkBuffer(logicalDevice, memAllocator, &lightPerspective, sizeof(ShadowProjection), VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, &shadowBuffer, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
 		VkImageAspectFlags aspectMask = 0;
 		VkImageLayout imageLayout;
 
 		aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
 		imageLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL;
 
-		VkImageCreateInfo imageInfo = VulkanAPI::StructImageCreateInfo({ 2048, 2048, 1 }, depthFormat, msaaSamples, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT);
-
+		VkImageCreateInfo imageInfo = VulkanAPI::StructImageCreateInfo({ SHADOW_MAP_DIM, SHADOW_MAP_DIM, 1 }, depthFormat, msaaSamples, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT);
+		//imageInfo.arrayLayers = glm::max((int)lights.size(), 1);
+		imageInfo.arrayLayers = lightsCount();
 		VulkanAPI::CreateImage(memAllocator, &imageInfo, &shadowMap.newImage.allocatedImage, &shadowMap.newImage.allocation);
 
 		VkImageSubresourceRange imageView{};
@@ -1300,17 +1314,17 @@ namespace GrEngine_Vulkan
 		imageView.baseMipLevel = 0;
 		imageView.levelCount = 1;
 		imageView.baseArrayLayer = 0;
-		imageView.layerCount = 1;
-		VulkanAPI::CreateImageView(logicalDevice, depthFormat, shadowMap.newImage.allocatedImage, imageView, &shadowMap.textureImageView);
-
+		//imageView.layerCount = glm::max((int)lights.size(), 1);
+		imageView.layerCount = lightsCount();
+		VulkanAPI::CreateImageView(logicalDevice, depthFormat, shadowMap.newImage.allocatedImage, imageView, &shadowMap.textureImageView, VK_IMAGE_VIEW_TYPE_2D_ARRAY);
 
 		VkSamplerCreateInfo samplerInfo{};
 		samplerInfo.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
 		samplerInfo.magFilter = VK_FILTER_LINEAR;
 		samplerInfo.minFilter = VK_FILTER_LINEAR;
-		samplerInfo.addressModeU = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER;
-		samplerInfo.addressModeV = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER;
-		samplerInfo.addressModeW = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER;
+		samplerInfo.addressModeU = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
+		samplerInfo.addressModeV = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
+		samplerInfo.addressModeW = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
 		samplerInfo.anisotropyEnable = VK_TRUE;
 		samplerInfo.maxAnisotropy = msaaSamples;
 		samplerInfo.borderColor = VK_BORDER_COLOR_INT_OPAQUE_BLACK;
@@ -1321,7 +1335,7 @@ namespace GrEngine_Vulkan
 		samplerInfo.mipLodBias = 0.0f;
 		samplerInfo.minLod = 0.0f;
 		samplerInfo.maxLod = 1.f;
-		VulkanAPI::CreateSampler(physicalDevice, logicalDevice, &samplerInfo, &shadowMap.textureSampler);
+		VulkanAPI::CreateSampler(logicalDevice, &samplerInfo, &shadowMap.textureSampler);
 
 		shadowMap.initialized = true;
 		shadowMap.texInfo.mipLevels = 1;
@@ -1330,41 +1344,13 @@ namespace GrEngine_Vulkan
 		shadowMap.texInfo.descriptor.imageView = shadowMap.textureImageView;
 		shadowMap.texInfo.descriptor.sampler = shadowMap.textureSampler;
 
-		std::vector<VkDescriptorPoolSize> poolSizes;
-		poolSizes.resize(1);
-		poolSizes[0].descriptorCount = 1;
-		poolSizes[0].type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-
-		std::vector<VkDescriptorSetLayoutBinding> setLayoutBindings;
-		setLayoutBindings.resize(1);
-		setLayoutBindings[0].binding = 0;
-		setLayoutBindings[0].stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
-		setLayoutBindings[0].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-		setLayoutBindings[0].descriptorCount = 1;
-
-		VkPushConstantRange pushConstant;
-		pushConstant.offset = 0;
-		pushConstant.size = sizeof(VertexConstants);
-		pushConstant.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
-
-		VulkanAPI::CreateDescriptorPool(logicalDevice, poolSizes, &shadowSetPool);
-		VulkanAPI::CreateDescriptorSetLayout(logicalDevice, setLayoutBindings, &shadowSetLayout);
-		VulkanAPI::CreatePipelineLayout(logicalDevice, { pushConstant }, { shadowSetLayout }, &shadowPipelineLayout);
-		VulkanAPI::AllocateDescriptorSet(logicalDevice, shadowSetPool, shadowSetLayout, &shadowSet);
-
-		std::vector<VkWriteDescriptorSet> writeDescriptorSets;
-		writeDescriptorSets.resize(1);
-		writeDescriptorSets[0].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-		writeDescriptorSets[0].dstBinding = 0;
-		writeDescriptorSets[0].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-		writeDescriptorSets[0].dstSet = shadowSet;
-		writeDescriptorSets[0].pBufferInfo = &shadowBuffer.BufferInfo;
-		writeDescriptorSets[0].descriptorCount = 1;
-
-		vkUpdateDescriptorSets(logicalDevice, static_cast<uint32_t>(writeDescriptorSets.size()), writeDescriptorSets.data(), 0, NULL);
+		////VulkanAPI::m_createVkBuffer(logicalDevice, memAllocator, nullptr, sizeof(VulkanSpotlight::ShadowProjection) * glm::max((int)lights.size(), 1), VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, &shadowBuffer, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
+		VulkanAPI::m_createVkBuffer(logicalDevice, memAllocator, nullptr, sizeof(VulkanSpotlight::ShadowProjection) * lightsCount(), VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, &shadowBuffer, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
+		vmaMapMemory(memAllocator, shadowBuffer.Allocation, (void**)&shadowBuffer.data);
+		VulkanAPI::m_createVkBuffer(logicalDevice, memAllocator, nullptr, 16 * SHADOW_MAP_CASCADE_COUNT, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, &cascadeBuffer, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
+		vmaMapMemory(memAllocator, cascadeBuffer.Allocation, (void**)&cascadeBuffer.data);
 
 		std::array<VkAttachmentDescription, 1> attchmentDescriptions = {};
-		// Color attachment
 		attchmentDescriptions[0].format = depthFormat;
 		attchmentDescriptions[0].samples = VK_SAMPLE_COUNT_1_BIT;
 		attchmentDescriptions[0].loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
@@ -1412,106 +1398,16 @@ namespace GrEngine_Vulkan
 		vkCreateRenderPass(logicalDevice, &renderPassInfo, nullptr, &shadowPass);
 
 		VkImageView attachments[] = { shadowMap.textureImageView };
-		VulkanAPI::CreateFrameBuffer(logicalDevice, shadowPass, attachments, 1, { 2048, 2048 }, &shadowFramebuffer);
 
-		VkPipelineVertexInputStateCreateInfo vertexInputInfo{};
-		vertexInputInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
-
-		auto bindingDescription = Vertex::getBindingDescription();
-		auto attributeDescriptions = Vertex::getAttributeDescriptions();
-
-		vertexInputInfo.vertexBindingDescriptionCount = 1;
-		vertexInputInfo.vertexAttributeDescriptionCount = static_cast<uint32_t>(attributeDescriptions.size());
-		vertexInputInfo.pVertexBindingDescriptions = &bindingDescription;
-		vertexInputInfo.pVertexAttributeDescriptions = attributeDescriptions.data();
-
-		VkPipelineInputAssemblyStateCreateInfo inputAssembly{};
-		inputAssembly.sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;
-		inputAssembly.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
-		inputAssembly.primitiveRestartEnable = VK_FALSE;
-		VkPipelineRasterizationStateCreateInfo rasterizationState{};
-		rasterizationState.sType = VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO;
-		rasterizationState.depthClampEnable = VK_FALSE;
-		rasterizationState.rasterizerDiscardEnable = VK_FALSE;
-		rasterizationState.polygonMode = VK_POLYGON_MODE_FILL;
-		rasterizationState.lineWidth = 1.0f;
-		rasterizationState.cullMode = VK_CULL_MODE_NONE;
-		rasterizationState.frontFace = VK_FRONT_FACE_COUNTER_CLOCKWISE;
-		rasterizationState.depthBiasEnable = VK_TRUE;
-		rasterizationState.depthBiasConstantFactor = 7.5f; 
-		rasterizationState.depthBiasClamp = 0.0f;
-		rasterizationState.depthBiasSlopeFactor = 2.5f;
-
-		VkPipelineColorBlendStateCreateInfo colorBlendState{};
-		colorBlendState.sType = VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO;
-		colorBlendState.attachmentCount = 0;
-		colorBlendState.pAttachments = nullptr;
-
-		VkPipelineDepthStencilStateCreateInfo depthStencilState{};
-		depthStencilState.sType = VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO;
-		depthStencilState.pNext = nullptr;
-		depthStencilState.depthTestEnable = VK_TRUE;
-		depthStencilState.depthWriteEnable = VK_TRUE;
-		depthStencilState.depthCompareOp = VK_COMPARE_OP_LESS_OR_EQUAL;
-		depthStencilState.depthBoundsTestEnable = VK_FALSE;
-		depthStencilState.minDepthBounds = 0.0f; // Optional
-		depthStencilState.maxDepthBounds = 1.0f; // Optional
-		depthStencilState.stencilTestEnable = VK_FALSE;
-
-		std::vector<VkDynamicState> dynamicStates = { VK_DYNAMIC_STATE_VIEWPORT, VK_DYNAMIC_STATE_SCISSOR };
-		VkPipelineDynamicStateCreateInfo dynamicState{};
-		dynamicState.sType = VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO;
-		dynamicState.pNext = nullptr;
-		dynamicState.flags = 0;
-		dynamicState.dynamicStateCount = (uint32_t)dynamicStates.size();
-		dynamicState.pDynamicStates = dynamicStates.data();
-
-		VkPipelineViewportStateCreateInfo viewportState{};
-		viewportState.sType = VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO;
-		viewportState.viewportCount = 0;
-		viewportState.pViewports = nullptr;
-		viewportState.scissorCount = 0;
-		viewportState.pScissors = nullptr;
-
-		VkPipelineMultisampleStateCreateInfo multisampleState{};
-		multisampleState.sType = VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO;
-		multisampleState.rasterizationSamples = VK_SAMPLE_COUNT_1_BIT;
-		multisampleState.sampleShadingEnable = VK_FALSE;
-		multisampleState.minSampleShading = 0;
-
-		std::string solution_path = GrEngine::Globals::getExecutablePath();
-		std::vector<char> vertShaderCode = GrEngine::Globals::readFile(solution_path + "Shaders//shadows_vert.spv");
-		VkShaderModule shaders[1] = { VulkanAPI::m_createShaderModule(logicalDevice, vertShaderCode) };
-
-		VkPipelineShaderStageCreateInfo vertShaderStageInfo{};
-		vertShaderStageInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
-		vertShaderStageInfo.stage = VK_SHADER_STAGE_VERTEX_BIT;
-		vertShaderStageInfo.module = shaders[0];
-		vertShaderStageInfo.pName = "main";
-
-		std::array<VkPipelineShaderStageCreateInfo, 1> shaderStages = { vertShaderStageInfo };
-
-		VkGraphicsPipelineCreateInfo pipelineCI{};
-
-		pipelineCI.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
-		pipelineCI.layout = shadowPipelineLayout;
-		pipelineCI.renderPass = shadowPass;
-		pipelineCI.basePipelineIndex = 0;
-		pipelineCI.pVertexInputState = &vertexInputInfo;
-		pipelineCI.pInputAssemblyState = &inputAssembly;
-		pipelineCI.pRasterizationState = &rasterizationState;
-		pipelineCI.pColorBlendState = &colorBlendState;
-		pipelineCI.pMultisampleState = &multisampleState;
-		pipelineCI.pViewportState = &viewportState;
-		pipelineCI.pDepthStencilState = &depthStencilState;
-		pipelineCI.pDynamicState = &dynamicState;
-		pipelineCI.stageCount = static_cast<uint32_t>(shaderStages.size());
-		pipelineCI.pStages = shaderStages.data();
-		pipelineCI.subpass = 0;
-
-		VulkanAPI::CreateGraphicsPipeline(logicalDevice, &pipelineCI, &shadowPipeline);
-
-		vkDestroyShaderModule(logicalDevice, shaders[0], nullptr);
+		VkFramebufferCreateInfo framebufferInfo{};
+		framebufferInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
+		framebufferInfo.renderPass = shadowPass;
+		framebufferInfo.attachmentCount = 1;
+		framebufferInfo.pAttachments = attachments;
+		framebufferInfo.width = SHADOW_MAP_DIM;
+		framebufferInfo.height = SHADOW_MAP_DIM;
+		framebufferInfo.layers = lightsCount();
+		VulkanAPI::CreateFrameBuffer(logicalDevice, &framebufferInfo, &shadowFramebuffer);
 	}
 
 	bool VulkanRenderer::updateDrawables(uint32_t index, DrawMode mode, VkExtent2D extent)
@@ -1520,6 +1416,11 @@ namespace GrEngine_Vulkan
 		VkRect2D scissor{};
 		VkCommandBufferBeginInfo beginInfo{};
 		beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+
+		vpUBO.view = glm::translate(glm::mat4_cast(getActiveViewport()->UpdateCameraOrientation(0.2)), -getActiveViewport()->UpdateCameraPosition(0.65));
+		vpUBO.proj = glm::perspective(glm::radians(60.0f), (float)extent.width / (float)extent.height, NearPlane, FarPlane);
+		vpUBO.proj[1][1] *= -1;
+		memcpy_s(viewProjUBO.data, sizeof(ViewProjection), &vpUBO, sizeof(ViewProjection));
 
 		if (vkBeginCommandBuffer(commandBuffers[index], &beginInfo) != VK_SUCCESS)
 			return false;
@@ -1531,7 +1432,7 @@ namespace GrEngine_Vulkan
 		shadowPassInfo.framebuffer = shadowFramebuffer;
 		shadowPassInfo.renderPass = shadowPass;
 		shadowPassInfo.renderArea.offset = { 0, 0 };
-		shadowPassInfo.renderArea.extent = { 2048, 2048 };
+		shadowPassInfo.renderArea.extent = { SHADOW_MAP_DIM, SHADOW_MAP_DIM };
 		shadowPassInfo.clearValueCount = 1;
 		shadowPassInfo.pClearValues = shadowClear;
 
@@ -1539,40 +1440,58 @@ namespace GrEngine_Vulkan
 
 		viewport.x = 0;
 		viewport.y = 0;
-		viewport.width = (float)2048;
-		viewport.height = (float)2048;
+		viewport.width = (float)SHADOW_MAP_DIM;
+		viewport.height = (float)SHADOW_MAP_DIM;
 		viewport.minDepth = 0.0f;
 		viewport.maxDepth = 1.0f;
 		vkCmdSetViewport(commandBuffers[index], 0, 1, &viewport);
 		scissor.offset = { 0, 0 };
-		scissor.extent = { 2048, 2048 };
+		scissor.extent = { SHADOW_MAP_DIM, SHADOW_MAP_DIM };
 		vkCmdSetScissor(commandBuffers[index], 0, 1, &scissor);
 
-		vkCmdBindPipeline(commandBuffers[index], VK_PIPELINE_BIND_POINT_GRAPHICS, shadowPipeline);
-		vkCmdBindDescriptorSets(commandBuffers[index], VK_PIPELINE_BIND_POINT_GRAPHICS, shadowPipelineLayout, 0, 1, &shadowSet, 0, NULL);
-
-		for (std::map<UINT, GrEngine::Object*>::iterator itt = drawables.begin(); itt != drawables.end(); ++itt)
+		if (lights.size() > 0)
 		{
-			if (static_cast<VulkanObject*>((*itt).second)->GetOwnerEntity()->GetPropertyValue("CastShadow", 1) && static_cast<VulkanObject*>((*itt).second)->IsVisible())
+			std::vector<VulkanSpotlight::ShadowProjection> projections;
+			for (std::map<UINT, GrEngine::SpotlightObject*>::iterator light = lights.begin(); light != lights.end(); ++light)
 			{
-				VertexConstants ubo{};
-				ubo.model = (*itt).second->GetOwnerEntity()->GetObjectTransformation();
-				ubo.scale = (*itt).second->GetOwnerEntity()->GetPropertyValue("Scale", glm::vec3(1.f));
-				vkCmdPushConstants(commandBuffers[index], shadowPipelineLayout, VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(VertexConstants), &ubo);
-				static_cast<VulkanObject*>((*itt).second)->draw(commandBuffers[index]);
+				LightType clt = ((*light).second)->GetLightType();
+				if (clt == LightType::Spot)
+				{
+					projections.push_back(static_cast<VulkanSpotlight*>((*light).second)->getLightUBO());
+				}
+				else if (clt == LightType::Cascade)
+				{
+					auto arr = static_cast<VulkanCascade*>((*light).second)->getCascadeUBO();
+					for (int i = 0; i < SHADOW_MAP_CASCADE_COUNT; i++)
+					{
+						VulkanSpotlight::ShadowProjection prj{};
+						prj.model = arr[i].model;
+						prj.viewproj = arr[i].proj * arr[i].view;
+						prj.spec.x = LightType::Cascade;
+						prj.spec.y = i;
+						projections.push_back(prj);
+						void* p = (byte*)cascadeBuffer.data + 16 * i;
+						memcpy_s(p, sizeof(float), &arr[i].splitDepth, sizeof(float));
+					}
+				}
+			}
+
+			memcpy_s(shadowBuffer.data, sizeof(VulkanSpotlight::ShadowProjection) * projections.size(), projections.data(), sizeof(VulkanSpotlight::ShadowProjection) * projections.size());
+
+			for (std::map<UINT, GrEngine::Object*>::iterator itt = drawables.begin(); itt != drawables.end(); ++itt)
+			{
+				if (static_cast<VulkanObject*>((*itt).second)->GetOwnerEntity()->GetPropertyValue(PropertyType::CastShadow, 1)
+					&& static_cast<VulkanObject*>((*itt).second)->IsVisible()
+					&& !static_cast<VulkanObject*>((*itt).second)->GetOwnerEntity()->GetPropertyValue(PropertyType::Transparency, 0))
+				{
+					static_cast<VulkanObject*>((*itt).second)->recordShadowPass(commandBuffers[index], projections.size());
+				}
 			}
 		}
 
 		vkCmdEndRenderPass(commandBuffers[index]);
 
 		VkClearValue clearValues[6];
-
-		vpUBO.view = glm::translate(glm::mat4_cast(getActiveViewport()->UpdateCameraOrientation(0.2)), -getActiveViewport()->UpdateCameraPosition(0.65));
-		vpUBO.proj = glm::perspective(glm::radians(60.0f), (float)extent.width / (float)extent.height, 0.1f, 1000.f);
-		vpUBO.proj[1][1] *= -1;
-
-		memcpy_s(uboData, sizeof(ViewProjection), &vpUBO, sizeof(ViewProjection));
-
 		VkRenderPassBeginInfo renderPassInfo{};
 		clearValues[0].color = { { 0.0f, 0.0f, 0.0f, 0.0f } };
 		clearValues[1].color = { { 0.0f, 0.0f, 0.0f, 0.0f } };
@@ -1622,20 +1541,17 @@ namespace GrEngine_Vulkan
 
 		for (std::map<UINT, GrEngine::Entity*>::iterator itt = entities.begin(); itt != entities.end(); ++itt)
 		{
-			switch ((*itt).second->GetEntityType())
+			if ((*itt).second->GetEntityType() == GrEngine::EntityType::ObjectEntity && static_cast<VulkanObject*>(drawables[(*itt).second->GetEntityID()])->IsVisible())
 			{
-			case GrEngine::EntityType::ObjectEntity:
-				if (static_cast<VulkanObject*>(drawables[(*itt).second->GetEntityID()])->IsVisible())
-					static_cast<VulkanObject*>(drawables[(*itt).second->GetEntityID()])->recordCommandBuffer(commandBuffers[index], DrawMode::NORMAL);
-				break;
-			case GrEngine::EntityType::SkyboxEntity:
+				static_cast<VulkanObject*>(drawables[(*itt).second->GetEntityID()])->recordCommandBuffer(commandBuffers[index], DrawMode::NORMAL);
+			}
+			else if ((*itt).second->GetEntityType() == GrEngine::EntityType::SkyboxEntity)
+			{
 				static_cast<VulkanSkybox*>((*itt).second)->recordCommandBuffer(commandBuffers[index], DrawMode::NORMAL);
-				break;
-			case GrEngine::EntityType::TerrainEntity:
+			}
+			else if ((*itt).second->GetEntityType() == GrEngine::EntityType::TerrainEntity)
+			{
 				static_cast<VulkanTerrain*>((*itt).second)->recordCommandBuffer(commandBuffers[index], DrawMode::NORMAL);
-				break;
-			default:
-				continue;
 			}
 		}
 
@@ -1799,7 +1715,8 @@ namespace GrEngine_Vulkan
 		res = VulkanAPI::CreateImageView(logicalDevice, swapChainImageFormat, colorImage.newImage.allocatedImage, VulkanAPI::StructSubresourceRange(VK_IMAGE_ASPECT_COLOR_BIT), &colorImage.textureImageView) & res;
 		res = VulkanAPI::CreateSampler(physicalDevice, logicalDevice, &colorImage.textureSampler) & res;
 
-		depthFormat = VK_FORMAT_D32_SFLOAT;
+		depthFormat = VK_FORMAT_D16_UNORM;
+		//depthFormat = VK_FORMAT_D32_SFLOAT;
 		VkImageCreateInfo depthImageCreateInfo = VulkanAPI::StructImageCreateInfo({ extent.width, extent.height, 1 }, depthFormat, msaaSamples, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT);
 		res = VulkanAPI::CreateImage(memAllocator, &depthImageCreateInfo, &depthImage.allocatedImage, &depthImage.allocation) & res;
 		res = VulkanAPI::CreateImageView(logicalDevice, depthFormat, depthImage.allocatedImage, VulkanAPI::StructSubresourceRange(VK_IMAGE_ASPECT_DEPTH_BIT), &depthImageView) & res;
@@ -1839,9 +1756,9 @@ namespace GrEngine_Vulkan
 			VulkanAPI::CreateImageView(logicalDevice, swapChainImageFormat, swapChainImages[i], subresourceRange, &swapChainImageViews[i]);
 		}
 
-		createAttachment(VK_FORMAT_R16G16B16A16_SFLOAT, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT, &position);
-		createAttachment(VK_FORMAT_R16G16B16A16_SFLOAT, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT, &normal);
-		createAttachment(swapChainImageFormat, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT, &albedo);
+		createAttachment(VK_FORMAT_R32G32B32A32_SFLOAT, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT, &position);
+		createAttachment(VK_FORMAT_R16G16B16A16_SFLOAT, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT, &normal);
+		createAttachment(swapChainImageFormat, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT, &albedo);
 
 		VulkanAPI::CreateRenderPass(logicalDevice, swapChainImageFormat, depthFormat, msaaSamples, &renderPass);
 		prepareCompositionPass();
@@ -1863,12 +1780,14 @@ namespace GrEngine_Vulkan
 		commandBuffers.resize(swapChainFramebuffers.size());
 		VulkanAPI::AllocateCommandBuffers(logicalDevice, commandPool, commandBuffers.data(), commandBuffers.size());
 
+		Initialized = swapChainExtent.height != 0;
+
 		for (std::map<UINT, GrEngine::Entity*>::iterator itt = entities.begin(); itt != entities.end(); ++itt)
 		{
 			switch ((*itt).second->GetEntityType())
 			{
 			case GrEngine::EntityType::ObjectEntity:
-				static_cast<VulkanObject*>(drawables[(*itt).second->GetEntityID()])->updateObject();
+				static_cast<VulkanObject*>(drawables[(*itt).second->GetEntityID()])->Refresh();
 				break;
 			case GrEngine::EntityType::SkyboxEntity:
 				static_cast<VulkanSkybox*>((*itt).second)->updateObject();
@@ -1880,18 +1799,35 @@ namespace GrEngine_Vulkan
 				continue;
 			}
 		}
+	}
 
-		lightPerspective.model = getActiveViewport()->GetObjectTransformation();
-		lightPerspective.view = glm::translate(glm::mat4_cast(getActiveViewport()->UpdateCameraOrientation(0.2)), -getActiveViewport()->UpdateCameraPosition(0.65));
-		lightPerspective.proj = glm::perspective(glm::radians(60.f), 1.f, 0.001f, 15.f);
-		lightPerspective.proj[1][1] *= -1;
+	void VulkanRenderer::updateShadowResources()
+	{
+		Initialized = false; //Block rendering for a time it takes to recreate swapchain
 
-		void* data;
-		vmaMapMemory(memAllocator, shadowBuffer.Allocation, (void**)&data);
-		memcpy(data, &lightPerspective, sizeof(ShadowProjection));
+		vkDeviceWaitIdle(logicalDevice);
+		vkQueueWaitIdle(graphicsQueue);
+
 		vmaUnmapMemory(memAllocator, shadowBuffer.Allocation);
+		vmaUnmapMemory(memAllocator, cascadeBuffer.Allocation);
 
-		Initialized = swapChainExtent.height != 0;
+		VulkanAPI::m_destroyShaderBuffer(logicalDevice, memAllocator, &shadowBuffer);
+		VulkanAPI::m_destroyShaderBuffer(logicalDevice, memAllocator, &cascadeBuffer);
+
+		VulkanAPI::DestroyFramebuffer(shadowFramebuffer);
+		VulkanAPI::DestroySampler(shadowMap.textureSampler);
+		VulkanAPI::DestroyImageView(shadowMap.textureImageView);
+		VulkanAPI::DestroyImage(shadowMap.newImage.allocatedImage);
+
+		if (shadowPass != nullptr)
+		{
+			vkDestroyRenderPass(logicalDevice, shadowPass, nullptr);
+		}
+
+		prepareShadowPass();
+		recreateSwapChain();
+
+		Initialized = true;
 	}
 
 	void VulkanRenderer::cleanupSwapChain()
@@ -1921,8 +1857,6 @@ namespace GrEngine_Vulkan
 		VulkanAPI::DestroyPipeline(samplingPipeline);
 		VulkanAPI::DestroyPipelineLayout(samplingPipelineLayout);
 
-
-
 		VulkanAPI::DestroyImageView(headIndex.textureImageView);
 		VulkanAPI::DestroyImage(headIndex.newImage.allocatedImage);
 
@@ -1946,6 +1880,11 @@ namespace GrEngine_Vulkan
 		{
 			VulkanAPI::m_destroyShaderBuffer(logicalDevice, memAllocator, &nodeBfffer);
 		}
+
+		//if (shadowBuffer.initialized == true)
+		//{
+		//	VulkanAPI::m_destroyShaderBuffer(logicalDevice, memAllocator, &shadowBuffer);
+		//}
 
 		VulkanAPI::FreeCommandBuffers(commandBuffers.data(), commandBuffers.size());
 		commandBuffers.resize(0);
@@ -1988,11 +1927,17 @@ namespace GrEngine_Vulkan
 
 			if ((*pos).second->IsStatic() == false)
 			{
-				if (drawables.count((*pos).first) > 0)
+				if ((*pos).second->GetEntityType() == GrEngine::EntityType::ObjectEntity)
 				{
 					static_cast<VulkanObject*>(drawables[(*pos).first])->destroyObject();
 					delete drawables[(*pos).first];
 					drawables.erase((*pos).first);
+				}
+				else if ((*pos).second->GetEntityType() == GrEngine::EntityType::SpotlightEntity)
+				{
+					static_cast<VulkanSpotlight*>(lights[(*pos).first])->destroyLight();
+					delete lights[(*pos).first];
+					lights.erase((*pos).first);
 				}
 				delete (*pos).second;
 				entities.erase((*pos).first);
@@ -2002,6 +1947,8 @@ namespace GrEngine_Vulkan
 				offset++;
 			}
 		}
+
+		recreateSwapChain();
 
 		Logger::Out("The scene was cleared", OutputColor::Green, OutputType::Log);
 	}
@@ -2082,6 +2029,25 @@ namespace GrEngine_Vulkan
 
 	Resource<Texture*>* VulkanRenderer::loadTexture(std::vector<std::string> texture_path, VkImageViewType type_view, VkImageType type_img)
 	{
+		if (texture_path.size() == 0)
+		{
+			int size = type_view == VK_IMAGE_VIEW_TYPE_CUBE ? 6 : 1;
+			for (int i = 0; i < size; i++)
+			{
+				texture_path.push_back("empty_texture");
+			}
+		}
+		else
+		{
+			for (int i = 0; i < texture_path.size(); i++)
+			{
+				if (texture_path[i] == "")
+				{
+					texture_path[i] = "empty_texture";
+				}
+			}
+		}
+
 		Resource<Texture*>* resource = resources.GetTextureResource(texture_path);
 
 		if (resource == nullptr)
@@ -2093,94 +2059,79 @@ namespace GrEngine_Vulkan
 			ShaderBuffer stagingBuffer;
 			Texture* new_texture = new Texture();
 			std::string solution = GrEngine::Globals::getExecutablePath();
+			std::vector<std::string> fullpath;
 
-			if (texture_path.size() == 0)
+			for (std::vector<std::string>::iterator itt = texture_path.begin(); itt != texture_path.end(); ++itt)
 			{
-				int size = type_view == VK_IMAGE_VIEW_TYPE_CUBE ? 6 : 1;
-				for (int i = 0; i < size; i++)
-				{
-					texture_path.push_back("empty_texture");
-				}
+				int width;
+				int height;
+				fullpath.push_back(solution + (*itt));
 
+				stbi_info(fullpath.back().c_str(), &width, &height, &channels);
 
-				data = (unsigned char*)malloc(channels * maxW * maxH * size);
-				memset(data, (byte)255, channels * maxW * maxH * size);
+				maxW = width > maxW ? width : maxW;
+				maxH = height > maxH ? height : maxH;
 			}
-			else
+
+			std::map<int, std::future<void>> processes_map;
+			data = (unsigned char*)malloc(maxW * maxH * channels * fullpath.size());
+			//TBD: fix loading same image file on different surfaces
+			int procNum = 0;
+			int image_size = maxW * maxH * channels;
+			for (std::vector<std::string>::iterator itt = fullpath.begin(); itt != fullpath.end(); ++itt)
 			{
-				std::vector<std::string> fullpath;
-
-				for (std::vector<std::string>::iterator itt = texture_path.begin(); itt != texture_path.end(); ++itt)
+				const char* texture = (*itt).c_str();
+				if ((*itt) != solution && (*itt) != solution + "empty_texture")
 				{
-					int width;
-					int height;
-					fullpath.push_back(solution + (*itt));
+					processes_map[procNum] = std::async(std::launch::async, [texture, data, maxW, maxH, image_size, procNum]()
+						{
+							int width;
+							int height;
+							int channels;
+							stbi_uc* pixels = stbi_load(texture, &width, &height, &channels, STBI_rgb_alpha);
 
-					stbi_info(fullpath.back().c_str(), &width, &height, &channels);
-
-					maxW = width > maxW ? width : maxW;
-					maxH = height > maxH ? height : maxH;
-				}
-
-				std::map<int, std::future<void>> processes_map;
-				data = (unsigned char*)malloc(maxW * maxH * channels * fullpath.size());
-				//TBD: fix loading same image file on different surfaces
-				int procNum = 0;
-				int image_size = maxW * maxH * channels;
-				for (std::vector<std::string>::iterator itt = fullpath.begin(); itt != fullpath.end(); ++itt)
-				{
-					const char* texture = (*itt).c_str();
-					if ((*itt) != solution)
-					{
-						processes_map[procNum] = std::async(std::launch::async, [texture, data, maxW, maxH, image_size, procNum]()
+							if (!pixels)
 							{
-								int width;
-								int height;
-								int channels;
-								stbi_uc* pixels = stbi_load(texture, &width, &height, &channels, STBI_rgb_alpha);
+								Logger::Out("An error occurred while loading the texture: %s", OutputColor::Green, OutputType::Error, texture);
+								free(data);
+								return;
+							}
 
-								if (!pixels)
-								{
-									Logger::Out("An error occurred while loading the texture: %s", OutputColor::Green, OutputType::Error, texture);
-									free(data);
-									return;
-								}
-
-								if (width < maxW || height < maxH)
-								{
-									unsigned char* output = (unsigned char*)malloc(image_size);
-									stbir_resize_uint8(pixels, width, height, 0, output, maxW, maxH, 0, channels);
-									memcpy_s(data + image_size * procNum, image_size, output, image_size);
-									stbi_image_free(pixels);
-									free(output);
-								}
-								else
-								{
-									memcpy_s(data + image_size * procNum, image_size, pixels, image_size);
-									stbi_image_free(pixels);
-								}
-							});
-					}
-					else
-					{
-						unsigned char* pixels = (unsigned char*)malloc(image_size);
-						memset(pixels, (byte)255, image_size);
-						memcpy_s(data + image_size * procNum, image_size, pixels, image_size);
-						free(pixels);
-						texture_path[procNum] = "empty_texture";
-					}
-
-					procNum++;
+							if (width < maxW || height < maxH)
+							{
+								unsigned char* output = (unsigned char*)malloc(image_size);
+								stbir_resize_uint8(pixels, width, height, 0, output, maxW, maxH, 0, channels);
+								memcpy_s(data + image_size * procNum, image_size, output, image_size);
+								stbi_image_free(pixels);
+								free(output);
+							}
+							else
+							{
+								memcpy_s(data + image_size * procNum, image_size, pixels, image_size);
+								stbi_image_free(pixels);
+							}
+						});
+				}
+				else
+				{
+					unsigned char* pixels = (unsigned char*)malloc(image_size);
+					memset(pixels, (byte)255, image_size);
+					memcpy_s(data + image_size * procNum, image_size, pixels, image_size);
+					free(pixels);
+					//texture_path[procNum] = "empty_texture";
 				}
 
-				for (int ind = 0; ind < processes_map.size(); ind++)
+				procNum++;
+			}
+
+			for (int ind = 0; ind < processes_map.size(); ind++)
+			{
+				if (processes_map[ind].valid())
 				{
-					if (processes_map[ind].valid())
-					{
-						processes_map[ind].wait();
-					}
+					processes_map[ind].wait();
 				}
 			}
+
 
 			VulkanAPI::m_createVkBuffer(logicalDevice, memAllocator, data, sizeof(byte) * maxW * maxH * channels * texture_path.size(), VK_BUFFER_USAGE_TRANSFER_SRC_BIT, &stagingBuffer);
 			free(data);
@@ -2761,31 +2712,34 @@ namespace GrEngine_Vulkan
 		terrain->LoadTerrain(filepath);
 	}
 
+	GrEngine::Object* VulkanRenderer::InitDrawableObject(GrEngine::Entity* ownerEntity)
+	{
+		VulkanObject* drawable = new VulkanObject(ownerEntity);
+		drawables[ownerEntity->GetEntityID()] = drawable;
+		drawable->initObject(logicalDevice, memAllocator, this);
+
+		return drawable;
+	}
+
+	GrEngine::SpotlightObject* VulkanRenderer::InitSpotlightObject(GrEngine::Entity* ownerEntity)
+	{
+		VulkanSpotlight* light = new VulkanSpotlight(ownerEntity);
+		light->initLight(logicalDevice, memAllocator);
+		lights[ownerEntity->GetEntityID()] = static_cast<GrEngine::SpotlightObject*>(light);
+		updateShadowResources();
+
+		return light;
+	}
+
 	GrEngine::Entity* VulkanRenderer::addEntity()
 	{
 		GrEngine::Entity* ent = nullptr;
 
-		UINT id;
-		if (free_ids.size() > 0)
-		{
-			id = free_ids.front();
-			free_ids.erase(free_ids.begin());
-		}
-		else
-		{
-			next_id[2]++;
-			next_id[1] += next_id[2] / 255;
-			next_id[0] += next_id[1] / 255;
-			next_id[2] %= 255;
-			char _buf[11];
-			std::snprintf(_buf, sizeof(_buf), "1%03d%03d%03d", next_id[0], next_id[1], next_id[2]);
-			id = std::atoi(_buf);
-		}
+		UINT id = 1000000000;
+		while (entities.contains(id) > 0)
+			id++;
 
 		ent = new GrEngine::Entity(id);
-		//GrEngine::Entity* ent = new VulkanObject(id);
-
-		//dynamic_cast<VulkanObject*>(ent)->initObject(logicalDevice, memAllocator, this);
 		std::string new_name = std::string("Entity") + std::to_string(entities.size());
 		ent->UpdateNameTag(new_name.c_str());
 		entities[id] = ent;
@@ -2796,48 +2750,20 @@ namespace GrEngine_Vulkan
 	GrEngine::Entity* VulkanRenderer::addEntity(UINT id)
 	{
 		GrEngine::Entity* ent = nullptr;
-		char _buf[11];
-		std::snprintf(_buf, sizeof(_buf), "1%03d%03d%03d", next_id[0], next_id[1], next_id[2]);
-
-		if (id > std::atoi(_buf))
-		{
-			next_id = { id / 1000000 % 1000, id / 1000 % 1000, id % 1000 };
-			next_id[2]++;
-			next_id[1] += next_id[2] / 255;
-			next_id[0] += next_id[1] / 255;
-			next_id[2] %= 255;
-		}
 
 		ent = new GrEngine::Entity(id);
 		std::string new_name = std::string("Entity") + std::to_string(entities.size());
 		ent->UpdateNameTag(new_name.c_str());
 		entities[id] = ent;
 
-		//GrEngine::Entity* ent = new VulkanObject(id);
-
-		//static_cast<VulkanObject*>(ent)->initObject(logicalDevice, memAllocator, this);
-		//std::string new_name = std::string("Entity") + std::to_string(entities.size() + 1);
-		//ent->UpdateNameTag(new_name.c_str());
-		//entities[ent->GetEntityID()] = ent;
-
 		return ent;
 	}
 
 	void VulkanRenderer::addEntity(GrEngine::Entity* entity)
 	{
-		//static_cast<VulkanObject*>(entity)->initObject(logicalDevice, memAllocator, this);
 		std::string new_name = std::string("Entity") + std::to_string(entities.size() + 1);
 		entity->UpdateNameTag(new_name.c_str());
 		entities[entity->GetEntityID()] = entity;
-	}
-
-	GrEngine::Object* VulkanRenderer::InitDrawableObject(GrEngine::Entity* ownerEntity)
-	{
-		VulkanObject* drawable = new VulkanObject(ownerEntity);
-		drawables[ownerEntity->GetEntityID()] = drawable;
-		drawable->initObject(logicalDevice, memAllocator, this);
-
-		return drawable;
 	}
 
 	GrEngine::Entity* VulkanRenderer::selectEntity(UINT ID)
@@ -2867,14 +2793,19 @@ namespace GrEngine_Vulkan
 
 		if (entities.at(id) != nullptr)
 		{
-			auto object = drawables.at(id);
-			if (object != nullptr)
+			switch (entities.at(id)->GetEntityType())
 			{
-				dynamic_cast<VulkanObject*>(object)->destroyObject();
+			case GrEngine::EntityType::ObjectEntity:
+				static_cast<VulkanObject*>(drawables.at(id))->destroyObject();
 				drawables.erase(id);
+				break;
+			case GrEngine::EntityType::SpotlightEntity:
+				static_cast<VulkanSpotlight*>(lights.at(id))->destroyLight();
+				lights.erase(id);
+				updateShadowResources();
+				break;
 			}
 			entities.erase(id);
-			free_ids.push_back(id);
 		}
 	}
 
@@ -2906,7 +2837,15 @@ namespace GrEngine_Vulkan
 		std::vector<EntityProperty*> cur_props = getActiveViewport()->GetProperties();
 		for (std::vector<EntityProperty*>::iterator itt = cur_props.begin(); itt != cur_props.end(); ++itt)
 		{
-			new_file << "    " << (*itt)->PrpertyNameString() << " " << (*itt)->ValueString() << "\n";
+			if ((*itt)->PrpertyNameString() == "EntityOrientation")
+			{
+				glm::vec3 pyr = getActiveViewport()->GetActualPYR();
+				new_file << "    " << (*itt)->PrpertyNameString() << " " << (GrEngine::Globals::FloatToString(pyr.x, 5) + ":" + GrEngine::Globals::FloatToString(pyr.y, 5) + ":" + GrEngine::Globals::FloatToString(pyr.z, 5)) << "\n";
+			}
+			else
+			{
+				new_file << "    " << (*itt)->PrpertyNameString() << " " << (*itt)->ValueString() << "\n";
+			}
 		}
 		new_file << "}\n";
 
@@ -2935,7 +2874,6 @@ namespace GrEngine_Vulkan
 
 	void VulkanRenderer::LoadScene(const char* path)
 	{
-		Initialized = false;
 		clearDrawables();
 
 		std::ifstream file(path, std::ios::ate | std::ios::binary);
@@ -2974,7 +2912,10 @@ namespace GrEngine_Vulkan
 				}
 				else
 				{
-					cur_ent->ParsePropertyValue(cur_property.c_str(), stream.c_str());
+					if (stream != "nil")
+					{
+						cur_ent->ParsePropertyValue(cur_property.c_str(), stream.c_str());
+					}
 					value = false;
 				}
 			}
@@ -3002,6 +2943,5 @@ namespace GrEngine_Vulkan
 		}
 
 		file.close();
-		Initialized = true;
 	}
 };

@@ -3,6 +3,7 @@
 #include "Entities/Entity.h"
 #include "Entities/Skybox.h"
 #include "Entities/Properties/Drawable.h"
+#include "Entities/Properties/Spotlight.h"
 #include "Core/Logger.h"
 
 namespace GrEngine
@@ -31,6 +32,7 @@ namespace GrEngine
 		virtual Entity* addEntity(UINT ID) = 0;
 		virtual void addEntity(Entity* entity) = 0;
 		virtual Object* InitDrawableObject(Entity* ownerEntity) = 0;
+		virtual SpotlightObject* InitSpotlightObject(Entity* ownerEntity) = 0;
 		std::map<UINT, Entity*>& GetEntitiesList()
 		{
 			return entities;
@@ -64,11 +66,13 @@ namespace GrEngine
 		virtual void SaveScene(const char* path) = 0;
 		virtual void LoadScene(const char* path) = 0;
 		EventListener* listener;
+
+		static float NearPlane;
+		static float FarPlane;
 	protected:
 		UINT32 selected_entity = 0;
 		std::map<UINT, Entity*> entities;
 		std::map<UINT, Object*> drawables;
-		glm::lowp_uvec3 next_id = {0, 0, 1};
-		std::vector<UINT> free_ids;
+		std::map<UINT, SpotlightObject*> lights;
 	};
 }

@@ -5,7 +5,8 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/quaternion.hpp>
 #include <vk_mem_alloc.h>
-#include "Engine/Headers/Entities/DrawableObject.h"
+#include "Engine/Headers/Entities/Properties/Drawable.h"
+#include "Bullet/BulletAPI.h"
 
 namespace GrEngine_Vulkan
 {
@@ -54,6 +55,7 @@ namespace GrEngine_Vulkan
 		VkMemoryRequirements MemoryRequirements;
 		VkMappedMemoryRange MappedMemoryRange;
 		VmaAllocation Allocation;
+		void* data;
 
 		bool initialized = false;
 	};
@@ -84,11 +86,10 @@ namespace GrEngine_Vulkan
 
 	struct VertexConstants {
 		glm::mat4 model{ 1.f };
-		glm::vec3 scale = { 1.f, 1.f, 1.f };
+		glm::vec4 scale = { 1.f, 1.f, 1.f, 1.f };
 	};
 
 	struct PickingBufferObject {
-		uint32_t object_id = 0;
 		glm::vec4 colors{ 1.f };
 	};
 

@@ -19,6 +19,7 @@ namespace GrEngine_Vulkan
 		virtual bool pushConstants(VkCommandBuffer cmd);
 		virtual bool recordCommandBuffer(VkCommandBuffer commandBuffer, UINT32 mode);
 		virtual bool draw(VkCommandBuffer commandBuffer);
+		virtual bool draw(VkCommandBuffer commandBuffer, int instances);
 
 	protected:
 		void subscribeDescriptor(VkShaderStageFlags shaderStage, uint8_t binding, VkDescriptorType descType, VkDescriptorImageInfo imageInfo, int targetLayout = 0);

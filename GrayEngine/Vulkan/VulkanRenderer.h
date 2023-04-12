@@ -2,6 +2,8 @@
 #include "VulkanObject.h"
 #include "VulkanSkybox.h"
 #include "VulkanTerrain.h"
+#include "VulkanSpotlight.h"
+#include "VulkanCascade.h"
 #include "Engine/Headers/Core/Logger.h"
 #include "Engine/Headers/Virtual/Renderer.h"
 #include "VulkanAPI.h"
@@ -27,6 +29,7 @@ namespace GrEngine_Vulkan
 		GrEngine::Entity* addEntity() override;
 		GrEngine::Entity* addEntity(UINT ID) override;
 		GrEngine::Object* InitDrawableObject(GrEngine::Entity* ownerEntity);
+		GrEngine::SpotlightObject* InitSpotlightObject(GrEngine::Entity* ownerEntity);
 
 		void addEntity(GrEngine::Entity* entity) override;
 		bool assignTextures(std::vector<std::string> textures, GrEngine::Entity* target) override;
@@ -75,11 +78,26 @@ namespace GrEngine_Vulkan
 			glm::mat4 proj;
 		} vpUBO;
 		ShaderBuffer viewProjUBO;
-		ShaderBuffer shadowBuffer;
+
 		Texture shadowMap;
 
-		void* uboData;
+		struct Cascade
+		{
+			float splitDepth;
+			glm::mat4 viewProjMatrix;
+		};
+		VulkanSpotlight::ShadowProjection cascadePrj;
+		VulkanCascade* spot;
 
+		VkRenderPass shadowPass;
+		ShaderBuffer shadowBuffer;
+
+		int cascade_count = 0;
+
+		const uint32_t lightsCount()
+		{
+			return glm::max((int)lights.size() + cascade_count * (SHADOW_MAP_CASCADE_COUNT - 1), 1);
+		}
 	protected:
 		void SaveScreenshot(const char* filepath);
 		bool updateDrawables(uint32_t index, DrawMode mode, VkExtent2D extent);
@@ -121,6 +139,7 @@ namespace GrEngine_Vulkan
 
 		bool createSwapChainImages();
 		void recreateSwapChain();
+		void updateShadowResources();
 		void cleanupSwapChain();
 		void generateMipmaps(VkImage image, int32_t texWidth, int32_t texHeight, uint32_t mipLevels, uint32_t arrayLevels);
 
@@ -175,24 +194,10 @@ namespace GrEngine_Vulkan
 		ShaderBuffer frameInfo;
 		glm::vec2 frameSize;
 
-
-		VkDescriptorPool shadowSetPool;
-		VkDescriptorSetLayout shadowSetLayout;
-		VkDescriptorSet shadowSet;
-		VkPipelineLayout shadowPipelineLayout;
-		VkPipeline shadowPipeline;
-		VkRenderPass shadowPass;
 		VkFramebuffer shadowFramebuffer;
-		//struct Light
-		//{
-		//	glm::vec4 pos = { 0, 0, -1, 1 };
-		//} light;
-		struct ShadowProjection
-		{
-			glm::mat4 view;
-			glm::mat4 proj;
-			glm::mat4 model;
-		} lightPerspective;
+		ShaderBuffer cascadeBuffer;
+
+		GrEngine::Entity* casent;
 
 #ifdef _DEBUG
 

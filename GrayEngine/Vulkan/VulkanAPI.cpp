@@ -71,7 +71,7 @@ namespace GrEngine_Vulkan
 		vmaCreateBuffer(allocator, &bufferCreateInfo, &vmaallocInfo, &shaderBuffer->Buffer, &shaderBuffer->Allocation, nullptr);
 		vkGetBufferMemoryRequirements(device, shaderBuffer->Buffer, &shaderBuffer->MemoryRequirements);
 
-		byte* data;
+		void* data;
 		if (bufData != nullptr)
 		{
 			vmaMapMemory(allocator, shaderBuffer->Allocation, (void**)&data);
@@ -220,7 +220,7 @@ namespace GrEngine_Vulkan
 
 		// Deferred attachments
 		// Position
-		attachments[1].format = VK_FORMAT_R16G16B16A16_SFLOAT;
+		attachments[1].format = VK_FORMAT_R32G32B32A32_SFLOAT;
 		attachments[1].samples = VK_SAMPLE_COUNT_1_BIT;
 		attachments[1].loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
 		attachments[1].storeOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
@@ -398,6 +398,22 @@ namespace GrEngine_Vulkan
 		framebufferInfo.layers = 1;
 
 		VkResult res = vkCreateFramebuffer(device, &framebufferInfo, nullptr, outFrameBuffer);
+
+		if (res != VK_SUCCESS)
+		{
+			Logger::Out("[VK] Failed to create framebuffer with code %d", OutputColor::Red, OutputType::Error, res);
+			return false;
+		}
+
+		destructors.insert_or_assign(destructors.begin(), *outFrameBuffer, (Destructor*)DestroyFramebuffer);
+		devices[*outFrameBuffer] = device;
+
+		return res == VK_SUCCESS;
+	}
+
+	bool VulkanAPI::CreateFrameBuffer(VkDevice device, VkFramebufferCreateInfo* info, VkFramebuffer* outFrameBuffer)
+	{
+		VkResult res = vkCreateFramebuffer(device, info, nullptr, outFrameBuffer);
 
 		if (res != VK_SUCCESS)
 		{
@@ -643,7 +659,7 @@ namespace GrEngine_Vulkan
 		return res == VK_SUCCESS;
 	}
 
-	bool VulkanAPI::CreateSampler(VkPhysicalDevice physicalDevice, VkDevice logicalDevice, VkSamplerCreateInfo* info, VkSampler* outSampler)
+	bool VulkanAPI::CreateSampler(VkDevice logicalDevice, VkSamplerCreateInfo* info, VkSampler* outSampler)
 	{
 		VkResult res = vkCreateSampler(logicalDevice, info, nullptr, outSampler);
 
@@ -1278,6 +1294,8 @@ namespace GrEngine_Vulkan
 		deviceFeatures.samplerAnisotropy = VK_TRUE;
 		deviceFeatures.fragmentStoresAndAtomics = VK_TRUE;
 		deviceFeatures.independentBlend = VK_TRUE;
+		deviceFeatures.depthBiasClamp = VK_TRUE;
+		deviceFeatures.depthClamp = VK_TRUE;
 
 		return deviceFeatures;
 	}

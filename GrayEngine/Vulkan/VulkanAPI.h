@@ -45,6 +45,7 @@ namespace GrEngine_Vulkan
 		static bool CreateVkSwapchain(VkPhysicalDevice physicalDevice, VkDevice logicalDevice, GLFWwindow* window,VkSurfaceKHR surface, VkSwapchainKHR* outSwapchain);
 		static bool CreateRenderPass(VkDevice device, VkFormat swapchainFormat, VkFormat depthFormat, VkSampleCountFlagBits sampleCount, VkRenderPass* outRenderPass);
 		static bool CreateFrameBuffer(VkDevice device, VkRenderPass renderPass, VkImageView* attachments, uint32_t attachmentsCount, VkExtent2D extent, VkFramebuffer* outFrameBuffer);
+		static bool CreateFrameBuffer(VkDevice device, VkFramebufferCreateInfo* info, VkFramebuffer* outFrameBuffer);
 		static bool CreateCommandPool(VkDevice device, uint32_t familyIndex, VkCommandPool* outPool);
 		static bool CreateVkSemaphore(VkDevice device, VkSemaphore* outSemaphore);
 		static bool CreateVkFence(VkDevice device, VkFence* outFence);
@@ -56,7 +57,7 @@ namespace GrEngine_Vulkan
 		static bool CreateDescriptorSetLayout(VkDevice device, std::vector<VkDescriptorSetLayoutBinding> bindings, VkDescriptorSetLayout* outLayout);
 		static bool CreateDescriptorPool(VkDevice device, std::vector<VkDescriptorPoolSize> pools, VkDescriptorPool* outDescriptorPool);
 		static bool CreateSampler(VkPhysicalDevice physicalDevice, VkDevice logicalDevice, VkSampler* outSampler, float mipLevels = 0.f);
-		static bool CreateSampler(VkPhysicalDevice physicalDevice, VkDevice logicalDevice, VkSamplerCreateInfo* info, VkSampler* outSampler);
+		static bool CreateSampler(VkDevice logicalDevice, VkSamplerCreateInfo* info, VkSampler* outSampler);
 
 		static void DestroyLogicalDevice(VkDevice device);
 		static void DestroyMemoryAllocator(VmaAllocator allocator);

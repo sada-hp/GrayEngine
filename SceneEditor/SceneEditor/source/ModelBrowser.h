@@ -51,7 +51,7 @@ namespace GrEngine
         {
             static float rotation = 0;
             Renderer* render = GetContext()->GetRenderer();
-            Object* drawable = GGetMesh(render->GetSelectedEntity());
+            Object* drawable = Object::FindObject(render->GetSelectedEntity());
             Camera* camera = render->getActiveViewport();
 
             if (drawable != NULL)

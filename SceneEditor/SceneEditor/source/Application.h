@@ -29,6 +29,7 @@ namespace GrEngine
         EditorUI editorUI;
         std::string log_path;
         unsigned char* foliage_mask;
+        std::string fm;
         int mask_width, mask_height, mask_channels;
 
     public:
@@ -63,7 +64,7 @@ namespace GrEngine
         {
             log_path = getExecutablePath() + std::string("grayengine.log");
 
-            GetRenderer()->getActiveViewport()->LockAxes(0, 0, 89, -89, 0, 0);
+            GetRenderer()->getActiveViewport()->LockAxes(89, -89, 0, 0, 0, 0);
 
             getEditorUI()->InitUI(VIEWPORT_EDITOR);
             getEditorUI()->SetViewportHWND(getViewportHWND(), VIEWPORT_EDITOR);
@@ -86,20 +87,42 @@ namespace GrEngine
         {
             getEditorUI()->ShowScene();
             LoadTools();
+            App_GetAllEntities();
             Run();
         }
 
         void LoadScene(const char* path) override
         {
-            GetRenderer()->selectEntity(0);
-            static_cast<DrawableObject*>(gizmo)->SetVisisibility(false);
+            
+            static_cast<Object*>(Object::FindObject(gizmo))->SetVisisibility(false);
             transform_target = nullptr;
+            if (foliage_mask != nullptr)
+            {
+                free(foliage_mask);
+                foliage_mask = nullptr;
+                fm = "";
+            }
             Engine::LoadScene(path);
+            auto ent = GetRenderer()->selectEntity(100);
+            if (ent != nullptr)
+            {
+                fm = Globals::getExecutablePath() + static_cast<Terrain*>(ent)->GetBlendMask();
+                foliage_mask = stbi_load(fm.c_str(), &mask_width, &mask_height, &mask_channels, STBI_rgb_alpha);
+                mask_aspect_x = mask_width / 1024;
+                mask_aspect_y = mask_height / 1024;
+            }
+
+            GetRenderer()->selectEntity(0);
         }
 
         void App_SaveScene(const char* path)
         {
             SaveScene(path);
+
+            if (foliage_mask != nullptr)
+            {
+                stbi_write_png(fm.c_str(), mask_width, mask_height, 4, foliage_mask, mask_width * mask_channels);
+            }
         }
 
         void App_UpdateSelection(UINT id)
@@ -185,47 +208,63 @@ namespace GrEngine
 
         void App_ShowBrush(int mode)
         {
-            if (mode == 1 && manipulation != 7)
+            transform_target = GetRenderer()->selectEntity(100);
+            if (transform_target != nullptr)
             {
-                if (foliage_mask != nullptr)
+                float resolution = static_cast<Terrain*>(transform_target)->GetTerrainSize().resolution;
+                subdivisions = 1.f / resolution;
+
+                if (mode == 1 && manipulation != 7)
                 {
-                    static_cast<DrawableObject*>(brush)->SetVisisibility(true);
-                    transform_target = GetRenderer()->selectEntity(100);
-                    manipulation = 7;
+                    if (foliage_mask == nullptr)
+                    {
+                        fm = Globals::getExecutablePath() + static_cast<Terrain*>(transform_target)->GetBlendMask();
+                        foliage_mask = stbi_load(fm.c_str(), &mask_width, &mask_height, &mask_channels, STBI_rgb_alpha);
+                        mask_aspect_x = mask_width / 1024;
+                        mask_aspect_y = mask_height / 1024;
+                    }
+
+                    if (foliage_mask != nullptr)
+                    {
+                        transform_target = GetRenderer()->selectEntity(100);
+                        static_cast<Object*>(Object::FindObject(brush))->SetVisisibility(true);
+                        manipulation = 7;
+                        paint_mode = 1;
+                        GetEventListener()->registerEvent("TerrainBlendMask", { true });
+                        GetEventListener()->registerEvent("TerrainSculptMask", { false });
+                        App_SendBrushInfo();
+                    }
+
+                }
+                else if (mode == 2 && manipulation != 8)
+                {
+                    static_cast<Object*>(Object::FindObject(brush))->SetVisisibility(true);
+                    manipulation = 8;
                     paint_mode = 1;
-                    GetEventListener()->registerEvent("TerrainBlendMask", { true });
-                    GetEventListener()->registerEvent("TerrainSculptMask", { false });
+                    GetEventListener()->registerEvent("TerrainSculptMask", { true });
+                    GetEventListener()->registerEvent("TerrainBlendMask", { false });
                     App_SendBrushInfo();
                 }
                 else
                 {
-                    Logger::Out("Invalid foliage mask selected!", OutputColor::Red, OutputType::Error);
-                    GetEventListener()->registerEvent("TerrainSculptMask", { false });
+                    static_cast<Object*>(Object::FindObject(brush))->SetVisisibility(false);
                     GetRenderer()->selectEntity(0);
                     manipulation = 0;
-                    return;
+                    GetEventListener()->registerEvent("TerrainBlendMask", { false });
+                    GetEventListener()->registerEvent("TerrainSculptMask", { false });
                 }
-            }
-            else if (mode == 2 && manipulation != 8)
-            {
-                static_cast<DrawableObject*>(brush)->SetVisisibility(true);
-                transform_target = GetRenderer()->selectEntity(100);
-                manipulation = 8;
-                paint_mode = 1;
-                GetEventListener()->registerEvent("TerrainSculptMask", { true });
-                GetEventListener()->registerEvent("TerrainBlendMask", { false });
-                App_SendBrushInfo();
             }
             else
             {
-                static_cast<DrawableObject*>(brush)->SetVisisibility(false);
+                Logger::Out("No valid terrain found in the world!", OutputColor::Red, OutputType::Error);
+                GetEventListener()->registerEvent("TerrainSculptMask", { false });
+                GetEventListener()->registerEvent("TerrainBlendMask", { false });
+                static_cast<Object*>(Object::FindObject(brush))->SetVisisibility(false);
                 GetRenderer()->selectEntity(0);
                 manipulation = 0;
-                GetEventListener()->registerEvent("TerrainBlendMask", { false });
-                GetEventListener()->registerEvent("TerrainSculptMask", { false });
+                return;
             }
-
-            FocusViewport();
+            //FocusViewport();
         }
 
         EditorUI* getEditorUI()
@@ -270,12 +309,12 @@ namespace GrEngine
 
         void App_RemoveEntity()
         {
-            if (transform_target != nullptr)
+            if (transform_target != nullptr && transform_target != gizmo)
             {
                 UINT id = transform_target->GetEntityID();
                 GetRenderer()->DeleteEntity(id);
                 getEditorUI()->RemoveEntity(id);
-                static_cast<GrEngine::DrawableObject*>(gizmo)->SetVisisibility(false);
+                static_cast<GrEngine::Object*>(GrEngine::Object::FindObject(gizmo))->SetVisisibility(false);
             }
         }
 
@@ -285,7 +324,7 @@ namespace GrEngine
 
             for (auto obj : ent_vec)
             {
-                if ((obj.second->GetEntityType() != EntityType::SkyboxEntity || obj.second->GetEntityType() == EntityType::TerrainEntity) && !obj.second->IsStatic())
+                if ((obj.second->GetEntityType() != EntityType::SkyboxEntity && obj.second->GetEntityType() != EntityType::TerrainEntity) && !obj.second->IsStatic())
                 {
                     App_UpdateEntity(obj.second);
                 }
@@ -342,7 +381,8 @@ namespace GrEngine
                 foliage_mask = nullptr;
             }
 
-            foliage_mask = stbi_load(maps[1].c_str(), &mask_width, &mask_height, &mask_channels, STBI_rgb_alpha);;
+            fm = (Globals::getExecutablePath() + maps[1]);
+            foliage_mask = stbi_load(fm.c_str(), &mask_width, &mask_height, &mask_channels, STBI_rgb_alpha);
             mask_aspect_x = mask_width / 1024;
             mask_aspect_y = mask_height / 1024;
             GenerateTerrain(resolution, x, y, z, maps);
@@ -364,10 +404,9 @@ namespace GrEngine
 
                     int actual_falloff = brush_falloff * mask_aspect_x * mask_aspect_y;
 
-                    float falloff = glm::ceil(actual_falloff);
-                    int radius = glm::ceil(brush_size * mask_aspect_x);
-                    int radiusx = glm::ceil(brush_size * mask_aspect_x) + falloff;
-                    int radiusy = glm::ceil(brush_size * mask_aspect_y) + falloff;
+                    float radius = brush_size * mask_aspect_x;
+                    int radiusx = glm::ceil(brush_size * mask_aspect_x + actual_falloff);
+                    int radiusy = glm::ceil(brush_size * mask_aspect_y + actual_falloff);
 
                     int sign = paint_mode == 1 ? 1 : -1;
                     int strength = 255 * brush_opacity * paint_mode * sign;
@@ -397,9 +436,9 @@ namespace GrEngine
                                 int red = foliage_mask[row + col] + strength * red_channel;
                                 int green = foliage_mask[row + col + 1] + strength * green_channel;
                                 int blue = foliage_mask[row + col + 2] + strength * blue_channel;
-                                foliage_mask[row + col] = glm::max(glm::min(red, 255), 0);
-                                foliage_mask[row + col + 1] = glm::max(glm::min(green, 255), 0);
-                                foliage_mask[row + col + 2] = glm::max(glm::min(blue, 255), 0);
+                                foliage_mask[row + col] = glm::clamp(red, 0, 255);
+                                foliage_mask[row + col + 1] = glm::clamp(green, 0, 255);
+                                foliage_mask[row + col + 2] = glm::clamp(blue, 0, 255);
                             }
                             else if (point_sq <= falloff_sq)
                             {
@@ -408,9 +447,9 @@ namespace GrEngine
                                 int red = foliage_mask[row + col] + falloff_strength * red_channel;
                                 int green = foliage_mask[row + col + 1] + falloff_strength * green_channel;
                                 int blue = foliage_mask[row + col + 2] + falloff_strength * blue_channel;
-                                foliage_mask[row + col] = glm::max(glm::min(red, 255), 0);
-                                foliage_mask[row + col + 1] = glm::max(glm::min(green, 255), 0);
-                                foliage_mask[row + col + 2] = glm::max(glm::min(blue, 255), 0);
+                                foliage_mask[row + col] = glm::clamp(red, 0, 255);
+                                foliage_mask[row + col + 1] = glm::clamp(green, 0, 255);
+                                foliage_mask[row + col + 2] = glm::clamp(blue, 0, 255);
                             }
                         }
                     }
@@ -553,14 +592,24 @@ namespace GrEngine
 
         void App_UpdateBrush(int mode, float opacity, float size, float falloff)
         {
-            brush_size = size > 0 ? size : brush_size;
-            brush_opacity = opacity > 0 ? opacity : brush_opacity;
-            brush_falloff = falloff > 0 ? falloff : brush_falloff;
+            if (size >= 0)
+            {
+                brush_size = glm::max(size, 0.1f);
+            }
+            if (opacity >= 0)
+            {
+                brush_opacity = glm::max(opacity, 0.1f);
+            }
+            if (falloff >= 0)
+            {
+                brush_falloff = glm::max(falloff, 0.1f);
+            }
             std::string temp = Globals::FloatToString(brush_size * 2, 5);
             std::string col = Globals::FloatToString(brush_opacity / 2, 5);
             brush->ParsePropertyValue("Scale", (temp + ":" + temp + ":" + temp).c_str());
             brush->ParsePropertyValue("Color", ("1:1:1:" + col).c_str());
             paint_mode = mode > 0 ? mode : paint_mode;
+            App_SendBrushInfo();
         }
 
         void App_SendBrushInfo()
@@ -599,19 +648,7 @@ namespace GrEngine
 
         void LoadTools()
         {
-            //Grid
-            grid = GetRenderer()->addEntity();
-            Object* grid_object = static_cast<Object*>(grid->AddNewProperty("Drawable")->GetValueAdress());
-            grid_object->GeneratePlaneMesh(1, 1);
-            grid_object->DisableCollisions();
-            //grid_object->SetVisisibility(false);
-            grid->ParsePropertyValue("Transparency", "1");
-            grid->ParsePropertyValue("Shader", "Shaders\\grid");
-            grid->MakeStatic();
-            grid->AddNewProperty("CastShadow");
-            grid->ParsePropertyValue("CastShadow", "0");
-
-            //Move
+            //Gizmo
             gizmo = GetRenderer()->addEntity();
             Object* gizmo_object = static_cast<Object*>(gizmo->AddNewProperty("Drawable")->GetValueAdress());
             gizmo_object->DisableCollisions();
@@ -624,6 +661,18 @@ namespace GrEngine
             gizmo->MakeStatic();
             gizmo->AddNewProperty("CastShadow");
             gizmo->ParsePropertyValue("CastShadow", "0");
+
+            //Grid
+            grid = GetRenderer()->addEntity();
+            Object* grid_object = static_cast<Object*>(grid->AddNewProperty("Drawable")->GetValueAdress());
+            grid_object->GeneratePlaneMesh(1, 1);
+            grid_object->DisableCollisions();
+            //grid_object->SetVisisibility(false);
+            grid->ParsePropertyValue("Transparency", "1");
+            grid->ParsePropertyValue("Shader", "Shaders\\grid");
+            grid->MakeStatic();
+            grid->AddNewProperty("CastShadow");
+            grid->ParsePropertyValue("CastShadow", "0");
 
             //Paint
             brush = GetRenderer()->addEntity();
@@ -696,7 +745,7 @@ namespace GrEngine
             auto props = ent->GetProperties();
             int numProps = props.size();
 
-            if (ent->GetEntityType() != EntityType::SkyboxEntity || ent->GetEntityType() == EntityType::TerrainEntity)
+            if (ent->GetEntityType() != EntityType::SkyboxEntity && ent->GetEntityType() != EntityType::TerrainEntity)
             {
                 for (int i = 0; i < numProps; i++)
                 {

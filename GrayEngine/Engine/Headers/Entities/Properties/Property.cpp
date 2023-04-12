@@ -1,6 +1,7 @@
 #include "pch.h"
+#include "Engine/Headers/Engine.h"
 #include "Engine/Headers/Entities/Entity.h"
-#include "Engine/Headers/Entities/DrawableObject.h"
+#include "Drawable.h"
 #include "Engine/Headers/Entities/Skybox.h"
 #include "Property.h"
 
@@ -223,7 +224,7 @@ void EntityPosition::ParsePropertyValue(const char* value)
 		}
 	}
 
-	property_value = res;
+	static_cast<GrEngine::Entity*>(owner)->PositionObjectAt(res);
 }
 
 void EntityPosition::SetPropertyValue(const float& x, const float& y, const float& z)
@@ -250,11 +251,13 @@ void* EntityPosition::GetValueAdress()
 
 EntityOrientation::EntityOrientation(const float& pitch, const float& yaw, const float& roll, void* parent)
 {
-	glm::quat qPitch = glm::angleAxis(glm::radians(yaw), glm::vec3(1, 0, 0));
-	glm::quat qYaw = glm::angleAxis(glm::radians(pitch), glm::vec3(0, 1, 0));
-	glm::quat qRoll = glm::angleAxis(glm::radians(roll), glm::vec3(0, 0, 1));
-	property_value = glm::normalize(qPitch * qYaw * qRoll);
 	pitch_yaw_roll = { pitch, yaw, roll };
+	glm::quat q = glm::quat_cast(glm::mat3(1.f));
+	q = q * glm::angleAxis(glm::radians(pitch_yaw_roll.x), glm::vec3(1, 0, 0));
+	q = q * glm::angleAxis(glm::radians(pitch_yaw_roll.y), glm::vec3(0, 1, 0));
+	q = q * glm::angleAxis(glm::radians(pitch_yaw_roll.z), glm::vec3(0, 0, 1));
+	property_value = q;
+
 	property_name = "EntityOrientation";
 	property_type = PropertyType::EntityOrientation;
 	owner = parent;
@@ -267,7 +270,7 @@ EntityOrientation::~EntityOrientation()
 
 const char* EntityOrientation::ValueString()
 {
-	property_string = (GrEngine::Globals::FloatToString(degrees.x, 5) + ":" + GrEngine::Globals::FloatToString(degrees.y, 5) + ":" + GrEngine::Globals::FloatToString(degrees.z, 5));
+	property_string = (GrEngine::Globals::FloatToString(pitch_yaw_roll.x, 5) + ":" + GrEngine::Globals::FloatToString(pitch_yaw_roll.y, 5) + ":" + GrEngine::Globals::FloatToString(pitch_yaw_roll.z, 5));
 	return property_string.c_str();
 }
 
@@ -277,21 +280,24 @@ void EntityOrientation::ParsePropertyValue(const char* degress)
 
 	if (cols.size() < 3) return;
 
-	SetPropertyValue(stof(cols[0]), stof(cols[1]), stof(cols[2]));
+	static_cast<GrEngine::Entity*>(owner)->SetRotation(stof(cols[0]), stof(cols[1]), stof(cols[2]));
 }
 
-void EntityOrientation::SetPropertyValue(const float& pitch, const float& yaw, const float& roll)
+void EntityOrientation::SetPropertyValue(glm::vec3 p_y_r)
 {
-	degrees = { pitch, yaw, roll };
-	pitch_yaw_roll = { glm::radians(pitch), glm::radians(yaw), glm::radians(roll) };
-	property_value = glm::quat(pitch_yaw_roll);
+	pitch_yaw_roll = p_y_r;
+	glm::quat q = glm::quat_cast(glm::mat3(1.f));
+	q = q * glm::angleAxis(glm::radians(pitch_yaw_roll.x), glm::vec3(1, 0, 0));
+	q = q * glm::angleAxis(glm::radians(pitch_yaw_roll.y), glm::vec3(0, 1, 0));
+	q = q * glm::angleAxis(glm::radians(pitch_yaw_roll.z), glm::vec3(0, 0, 1));
+	property_value = q;
 }
 
 void EntityOrientation::SetPropertyValue(glm::quat value)
 {
 	property_value = value;
-	pitch_yaw_roll = glm::eulerAngles(value);
-	degrees = { glm::degrees(pitch_yaw_roll.x), glm::degrees(pitch_yaw_roll.y), glm::degrees(pitch_yaw_roll.z) };
+	glm::quat q = glm::inverse(value);
+	pitch_yaw_roll = glm::degrees(glm::eulerAngles(value));
 }
 
 std::any EntityOrientation::GetAnyValue()
@@ -425,6 +431,46 @@ void* Drawable::GetValueAdress()
 	return drawable;
 }
 
+////////////////////////////////////Spotlight/////////////////////////////////////////////
+
+SpotLight::SpotLight(void* parent)
+{
+	property_name = "Spotlight";
+	property_type = PropertyType::Spotlight;
+	owner = parent;
+	spotlight = GrEngine::Engine::GetContext()->GetRenderer()->InitSpotlightObject(static_cast<GrEngine::Entity*>(owner));
+}
+
+SpotLight::~SpotLight()
+{
+
+}
+
+const char* SpotLight::ValueString()
+{
+	return property_value.c_str();
+}
+
+void SpotLight::ParsePropertyValue(const char* value)
+{
+	SetPropertyValue(value);
+}
+
+void SpotLight::SetPropertyValue(std::string value)
+{
+	property_value = value;
+}
+
+std::any SpotLight::GetAnyValue()
+{
+	return spotlight;
+}
+
+void* SpotLight::GetValueAdress()
+{
+	return spotlight;
+}
+
 ////////////////////////////////////CubemapProperty/////////////////////////////////////////////
 
 CubemapProperty::CubemapProperty(std::array<std::string, 6> textures, void* parent)
@@ -511,7 +557,7 @@ void Shader::SetPropertyValue(std::string value)
 
 	if (owner != nullptr)
 	{
-		GrEngine::Object* mesh = GGetMesh(static_cast<GrEngine::Entity*>(owner));
+		GrEngine::Object* mesh = GrEngine::Object::FindObject(static_cast<GrEngine::Entity*>(owner));
 		if (mesh != nullptr)
 		{
 			mesh->Refresh();
@@ -531,10 +577,11 @@ void* Shader::GetValueAdress()
 
 ////////////////////////////////////Transparency/////////////////////////////////////////////
 
-Transparency::Transparency(int value, void* parent)
+Transparency::Transparency(bool value, void* parent)
 {
 	property_name = "Transparency";
 	property_value = value;
+	property_string = std::to_string((int)value);
 	property_type = PropertyType::Transparency;
 	owner = parent;
 }
@@ -555,14 +602,14 @@ void Transparency::ParsePropertyValue(const char* value)
 	property_string = value;
 }
 
-void Transparency::SetPropertyValue(int value)
+void Transparency::SetPropertyValue(bool value)
 {
 	property_value = value;
 	property_string = std::to_string(value);
 
 	if (owner != nullptr)
 	{
-		GrEngine::Object* mesh = GGetMesh(static_cast<GrEngine::Entity*>(owner));
+		GrEngine::Object* mesh = GrEngine::Object::FindObject(static_cast<GrEngine::Entity*>(owner));
 		if (mesh != nullptr)
 		{
 			mesh->Refresh();
@@ -587,6 +634,7 @@ DoubleSided::DoubleSided(bool value, void* parent)
 {
 	property_name = "DoubleSided";
 	property_value = value;
+	property_string = std::to_string((int)value);
 	property_type = PropertyType::DoubleSided;
 	owner = parent;
 }
@@ -607,14 +655,14 @@ void DoubleSided::ParsePropertyValue(const char* value)
 	property_string = value;
 }
 
-void DoubleSided::SetPropertyValue(int value)
+void DoubleSided::SetPropertyValue(bool value)
 {
 	property_value = value;
 	property_string = std::to_string(value);
 
 	if (owner != nullptr)
 	{
-		GrEngine::Object* mesh = GGetMesh(static_cast<GrEngine::Entity*>(owner));
+		GrEngine::Object* mesh = GrEngine::Object::FindObject(static_cast<GrEngine::Entity*>(owner));
 		if (mesh != nullptr)
 		{
 			mesh->Refresh();
@@ -638,7 +686,7 @@ CastShadow::CastShadow(bool value, void* parent)
 {
 	property_name = "CastShadow";
 	property_value = value;
-	property_type = PropertyType::DoubleSided;
+	property_type = PropertyType::CastShadow;
 	owner = parent;
 }
 

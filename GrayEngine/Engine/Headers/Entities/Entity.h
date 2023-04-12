@@ -98,37 +98,37 @@ namespace GrEngine
 		virtual void Rotate(const float& pitch, const float& yaw, const float& roll)
 		{
 			pitch_yaw_roll += glm::vec3{ pitch, yaw, roll };
-			static_cast<EntityOrientation*>(properties[3])->SetPropertyValue(pitch_yaw_roll.x, pitch_yaw_roll.y, pitch_yaw_roll.z);
+			static_cast<EntityOrientation*>(properties[3])->SetPropertyValue(pitch_yaw_roll);
 		};
 
 		virtual void Rotate(const glm::vec3& angle)
 		{
 			pitch_yaw_roll += angle;
-			static_cast<EntityOrientation*>(properties[3])->SetPropertyValue(pitch_yaw_roll.x, pitch_yaw_roll.y, pitch_yaw_roll.z);
+			static_cast<EntityOrientation*>(properties[3])->SetPropertyValue(pitch_yaw_roll);
 		};
 
 		virtual void Rotate(const glm::quat& angle)
 		{
 			pitch_yaw_roll += glm::degrees(glm::eulerAngles(angle));
-			static_cast<EntityOrientation*>(properties[3])->SetPropertyValue(pitch_yaw_roll.x, pitch_yaw_roll.y, pitch_yaw_roll.z);
+			static_cast<EntityOrientation*>(properties[3])->SetPropertyValue(angle);
 		};
 
 		virtual void SetRotation(const float& pitch, const float& yaw, const float& roll)
 		{
 			pitch_yaw_roll = glm::vec3{ pitch, yaw, roll };
-			static_cast<EntityOrientation*>(properties[3])->SetPropertyValue(pitch_yaw_roll.x, pitch_yaw_roll.y, pitch_yaw_roll.z);
+			static_cast<EntityOrientation*>(properties[3])->SetPropertyValue(pitch_yaw_roll);
 		};
 
 		virtual void SetRotation(const glm::vec3& angle)
 		{
 			pitch_yaw_roll = angle;
-			static_cast<EntityOrientation*>(properties[3])->SetPropertyValue(pitch_yaw_roll.x, pitch_yaw_roll.y, pitch_yaw_roll.z);
+			static_cast<EntityOrientation*>(properties[3])->SetPropertyValue(pitch_yaw_roll);
 		};
 
 		virtual void SetRotation(const glm::quat& angle)
 		{
 			pitch_yaw_roll = glm::degrees(glm::eulerAngles(angle));
-			static_cast<EntityOrientation*>(properties[3])->SetPropertyValue(pitch_yaw_roll.x, pitch_yaw_roll.y, pitch_yaw_roll.z);
+			static_cast<EntityOrientation*>(properties[3])->SetPropertyValue(angle);
 		};
 
 		virtual void MoveObject(const float& x, const float& y, const float& z)
@@ -169,10 +169,15 @@ namespace GrEngine
 		template<typename T>
 		T GetPropertyValue(const char* property_name, T default_value)
 		{
-			std::string prop_str = std::string(property_name);
+			return GetPropertyValue(EntityProperty::StringToType(property_name), default_value);
+		};
+
+		template<typename T>
+		T GetPropertyValue(PropertyType type, T default_value)
+		{
 			for (std::vector<EntityProperty*>::iterator itt = properties.begin(); itt != properties.end(); ++itt)
 			{
-				if ((*itt)->property_name == prop_str)
+				if ((*itt)->GetPropertyType() == type)
 				{
 					return std::any_cast<T>((*itt)->GetAnyValue());
 				}
@@ -183,10 +188,14 @@ namespace GrEngine
 
 		inline EntityProperty* GetProperty(const char* property_name)
 		{
-			std::string prop_str = std::string(property_name);
+			return GetProperty(EntityProperty::StringToType(property_name));
+		};
+
+		inline EntityProperty* GetProperty(PropertyType type)
+		{
 			for (std::vector<EntityProperty*>::iterator itt = properties.begin(); itt != properties.end(); ++itt)
 			{
-				if ((*itt)->property_name == prop_str)
+				if ((*itt)->GetPropertyType() == type)
 				{
 					return (*itt);
 				}
@@ -195,12 +204,13 @@ namespace GrEngine
 			return nullptr;
 		};
 
-		inline bool HasProperty(const char* property_name)
+		bool HasProperty(const char* property_name)
 		{
 			std::string prop_str = std::string(property_name);
 			for (std::vector<EntityProperty*>::iterator itt = properties.begin(); itt != properties.end(); ++itt)
 			{
-				if ((*itt)->property_name == prop_str)
+				std::string cur_str = (*itt)->PrpertyNameString();
+				if (cur_str == prop_str)
 				{
 					return true;
 				}
@@ -211,12 +221,17 @@ namespace GrEngine
 
 		virtual void ParsePropertyValue(const char* property_name, const char* property_value)
 		{
-			std::string prop_str = std::string(property_name);
+			ParsePropertyValue(EntityProperty::StringToType(property_name), property_value);
+		};
+
+		virtual void ParsePropertyValue(PropertyType type, const char* property_value)
+		{
 			for (std::vector<EntityProperty*>::iterator itt = properties.begin(); itt != properties.end(); ++itt)
 			{
-				if ((*itt)->property_name == prop_str)
+				if ((*itt)->GetPropertyType() == type)
 				{
 					(*itt)->ParsePropertyValue(property_value);
+					break;
 				}
 			}
 		};
@@ -226,7 +241,8 @@ namespace GrEngine
 			std::string prop_str = std::string(property_name);
 			for (std::vector<EntityProperty*>::iterator itt = properties.begin(); itt != properties.end(); ++itt)
 			{
-				if ((*itt)->property_name == prop_str)
+				std::string cur_str = (*itt)->PrpertyNameString();
+				if (cur_str == prop_str)
 				{
 					return (*itt)->GetValueAdress();
 				}
@@ -296,6 +312,12 @@ namespace GrEngine
 					properties.push_back(new CastShadow(1, this));
 					return properties.back();
 				}
+				else if (prop_str == "Spotlight")
+				{
+					properties.push_back(new SpotLight(this));
+					Type |= EntityType::SpotlightEntity;
+					return properties.back();
+				}
 				else
 				{
 					return nullptr;
@@ -351,6 +373,13 @@ namespace GrEngine
 		{
 			return isPrivated;
 		}
+
+		//////////////////////////////////////////////////////////////////
+		//void SetType(EntityType t)
+		//{
+		//	Type = t;
+		//}
+		//////////////////////////////////////////////////////////////////
 
 	protected:
 		std::vector<EntityProperty*> properties;

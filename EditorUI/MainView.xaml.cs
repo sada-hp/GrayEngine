@@ -341,6 +341,11 @@ namespace EditorUI
                     types.Add(name, typeof(ResourceControl));
                     events.Add(name, "DialogOpen");
                 }
+                else if (name == "Transparency" || name == "DoubleSided")
+                {
+                    types.Add(name, typeof(CheckBoxControl));
+                    events.Add(name, "CheckPropertyChanged");
+                }
                 else
                 {
                     types.Add(name, typeof(LabelControl));

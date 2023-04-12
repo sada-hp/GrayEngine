@@ -4,6 +4,7 @@
 
 enum class PropertyType
 {
+	Error = -1,
 	EntityID = 100,
 	Mass = 101,
 	EntityName,
@@ -12,6 +13,7 @@ enum class PropertyType
 	EntityOrientation,
 	Color,
 	Drawable,
+	Spotlight,
 	Cubemap,
 	Shader,
 	Transparency,
@@ -32,7 +34,7 @@ public:
 	{
 		return property_name;
 	}
-	PropertyType& GetPropertyType()
+	const PropertyType& GetPropertyType()
 	{
 		return property_type;
 	}
@@ -41,6 +43,34 @@ public:
 	PropertyType property_type;
 	void* property_value;
 	void* owner;
+
+	static PropertyType StringToType(const char* property_name)
+	{
+		const static std::unordered_map<std::string, PropertyType> type_hash =
+		{ {"EntityID", PropertyType::EntityID},
+		{"Mass", PropertyType::Mass},
+		{"EntityName", PropertyType::EntityName},
+		{"Scale", PropertyType::Scale},
+		{"EntityPosition", PropertyType::EntityPosition},
+		{"EntityOrientation", PropertyType::EntityOrientation},
+		{"Color", PropertyType::Color},
+		{"Drawable", PropertyType::Drawable},
+		{"Mesh", PropertyType::Drawable},
+		{"Spotlight", PropertyType::Spotlight},
+		{"CubemapProperty", PropertyType::Cubemap},
+		{"Cubemap", PropertyType::Cubemap},
+		{"Shader", PropertyType::Shader},
+		{"Transparency", PropertyType::Transparency},
+		{"DoubleSided", PropertyType::DoubleSided},
+		{"CastShadow", PropertyType::CastShadow}
+		};
+
+		auto it = type_hash.find(std::string(property_name));
+		if (it != type_hash.end())
+			return it->second;
+		else
+			throw "Unknow type provided!";
+	}
 };
 
 struct EntityID : public EntityProperty
@@ -131,7 +161,7 @@ public:
 	~EntityOrientation();
 	const char* ValueString() override;
 	void ParsePropertyValue(const char* value) override;
-	void SetPropertyValue(const float& pitch, const float& yaw, const float& roll);
+	void SetPropertyValue(glm::vec3 p_y_r);
 	void SetPropertyValue(glm::quat value);
 	std::any GetAnyValue() override;
 	virtual void* GetValueAdress() override;
@@ -140,7 +170,6 @@ public:
 private:
 	std::string property_string;
 	glm::vec3 pitch_yaw_roll = { 0.f, 0.f, 0.f };
-	glm::vec3 degrees = { 0.f, 0.f, 0.f };
 };
 
 struct Color : public EntityProperty
@@ -173,7 +202,7 @@ public:
 	std::any GetAnyValue() override;
 	virtual void* GetValueAdress() override;
 
-	std::string property_value;
+	std::string property_value = "nil";
 	void* drawable = nullptr;
 };
 
@@ -188,7 +217,7 @@ public:
 	std::any GetAnyValue() override;
 	virtual void* GetValueAdress() override;
 
-	std::string property_value;
+	std::string property_value = "nil";
 	void* spotlight = nullptr;
 };
 
@@ -226,11 +255,11 @@ public:
 struct Transparency : public EntityProperty
 {
 public:
-	Transparency(int value, void* parent = nullptr);
+	Transparency(bool value, void* parent = nullptr);
 	~Transparency();
 	const char* ValueString() override;
 	void ParsePropertyValue(const char* value) override;
-	void SetPropertyValue(int value);
+	void SetPropertyValue(bool value);
 	std::any GetAnyValue() override;
 	virtual void* GetValueAdress() override;
 
@@ -246,7 +275,7 @@ public:
 	~DoubleSided();
 	const char* ValueString() override;
 	void ParsePropertyValue(const char* value) override;
-	void SetPropertyValue(int value);
+	void SetPropertyValue(bool value);
 	std::any GetAnyValue() override;
 	virtual void* GetValueAdress() override;
 

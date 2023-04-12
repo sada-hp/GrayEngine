@@ -29,7 +29,6 @@ namespace GrEngine_Vulkan
 			VulkanAPI::m_destroyShaderBuffer(logicalDevice, memAllocator, &object_mesh->vertexBuffer);
 			VulkanAPI::m_destroyShaderBuffer(logicalDevice, memAllocator, &object_mesh->indexBuffer);
 		}
-		//resources->RemoveTexture(heightMap->texture_collection, logicalDevice, memAllocator);
 		resources->RemoveTexture(foliageMask->texture_collection, logicalDevice, memAllocator);
 		GrEngine::Engine::GetContext()->GetPhysics()->RemoveSimulationObject(physComponent);
 
@@ -57,6 +56,11 @@ namespace GrEngine_Vulkan
 		updateObject();
 	}
 
+	const std::string& VulkanTerrain::GetBlendMask()
+	{
+		return foliageMask->texture_collection[0];
+	}
+
 	void VulkanTerrain::GenerateTerrain(int resolution, int width, int height, int depth, std::array<std::string, 6> images)
 	{
 		if (ready)
@@ -64,7 +68,6 @@ namespace GrEngine_Vulkan
 			VulkanAPI::m_destroyShaderBuffer(logicalDevice, memAllocator, &object_mesh->vertexBuffer);
 			VulkanAPI::m_destroyShaderBuffer(logicalDevice, memAllocator, &object_mesh->indexBuffer);
 			resources->RemoveTexture(foliageMask->texture_collection, logicalDevice, memAllocator);
-			VulkanAPI::DestroyImage(foliageMask->newImage.allocatedImage);
 			delete object_mesh;
 
 			ready = false;
@@ -148,7 +151,6 @@ namespace GrEngine_Vulkan
 		VulkanAPI::m_destroyShaderBuffer(logicalDevice, memAllocator, &terIn);
 		VulkanAPI::m_destroyShaderBuffer(logicalDevice, memAllocator, &terOut);
 		resources->RemoveTexture(heightMap->texture_collection, logicalDevice, memAllocator);
-		VulkanAPI::DestroyImage(heightMap->newImage.allocatedImage);
 		use_compute = false;
 		updateObject();
 
@@ -467,10 +469,8 @@ namespace GrEngine_Vulkan
 
 	bool VulkanTerrain::pushConstants(VkCommandBuffer cmd)
 	{
-		/*orientation relative to the position in a 3D space (?)*/
 		ubo.model = glm::mat4{ 1.f };
-		/*Math for Game Programmers: Understanding Homogeneous Coordinates GDC 2015*/
-		ubo.scale = glm::vec3(size.width, size.height, size.depth);
+		ubo.scale = glm::vec4(glm::vec3(size.width, size.height, size.depth), 1.f);
 
 		vkCmdPushConstants(cmd, pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_GEOMETRY_BIT, 0, sizeof(VertexConstants), &ubo);
 		return true;
@@ -488,11 +488,6 @@ namespace GrEngine_Vulkan
 
 	bool VulkanTerrain::createComputeLayout()
 	{
-		VkPushConstantRange pushConstant;
-		pushConstant.offset = 0;
-		pushConstant.size = sizeof(VertexConstants);
-		pushConstant.stageFlags = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_GEOMETRY_BIT;
-
 		return VulkanAPI::CreatePipelineLayout(logicalDevice, {}, { descriptorSets[1].descriptorSetLayout }, &computeLayout);
 	}
 
@@ -575,7 +570,7 @@ namespace GrEngine_Vulkan
 		multisampleState.minSampleShading = 0;
 
 		std::vector<VkPipelineColorBlendAttachmentState> blendAttachmentStates;
-		blendAttachmentStates.resize(5);
+		blendAttachmentStates.resize(4);
 		blendAttachmentStates[0].colorWriteMask = VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT;
 		blendAttachmentStates[0].blendEnable = VK_FALSE;
 		blendAttachmentStates[1].colorWriteMask = VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT;
@@ -584,8 +579,6 @@ namespace GrEngine_Vulkan
 		blendAttachmentStates[2].blendEnable = VK_FALSE;
 		blendAttachmentStates[3].colorWriteMask = VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT;
 		blendAttachmentStates[3].blendEnable = VK_FALSE;
-		blendAttachmentStates[4].colorWriteMask = VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT;
-		blendAttachmentStates[4].blendEnable = VK_FALSE;
 
 		VkPipelineColorBlendStateCreateInfo colorBlendState{};
 		colorBlendState.sType = VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO;

@@ -10,12 +10,6 @@ namespace GrEngine
 	public:
 		Camera() 
 		{
-			glm::quat qPitch = glm::angleAxis(glm::radians(pitch_yaw_roll.y), glm::vec3(1, 0, 0));
-			glm::quat qYaw = glm::angleAxis(glm::radians(pitch_yaw_roll.x), glm::vec3(0, 1, 0));
-			glm::quat qRoll = glm::angleAxis(glm::radians(pitch_yaw_roll.z), glm::vec3(0, 0, 1));
-			obj_orientation_target = glm::normalize(qPitch * qYaw * qRoll);
-			static_cast<EntityOrientation*>(properties[3])->SetPropertyValue(glm::normalize(qPitch * qYaw * qRoll));
-
 			Type |= EntityType::CameraEntity;
 			static_cast<EntityID*>(properties[1])->SetPropertyValue(std::rand() % 10000 + 1000);
 		};
@@ -25,25 +19,27 @@ namespace GrEngine
 		{
 			pitch_yaw_roll += glm::vec3{ pitch, yaw, roll };
 			checkBorders();
-			glm::quat qPitch = glm::angleAxis(glm::radians(pitch_yaw_roll.y), glm::vec3(1, 0, 0));
-			glm::quat qYaw = glm::angleAxis(glm::radians(pitch_yaw_roll.x), glm::vec3(0, 1, 0));
-			glm::quat qRoll = glm::angleAxis(glm::radians(pitch_yaw_roll.z), glm::vec3(0, 0, 1));
-			obj_orientation_target = glm::normalize(qPitch * qYaw * qRoll);
+			glm::quat q = glm::quat_cast(glm::mat3(1.f));
+			q = q * glm::angleAxis(glm::radians(pitch_yaw_roll.x), glm::vec3(1, 0, 0));
+			q = q * glm::angleAxis(glm::radians(pitch_yaw_roll.y), glm::vec3(0, 1, 0));
+			q = q * glm::angleAxis(glm::radians(pitch_yaw_roll.z), glm::vec3(0, 0, 1));
+			obj_orientation_target = q;
 		}
 
 		void Rotate(const glm::vec3& angle) override
 		{
 			pitch_yaw_roll += angle;
 			checkBorders();
-			glm::quat qPitch = glm::angleAxis(glm::radians(pitch_yaw_roll.y), glm::vec3(1, 0, 0));
-			glm::quat qYaw = glm::angleAxis(glm::radians(pitch_yaw_roll.x), glm::vec3(0, 1, 0));
-			glm::quat qRoll = glm::angleAxis(glm::radians(pitch_yaw_roll.z), glm::vec3(0, 0, 1));
-			obj_orientation_target = glm::normalize(qPitch * qYaw * qRoll);
+			glm::quat q = glm::quat_cast(glm::mat3(1.f));
+			q = q * glm::angleAxis(glm::radians(pitch_yaw_roll.x), glm::vec3(1, 0, 0));
+			q = q * glm::angleAxis(glm::radians(pitch_yaw_roll.y), glm::vec3(0, 1, 0));
+			q = q * glm::angleAxis(glm::radians(pitch_yaw_roll.z), glm::vec3(0, 0, 1));
+			obj_orientation_target = q;
 		}
 
 		 void Rotate(const glm::quat& angle) override
 		 {
-			 pitch_yaw_roll += glm::eulerAngles(angle) * glm::vec3(Globals::delta_time, Globals::delta_time, Globals::delta_time);
+			 pitch_yaw_roll += glm::eulerAngles(angle);
 			 checkBorders();
 			 obj_orientation_target += angle;
 		 }
@@ -51,21 +47,15 @@ namespace GrEngine
 		 void SetRotation(const float& pitch, const float& yaw, const float& roll) override
 		 {
 			 pitch_yaw_roll = glm::vec3{ pitch, yaw, roll };
-			 glm::quat qPitch = glm::angleAxis(glm::radians(yaw), glm::vec3(1, 0, 0));
-			 glm::quat qYaw = glm::angleAxis(glm::radians(pitch), glm::vec3(0, 1, 0));
-			 glm::quat qRoll = glm::angleAxis(glm::radians(roll), glm::vec3(0, 0, 1));
-			 obj_orientation_target = glm::normalize(qPitch * qYaw * qRoll);
-			 static_cast<EntityOrientation*>(properties[3])->SetPropertyValue(pitch_yaw_roll.x, pitch_yaw_roll.y, pitch_yaw_roll.z);
+			 static_cast<EntityOrientation*>(properties[3])->SetPropertyValue(pitch_yaw_roll);
+			 obj_orientation_target = *obj_orientation;
 		 };
 
 		 virtual void SetRotation(const glm::vec3& angle) override
 		 {
 			 pitch_yaw_roll = angle;
-			 glm::quat qPitch = glm::angleAxis(glm::radians(angle.y), glm::vec3(1, 0, 0));
-			 glm::quat qYaw = glm::angleAxis(glm::radians(angle.x), glm::vec3(0, 1, 0));
-			 glm::quat qRoll = glm::angleAxis(glm::radians(angle.z), glm::vec3(0, 0, 1));
-			 obj_orientation_target = glm::normalize(qPitch * qYaw * qRoll);
-			 static_cast<EntityOrientation*>(properties[3])->SetPropertyValue(pitch_yaw_roll.x, pitch_yaw_roll.y, pitch_yaw_roll.z);
+			 static_cast<EntityOrientation*>(properties[3])->SetPropertyValue(pitch_yaw_roll);
+			 obj_orientation_target = *obj_orientation;
 		 };
 
 		 virtual void SetRotation(const glm::quat& angle) override
@@ -96,6 +86,21 @@ namespace GrEngine
 			 object_position_target = vector;
 			 static_cast<EntityPosition*>(properties[2])->SetPropertyValue(vector);
 		 };
+
+		 virtual glm::vec3 GetObjectPosition() override
+		 {
+			 return *object_origin;
+		 };
+
+		 virtual glm::quat GetObjectOrientation() override
+		 {
+			 return *obj_orientation;
+		 };
+
+		 const glm::vec3& GetActualPYR()
+		 {
+			 return pitch_yaw_roll;
+		 }
 
 		void LockAxes(float pitch_up, float pitch_low, float yaw_up, float yaw_low, float roll_up, float roll_low)
 		{

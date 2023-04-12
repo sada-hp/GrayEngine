@@ -6,6 +6,56 @@
 
 namespace GrEngine
 {
+	struct Texture
+	{
+		std::vector<std::string> texture_collection;
+		bool initialized = false;
+	};
+
+	struct Vertex
+	{
+		glm::vec4 pos;
+		glm::vec4 norm;
+		glm::vec4 tang;
+		glm::vec4 color;
+		glm::vec2 uv;
+		uint32_t uv_index;
+
+		Vertex()
+		{
+			pos = glm::vec4(0.f);
+			norm = glm::vec4(0.f);
+			tang = glm::vec4(0.f);
+			uv = glm::vec2(0.f);
+		}
+
+		Vertex(glm::vec4 position, glm::vec4 normal, glm::vec2 uv_coordinates, uint32_t material_index = 0)
+		{
+			pos = position;
+			uv = uv_coordinates;
+			uv_index = material_index;
+			norm = normal;
+		}
+
+		bool operator==(const Vertex& other) const
+		{
+			return pos == other.pos && uv == other.uv;
+		}
+	};
+
+	struct Mesh
+	{
+		std::string mesh_path = "";
+	};
+
+	struct PixelData
+	{
+		unsigned char* data;
+		int width;
+		int height;
+		int channels;
+	};
+
 	class Object
 	{
 	public:
@@ -129,6 +179,19 @@ namespace GrEngine
 			return ownerEntity;
 		};
 
+		static GrEngine::Object* FindObject(GrEngine::Entity* entity)
+		{
+			EntityProperty* ent_property = entity->GetProperty(PropertyType::Drawable);
+			if (ent_property != nullptr)
+			{
+				return static_cast<GrEngine::Object*>(ent_property->GetValueAdress());
+			}
+			else
+			{
+				return nullptr;
+			}
+		};
+
 		std::vector<std::string> material_names;
 		std::vector<std::string> texture_names;
 
@@ -141,17 +204,4 @@ namespace GrEngine
 		bool visibility = true;
 		bool CollisionEnabled = true;
 	};
-};
-
-inline GrEngine::Object* GGetMesh(GrEngine::Entity* entity)
-{
-	EntityProperty* ent_property = entity->GetProperty("Drawable");
-	if (ent_property != nullptr)
-	{
-		return static_cast<GrEngine::Object*>(ent_property->GetValueAdress());
-	}
-	else
-	{
-		return nullptr;
-	}
 };
