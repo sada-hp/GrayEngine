@@ -59,6 +59,7 @@ namespace GrEngine
         float subdivisions = 1.f;
 
         bool brush_snap = false;
+        Entity* shrek;
 
         Application(const AppParameters& Properties = AppParameters()) : Engine(Properties)
         {
@@ -689,6 +690,14 @@ namespace GrEngine
             brush->MakeStatic();
             brush->AddNewProperty("CastShadow");
             brush->ParsePropertyValue("CastShadow", "0");
+
+            //shrek = GetRenderer()->addEntity();
+            //Object* shrek_object = static_cast<Object*>(shrek->AddNewProperty("Drawable")->GetValueAdress());
+            //shrek_object->LoadModel((Globals::getExecutablePath() + "Content\\Shrek\\shrek.gmf").c_str());
+            //PhysicsObject* phys_comp = static_cast<PhysicsObject*>(shrek->AddNewProperty("Physics")->GetValueAdress());
+            //shrek->ParsePropertyValue("Physics", "1");
+            //shrek->MoveObject(-1, 0, 0);
+            //shrek->Rotate(0, 15, 0);
         }
 
         void UnloadTools()
@@ -754,4 +763,4 @@ namespace GrEngine
             }
         }
     };
-}
+};

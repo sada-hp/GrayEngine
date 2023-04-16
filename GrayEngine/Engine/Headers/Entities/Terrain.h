@@ -49,7 +49,7 @@ namespace GrEngine
 		virtual const std::string& GetBlendMask() = 0;
 		TerrainSize& GetTerrainSize() { return size; }
 
-		Physics::PhysicsObject* physComponent;
+		PhysicsObject* physComponent;
 	protected:
 		TerrainSize size;
 	};

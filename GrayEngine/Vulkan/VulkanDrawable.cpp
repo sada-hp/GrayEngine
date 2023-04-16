@@ -86,6 +86,8 @@ namespace GrEngine_Vulkan
 
 	void VulkanDrawable::updateObject()
 	{
+		static_cast<VulkanRenderer*>(p_Owner)->waitForRenderer();
+
 		VulkanAPI::DestroyPipeline(graphicsPipeline);
 		VulkanAPI::DestroyPipelineLayout(pipelineLayout);
 

@@ -42,8 +42,9 @@ namespace GrEngine_Vulkan
 
 		static bool CreateLogicalDevice(VkPhysicalDevice physicalDevice, VkDeviceCreateInfo* deviceInfo, VkDevice* outLogicalDevice);
 		static bool CreateVulkanMemoryAllocator(VkInstance instance, VkPhysicalDevice physicalDevice, VkDevice logicalDevice, VmaAllocator* outAllocator);
-		static bool CreateVkSwapchain(VkPhysicalDevice physicalDevice, VkDevice logicalDevice, GLFWwindow* window,VkSurfaceKHR surface, VkSwapchainKHR* outSwapchain);
+		static bool CreateVkSwapchain(VkPhysicalDevice physicalDevice, VkDevice logicalDevice, GLFWwindow* window,VkSurfaceKHR surface, VkSwapchainKHR* outSwapchain, VkPresentModeKHR presentMode = VK_PRESENT_MODE_MAILBOX_KHR);
 		static bool CreateRenderPass(VkDevice device, VkFormat swapchainFormat, VkFormat depthFormat, VkSampleCountFlagBits sampleCount, VkRenderPass* outRenderPass);
+		static bool CreateRenderPass(VkDevice device, VkRenderPassCreateInfo* info, VkRenderPass* outRenderPass);
 		static bool CreateFrameBuffer(VkDevice device, VkRenderPass renderPass, VkImageView* attachments, uint32_t attachmentsCount, VkExtent2D extent, VkFramebuffer* outFrameBuffer);
 		static bool CreateFrameBuffer(VkDevice device, VkFramebufferCreateInfo* info, VkFramebuffer* outFrameBuffer);
 		static bool CreateCommandPool(VkDevice device, uint32_t familyIndex, VkCommandPool* outPool);
@@ -89,7 +90,7 @@ namespace GrEngine_Vulkan
 
 		static std::vector<int32_t> FindFamilyIndicies(VkPhysicalDevice physicalDevice, VkSurfaceKHR surface, std::vector<VkQueueFlagBits> families);
 		static VkSampleCountFlagBits GetMaxSampleCount(VkPhysicalDevice physicalDevice);
-		static VkPresentModeKHR ChooseSwapPresentMode(const std::vector<VkPresentModeKHR>& availablePresentModes);
+		static VkPresentModeKHR ChooseSwapPresentMode(const std::vector<VkPresentModeKHR>& availablePresentModes, VkPresentModeKHR desiredMode);
 		static VkSurfaceFormatKHR ChooseSwapSurfaceFormat(const std::vector<VkSurfaceFormatKHR>& availableFormats);
 		static VkExtent2D ChooseSwapExtent(GLFWwindow* window, const VkSurfaceCapabilitiesKHR& capabilities);
 		static SwapChainSupportDetails QuerySwapChainSupport(VkSurfaceKHR surface, VkPhysicalDevice physicalDevice);

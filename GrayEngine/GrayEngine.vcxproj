@@ -21,6 +21,7 @@
     <ClInclude Include="Engine\Headers\Core\Core.h" />
     <ClInclude Include="Engine\Headers\Entities\Entity.h" />
     <ClInclude Include="Engine\Headers\Core\Globals.h" />
+    <ClInclude Include="Engine\Headers\Virtual\PhysicsObject.h" />
     <ClInclude Include="Engine\Headers\Virtual\Renderer.h" />
     <ClInclude Include="Engine\Headers\Entities\Terrain.h" />
     <ClInclude Include="Vulkan\VulkanCascade.h" />

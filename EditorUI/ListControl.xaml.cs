@@ -20,13 +20,14 @@ namespace EditorUI
     /// </summary>
     public partial class ListControl : UserControl, PropertyControl
     {
+        bool silent = false;
         string prop_content = "";
         int entity_id;
         public event DummyEvent ControlSelectionChanged;
 
         public string Contents
         {
-            get => Container.SelectedItem.ToString();
+            get => Container.SelectedItem == null ? "" : ((ComboBoxItem)Container.SelectedItem).Content.ToString();
             set
             {
                 Container.Items.Clear();
@@ -35,8 +36,12 @@ namespace EditorUI
 
                 for (int i = 0; i < content.Length; i++)
                 {
-                    Container.Items.Add(content[i]);
+                    ComboBoxItem item = new ComboBoxItem();
+                    item.Content = content[i];
+                    Container.Items.Add(item);
                 }
+
+                silent = true;
                 Container.SelectedIndex = 0;
             }
         }
@@ -74,7 +79,19 @@ namespace EditorUI
 
         private void Container_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
-            ControlSelectionChanged(this);
+            bool f = false;
+            foreach (ComboBoxItem o in Container.Items)
+            {
+                if (o.IsFocused)
+                {
+                    f = true;
+                    break;
+                }
+            }
+            if (Container.IsFocused || f)
+                ControlSelectionChanged(this);
+
+            silent = false;
         }
     }
 }

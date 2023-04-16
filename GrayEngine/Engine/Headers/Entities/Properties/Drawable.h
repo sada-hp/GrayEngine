@@ -67,10 +67,7 @@ namespace GrEngine
 
 		virtual ~Object()
 		{
-			if (physComponent != nullptr)
-			{
-				delete physComponent;
-			}
+
 		};
 
 		virtual bool LoadMesh(const char* mesh_path, std::vector<std::string>* out_materials) = 0;
@@ -89,28 +86,12 @@ namespace GrEngine
 
 		virtual glm::vec3 GetObjectPosition()
 		{
-			if (physComponent->HasValue())
-			{
-				auto pos = physComponent->GetPhysPosition();
-				return pos;
-			}
-			else
-			{
-				return ownerEntity->GetObjectPosition();
-			}
+			return ownerEntity->GetObjectPosition();
 		};
 
 		virtual glm::quat GetObjectOrientation()
 		{
-			if (physComponent->HasValue())
-			{
-				auto ori = physComponent->GetPhysOrientation();
-				return ori;
-			}
-			else
-			{
-				return ownerEntity->GetObjectOrientation();
-			}
+			return ownerEntity->GetObjectOrientation();
 		};
 
 		virtual glm::mat4 GetObjectTransformation()
@@ -158,9 +139,15 @@ namespace GrEngine
 			return res;
 		};
 
+		virtual void updateCollisions() = 0;
+
 		void recalculatePhysics(bool enabled)
 		{
-			physComponent->CalculatePhysics();
+			GrEngine::PhysicsObject* physComponent = ownerEntity->GetPropertyValue(PropertyType::PhysComponent, static_cast<GrEngine::PhysicsObject*>(nullptr));
+			if (physComponent != nullptr)
+			{
+				physComponent->CalculatePhysics();
+			}
 		};
 
 		void DisableCollisions()
@@ -168,6 +155,7 @@ namespace GrEngine
 			CollisionEnabled = false;
 			ownerEntity->ParsePropertyValue("Mass", "0");
 
+			GrEngine::PhysicsObject* physComponent = ownerEntity->GetPropertyValue(PropertyType::PhysComponent, static_cast<GrEngine::PhysicsObject*>(nullptr));
 			if (physComponent != nullptr)
 			{
 				physComponent->DisablePhysics();
@@ -198,8 +186,6 @@ namespace GrEngine
 	protected:
 
 		Entity* ownerEntity = nullptr;
-		Physics::PhysicsObject* physComponent = nullptr;
-		virtual void updateCollisions() = 0;
 		glm::uvec3 bound = { 0.f, 0.f, 0.f };
 		bool visibility = true;
 		bool CollisionEnabled = true;

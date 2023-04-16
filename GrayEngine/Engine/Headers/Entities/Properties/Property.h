@@ -12,13 +12,15 @@ enum class PropertyType
 	EntityPosition,
 	EntityOrientation,
 	Color,
+	PhysComponent,
 	Drawable,
 	Spotlight,
 	Cubemap,
 	Shader,
 	Transparency,
 	DoubleSided,
-	CastShadow
+	CastShadow,
+	CollisionType
 };
 
 struct EntityProperty
@@ -54,6 +56,8 @@ public:
 		{"EntityPosition", PropertyType::EntityPosition},
 		{"EntityOrientation", PropertyType::EntityOrientation},
 		{"Color", PropertyType::Color},
+		{"Physics", PropertyType::PhysComponent},
+		{"PhysComponent", PropertyType::PhysComponent},
 		{"Drawable", PropertyType::Drawable},
 		{"Mesh", PropertyType::Drawable},
 		{"Spotlight", PropertyType::Spotlight},
@@ -62,7 +66,8 @@ public:
 		{"Shader", PropertyType::Shader},
 		{"Transparency", PropertyType::Transparency},
 		{"DoubleSided", PropertyType::DoubleSided},
-		{"CastShadow", PropertyType::CastShadow}
+		{"CastShadow", PropertyType::CastShadow},
+		{"CollisionType", PropertyType::CollisionType}
 		};
 
 		auto it = type_hash.find(std::string(property_name));
@@ -189,6 +194,39 @@ public:
 	glm::vec4 property_value;
 private:
 	std::string property_string;
+};
+
+struct PhysComponent : public EntityProperty
+{
+public:
+	PhysComponent(void* parent = nullptr);
+	~PhysComponent();
+	const char* ValueString() override;
+	void ParsePropertyValue(const char* value) override;
+	void SetPropertyValue(int value);
+	std::any GetAnyValue() override;
+	virtual void* GetValueAdress() override;
+
+	void* phys = nullptr;
+	int property_value = 0;
+private:
+	std::string property_string = "0";
+};
+
+struct CollisionType : public EntityProperty
+{
+public:
+	CollisionType(void* parent = nullptr);
+	~CollisionType();
+	const char* ValueString() override;
+	void ParsePropertyValue(const char* value) override;
+	void SetPropertyValue(int value);
+	std::any GetAnyValue() override;
+	virtual void* GetValueAdress() override;
+
+	int property_value = 0;
+private:
+	std::string property_string = "0";
 };
 
 struct Drawable : public EntityProperty

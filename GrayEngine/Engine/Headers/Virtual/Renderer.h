@@ -33,6 +33,7 @@ namespace GrEngine
 		virtual void addEntity(Entity* entity) = 0;
 		virtual Object* InitDrawableObject(Entity* ownerEntity) = 0;
 		virtual SpotlightObject* InitSpotlightObject(Entity* ownerEntity) = 0;
+		virtual void VSyncState(bool state) = 0;
 		std::map<UINT, Entity*>& GetEntitiesList()
 		{
 			return entities;

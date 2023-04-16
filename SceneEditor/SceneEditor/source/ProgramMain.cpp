@@ -7,6 +7,8 @@ namespace SceneEditor
 
     void Inputs()
     {
+        //GrEngine::PhysicsObject* phys_comp = static_cast<GrEngine::PhysicsObject*>(app->shrek->AddNewProperty("Physics")->GetValueAdress());
+        //phys_comp->MoveObject({ 0.01f, 0, 0 });
         app->UpdateUI();
     }
 
@@ -70,12 +72,12 @@ namespace SceneEditor
         glm::vec2 old_cursor_pos{ vSize.x / 2, vSize.y / 2 };
         glm::vec3 direction{ 0.f };
         glm::vec3 orientation{ 0.f };
-        float senstivity = 0.75f;
+        float senstivity = 0.6f;
 
         POINTFLOAT cur = app->GetCursorPosition();
 
-        orientation.y -= (old_cursor_pos.x - cur.x) * senstivity;
-        orientation.x -= (old_cursor_pos.y - cur.y) * senstivity;
+        orientation.y -= (glm::ceil(((old_cursor_pos.x - cur.x) * senstivity) * 10000) / 10000);
+        orientation.x -= (glm::ceil(((old_cursor_pos.y - cur.y) * senstivity) * 10000) / 10000);
         camera->Rotate(orientation);
         SetCursorPos(vPos.x + (vSize.x / 2), vPos.y + (vSize.y / 2));
 
@@ -108,6 +110,7 @@ namespace SceneEditor
         Logger::AllowMessages(MessageMode::Allow);
         app = new GrEngine::Application();
         Logger::ShowConsole(false);
+        app->SetVSync(1);
 
         app->GetEventListener()->pushEvent(EventType::Step, [](std::vector<double> para)
             {

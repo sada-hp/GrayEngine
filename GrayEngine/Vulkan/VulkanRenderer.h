@@ -16,6 +16,7 @@ namespace GrEngine_Vulkan
 		bool init(void* window) override;
 		void destroy() override;
 		void RenderFrame() override;
+		void VSyncState(bool state) override;
 		VkDevice logicalDevice;
 		VkPhysicalDevice physicalDevice = nullptr;
 
@@ -57,6 +58,7 @@ namespace GrEngine_Vulkan
 		bool updateResource(Texture* target, byte* pixels, uint32_t width, uint32_t height, uint32_t offset_x, uint32_t offset_y);
 
 		std::optional<uint32_t> compute_bit;
+		std::optional<uint32_t> graphics_bit;
 
 		Texture position;
 		Texture normal;
@@ -68,7 +70,6 @@ namespace GrEngine_Vulkan
 		Texture headIndex;
 
 		VkQueue graphicsQueue;
-		VkFence graphicsFence;
 		VkCommandPool commandPool;
 
 		VkRenderPass selectionPass;
@@ -123,9 +124,12 @@ namespace GrEngine_Vulkan
 		VkRenderPass renderPass;
 		std::vector<VkFramebuffer> swapChainFramebuffers;
 		std::vector<VkCommandBuffer> commandBuffers;
-		VkSemaphore imageAvailableSemaphore;
-		VkSemaphore renderFinishedSemaphore;
+		std::vector<VkSemaphore> imageAvailableSemaphore;
+		std::vector<VkSemaphore> renderFinishedSemaphore;
+		std::vector<VkFence> renderFence;
 
+		uint32_t currentFrame = 0;
+		uint32_t previousFrame = 0;
 
 		VkMemoryRequirements memRequirements;
 
@@ -198,6 +202,9 @@ namespace GrEngine_Vulkan
 		ShaderBuffer cascadeBuffer;
 
 		GrEngine::Entity* casent;
+
+		uint8_t max_async_frames = 1;
+		bool vsync = false;
 
 #ifdef _DEBUG
 

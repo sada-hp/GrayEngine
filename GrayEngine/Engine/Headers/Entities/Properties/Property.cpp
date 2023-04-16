@@ -77,7 +77,7 @@ const char* Mass::ValueString()
 
 void Mass::ParsePropertyValue(const char* value)
 {
-	property_value = std::stof(value);
+	SetPropertyValue(std::stof(value));
 }
 
 void Mass::SetPropertyValue(float value)
@@ -223,13 +223,13 @@ void EntityPosition::ParsePropertyValue(const char* value)
 			res[ind] = property_value[ind];
 		}
 	}
-
+	
 	static_cast<GrEngine::Entity*>(owner)->PositionObjectAt(res);
 }
 
 void EntityPosition::SetPropertyValue(const float& x, const float& y, const float& z)
 {
-	property_value = { x, y, z };
+	SetPropertyValue({ x, y, z });
 }
 
 void EntityPosition::SetPropertyValue(const glm::vec3& value)
@@ -280,7 +280,8 @@ void EntityOrientation::ParsePropertyValue(const char* degress)
 
 	if (cols.size() < 3) return;
 
-	static_cast<GrEngine::Entity*>(owner)->SetRotation(stof(cols[0]), stof(cols[1]), stof(cols[2]));
+	SetPropertyValue({ stof(cols[0]), stof(cols[1]), stof(cols[2]) });
+	//static_cast<GrEngine::Entity*>(owner)->SetRotation(stof(cols[0]), stof(cols[1]), stof(cols[2]));
 }
 
 void EntityOrientation::SetPropertyValue(glm::vec3 p_y_r)
@@ -379,6 +380,107 @@ std::any Color::GetAnyValue()
 }
 
 void* Color::GetValueAdress()
+{
+	return &property_value;
+}
+
+////////////////////////////////////PhysComponent/////////////////////////////////////////////
+
+PhysComponent::PhysComponent(void* parent)
+{
+	property_name = "PhysComponent";
+	property_type = PropertyType::PhysComponent;
+	owner = parent;
+	phys = GrEngine::Engine::GetContext()->GetPhysics()->InitSimulationObject(static_cast<GrEngine::Entity*>(owner));
+}
+
+PhysComponent::~PhysComponent()
+{
+	GrEngine::Engine::GetContext()->GetPhysics()->RemoveSimulationObject(static_cast<GrEngine::PhysicsObject*>(phys));
+}
+
+const char* PhysComponent::ValueString()
+{
+	property_string = std::to_string(property_value);
+	return property_string.c_str();
+}
+
+void PhysComponent::ParsePropertyValue(const char* value)
+{
+	SetPropertyValue(std::atoi(value));
+}
+
+void PhysComponent::SetPropertyValue(int value)
+{
+	property_value = value;
+	static_cast<GrEngine::PhysicsObject*>(phys)->SetKinematic(value);
+}
+
+std::any PhysComponent::GetAnyValue()
+{
+	return static_cast<GrEngine::PhysicsObject*>(phys);
+}
+
+void* PhysComponent::GetValueAdress()
+{
+	return phys;
+}
+
+////////////////////////////////////CollisionType/////////////////////////////////////////////
+
+CollisionType::CollisionType(void* parent)
+{
+	property_name = "CollisionType";
+	property_type = PropertyType::CollisionType;
+	owner = parent;
+}
+
+CollisionType::~CollisionType()
+{
+}
+
+const char* CollisionType::ValueString()
+{
+	property_string = std::to_string(property_value);
+	return property_string.c_str();
+}
+
+void CollisionType::ParsePropertyValue(const char* value)
+{
+	SetPropertyValue(std::atoi(value));
+}
+
+void CollisionType::SetPropertyValue(int value)
+{
+	property_value = value;
+	GrEngine::PhysicsObject* comp = static_cast<GrEngine::Entity*>(owner)->GetPropertyValue(PropertyType::PhysComponent, static_cast<GrEngine::PhysicsObject*>(nullptr));
+	if (comp != nullptr)
+	{
+		switch (value)
+		{
+		case 0:
+			comp->GenerateBoxCollision(0.25f, 0.25f, 0.25f);
+			break;
+		case 1:
+			
+			break;
+		case 2:
+			GrEngine::Object * obj = GrEngine::Object::FindObject(static_cast<GrEngine::Entity*>(owner));
+			if (obj != nullptr)
+			{
+				obj->updateCollisions();
+			}
+			break;
+		}
+	}
+}
+
+std::any CollisionType::GetAnyValue()
+{
+	return property_value;
+}
+
+void* CollisionType::GetValueAdress()
 {
 	return &property_value;
 }
@@ -721,4 +823,3 @@ void* CastShadow::GetValueAdress()
 {
 	return &property_value;
 }
-

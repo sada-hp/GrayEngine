@@ -260,6 +260,32 @@ namespace EditorUI
             UIBridge.UpdateBrush(-1, -1, -1, fall);
         }
 
+        private void CollisionType_callback(object sender)
+        {
+            string mode = "0";
+            if ((sender as PropertyControl).Contents == "Box")
+                mode = "0";
+            else if ((sender as PropertyControl).Contents == "Sphere")
+                mode = "1";
+            else
+                mode = "2";
+
+            UIBridge.UpdateEntityProperty(((PropertyControl)sender).ID, Marshal.StringToHGlobalAnsi("CollisionType"), Marshal.StringToHGlobalAnsi(mode));
+        }
+
+        private void PhysComponent_callback(object sender)
+        {
+            string mode = "0";
+            if ((sender as PropertyControl).Contents == "RigidBody")
+                mode = "0";
+            else if ((sender as PropertyControl).Contents == "KinematicBody")
+                mode = "1";
+            else if ((sender as PropertyControl).Contents == "StaticObject")
+                mode = "2";
+
+            UIBridge.UpdateEntityProperty(((PropertyControl)sender).ID, Marshal.StringToHGlobalAnsi("PhysComponent"), Marshal.StringToHGlobalAnsi(mode));
+        }
+
         private void BrushMode_callback(object sender)
         {
             if ((sender as PropertyControl).Contents == "Paint")
@@ -345,6 +371,46 @@ namespace EditorUI
                 {
                     types.Add(name, typeof(CheckBoxControl));
                     events.Add(name, "CheckPropertyChanged");
+                }
+                else if (name == "PhysComponent")
+                {
+                    if (value == "0")
+                    {
+                        properties[name] = "RigidBody:KinematicBody:StaticObject";
+                    }
+                    else if (value == "1")
+                    {
+                        properties[name] = "KinematicBody:RigidBody:StaticObject";
+                    }
+                    else if (value == "2")
+                    {
+                        properties[name] = "StaticObject:RigidBody:KinematicBody";
+                    }
+
+                    types.Add(name, typeof(ListControl));
+                    events.Add(name, "ControlSelectionChanged");
+                }
+                else if (name == "CollisionType")
+                {
+                    if (value == "0")
+                    {
+                        properties[name] = "Box:Sphere:Mesh";
+                    }
+                    else if (value == "1")
+                    {
+                        properties[name] = "Sphere:Box:Mesh";
+                    }
+                    else if (value == "2")
+                    {
+                        properties[name] = "Mesh:Box:Sphere";
+                    }
+
+                    types.Add(name, typeof(ListControl));
+                    events.Add(name, "ControlSelectionChanged");
+                }
+                else if (name == "Shader")
+                {
+                    return;
                 }
                 else
                 {

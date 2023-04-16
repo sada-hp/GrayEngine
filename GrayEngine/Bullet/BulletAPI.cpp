@@ -7,53 +7,65 @@ namespace GrEngineBullet
 	{
 		if (simulate)
 		{
-			dynamicsWorld->stepSimulation(GrEngine::Globals::delta_time);
+			dynamicsWorld->stepSimulation(GrEngine::Globals::delta_time, 1, GrEngine::Globals::delta_time);
+		}
+	}
+
+	void BulletAPI::updateObjects()
+	{
+		for (std::vector<GrEngine::PhysicsObject*>::iterator itt = objects.begin(); itt != objects.end(); ++itt)
+		{
+			BulletPhysObject* object = static_cast<BulletPhysObject*>(*itt);
+			object->SetActivationState(simulate);
+			object->CalculatePhysics();
+		}
+	}
+
+	void BulletAPI::resetObjects()
+	{
+		for (std::vector<GrEngine::PhysicsObject*>::iterator itt = objects.begin(); itt != objects.end(); ++itt)
+		{
+			BulletPhysObject* object = static_cast<BulletPhysObject*>(*itt);
+			object->SetActivationState(simulate);
+			object->CalculatePhysics();
+			object->ResetMotion();
 		}
 	}
 
 	void BulletAPI::TogglePhysicsState(bool state)
 	{
-		dynamicsWorld->getCollisionObjectArray().resize(0);
-
-		if (state == false)
-		{
-			for (std::vector<GrEngine::Physics::PhysicsObject*>::iterator itt = objects.begin(); itt != objects.end(); ++itt)
-			{
-				BulletPhysObject* object = static_cast<BulletPhysObject*>(*itt);
-
-				if (object->HasValue())
-				{
-					dynamicsWorld->removeRigidBody(object->body);
-					object->Dispose();
-				}
-			}
-		}
-		else
-		{
-			for (std::vector<GrEngine::Physics::PhysicsObject*>::iterator itt = objects.begin(); itt != objects.end(); ++itt)
-			{
-				BulletPhysObject* object = static_cast<BulletPhysObject*>(*itt);
-				if (object->CalculatePhysics())
-				{
-					dynamicsWorld->addRigidBody(object->body);
-				}
-			}
-		}
-
 		simulate = state;
+		resetObjects();
 	}
 
-	void BulletAPI::AddSimulationObject(GrEngine::Physics::PhysicsObject* object)
+	GrEngine::PhysicsObject* BulletAPI::InitSimulationObject(GrEngine::Entity* owner)
+	{
+		auto phys = new BulletPhysObject(static_cast<GrEngine::Entity*>(owner));
+		objects.push_back(phys);
+		if (phys->CalculatePhysics())
+		{
+			dynamicsWorld->addRigidBody(phys->body);
+		}
+
+		return phys;
+	}
+
+	void BulletAPI::AddSimulationObject(GrEngine::PhysicsObject* object)
 	{
 		objects.push_back(object);
 	}
 
-	void BulletAPI::RemoveSimulationObject(GrEngine::Physics::PhysicsObject* object)
+	void BulletAPI::RemoveSimulationObject(GrEngine::PhysicsObject* object)
 	{
 		for (int position = 0; position < objects.size(); position++)
 		{
 			if (objects[position] == object)
 			{
+				if (object->HasValue())
+				{
+					dynamicsWorld->removeRigidBody(static_cast<BulletPhysObject*>(object)->body);
+					object->Dispose();
+				}
 				objects.erase(objects.begin() + position);
 				return;
 			}
@@ -69,7 +81,7 @@ namespace GrEngineBullet
 	{
 		simulate = false;
 		dynamicsWorld->getCollisionObjectArray().resize(0);
-		for (std::vector<GrEngine::Physics::PhysicsObject*>::iterator itt = objects.begin(); itt != objects.end(); ++itt)
+		for (std::vector<GrEngine::PhysicsObject*>::iterator itt = objects.begin(); itt != objects.end(); ++itt)
 		{
 			BulletPhysObject* object = static_cast<BulletPhysObject*>(*itt);
 
@@ -84,15 +96,7 @@ namespace GrEngineBullet
 
 	const GrEngine::RayCastResult BulletAPI::CastRayGetHit(glm::vec3 startPoint, glm::vec3 endPoint)
 	{
-		for (std::vector<GrEngine::Physics::PhysicsObject*>::iterator itt = objects.begin(); itt != objects.end(); ++itt)
-		{
-			BulletPhysObject* object = static_cast<BulletPhysObject*>(*itt);
-			if (object->CalculatePhysics())
-			{
-				dynamicsWorld->addRigidBody(object->body);
-			}
-		}
-
+		updateObjects();
 		dynamicsWorld->updateAabbs();
 		dynamicsWorld->computeOverlappingPairs();
 
@@ -113,32 +117,12 @@ namespace GrEngineBullet
 			btVector3 p = start.lerp(end, res.m_hitFractions[0]);
 			raycastResult.hitPos = glm::vec3{ p.x(), p.y(), p.z() };
 		}
-
-		for (std::vector<GrEngine::Physics::PhysicsObject*>::iterator itt = objects.begin(); itt != objects.end(); ++itt)
-		{
-			BulletPhysObject* object = static_cast<BulletPhysObject*>(*itt);
-
-			if (object->HasValue())
-			{
-				dynamicsWorld->removeRigidBody(object->body);
-				object->Dispose();
-			}
-		}
-
 		return raycastResult;
 	}
 
 	const GrEngine::RayCastResult BulletAPI::CastRayToObject(glm::vec3 startPoint, glm::vec3 endPoint, UINT id)
 	{
-		for (std::vector<GrEngine::Physics::PhysicsObject*>::iterator itt = objects.begin(); itt != objects.end(); ++itt)
-		{
-			BulletPhysObject* object = static_cast<BulletPhysObject*>(*itt);
-			if (object->GetID() == id && object->CalculatePhysics())
-			{
-				dynamicsWorld->addRigidBody(object->body);
-			}
-		}
-
+		updateObjects();
 		dynamicsWorld->updateAabbs();
 		dynamicsWorld->computeOverlappingPairs();
 
@@ -155,22 +139,17 @@ namespace GrEngineBullet
 
 		if (res.hasHit())
 		{
-			raycastResult.hasHit = true;
-			btVector3 p = start.lerp(end, res.m_hitFractions[0]);
-			raycastResult.hitPos = glm::vec3{ p.x(), p.y(), p.z() };
-		}
-
-		for (std::vector<GrEngine::Physics::PhysicsObject*>::iterator itt = objects.begin(); itt != objects.end(); ++itt)
-		{
-			BulletPhysObject* object = static_cast<BulletPhysObject*>(*itt);
-
-			if (object->HasValue())
+			for (int i = 0; i < res.m_hitFractions.size(); i++)
 			{
-				dynamicsWorld->removeRigidBody(object->body);
-				object->Dispose();
+				if ((UINT)res.m_collisionObjects[i]->getUserPointer() == id)
+				{
+					btVector3 p = start.lerp(end, res.m_hitFractions[i]);
+					raycastResult.hitPos = glm::vec3{ p.x(), p.y(), p.z() };
+					raycastResult.hasHit = true;
+					break;
+				}
 			}
 		}
-		dynamicsWorld->getCollisionObjectArray().resize(0);
 
 		return raycastResult;
 	}

@@ -40,6 +40,7 @@
     <ClInclude Include="Engine\Headers\Entities\Properties\Spotlight.h" />
     <ClInclude Include="Vulkan\VulkanSpotlight.h" />
     <ClInclude Include="Vulkan\VulkanCascade.h" />
+    <ClInclude Include="Engine\Headers\Virtual\PhysicsObject.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Engine\Source\GL_App.cpp" />

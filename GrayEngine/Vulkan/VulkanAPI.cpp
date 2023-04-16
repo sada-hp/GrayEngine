@@ -151,12 +151,12 @@ namespace GrEngine_Vulkan
 		return vmaCreateAllocator(&vmaInfo, outAllocator) == VK_SUCCESS;
 	}
 
-	bool VulkanAPI::CreateVkSwapchain(VkPhysicalDevice physicalDevice, VkDevice logicalDevice, GLFWwindow* window, VkSurfaceKHR surface, VkSwapchainKHR* outSwapchain)
+	bool VulkanAPI::CreateVkSwapchain(VkPhysicalDevice physicalDevice, VkDevice logicalDevice, GLFWwindow* window, VkSurfaceKHR surface, VkSwapchainKHR* outSwapchain, VkPresentModeKHR presentMode)
 	{
 		SwapChainSupportDetails swapChainSupport = QuerySwapChainSupport(surface, physicalDevice);
 
 		VkSurfaceFormatKHR surfaceFormat = ChooseSwapSurfaceFormat(swapChainSupport.formats);
-		VkPresentModeKHR presentMode = ChooseSwapPresentMode(swapChainSupport.presentModes);
+		presentMode = ChooseSwapPresentMode(swapChainSupport.presentModes, presentMode);
 		VkExtent2D extent = ChooseSwapExtent(window, swapChainSupport.capabilities);
 
 		uint32_t imageCount = swapChainSupport.capabilities.minImageCount + 1;
@@ -324,7 +324,7 @@ namespace GrEngine_Vulkan
 
 		dependencies[1].srcSubpass = VK_SUBPASS_EXTERNAL;
 		dependencies[1].dstSubpass = 0;
-		dependencies[1].srcStageMask = VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT;
+		dependencies[1].srcStageMask = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
 		dependencies[1].dstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
 		dependencies[1].srcAccessMask = VK_ACCESS_MEMORY_READ_BIT;
 		dependencies[1].dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_READ_BIT | VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
@@ -350,17 +350,17 @@ namespace GrEngine_Vulkan
 		dependencies[4].srcSubpass = 2;
 		dependencies[4].dstSubpass = 3;
 		dependencies[4].srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
-		dependencies[4].dstStageMask = VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT | VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT;
-		dependencies[4].srcAccessMask = VK_ACCESS_COLOR_ATTACHMENT_READ_BIT | VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
-		dependencies[4].dstAccessMask = VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
+		dependencies[4].dstStageMask = VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT;
+		dependencies[4].srcAccessMask = VK_ACCESS_SHADER_READ_BIT;
+		dependencies[4].dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
 		dependencies[4].dependencyFlags = VK_DEPENDENCY_BY_REGION_BIT;
 
 		dependencies[5].srcSubpass = 3;
 		dependencies[5].dstSubpass = VK_SUBPASS_EXTERNAL;
-		dependencies[5].srcStageMask = VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT | VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT;
-		dependencies[5].dstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
-		dependencies[5].srcAccessMask = VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
-		dependencies[5].dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT | VK_ACCESS_COLOR_ATTACHMENT_READ_BIT;
+		dependencies[5].srcStageMask = VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT;
+		dependencies[5].dstStageMask = VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT;
+		dependencies[5].srcAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+		dependencies[5].dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_READ_BIT;
 		dependencies[5].dependencyFlags = VK_DEPENDENCY_BY_REGION_BIT;
 
 		VkRenderPassCreateInfo renderPassInfo = {};
@@ -373,6 +373,22 @@ namespace GrEngine_Vulkan
 		renderPassInfo.pDependencies = dependencies.data();
 
 		VkResult res = vkCreateRenderPass(device, &renderPassInfo, nullptr, outRenderPass);
+
+		if (res != VK_SUCCESS)
+		{
+			Logger::Out("[VK] Failed to create render pass with code %d", OutputColor::Red, OutputType::Error, res);
+			return false;
+		}
+
+		destructors.insert_or_assign(destructors.begin(), *outRenderPass, (Destructor*)DestroyRenderPass);
+		devices[*outRenderPass] = device;
+
+		return res == VK_SUCCESS;
+	}
+
+	bool VulkanAPI::CreateRenderPass(VkDevice device, VkRenderPassCreateInfo* info, VkRenderPass* outRenderPass)
+	{
+		VkResult res = vkCreateRenderPass(device, info, nullptr, outRenderPass);
 
 		if (res != VK_SUCCESS)
 		{
@@ -967,16 +983,16 @@ namespace GrEngine_Vulkan
 	}
 
 
-	VkPresentModeKHR VulkanAPI::ChooseSwapPresentMode(const std::vector<VkPresentModeKHR>& availablePresentModes)
+	VkPresentModeKHR VulkanAPI::ChooseSwapPresentMode(const std::vector<VkPresentModeKHR>& availablePresentModes, VkPresentModeKHR desiredMode)
 	{
 		for (const auto& availablePresentMode : availablePresentModes) 
 		{
-			if (availablePresentMode == VK_PRESENT_MODE_MAILBOX_KHR) {
+			if (availablePresentMode == desiredMode) {
 				return availablePresentMode;
 			}
 		}
 
-		return VK_PRESENT_MODE_FIFO_KHR;
+		return VK_PRESENT_MODE_MAILBOX_KHR;
 	}
 
 	VkSurfaceFormatKHR VulkanAPI::ChooseSwapSurfaceFormat(const std::vector<VkSurfaceFormatKHR>& availableFormats)

@@ -3,7 +3,8 @@
 #include <glm/gtc/quaternion.hpp>
 #include <glm/gtc/type_ptr.hpp>
 #include "Core/Globals.h"
-#include "Core/Logger.h"
+#include "Core/Globals.h"
+#include "Engine/Headers/Virtual/PhysicsObject.h"
 #include "Properties/Property.h"
 
 namespace GrEngine
@@ -153,24 +154,34 @@ namespace GrEngine
 
 		virtual glm::vec3 GetObjectPosition()
 		{
-			return *object_origin;
+			if (physComp != nullptr && physComp->HasValue())
+			{
+				auto pos = physComp->GetPhysPosition();
+				return pos;
+			}
+			else
+			{
+				return *object_origin;
+			}
 		};
 
 		virtual glm::quat GetObjectOrientation()
 		{
-			return *obj_orientation;
+			if (physComp != nullptr && physComp->HasValue())
+			{
+				auto ori = physComp->GetPhysOrientation();
+				return ori;
+			}
+			else
+			{
+				return *obj_orientation;
+			}
 		};
 
 		virtual glm::mat4 GetObjectTransformation()
 		{
 			return glm::translate(glm::mat4(1.f), GetObjectPosition()) * glm::mat4_cast(GetObjectOrientation());
 		}
-
-		template<typename T>
-		T GetPropertyValue(const char* property_name, T default_value)
-		{
-			return GetPropertyValue(EntityProperty::StringToType(property_name), default_value);
-		};
 
 		template<typename T>
 		T GetPropertyValue(PropertyType type, T default_value)
@@ -186,9 +197,10 @@ namespace GrEngine
 			return default_value;
 		};
 
-		inline EntityProperty* GetProperty(const char* property_name)
+		template<typename T>
+		T GetPropertyValue(const char* property_name, T default_value)
 		{
-			return GetProperty(EntityProperty::StringToType(property_name));
+			return GetPropertyValue(EntityProperty::StringToType(property_name), default_value);
 		};
 
 		inline EntityProperty* GetProperty(PropertyType type)
@@ -204,13 +216,16 @@ namespace GrEngine
 			return nullptr;
 		};
 
-		bool HasProperty(const char* property_name)
+		inline EntityProperty* GetProperty(const char* property_name)
 		{
-			std::string prop_str = std::string(property_name);
+			return GetProperty(EntityProperty::StringToType(property_name));
+		};
+
+		bool HasProperty(PropertyType type)
+		{
 			for (std::vector<EntityProperty*>::iterator itt = properties.begin(); itt != properties.end(); ++itt)
 			{
-				std::string cur_str = (*itt)->PrpertyNameString();
-				if (cur_str == prop_str)
+				if (type == (*itt)->GetPropertyType())
 				{
 					return true;
 				}
@@ -219,9 +234,9 @@ namespace GrEngine
 			return false;
 		};
 
-		virtual void ParsePropertyValue(const char* property_name, const char* property_value)
+		bool HasProperty(const char* property_name)
 		{
-			ParsePropertyValue(EntityProperty::StringToType(property_name), property_value);
+			return HasProperty(EntityProperty::StringToType(property_name));
 		};
 
 		virtual void ParsePropertyValue(PropertyType type, const char* property_value)
@@ -234,6 +249,11 @@ namespace GrEngine
 					break;
 				}
 			}
+		};
+
+		virtual void ParsePropertyValue(const char* property_name, const char* property_value)
+		{
+			ParsePropertyValue(EntityProperty::StringToType(property_name), property_value);
 		};
 
 		void* FindPropertyAdress(const char* property_name)
@@ -318,6 +338,17 @@ namespace GrEngine
 					Type |= EntityType::SpotlightEntity;
 					return properties.back();
 				}
+				else if (prop_str == "CollisionType")
+				{
+					properties.push_back(new CollisionType(this));
+					return properties.back();
+				}
+				else if (prop_str == "PhysComponent" || prop_str == "Physics")
+				{
+					properties.push_back(new PhysComponent(this));
+					physComp = static_cast<PhysicsObject*>(properties.back()->GetValueAdress());
+					return properties.back();
+				}
 				else
 				{
 					return nullptr;
@@ -392,5 +423,6 @@ namespace GrEngine
 
 		glm::vec3 pitch_yaw_roll = { 0.f, 0.f, 0.f };
 		bool isPrivated = false;
+		PhysicsObject* physComp = nullptr;
 	};
 }

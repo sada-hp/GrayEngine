@@ -127,6 +127,7 @@ namespace GrEngine
 	void GL_APP::SetVSync(bool state)
 	{
 		glfwSwapInterval((int)state);
+		pAppRenderer->VSyncState(state);
 		Logger::Out("VSync is now set to %d", OutputColor::Green, OutputType::Log, state);
 	}
 

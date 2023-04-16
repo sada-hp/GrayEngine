@@ -17,9 +17,8 @@ namespace GrEngine_Vulkan
 		logicalDevice = device;
 		memAllocator = allocator;
 
-		physComponent = new GrEngineBullet::BulletAPI::BulletPhysObject(this);
-
-		GrEngine::Engine::GetContext()->GetPhysics()->AddSimulationObject(physComponent);
+		AddNewProperty("PhysComponent");
+		physComp->SetKinematic(2);
 	}
 
 	void VulkanTerrain::destroyObject()
@@ -30,7 +29,6 @@ namespace GrEngine_Vulkan
 			VulkanAPI::m_destroyShaderBuffer(logicalDevice, memAllocator, &object_mesh->indexBuffer);
 		}
 		resources->RemoveTexture(foliageMask->texture_collection, logicalDevice, memAllocator);
-		GrEngine::Engine::GetContext()->GetPhysics()->RemoveSimulationObject(physComponent);
 
 		ready = false;
 		VulkanDrawable::destroyObject();
@@ -153,6 +151,7 @@ namespace GrEngine_Vulkan
 		resources->RemoveTexture(heightMap->texture_collection, logicalDevice, memAllocator);
 		use_compute = false;
 		updateObject();
+		physComp->CalculatePhysics();
 
 		ready = true;
 	}
@@ -168,37 +167,37 @@ namespace GrEngine_Vulkan
 		byte* data;
 		vmaMapMemory(memAllocator, object_mesh->vertexBuffer.Allocation, (void**)&data);
 
-		std::optional<float> max_width = 0.f;
-		std::optional<float> min_width = 0.f;
+		//std::optional<float> max_width = 0.f;
+		//std::optional<float> min_width = 0.f;
 
-		std::optional<float> max_length = 0.f;
-		std::optional<float> min_length = 0.f;
+		//std::optional<float> max_length = 0.f;
+		//std::optional<float> min_length = 0.f;
 
 		for (std::map<UINT, float>::iterator itt = offsets.begin(); itt != offsets.end(); ++itt)
 		{
-			if (!max_width.has_value() || object_mesh->vertices[(*itt).first].pos.x > max_width.value())
-			{
-				max_width = object_mesh->vertices[(*itt).first].pos.x;
-			}
+			//if (!max_width.has_value() || object_mesh->vertices[(*itt).first].pos.x > max_width.value())
+			//{
+			//	max_width = object_mesh->vertices[(*itt).first].pos.x;
+			//}
 
-			if (!min_width.has_value() || object_mesh->vertices[(*itt).first].pos.x < min_width.value())
-			{
-				min_width = glm::floor(object_mesh->vertices[(*itt).first].pos.x);
-			}
+			//if (!min_width.has_value() || object_mesh->vertices[(*itt).first].pos.x < min_width.value())
+			//{
+			//	min_width = glm::floor(object_mesh->vertices[(*itt).first].pos.x);
+			//}
 
-			if (!max_length.has_value() || object_mesh->vertices[(*itt).first].pos.z > max_length.value())
-			{
-				max_length = object_mesh->vertices[(*itt).first].pos.z;
-			}
+			//if (!max_length.has_value() || object_mesh->vertices[(*itt).first].pos.z > max_length.value())
+			//{
+			//	max_length = object_mesh->vertices[(*itt).first].pos.z;
+			//}
 
-			if (!min_length.has_value() || object_mesh->vertices[(*itt).first].pos.z < min_length.value())
-			{
-				min_length = object_mesh->vertices[(*itt).first].pos.z;
-			}
+			//if (!min_length.has_value() || object_mesh->vertices[(*itt).first].pos.z < min_length.value())
+			//{
+			//	min_length = object_mesh->vertices[(*itt).first].pos.z;
+			//}
 
 			object_mesh->vertices[(*itt).first].pos.y += (*itt).second;
 			memcpy(data + sizeof(Vertex) * (*itt).first, &object_mesh->vertices[(*itt).first], sizeof(Vertex));
-			vertArray[(*itt).first] = btVector4(object_mesh->vertices[(*itt).first].pos.x, object_mesh->vertices[(*itt).first].pos.y, object_mesh->vertices[(*itt).first].pos.z, 1);
+			vertArray[(*itt).first] = btVector4(vertArray[(*itt).first].x(), vertArray[(*itt).first].y() + (*itt).second, vertArray[(*itt).first].z(), 1);
 
 			maxAABB = glm::max(maxAABB, object_mesh->vertices[(*itt).first].pos.y);
 			minAABB = glm::min(minAABB, object_mesh->vertices[(*itt).first].pos.y);
@@ -213,7 +212,9 @@ namespace GrEngine_Vulkan
 		aabbMin.setY(minAABB);
 		colMesh->setPremadeAabb(aabbMin, aabbMax);
 		colShape->getOptimizedBvh()->setQuantizationValues(aabbMin, aabbMax);
-		colShape->partialRefitTree(btVector3(min_width.value(), aabbMin.y(), min_width.value()), btVector3(max_width.value(), aabbMax.y(), max_length.value()));
+		//colShape->partialRefitTree(btVector3(min_width.value(), aabbMin.y(), min_width.value()), btVector3(max_width.value(), aabbMax.y(), max_length.value()));
+		colShape->partialRefitTree(aabbMin, aabbMax);
+		physComp->CalculatePhysics();
 	}
 
 	void VulkanTerrain::UpdateVertices(std::map<UINT, float> offsets)
@@ -274,6 +275,7 @@ namespace GrEngine_Vulkan
 		colMesh->setPremadeAabb(aabbMin, aabbMax);
 		colShape->getOptimizedBvh()->setQuantizationValues(aabbMin, aabbMax);
 		colShape->partialRefitTree(btVector3(min_width.value(), aabbMin.y(), min_width.value()), btVector3(max_width.value(), aabbMax.y(), max_length.value()));
+		physComp->CalculatePhysics();
 	}
 
 	glm::vec4& VulkanTerrain::GetVertexPosition(UINT at)
@@ -456,7 +458,7 @@ namespace GrEngine_Vulkan
 		}
 
 		colShape = new btBvhTriangleMeshShape(colMesh, true);
-		physComponent->UpdateCollisionShape(colShape);
+		physComp->UpdateCollisionShape(colShape);
 	}
 
 	void VulkanTerrain::UpdateCollision()
@@ -465,6 +467,7 @@ namespace GrEngine_Vulkan
 		btVector3 aabbMin = colShape->getLocalAabbMin();
 
 		colShape->refitTree(aabbMin, aabbMax);
+		physComp->CalculatePhysics();
 	}
 
 	bool VulkanTerrain::pushConstants(VkCommandBuffer cmd)

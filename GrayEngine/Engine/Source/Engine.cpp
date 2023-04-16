@@ -134,6 +134,11 @@ namespace GrEngine
 		physEngine->TogglePhysicsState(state);
 	}
 
+	void Engine::SetVSync(bool state)
+	{
+		pWindow->SetVSync(state);
+	}
+
 	UINT Engine::GetSelectedEntityID()
 	{
 		return GetRenderer()->GetSelectedEntity()->GetEntityID();
