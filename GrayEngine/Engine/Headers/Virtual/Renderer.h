@@ -66,6 +66,7 @@ namespace GrEngine
 		virtual void SetHighlightingMode(bool enabled) = 0;
 		virtual void SaveScene(const char* path) = 0;
 		virtual void LoadScene(const char* path) = 0;
+		virtual std::vector<std::string> GetMaterialNames(const char* mesh_path) = 0;
 		EventListener* listener;
 
 		static float NearPlane;

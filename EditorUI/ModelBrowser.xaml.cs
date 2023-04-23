@@ -18,6 +18,7 @@ namespace EditorUI
         IntPtr child_hwnd;
         bool b_fullpath = false;
         string loaded_mesh = "";
+        string loaded_collision = "";
         string default_name = "";
         SortType sorting = SortType.NAME_ASC;
         System.Windows.Forms.Panel panel = new System.Windows.Forms.Panel();
@@ -69,34 +70,46 @@ namespace EditorUI
                         byte[] byte_array = new byte[file.Length];
                         file.Read(byte_array, 0, byte_array.Length);
                         string oper = "";
+                        string mode = "";
+                        string mesh_path = "";
+                        string collision_path = "";
                         bool writing = false;
 
                         foreach (char chr in byte_array)
                         {
-                            if (chr == '<' && !writing)
+                            if (chr == ' ' || chr == '\n')
+                            {
+                                continue;
+                            }
+                            else if (chr == '{')
                             {
                                 writing = true;
+                                oper = "";
                             }
-                            else if (writing && chr != '>' && chr != '<')
+                            else if (chr == '}')
                             {
-                                oper += chr;
-                            }
-                            else if (chr == '>' && writing)
-                            {
-                                if (oper == "mesh")
+                                if (mode.Contains("mesh"))
                                 {
-                                    oper = "";
+                                    mesh_path = oper.Trim();
+                                }
+                                else if (mode.Contains("collision"))
+                                {
+                                    collision_path = oper.Trim();
+                                }
+                                writing = false;
+                                oper = "";
+                                mode = "";
+                            }
+                            else
+                            {
+                                if (writing)
+                                {
+                                    oper += chr;
                                 }
                                 else
                                 {
-                                    writing = false;
-                                    oper = "";
+                                    mode += chr;
                                 }
-                            }
-                            else if (chr == '<' && writing)
-                            {
-                                writing = false;
-                                break;
                             }
                         }
                         file.Close();
@@ -107,7 +120,6 @@ namespace EditorUI
 
                         if (!b_fullpath)
                         {
-
                             item = new BrowserItem("...\\" + name_cut[name_cut.Length - 2] + '\\' + name_cut[name_cut.Length - 1]);
                         }
                         else
@@ -117,7 +129,8 @@ namespace EditorUI
 
                         item.Padding = new System.Windows.Thickness(5);
                         item.ToolTip = model_file;
-                        item.mesh_path = oper;
+                        item.mesh_path = mesh_path;
+                        item.collision_path = collision_path;
 
                         if (!LoadedAssets.ContainsKey(model_file))
                         {
@@ -179,7 +192,7 @@ namespace EditorUI
         private void BtnLoadMdl_Click(object sender, RoutedEventArgs e)
         {
             System.Windows.Forms.OpenFileDialog openFileDialog = new System.Windows.Forms.OpenFileDialog();
-            openFileDialog.Filter = "obj files (*.obj)|*.obj";
+            openFileDialog.Filter = "mesh files (*.obj; *.fbx)|*.obj;*.fbx";
             openFileDialog.InitialDirectory = content_folder;
             openFileDialog.RestoreDirectory = true;
 
@@ -191,6 +204,13 @@ namespace EditorUI
                 MeshPath.ToolTip = loaded_mesh;
                 default_name = openFileDialog.SafeFileName.Split('.')[0];
                 IdBox.Text = default_name;
+
+                if (ColPath.Text == "")
+                {
+                    loaded_collision = openFileDialog.FileName;
+                    ColPath.Text = loaded_collision;
+                    ColPath.ToolTip = loaded_collision;
+                }
 
                 UIBridge.LoadObject(Marshal.StringToHGlobalAnsi(openFileDialog.FileName), Marshal.StringToHGlobalAnsi(missing_texture + '|'));
             }
@@ -288,7 +308,10 @@ namespace EditorUI
                 material_string += texture.Remove(0, distr_location.Length + 1) + "|";
             }
 
-            UIBridge.CreateModelFile(Marshal.StringToHGlobalAnsi(loaded_mesh.Substring(0, loaded_mesh.LastIndexOf('\\')) + '\\' + IdBox.Text + ".gmf" + "|" + loaded_mesh.Remove(0, distr_location.Length + 1)), Marshal.StringToHGlobalAnsi(material_string));
+            string file = loaded_mesh.Substring(0, loaded_mesh.LastIndexOf('\\')) + '\\' + IdBox.Text + ".gmf";
+            string mesh = loaded_mesh.Remove(0, distr_location.Length + 1);
+            string collision = loaded_collision.Remove(0, distr_location.Length + 1);
+            UIBridge.CreateModelFile(Marshal.StringToHGlobalAnsi(file), Marshal.StringToHGlobalAnsi(mesh), Marshal.StringToHGlobalAnsi(collision), Marshal.StringToHGlobalAnsi(material_string));
             LoadData();
         }
 
@@ -299,9 +322,12 @@ namespace EditorUI
                 if (Browser.SelectedIndex < 0) return;
 
                 IdBox.Text = ((BrowserItem)Browser.SelectedItem).ToolTip.ToString().Split('\\').Last().Split('.')[0];
-                loaded_mesh = ((BrowserItem)Browser.SelectedItem).ToolTip.ToString();
+                loaded_mesh = distr_location + '\\' + ((BrowserItem)Browser.SelectedItem).mesh_path;
+                loaded_collision = distr_location + '\\' + ((BrowserItem)Browser.SelectedItem).collision_path;
                 MeshPath.Text = ((BrowserItem)Browser.SelectedItem).mesh_path;
                 MeshPath.ToolTip = ((BrowserItem)Browser.SelectedItem).mesh_path;
+                ColPath.Text = ((BrowserItem)Browser.SelectedItem).collision_path;
+                ColPath.ToolTip = ((BrowserItem)Browser.SelectedItem).collision_path;
                 UIBridge.LoadModelFile(Marshal.StringToHGlobalAnsi(((BrowserItem)Browser.SelectedItem).ToolTip.ToString()));
                 GC.Collect();
             }
@@ -382,10 +408,11 @@ namespace EditorUI
             string restriction = @"#%&{}\\<>*?/ $!':@+`|=." + '"';
             ((System.Windows.Controls.TextBox)sender).Undo();
 
-            
             if (!restriction.Contains(e.Text))
             {
                 ((System.Windows.Controls.TextBox)sender).Text += e.Text;
+                ((System.Windows.Controls.TextBox)sender).ScrollToEnd();
+                ((System.Windows.Controls.TextBox)sender).CaretIndex = ((System.Windows.Controls.TextBox)sender).Text.Length;
             }
         }
 
@@ -426,6 +453,24 @@ namespace EditorUI
             panel.Dispose();
             FormHost.Dispose();
             UIBridge.DestroyUserInterface(1);
+        }
+
+        private void BtnLoadCol_Click(object sender, RoutedEventArgs e)
+        {
+            System.Windows.Forms.OpenFileDialog openFileDialog = new System.Windows.Forms.OpenFileDialog();
+            openFileDialog.Filter = "obj files (*.obj *.fbx)|*.obj *.fbx";
+            openFileDialog.InitialDirectory = content_folder;
+            openFileDialog.RestoreDirectory = true;
+
+            if (openFileDialog.ShowDialog() == System.Windows.Forms.DialogResult.OK)
+            {
+                Materials.Clear();
+                loaded_collision = openFileDialog.FileName;
+                ColPath.Text = loaded_collision;
+                ColPath.ToolTip = loaded_collision;
+            }
+
+            GC.Collect();
         }
     }
 }

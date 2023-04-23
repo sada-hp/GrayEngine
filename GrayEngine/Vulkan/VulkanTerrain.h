@@ -59,6 +59,7 @@ namespace GrEngine_Vulkan
 		float maxAABB = 0.f;
 		float minAABB = 0.f;
 		bool ready = false;
+		bool was_updated = false;
 	};
 }
 

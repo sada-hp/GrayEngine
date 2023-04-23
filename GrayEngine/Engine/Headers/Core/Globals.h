@@ -63,7 +63,7 @@ namespace GrEngine
 			return false;
 		}
 
-		static bool readGMF(const std::string& filepath, std::string* mesh, std::vector<std::string>* textures)
+		static bool readGMF(const std::string& filepath, std::string* mesh, std::string* collisions, std::vector<std::string>* textures)
 		{
 			std::string stream = "";
 			std::string distro = getExecutablePath();
@@ -75,7 +75,7 @@ namespace GrEngine
 				file.open(filepath, std::ios::ate | std::ios::binary);
 			}
 
-			bool value = false;
+			int value = 0;
 			bool block_open = false;
 			file.seekg(0);
 
@@ -91,29 +91,37 @@ namespace GrEngine
 				}
 				else if (block_open)
 				{
-					if (value)
+					if (value == 0)
+					{
+						textures->push_back(stream);
+					}
+					else if (value == 1)
 					{
 						mesh->append(stream);
 					}
-					else
+					else if (value == 2)
 					{
-						textures->push_back(stream);
+						collisions->append(stream);
 					}
 				}
 				else if (!block_open && stream == "mesh")
 				{
-					value = true;
+					value = 1;
+				}
+				else if (!block_open && stream == "collision")
+				{
+					value = 2;
 				}
 				else if (!block_open && stream == "textures")
 				{
-					value = false;
+					value = 0;
 				}
 			}
 
 			return true;
 		}
 
-		static bool writeGMF(const char* filepath, const char* mesh_path, std::vector<std::string>& textures_vector)
+		static bool writeGMF(const char* filepath, const char* mesh_path, const char* colliision_path, std::vector<std::string>& textures_vector)
 		{
 			std::fstream new_file;
 			new_file.open(filepath, std::fstream::out | std::ios::trunc);
@@ -122,6 +130,7 @@ namespace GrEngine
 				return false;
 
 			new_file << "mesh\n{\n   " << mesh_path << "\n}\n";
+			new_file << "collision\n{\n   " << colliision_path << "\n}\n";
 			new_file << "textures\n{\n";
 			for (std::vector<std::string>::iterator itt = textures_vector.begin(); itt != textures_vector.end(); ++itt)
 			{

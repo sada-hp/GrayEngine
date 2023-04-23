@@ -13,7 +13,8 @@ enum class EventType
 	Step,
 	Log,
 	Custom,
-	SelectionChanged
+	SelectionChanged,
+	FocusChanged
 };
 
 typedef void (*EventCallback)(std::vector<double>);

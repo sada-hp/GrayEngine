@@ -9,7 +9,7 @@
              d:DesignHeight="450" d:DesignWidth="800" WindowStartupLocation="CenterScreen" Background="#FF15161F" Title="Gray Engine: World Editor" Closed="Window_Closed" KeyDown="Window_KeyDown" KeyUp="Window_KeyUp">
 
     <DockPanel Background="#FF6D88FF" LastChildFill="True" KeyDown="Window_KeyDown" KeyUp="Window_KeyUp">
-        <Menu Height="25" Background="#FF353538" Padding="0,2,0,0" DockPanel.Dock="Top">
+        <Menu Height="25" Background="#FF353538" Padding="0,2,0,0" DockPanel.Dock="Top" KeyDown="Window_KeyDown" KeyUp="Window_KeyUp">
             <MenuItem Header="File" Foreground="WhiteSmoke" Margin="0">
                 <MenuItem Name="LoadBtn" Header="Load" Foreground="Black" Cursor="Hand" Click="LoadBtn_Click"/>
                 <MenuItem Name="SaveBtn" Header="Save" Foreground="Black" Cursor="Hand" Click="SaveBtn_Click"/>

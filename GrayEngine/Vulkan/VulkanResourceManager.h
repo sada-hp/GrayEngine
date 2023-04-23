@@ -5,6 +5,7 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/quaternion.hpp>
 #include <vk_mem_alloc.h>
+#include "Engine/Headers/Virtual/ResourceManager.h"
 #include "Engine/Headers/Entities/Properties/Drawable.h"
 #include "Bullet/BulletAPI.h"
 
@@ -79,9 +80,14 @@ namespace GrEngine_Vulkan
 		std::vector<uint32_t> indices;
 		ShaderBuffer vertexBuffer;
 		ShaderBuffer indexBuffer;
-		btTriangleMesh collisions;
+		btConvexHullShape collisions;
 
-		glm::uvec3 bounds;
+		glm::vec3 bounds;
+	};
+
+	struct CollisionMesh
+	{
+		btCollisionShape* shape;
 	};
 
 	struct VertexConstants {
@@ -122,54 +128,9 @@ namespace GrEngine_Vulkan
 	};
 
 
-	template<typename T>
-	struct Resource
-	{
-		Resource(const char* new_name, T new_pointer)
-		{
-			name = new_name;
-			pointer = new_pointer;
-		}
 
-		~Resource()
-		{
 
-		}
-
-		T AddLink()
-		{
-			links++;
-			return pointer;
-		}
-
-		void RemoveLink()
-		{
-			links--;
-		}
-
-		T PopResource()
-		{
-			links--;
-			return pointer;
-		}
-
-		void Update(T new_pointer)
-		{
-			pointer = new_pointer;
-		}
-
-		uint8_t getNumOfLinks()
-		{
-			return links;
-		}
-
-		std::string name;
-	private:
-		uint8_t links = 0;
-		T pointer;
-	};
-
-	class VulkanResourceManager
+	class VulkanResourceManager : public GrEngine::ResourceManager
 	{
 	public:
 		VulkanResourceManager()
@@ -202,20 +163,6 @@ namespace GrEngine_Vulkan
 		Resource<Texture*>* GetTextureResource(std::vector<std::string> names);
 
 	private:
-		std::string NormalizeName(std::string name)
-		{
-			std::string path = GrEngine::Globals::getExecutablePath();
-
-			if (name.starts_with(path))
-			{
-				return name.substr(path.size(), name.size() - path.size());
-			}
-			else
-			{
-				return name;
-			}
-		}
-
 		std::vector<Resource<Mesh*>*> meshResources;
 		std::vector<Resource<Texture*>*> texResources;
 	};

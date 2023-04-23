@@ -11,6 +11,7 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="Bullet\BulletResourceManager.h" />
     <ClInclude Include="Bullet\BulletAPI.h" />
     <ClInclude Include="Engine\Headers\Entities\Properties\Drawable.h" />
     <ClInclude Include="Engine\Headers\Entities\Properties\Property.h" />
@@ -24,6 +25,7 @@
     <ClInclude Include="Engine\Headers\Virtual\PhysicsObject.h" />
     <ClInclude Include="Engine\Headers\Virtual\Renderer.h" />
     <ClInclude Include="Engine\Headers\Entities\Terrain.h" />
+    <ClInclude Include="Engine\Headers\Virtual\ResourceManager.h" />
     <ClInclude Include="Vulkan\VulkanCascade.h" />
     <ClInclude Include="Vulkan\VulkanSpotlight.h" />
     <ClInclude Include="Vulkan\VulkanRenderer.h" />
@@ -42,6 +44,7 @@
     <ClInclude Include="Engine\Headers\Virtual\Physics.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="Bullet\BulletResourceManager.cpp" />
     <ClCompile Include="Bullet\BulletAPI.cpp" />
     <ClCompile Include="Engine\Headers\Entities\Properties\Property.cpp" />
     <ClCompile Include="Engine\Source\Engine.cpp" />

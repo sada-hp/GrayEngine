@@ -47,6 +47,7 @@ namespace GrEngine_Vulkan
 		void waitForRenderer() override;
 		void LoadTerrain(int resolution, int width, int height, int depth, std::array<std::string, 6> maps) override;
 		void LoadTerrain(const char* filepath) override;
+		std::vector<std::string> GetMaterialNames(const char* mesh_path) override;
 
 		void Update() override;
 		VkSampleCountFlagBits GetSampling() { return msaaSamples; };

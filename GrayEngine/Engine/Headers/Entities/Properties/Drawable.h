@@ -70,9 +70,7 @@ namespace GrEngine
 
 		};
 
-		virtual bool LoadMesh(const char* mesh_path, std::vector<std::string>* out_materials) = 0;
-
-		virtual bool LoadModel(const char* model_path) = 0;
+		virtual bool LoadMesh(const char* mesh_path) = 0;
 
 		virtual bool LoadModel(const char* mesh_path, std::vector<std::string> textures_vector) = 0;
 
@@ -99,12 +97,12 @@ namespace GrEngine
 			return glm::translate(glm::mat4(1.f), GetObjectPosition()) * glm::mat4_cast(GetObjectOrientation());
 		};
 
-		virtual glm::uvec3& GetObjectBounds()
+		virtual glm::vec3& GetObjectBounds()
 		{
 			return bound;
 		};
 
-		virtual void SetObjectBounds(glm::uvec3 new_bounds)
+		virtual void SetObjectBounds(glm::vec3 new_bounds)
 		{
 			bound = new_bounds;
 		};
@@ -124,19 +122,9 @@ namespace GrEngine
 			return ownerEntity->GetEntityType();
 		};
 
-		std::unordered_map<std::string, std::string> GetMaterials()
+		std::vector<std::string> GetTextureCollection()
 		{
-			std::unordered_map<std::string, std::string> res;
-
-			for (int i = 0; i < material_names.size(); i++)
-			{
-				if (i < texture_names.size())
-					res.insert_or_assign(material_names[i], texture_names[i]);
-				else
-					res.insert_or_assign(material_names[i], "nil");
-			}
-
-			return res;
+			return texture_names;
 		};
 
 		virtual void updateCollisions() = 0;
@@ -180,13 +168,12 @@ namespace GrEngine
 			}
 		};
 
-		std::vector<std::string> material_names;
 		std::vector<std::string> texture_names;
 
 	protected:
 
 		Entity* ownerEntity = nullptr;
-		glm::uvec3 bound = { 0.f, 0.f, 0.f };
+		glm::vec3 bound = { 0.f, 0.f, 0.f };
 		bool visibility = true;
 		bool CollisionEnabled = true;
 	};

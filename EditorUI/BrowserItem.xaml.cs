@@ -20,6 +20,7 @@ namespace EditorUI
     public partial class BrowserItem : UserControl
     {
         public string mesh_path = "";
+        public string collision_path = "";
         public BrowserItem(string mesh_path)
         {
             InitializeComponent();

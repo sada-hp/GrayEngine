@@ -3,6 +3,15 @@
 #include <glm/gtc/quaternion.hpp>
 #include "Entities/Entity.h"
 
+enum CollisionTypeEnum
+{
+	Box = 0,
+	Sphere = 1,
+	ConvexHullMesh,
+	Mesh,
+	Capsule
+};
+
 namespace GrEngine
 {
 	class Entity;
@@ -29,14 +38,18 @@ namespace GrEngine
 		virtual void Dispose() = 0;
 		virtual void UpdateCollisionShape(void* shape) = 0;
 		virtual void GenerateBoxCollision(float width, float height, float length) = 0;
+		virtual void GenerateCapsuleCollision(float radius, float height) = 0;
+		virtual bool LoadCollisionMesh(const char* mesh_path) = 0;
 		virtual void ResetMotion() = 0;
 		virtual void MoveObject(glm::vec3 vector) = 0;
+		virtual void SlideObjectForDuration(glm::vec3 vector, float dur) = 0;
 		virtual void SetActivationState(bool state)
 		{
 			active = state;
 		}
 
 		virtual void SetKinematic(int value) = 0;
+		virtual void UpdateCollisionType(CollisionTypeEnum value) = 0;
 
 
 		bool HasValue()

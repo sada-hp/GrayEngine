@@ -126,7 +126,7 @@
                         <Border DockPanel.Dock="Top" BorderThickness="0,0,0,1" BorderBrush="#FFABADB3" Padding="0,1,0,0" Background="#FF1E1E21">
                             <Label Content="Name" HorizontalContentAlignment="Center" FontFamily="Lucida Sans Unicode" TextOptions.TextHintingMode="Fixed" Background="{x:Null}" Foreground="WhiteSmoke" Margin="0"/>
                         </Border>
-                        <TextBox IsUndoEnabled="False" Name="IdBox" IsEnabled="True" Height="25" DockPanel.Dock="Top" Text="" VerticalContentAlignment="Center" HorizontalContentAlignment="Center" TextWrapping="NoWrap" Foreground="#FF8B8B8B" Background="{x:Null}" SelectionBrush="#FF2D6FA6" BorderBrush="{x:Null}" TabIndex="2" CaretBrush="#FFB4B4B4" GotFocus="IdBox_GotFocus" LostFocus="IdBox_LostFocus"/>
+                        <TextBox IsUndoEnabled="True" Name="IdBox" IsEnabled="True" Height="25" DockPanel.Dock="Top" Text="" VerticalContentAlignment="Center" HorizontalContentAlignment="Center" TextWrapping="NoWrap" Foreground="#FF8B8B8B" Background="{x:Null}" SelectionBrush="#FF2D6FA6" BorderBrush="{x:Null}" TabIndex="2" CaretBrush="#FFB4B4B4" GotFocus="IdBox_GotFocus" LostFocus="IdBox_LostFocus"/>
                         <Button Name="BtnCreate" Height="25" Content="Save preset" Background="#FF5D5D5D" BorderBrush="#FFC8C8C8" BorderThickness="1" Margin="5" Foreground="WhiteSmoke" FontFamily="Lucida Sans Unicode" TextOptions.TextHintingMode="Fixed" Padding="2" Cursor="Hand" Click="BtnCreate_Click" DockPanel.Dock="Bottom"/>
                         <Border DockPanel.Dock="Top" BorderThickness="0,1,0,1" BorderBrush="#FFABADB3" Padding="0,1,0,0" Background="#FF1E1E21">
                             <Grid Margin="0,0,0,1">
@@ -161,7 +161,41 @@
                                 </Button>
                             </Grid>
                         </Border>
-                        <TextBox IsUndoEnabled="False" Name="MeshPath" DockPanel.Dock="Top" Foreground="#FFB9B9D1" Background="{x:Null}" BorderBrush="{x:Null}" BorderThickness="0" SelectionBrush="#FF44434B" IsReadOnly="True" IsReadOnlyCaretVisible="False" Margin="0,5,0,5" />
+                        <TextBox IsUndoEnabled="False" Name="MeshPath" DockPanel.Dock="Top" Foreground="#FFB9B9D1" Background="{x:Null}" BorderBrush="{x:Null}" BorderThickness="0" SelectionBrush="#FF44434B" IsReadOnly="True" IsReadOnlyCaretVisible="False" Margin="0,5" MaxLines="1" />
+                        <Border DockPanel.Dock="Top" BorderThickness="0,1,0,1" BorderBrush="#FFABADB3" Padding="0,1,0,0" Background="#FF1E1E21">
+                            <Grid Margin="0,0,0,1">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="20"/>
+                                    <ColumnDefinition/>
+                                    <ColumnDefinition Width="20"/>
+                                </Grid.ColumnDefinitions>
+                                <Label Grid.Column="1" Content="Collision mesh" HorizontalContentAlignment="Center" FontFamily="Lucida Sans Unicode" TextOptions.TextHintingMode="Fixed" Background="{x:Null}" Foreground="WhiteSmoke" Margin="0"/>
+                                <Button Name="BtnLoadCol" Content="≡" Grid.Column="2" Width="20" Click="BtnLoadCol_Click" Grid.Row="0" BorderBrush="{x:Null}" BorderThickness="0,0,1,1" Cursor="Hand" FontFamily="Lucida Sans Unicode" TextOptions.TextHintingMode="Fixed" Background="{x:Null}" FontSize="14" FontWeight="Bold" ToolTip="Load mesh file">
+                                    <Button.Style>
+                                        <Style TargetType="{x:Type Button}">
+                                            <Setter Property="Background" Value="{x:Null}"/>
+                                            <Setter Property="Foreground" Value="LightGray"/>
+                                            <Setter Property="Template">
+                                                <Setter.Value>
+                                                    <ControlTemplate TargetType="{x:Type Button}">
+                                                        <Border Background="{TemplateBinding Background}">
+                                                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                                        </Border>
+                                                    </ControlTemplate>
+                                                </Setter.Value>
+                                            </Setter>
+                                            <Style.Triggers>
+                                                <Trigger Property="IsMouseOver" Value="True">
+                                                    <Setter Property="Background" Value="{x:Null}"/>
+                                                    <Setter Property="Foreground" Value="White"/>
+                                                </Trigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </Button.Style>
+                                </Button>
+                            </Grid>
+                        </Border>
+                        <TextBox IsUndoEnabled="False" Name="ColPath" DockPanel.Dock="Top" Foreground="#FFB9B9D1" Background="{x:Null}" BorderBrush="{x:Null}" BorderThickness="0" SelectionBrush="#FF44434B" IsReadOnly="True" IsReadOnlyCaretVisible="False" Margin="0,5" />
                         <Label DockPanel.Dock="Top" Content="Materials" HorizontalContentAlignment="Center" FontFamily="Lucida Sans Unicode" TextOptions.TextHintingMode="Fixed" Background="#FF1E1E21" BorderThickness="0,1,0,1" BorderBrush="#FFABADB3" Foreground="WhiteSmoke"/>
                         <Border Padding="0,0,0,1" BorderThickness="0,0,0,1" BorderBrush="#FFABADB3">
                             <DockPanel Name="MaterialsPanel" LastChildFill="False" Background="#FF242427"/>

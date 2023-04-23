@@ -1,0 +1,13 @@
+mesh
+{
+   Content\Shrek\shrek.obj
+}
+collision
+{
+   Content\Shrek\shrek_collisions.obj
+}
+textures
+{
+   Content\Shrek\ShrekHead_Col.png
+   Content\Shrek\ShrekBody_Col.png
+}

@@ -636,6 +636,18 @@ namespace EditorUI
             {
                 UIBridge.ControlKey(true);
             }
+            else if (e.Key == System.Windows.Input.Key.Escape)
+            {
+                UIBridge.EscKey(true);
+            }
+            else if (e.Key == System.Windows.Input.Key.Tab)
+            {
+                UIBridge.TabKey(true);
+            }
+            else if (e.Key == System.Windows.Input.Key.S)
+            {
+                UIBridge.TabKey(true);
+            }
         }
 
         private void Window_KeyUp(object sender, System.Windows.Input.KeyEventArgs e)
@@ -643,6 +655,18 @@ namespace EditorUI
             if (e.Key == System.Windows.Input.Key.LeftCtrl)
             {
                 UIBridge.ControlKey(false);
+            }
+            else if (e.Key == System.Windows.Input.Key.Escape)
+            {
+                UIBridge.EscKey(false);
+            }
+            else if (e.Key == System.Windows.Input.Key.Tab)
+            {
+                UIBridge.TabKey(false);
+            }
+            else if (e.Key == System.Windows.Input.Key.S)
+            {
+                UIBridge.TabKey(false);
             }
         }
     };

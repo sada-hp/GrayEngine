@@ -18,6 +18,7 @@ namespace GrEngineBullet
 			BulletPhysObject* object = static_cast<BulletPhysObject*>(*itt);
 			object->SetActivationState(simulate);
 			object->CalculatePhysics();
+			dynamicsWorld->refreshBroadphaseProxy(object->body);
 		}
 	}
 
@@ -30,6 +31,7 @@ namespace GrEngineBullet
 			object->CalculatePhysics();
 			object->ResetMotion();
 		}
+		solver->reset();
 	}
 
 	void BulletAPI::TogglePhysicsState(bool state)
@@ -40,11 +42,10 @@ namespace GrEngineBullet
 
 	GrEngine::PhysicsObject* BulletAPI::InitSimulationObject(GrEngine::Entity* owner)
 	{
-		auto phys = new BulletPhysObject(static_cast<GrEngine::Entity*>(owner));
-		objects.push_back(phys);
+		auto phys = new BulletPhysObject(static_cast<GrEngine::Entity*>(owner), resourceManager, dynamicsWorld);
 		if (phys->CalculatePhysics())
 		{
-			dynamicsWorld->addRigidBody(phys->body);
+			AddSimulationObject(phys);
 		}
 
 		return phys;
@@ -61,11 +62,25 @@ namespace GrEngineBullet
 		{
 			if (objects[position] == object)
 			{
-				if (object->HasValue())
+				if (static_cast<BulletPhysObject*>(object)->body != nullptr)
 				{
-					dynamicsWorld->removeRigidBody(static_cast<BulletPhysObject*>(object)->body);
 					object->Dispose();
 				}
+				objects.erase(objects.begin() + position);
+				return;
+			}
+		}
+	}
+
+	void BulletAPI::RemoveSimulationObject(UINT id)
+	{
+		for (int position = 0; position < objects.size(); position++)
+		{
+			if (objects[position]->GetID() == id)
+			{
+				BulletPhysObject* object = static_cast<BulletPhysObject*>(objects[position]);
+				object->Dispose();
+				delete object;
 				objects.erase(objects.begin() + position);
 				return;
 			}
@@ -79,24 +94,32 @@ namespace GrEngineBullet
 
 	void BulletAPI::CleanUp()
 	{
-		simulate = false;
-		dynamicsWorld->getCollisionObjectArray().resize(0);
-		for (std::vector<GrEngine::PhysicsObject*>::iterator itt = objects.begin(); itt != objects.end(); ++itt)
+		int offset = 0;
+		while (objects.size() != offset)
 		{
-			BulletPhysObject* object = static_cast<BulletPhysObject*>(*itt);
+			std::vector<GrEngine::PhysicsObject*>::iterator pos = objects.begin();
+			std::advance(pos, offset);
+			BulletPhysObject* object = static_cast<BulletPhysObject*>(*pos);
 
-			if (object->HasValue())
+			if (!object->IsOwnerStatic())
 			{
-				dynamicsWorld->removeRigidBody(object->body);
 				object->Dispose();
+				delete object;
+				objects.erase(pos);
+			}
+			else
+			{
+				object->Dispose();
+				offset++;
 			}
 		}
-		objects.resize(0);
+
+		resourceManager->Clean();
 	}
 
 	const GrEngine::RayCastResult BulletAPI::CastRayGetHit(glm::vec3 startPoint, glm::vec3 endPoint)
 	{
-		updateObjects();
+		//updateObjects();
 		dynamicsWorld->updateAabbs();
 		dynamicsWorld->computeOverlappingPairs();
 
@@ -104,7 +127,7 @@ namespace GrEngineBullet
 		btVector3 end = btVector3(endPoint.x, endPoint.y, endPoint.z);
 		btCollisionWorld::AllHitsRayResultCallback res(start, end);
 		res.m_flags |= btTriangleRaycastCallback::kF_UseGjkConvexCastRaytest;
-		res.m_flags |= btTriangleRaycastCallback::kF_KeepUnflippedNormal;
+		//res.m_flags |= btTriangleRaycastCallback::kF_KeepUnflippedNormal;
 
 		dynamicsWorld->rayTest(start, end, res);
 
@@ -113,16 +136,18 @@ namespace GrEngineBullet
 
 		if (res.hasHit())
 		{
-			raycastResult.hasHit = true;
 			btVector3 p = start.lerp(end, res.m_hitFractions[0]);
+			btVector3 n = res.m_hitNormalWorld[0];
+			raycastResult.hasHit = true;
 			raycastResult.hitPos = glm::vec3{ p.x(), p.y(), p.z() };
+			raycastResult.hitNorm = glm::vec3{ n.x(), n.y(), n.z() };
 		}
 		return raycastResult;
 	}
 
 	const GrEngine::RayCastResult BulletAPI::CastRayToObject(glm::vec3 startPoint, glm::vec3 endPoint, UINT id)
 	{
-		updateObjects();
+		//updateObjects();
 		dynamicsWorld->updateAabbs();
 		dynamicsWorld->computeOverlappingPairs();
 
@@ -130,7 +155,7 @@ namespace GrEngineBullet
 		btVector3 end = btVector3(endPoint.x, endPoint.y, endPoint.z);
 		btCollisionWorld::AllHitsRayResultCallback res(start, end);
 		res.m_flags |= btTriangleRaycastCallback::kF_UseGjkConvexCastRaytest;
-		res.m_flags |= btTriangleRaycastCallback::kF_KeepUnflippedNormal;
+		//res.m_flags |= btTriangleRaycastCallback::kF_KeepUnflippedNormal;
 
 		dynamicsWorld->rayTest(start, end, res);
 
@@ -144,13 +169,47 @@ namespace GrEngineBullet
 				if ((UINT)res.m_collisionObjects[i]->getUserPointer() == id)
 				{
 					btVector3 p = start.lerp(end, res.m_hitFractions[i]);
+					btVector3 n = res.m_hitNormalWorld[i];
 					raycastResult.hitPos = glm::vec3{ p.x(), p.y(), p.z() };
 					raycastResult.hasHit = true;
+					raycastResult.hitNorm = glm::vec3{ n.x(), n.y(), n.z() };
 					break;
 				}
 			}
 		}
 
 		return raycastResult;
+	}
+
+	const std::vector<GrEngine::RayCastResult> BulletAPI::GetObjectContactPoints(GrEngine::PhysicsObject* object, float radius)
+	{
+		BulletPhysObject* btObject = static_cast<BulletPhysObject*>(object);
+		std::vector<GrEngine::RayCastResult> out;
+		CollisionTest callback(&out);
+		dynamicsWorld->getCollisionWorld()->contactTest(btObject->body, callback);
+
+		//int numManifolds = dynamicsWorld->getDispatcher()->getNumManifolds();
+		//for (int i = 0; i < numManifolds; i++)
+		//{
+		//	btPersistentManifold* contactManifold = dynamicsWorld->getDispatcher()->getManifoldByIndexInternal(i);
+		//	const btCollisionObject* obA = static_cast<const btCollisionObject*>(contactManifold->getBody0());
+		//	const btCollisionObject* obB = static_cast<const btCollisionObject*>(contactManifold->getBody1());
+		//	if (obA == btObject->body)
+		//	{
+		//		int numContacts = contactManifold->getNumContacts();
+		//		for (int j = 0; j < numContacts; j++)
+		//		{
+		//			btManifoldPoint& pt = contactManifold->getContactPoint(j);
+		//			GrEngine::RayCastResult r{};
+		//			r.hitPos = glm::vec3(pt.getPositionWorldOnB().x(), pt.getPositionWorldOnB().y(), pt.getPositionWorldOnB().z());
+		//			r.hasHit = true;
+		//			r.hitNorm = glm::vec3(pt.m_normalWorldOnB.x(), pt.m_normalWorldOnB.y(), pt.m_normalWorldOnB.z());
+		//			r.distance = pt.getDistance();
+		//			out.push_back(r);
+		//		}
+		//	}
+		//}
+
+		return out;
 	}
 };

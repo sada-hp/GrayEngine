@@ -456,22 +456,7 @@ void CollisionType::SetPropertyValue(int value)
 	GrEngine::PhysicsObject* comp = static_cast<GrEngine::Entity*>(owner)->GetPropertyValue(PropertyType::PhysComponent, static_cast<GrEngine::PhysicsObject*>(nullptr));
 	if (comp != nullptr)
 	{
-		switch (value)
-		{
-		case 0:
-			comp->GenerateBoxCollision(0.25f, 0.25f, 0.25f);
-			break;
-		case 1:
-			
-			break;
-		case 2:
-			GrEngine::Object * obj = GrEngine::Object::FindObject(static_cast<GrEngine::Entity*>(owner));
-			if (obj != nullptr)
-			{
-				obj->updateCollisions();
-			}
-			break;
-		}
+		comp->UpdateCollisionType((CollisionTypeEnum)value);
 	}
 }
 
@@ -496,7 +481,7 @@ Drawable::Drawable(const char* path, void* parent)
 
 	if (path != "" && path != "nil")
 	{
-		static_cast<GrEngine::Object*>(drawable)->LoadModel(path);
+		GrEngine::Engine::GetContext()->LoadFromGMF(static_cast<GrEngine::Entity*>(owner)->GetEntityID(), path);
 	}
 }
 
@@ -520,12 +505,12 @@ void Drawable::SetPropertyValue(std::string value)
 	property_value = value;
 
 	if (owner != nullptr && value != "nil")
-		static_cast<GrEngine::Object*>(drawable)->LoadModel(value.c_str());
+		GrEngine::Engine::GetContext()->LoadFromGMF(static_cast<GrEngine::Entity*>(owner)->GetEntityID(), value.c_str());
 }
 
 std::any Drawable::GetAnyValue()
 {
-	return drawable;
+	return static_cast<GrEngine::Object*>(drawable);
 }
 
 void* Drawable::GetValueAdress()

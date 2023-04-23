@@ -48,7 +48,6 @@ void SceneEditor::GetEntitiesList()
 
 void SceneEditor::LoadModelFile(const char* model_path)
 {
-    std::unordered_map<std::string, std::string> materials;
     std::string solution = GrEngine::Globals::getExecutablePath();
     if (std::string(model_path).substr(0, solution.size()) != solution)
     {
@@ -56,15 +55,48 @@ void SceneEditor::LoadModelFile(const char* model_path)
         return;
     }
 
-    GrEngine::Engine::GetContext()->LoadFromGMF(GrEngine::Engine::GetContext()->GetSelectedEntityID(), std::string(model_path).erase(0, solution.size()).c_str());
-    materials = GrEngine::Object::FindObject(GrEngine::Engine::GetContext()->GetRenderer()->GetSelectedEntity())->GetMaterials();
+    auto start = std::chrono::steady_clock::now();
 
+    std::string mesh_path = "";
+    std::string coll_path = "";
+    std::vector<std::string> textures_vector;
+
+    if (!GrEngine::Globals::readGMF(model_path, &mesh_path, &coll_path, &textures_vector))
+        return;
+
+    GrEngine::Entity* target = GrEngine::Engine::GetContext()->GetRenderer()->GetSelectedEntity();
+    GrEngine::Object* drawComponent = target->GetPropertyValue(PropertyType::Drawable, static_cast<GrEngine::Object*>(nullptr));
+    GrEngine::PhysicsObject* physComponent = target->GetPropertyValue(PropertyType::PhysComponent, static_cast<GrEngine::PhysicsObject*>(nullptr));
+
+    target->drawable_path = mesh_path;
+    target->collision_path = coll_path;
+
+    if (drawComponent != nullptr)
+    {
+        drawComponent->LoadModel(mesh_path.c_str(), textures_vector);
+    }
+
+    if (physComponent != nullptr)
+    {
+        physComponent->LoadCollisionMesh(coll_path.c_str());
+    }
+
+    auto end = std::chrono::steady_clock::now();
+    auto time = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
+    Logger::Out("Model %s loaded in %d ms", OutputColor::Gray, OutputType::Log, model_path, (int)time);
+
+    std::vector<std::string> materials = GrEngine::Engine::GetContext()->GetMaterialNames(mesh_path.c_str());
     std::string out_materials;
     std::string out_textures;
-    for (auto pair : materials)
+    for (auto mat : materials)
     {
-        out_materials += pair.first + "|";
-        out_textures += pair.second + "|";
+        out_materials += mat + "|";
+    }
+
+    materials = static_cast<GrEngine::Object*>(GrEngine::Object::FindObject(GrEngine::Engine::GetContext()->GetRenderer()->GetSelectedEntity()))->GetTextureCollection();
+    for (auto tex : materials)
+    {
+        out_textures += tex + "|";
     }
 
     GrEngine::Engine::GetContext()->GetEventListener()->registerEvent("RequireMaterialsUpdate", { out_materials, out_textures, 0 });
@@ -75,7 +107,7 @@ void SceneEditor::LoadObject(const char* mesh_path, const char* textures_path)
     GrEngine::Engine::GetContext()->GetEventListener()->clearEventQueue();
 
     std::vector<std::string> tex_vector = GrEngine::Globals::SeparateString(textures_path, '|');
-    std::unordered_map<std::string, std::string> materials;
+    //std::unordered_map<std::string, std::string> materials;
     std::string solution = GrEngine::Globals::getExecutablePath();
 
     if (std::string(mesh_path).substr(0, solution.size()) != solution)
@@ -94,14 +126,20 @@ void SceneEditor::LoadObject(const char* mesh_path, const char* textures_path)
     }
 
     GrEngine::Engine::GetContext()->LoadObject(GrEngine::Engine::GetContext()->GetSelectedEntityID(), mesh_path, tex_vector);
-    materials = static_cast<GrEngine::Object*>(GrEngine::Object::FindObject(GrEngine::Engine::GetContext()->GetRenderer()->GetSelectedEntity()))->GetMaterials();
+    //materials = static_cast<GrEngine::Object*>(GrEngine::Object::FindObject(GrEngine::Engine::GetContext()->GetRenderer()->GetSelectedEntity()))->GetMaterials();
 
+    std::vector<std::string> materials = GrEngine::Engine::GetContext()->GetMaterialNames(mesh_path);
     std::string out_materials;
     std::string out_textures;
-    for (auto pair : materials)
+    for (auto mat : materials)
     {
-        out_materials += pair.first + "|";
-        out_textures += pair.second + "|";
+        out_materials += mat + "|";
+    }
+
+    materials = static_cast<GrEngine::Object*>(GrEngine::Object::FindObject(GrEngine::Engine::GetContext()->GetRenderer()->GetSelectedEntity()))->GetTextureCollection();
+    for (auto tex : materials)
+    {
+        out_textures += tex + "|";
     }
 
     GrEngine::Engine::GetContext()->GetEventListener()->registerEvent("RequireMaterialsUpdate", { out_materials, out_textures, 1});
@@ -133,7 +171,7 @@ void SceneEditor::AssignTextures(const char* textures_path)
             continue;
         }
     }
-    //GrEngine::Engine::GetContext()->AssignTextures(mat_vector, GrEngine::Engine::GetContext()->GetRenderer()->GetSelectedEntity());
+    GrEngine::Engine::GetContext()->AssignTextures(mat_vector, GrEngine::Engine::GetContext()->GetRenderer()->GetSelectedEntity());
 }
 
 void SceneEditor::CloseContext()
@@ -155,12 +193,10 @@ void SceneEditor::AddToTheScene(const char* model_path)
     SceneEditor::GetApplication()->GetEventListener()->registerEvent("LoadModel", para);
 }
 
-void SceneEditor::CreateModelFile(const char* mesh_path, const char* textures)
+void SceneEditor::CreateModelFile(const char* filename, const char* mesh_path, const char* collision_path, const char* textures)
 {
     std::string temp_str = "";
     std::vector<std::string> mat_vector;
-    std::string mesh = "";
-    std::string file = "";
 
     if (textures)
     {
@@ -181,21 +217,7 @@ void SceneEditor::CreateModelFile(const char* mesh_path, const char* textures)
         }
     }
 
-    for (char chr : std::string(mesh_path))
-    {
-        if (chr != '|')
-        {
-            temp_str += chr;
-        }
-        else
-        {
-            file = temp_str;
-            temp_str = "";
-        }
-        mesh = temp_str;
-    }
-
-	GrEngine::Engine::WriteGMF(file.c_str(), mesh.c_str(), mat_vector);
+	GrEngine::Engine::WriteGMF(filename, mesh_path, collision_path, mat_vector);
 }
 
 void  SceneEditor::SaveScreenshot(const char* filepath)
@@ -261,6 +283,48 @@ void SceneEditor::SetActiveBrushChannels(bool red, bool green, bool blue)
 
 void SceneEditor::ControlKey(bool state)
 {
-    SceneEditor::GetApplication()->ctr_down = state;
-    SceneEditor::GetApplication()->FocusViewport();
+    //(double)glfwGetKeyScancode(GLFW_KEY_LEFT_CONTROL)
+
+    std::vector<double> para = {
+    (double)GLFW_KEY_LEFT_CONTROL, (double)0, (double)(state ? GLFW_PRESS : GLFW_RELEASE), (double)0
+    };
+
+    SceneEditor::GetApplication()->FocusWindow();
+    SceneEditor::GetApplication()->GetEventListener()->registerEvent(EventType::KeyPress, para);
+}
+
+void SceneEditor::EscKey(bool state)
+{
+    //(double)glfwGetKeyScancode(GLFW_KEY_ESCAPE)
+
+    std::vector<double> para = {
+    (double)GLFW_KEY_ESCAPE, (double)0, (double)(state ? GLFW_PRESS : GLFW_RELEASE), (double)0
+    };
+
+    SceneEditor::GetApplication()->FocusWindow();
+    SceneEditor::GetApplication()->GetEventListener()->registerEvent(EventType::KeyPress, para);
+}
+
+void SceneEditor::TabKey(bool state)
+{
+    //(double)glfwGetKeyScancode(GLFW_KEY_TAB)
+
+    std::vector<double> para = {
+    (double)GLFW_KEY_TAB, (double)0, (double)(state ? GLFW_PRESS : GLFW_RELEASE), (double)0
+    };
+
+    SceneEditor::GetApplication()->FocusWindow();
+    SceneEditor::GetApplication()->GetEventListener()->registerEvent(EventType::KeyPress, para);
+}
+
+void SceneEditor::SKey(bool state)
+{
+    //(double)glfwGetKeyScancode(GLFW_KEY_S)
+
+    std::vector<double> para = {
+    (double)GLFW_KEY_S, (double)0, (double)(state ? GLFW_PRESS : GLFW_RELEASE), (double)0
+    };
+
+    SceneEditor::GetApplication()->FocusWindow();
+    SceneEditor::GetApplication()->GetEventListener()->registerEvent(EventType::KeyPress, para);
 }

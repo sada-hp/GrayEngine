@@ -26,7 +26,7 @@ namespace EditorUI
         [DllImport("SceneEditor.dll", CallingConvention = CallingConvention.Cdecl)]
         public static extern void AddToTheScene(IntPtr mesh_path);
         [DllImport("SceneEditor.dll", CallingConvention = CallingConvention.Cdecl)]
-        public static extern void CreateModelFile(IntPtr mesh_path, IntPtr textures);
+        public static extern void CreateModelFile(IntPtr filename, IntPtr mesh_path, IntPtr collision_path, IntPtr textures);
         [DllImport("SceneEditor.dll", CallingConvention = CallingConvention.Cdecl)]
         public static extern void CloseContext();
         [DllImport("SceneEditor.dll", CallingConvention = CallingConvention.Cdecl)]
@@ -76,6 +76,12 @@ namespace EditorUI
 
         [DllImport("SceneEditor.dll", CallingConvention = CallingConvention.Cdecl)]
         public static extern void ControlKey(bool state);
+        [DllImport("SceneEditor.dll", CallingConvention = CallingConvention.Cdecl)]
+        public static extern void EscKey(bool state);
+        [DllImport("SceneEditor.dll", CallingConvention = CallingConvention.Cdecl)]
+        public static extern void TabKey(bool state);
+        [DllImport("SceneEditor.dll", CallingConvention = CallingConvention.Cdecl)]
+        public static extern void SKey(bool state);
 
         public static Wrapper[] wrappers = new Wrapper[2];
         public static Thread uThread;

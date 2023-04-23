@@ -161,7 +161,14 @@ namespace GrEngine
 			}
 			else
 			{
-				return *object_origin;
+				if (parent == nullptr)
+				{
+					return *object_origin;
+				}
+				else
+				{
+					return *object_origin + parent->GetObjectPosition();
+				}
 			}
 		};
 
@@ -405,6 +412,14 @@ namespace GrEngine
 			return isPrivated;
 		}
 
+		void SetParentEntity(Entity* parent_ent)
+		{
+			parent = parent_ent;
+		}
+
+		std::string drawable_path = "";
+		std::string collision_path = "";
+
 		//////////////////////////////////////////////////////////////////
 		//void SetType(EntityType t)
 		//{
@@ -424,5 +439,6 @@ namespace GrEngine
 		glm::vec3 pitch_yaw_roll = { 0.f, 0.f, 0.f };
 		bool isPrivated = false;
 		PhysicsObject* physComp = nullptr;
+		Entity* parent;
 	};
 }

@@ -22,7 +22,7 @@ namespace SceneEditor
 		ExportDll void __stdcall AssignTextures(const char* textures_path);
 		ExportDll void __stdcall AddToTheScene(const char* model_path);
 		ExportDll void __stdcall CloseContext();
-		ExportDll void __stdcall CreateModelFile(const char* mesh, const char* textures);
+		ExportDll void __stdcall CreateModelFile(const char* filename, const char* mesh_path, const char* collision_path, const char* textures);
 		ExportDll void __stdcall SaveScreenshot(const char* filepath);
 		ExportDll void __stdcall TogglePhysics();
 		ExportDll void __stdcall AddNewEntityProperty(int id, const char* property);
@@ -34,5 +34,8 @@ namespace SceneEditor
 		ExportDll void __stdcall UpdateBrush(int mode, float opacity, float size, float falloff);
 		ExportDll void __stdcall SetActiveBrushChannels(bool red, bool green, bool blue);
 		ExportDll void __stdcall ControlKey(bool state);
+		ExportDll void __stdcall EscKey(bool state);
+		ExportDll void __stdcall TabKey(bool state);
+		ExportDll void __stdcall SKey(bool state);
 	}
 }

@@ -1,5 +1,6 @@
 #include "pch.h"
 #include "VulkanResourceManager.h"
+#include "Engine.h"
 #include "VulkanAPI.h"
 
 namespace GrEngine_Vulkan
@@ -16,7 +17,7 @@ namespace GrEngine_Vulkan
 				resource->RemoveLink();
 				if (resource->getNumOfLinks() == 0)
 				{
-					Logger::Out("Resource %s was removed", OutputColor::Blue, OutputType::Log, string_name.c_str());
+					Logger::Out("Mesh resource %s was removed", OutputColor::Blue, OutputType::Log, string_name.c_str());
 					VulkanAPI::m_destroyShaderBuffer(device, allocator, &resource->PopResource()->indexBuffer);
 					VulkanAPI::m_destroyShaderBuffer(device, allocator, &resource->PopResource()->vertexBuffer);
 					delete resource;
@@ -39,7 +40,7 @@ namespace GrEngine_Vulkan
 				resource->RemoveLink();
 				if (resource->getNumOfLinks() == 0)
 				{
-					Logger::Out("Resource %s was removed", OutputColor::Blue, OutputType::Log, string_name.c_str());
+					Logger::Out("Texture resource %s was removed", OutputColor::Blue, OutputType::Log, string_name.c_str());
 					VulkanAPI::m_destroyTexture(device, allocator, resource->PopResource());
 					delete resource;
 					texResources.erase(itt);
@@ -84,7 +85,7 @@ namespace GrEngine_Vulkan
 				resource->RemoveLink();
 				if (resource->getNumOfLinks() == 0)
 				{
-					Logger::Out("Resource %s was removed", OutputColor::Blue, OutputType::Log, string_name.c_str());
+					Logger::Out("Texture resource %s was removed", OutputColor::Blue, OutputType::Log, string_name.c_str());
 					VulkanAPI::m_destroyTexture(device, allocator, resource->PopResource());
 					delete resource;
 					texResources.erase(itt);

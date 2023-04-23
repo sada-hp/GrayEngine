@@ -158,8 +158,19 @@ namespace GrEngine
 		glfwFocusWindow(window);
 	}
 
+
 	void GL_APP::SetUpEvents(GLFWwindow* target)
 	{
+		glfwSetWindowFocusCallback(target, [](GLFWwindow* win, int focused)
+			{
+				AppParameters& data = *(AppParameters*)glfwGetWindowUserPointer(win);
+
+				std::vector<double> para = {
+					(double)focused
+				};
+
+				data.eventListener->registerEvent(EventType::FocusChanged, para);
+			});
 		glfwSetWindowSizeCallback(target, [](GLFWwindow* win, int width, int height)
 		{
 			AppParameters& data = *(AppParameters*)glfwGetWindowUserPointer(win);

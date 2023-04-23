@@ -7,9 +7,158 @@ namespace SceneEditor
 
     void Inputs()
     {
-        //GrEngine::PhysicsObject* phys_comp = static_cast<GrEngine::PhysicsObject*>(app->shrek->AddNewProperty("Physics")->GetValueAdress());
-        //phys_comp->MoveObject({ 0.01f, 0, 0 });
         app->UpdateUI();
+    }
+
+    void Character()
+    {
+        if (!app->focused) return;
+
+        glm::vec3 direction{};
+        POINT vSize = app->GetWindowSize();
+        POINT vPos = app->GetWindowPosition();
+        float sprint = 1.f;
+
+        GrEngine::Renderer* render = app->GetRenderer();
+        GrEngine::Camera* camera = render->getActiveViewport();
+        glm::vec2 old_cursor_pos{ vSize.x / 2, vSize.y / 2 };
+        glm::vec3 orientation{ 0.f };
+        float senstivity = 0.6f;
+        POINTFLOAT cur = app->GetCursorPosition();
+
+        orientation.y -= (glm::ceil(((old_cursor_pos.x - cur.x) * senstivity) * 10000) / 10000);
+        orientation.x -= (glm::ceil(((old_cursor_pos.y - cur.y) * senstivity) * 10000) / 10000);
+        camera->Rotate(orientation);
+        SetCursorPos(vPos.x + (vSize.x / 2), vPos.y + (vSize.y / 2));
+
+        glm::quat q = glm::quat_cast(glm::mat3(1.f));
+        q = q * glm::angleAxis(glm::radians(0.f), glm::vec3(1, 0, 0));
+        q = q * glm::angleAxis(glm::radians(-camera->GetActualPYR().y), glm::vec3(0, 1, 0));
+        q = q * glm::angleAxis(glm::radians(0.f), glm::vec3(0, 0, 1));
+        glm::mat4 trans = glm::translate(glm::mat4(1.f), camera->GetObjectPosition()) * glm::mat4_cast(q);
+        if (app->IsKeyDown(GLFW_KEY_W))
+        {
+            direction -= glm::vec3(trans[2][0], trans[2][1], trans[2][2]);
+        }
+        if (app->IsKeyDown(GLFW_KEY_S))
+        {
+            direction += glm::vec3(trans[2][0], trans[2][1], trans[2][2]);
+        }
+        if (app->IsKeyDown(GLFW_KEY_D))
+        {
+            direction += glm::vec3(trans[0][0], trans[0][1], trans[0][2]);
+        }
+        if (app->IsKeyDown(GLFW_KEY_A))
+        {
+            direction -= glm::vec3(trans[0][0], trans[0][1], trans[0][2]);
+        }
+        if (app->IsKeyDown(GLFW_KEY_LEFT_SHIFT))
+        {
+            sprint = 1.35f;
+        }
+        GrEngine::PhysicsObject* phys_comp = static_cast<GrEngine::PhysicsObject*>(app->shrek_coll->GetProperty(PropertyType::PhysComponent)->GetValueAdress());
+        if (direction != glm::vec3(0.f))
+        {
+            glm::vec3 cap_pos = app->shrek_coll->GetObjectPosition();
+            GrEngine::RayCastResult ray = app->GetPhysics()->CastRayGetHit(cap_pos, glm::vec3(cap_pos.x, cap_pos.y - 2.5f, cap_pos.z));
+            std::vector<GrEngine::RayCastResult> res;
+            if (!ray.hasHit)
+            {
+                res = app->GetPhysics()->GetObjectContactPoints(phys_comp, 25.f);
+            }
+            else
+            {
+                res.push_back(ray);
+            }
+
+            if (res.size() > 0)
+            {
+                glm::vec3 normal = glm::vec3(0.f);
+                int count = 0;
+
+                for (int i = 0; i < res.size(); i++)
+                {
+                    normal += res[i].hitNorm;
+                    count++;
+                }
+
+                normal = normal / (float)count;
+                normal = glm::normalize(normal);
+
+                float max_ang = glm::radians(45.f);
+                float ang = glm::acos(glm::dot(glm::vec3(0, 1, 0), normal));
+                //Logger::Out("Angle of the slope %f", OutputColor::Gray, OutputType::Log, ang);
+                if (ang < max_ang)
+                {
+                    phys_comp->MoveObject(glm::vec3(0.15f * sprint, 0.f, 0.15f * sprint) * glm::normalize(direction));
+                }
+                else
+                {
+                    float sign = glm::sign(glm::dot(direction, normal));
+                    //float bias = glm::abs(glm::radians(45.f) - ang) * 10;
+                    float limit = glm::radians(20.f) / 100.f;
+                    float bias = 0.15f * ((ang - max_ang) / limit) / 100.f;
+                    //Logger::Out("Bias of the slope %f", OutputColor::Gray, OutputType::Log, ((ang - max_ang) / limit));
+                    float speed = 0.15f + bias * sign;
+                    if (speed > 0)
+                    {
+                        speed = glm::min(speed, 2.75f);
+                        phys_comp->MoveObject(glm::vec3(speed, 0.f, speed) * glm::normalize(direction));
+                    }
+                    else
+                    {
+                        speed = glm::abs(speed) + 1.65f;
+                        phys_comp->SlideObjectForDuration(glm::vec3(speed, 0.f, speed) * glm::normalize((normal)), 0.1f);
+                    }
+                }
+            }
+            else
+            {
+                phys_comp->MoveObject(glm::vec3(0.1f, 0.f, 0.1f) * glm::normalize(direction));
+            }
+        }
+        else
+        {
+            //glm::vec3 cap_pos = app->shrek_coll->GetObjectPosition();
+            //GrEngine::RayCastResult res = app->GetPhysics()->CastRayGetHit(cap_pos, glm::vec3(cap_pos.x, cap_pos.y - 4.5f, cap_pos.z));
+
+            std::vector<GrEngine::RayCastResult> res = app->GetPhysics()->GetObjectContactPoints(phys_comp, 25.f);
+            if (res.size() > 0)
+            {
+                glm::vec3 normal = glm::vec3(0.f);
+                int count = 0;
+
+                for (int i = 0; i < res.size(); i++)
+                {
+                    normal += res[i].hitNorm;
+                    count++;
+                }
+
+                normal = normal / (float)count;
+                normal = glm::normalize(normal);
+
+                constexpr float max_ang = glm::radians(35.f);
+                float ang = glm::acos(glm::dot(glm::vec3(0, 1, 0), normal));
+                bool sliding = ang <= max_ang;
+                float sign = glm::sign(glm::dot(direction, normal));
+                if (!sliding)
+                {
+                    constexpr float limit = glm::radians(30.f) / 100.f;
+                    float bias = 0.15f * ((ang - max_ang) / limit) / 100.f;
+                    float speed = 0.15f + bias * sign;
+                    speed = glm::abs(speed) + 1.65f;
+                    phys_comp->SlideObjectForDuration(glm::vec3(speed, 0.f, speed) * glm::normalize((normal)), 0.1f);
+                }
+                else
+                {
+                    phys_comp->MoveObject(glm::vec3(0.f, 0.f, 0.f));
+                }
+            }
+            else
+            {
+                phys_comp->MoveObject(glm::vec3(0.f, 0.f, 0.f));
+            }
+        }
     }
 
     void Transformation()
@@ -63,6 +212,8 @@ namespace SceneEditor
 
     void FreeCamera()
     {
+        if (!app->focused) return;
+
         POINT vSize = app->GetWindowSize();
         POINT vPos = app->GetWindowPosition();
         GrEngine::Renderer* render = app->GetRenderer();
@@ -207,6 +358,37 @@ namespace SceneEditor
                 {
                     app->ctr_down = static_cast<int>(para[2]) != GLFW_RELEASE;
                 }
+                else if (static_cast<int>(para[0]) == GLFW_KEY_TAB && static_cast<int>(para[2]) == GLFW_PRESS)
+                {
+                    if (!app->char_mode)
+                    {
+                        POINT vSize = app->GetWindowSize();
+                        POINT vPos = app->GetWindowPosition();
+                        SetCursorPos(vPos.x + (vSize.x / 2), vPos.y + (vSize.y / 2));
+
+                        if (app->free_mode)
+                        {
+                            app->toggle_free_mode();
+                            app->RemoveInputCallback(1);
+                        }
+                        app->AddInputCallback(5, Character);
+                        app->App_SetUpCharacter();
+                        app->TogglePhysicsState(true);
+                        app->char_mode = true;
+                    }
+                    else
+                    {
+                        app->RemoveInputCallback(5);
+                        app->TogglePhysicsState(false);
+                        app->App_ClearCharacter();
+                        app->char_mode = false;
+                    }
+                    app->SetCursorState(!app->char_mode);
+                }
+                else if (static_cast<int>(para[0]) == GLFW_KEY_S && app->ctr_down && static_cast<int>(para[2]) == GLFW_PRESS && !app->free_mode && !app->char_mode)
+                {
+                    app->App_SaveScene();
+                }
             });
 
         app->GetEventListener()->pushEvent(EventType::MouseClick, [](std::vector<double> para)
@@ -220,7 +402,7 @@ namespace SceneEditor
                 {
                     app->mouse_down = false;
                     app->SetCursorShape(GLFW_ARROW_CURSOR);
-                    app->gizmo->ParsePropertyValue("Color", "255:255:255:255");
+                    app->gizmo->ParsePropertyValue("Color", "1:1:1:1");
                     app->manipulation = app->manipulation < 7 ? 0 : app->manipulation;
 
                     if (app->manipulation == 8)
@@ -257,6 +439,11 @@ namespace SceneEditor
                 {
                     app->RemoveInputCallback(2);
                 }
+            });
+
+        app->GetEventListener()->pushEvent(EventType::FocusChanged, [](std::vector<double> para)
+            {
+                app->focused = static_cast<int>(para[0]);
             });
 
         try

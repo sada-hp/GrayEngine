@@ -29,12 +29,16 @@ namespace GrEngine
         EditorUI editorUI;
         std::string log_path;
         unsigned char* foliage_mask;
+        bool was_mask_updated = false;
         std::string fm;
         int mask_width, mask_height, mask_channels;
 
     public:
+        std::string loaded_scene_path = "";
+        bool focused = true;
         bool free_mode = false;
         bool mouse_down = false;
+        bool char_mode = false;
         uint8_t manipulation = 0;
         POINTFLOAT manip_start;
         Entity* grid;
@@ -59,7 +63,7 @@ namespace GrEngine
         float subdivisions = 1.f;
 
         bool brush_snap = false;
-        Entity* shrek;
+        Entity* shrek_coll;
 
         Application(const AppParameters& Properties = AppParameters()) : Engine(Properties)
         {
@@ -104,6 +108,7 @@ namespace GrEngine
                 fm = "";
             }
             Engine::LoadScene(path);
+            loaded_scene_path = path;
             auto ent = GetRenderer()->selectEntity(100);
             if (ent != nullptr)
             {
@@ -119,10 +124,28 @@ namespace GrEngine
         void App_SaveScene(const char* path)
         {
             SaveScene(path);
+            loaded_scene_path = path;
 
-            if (foliage_mask != nullptr)
+            if (foliage_mask != nullptr && was_mask_updated)
             {
                 stbi_write_png(fm.c_str(), mask_width, mask_height, 4, foliage_mask, mask_width * mask_channels);
+                was_mask_updated = false;
+            }
+        }
+
+        void App_SaveScene()
+        {
+            if (loaded_scene_path == "")
+            {
+                return;
+            }
+
+            SaveScene(loaded_scene_path.c_str());
+
+            if (foliage_mask != nullptr && was_mask_updated)
+            {
+                stbi_write_png(fm.c_str(), mask_width, mask_height, 4, foliage_mask, mask_width * mask_channels);
+                was_mask_updated = false;
             }
         }
 
@@ -141,41 +164,41 @@ namespace GrEngine
                 Object* gizmo_object = static_cast<Object*>(gizmo->GetProperty("Drawable")->GetValueAdress());
 
                 std::array<byte, 3> rgb = GetRenderer()->GetPixelColorAtCursor();
-                if (rgb[0] == 255)
+                if (rgb[0] / 255.f == 1.f)
                 {
                     manipulation = 1;
-                    gizmo->ParsePropertyValue("Color", "255:10:10:255");
+                    gizmo->ParsePropertyValue("Color", "1:0.1:0.1:1");
                 }
-                else if (rgb[1] == 255)
+                else if (rgb[1] / 255.f == 1.f)
                 {
                     manipulation = 2;
-                    gizmo->ParsePropertyValue("Color", "10:255:10:255");
+                    gizmo->ParsePropertyValue("Color", "0.1:1:0.1:1");
                 }
-                else if (rgb[2] == 255)
+                else if (rgb[2] / 255.f == 1.f)
                 {
                     manipulation = 3;
-                    gizmo->ParsePropertyValue("Color", "10:10:255:255");
+                    gizmo->ParsePropertyValue("Color", "0.1:0.1:1:1");
                 }
-                else if (rgb[0] == 254)
+                else if (rgb[0]/255.f >= 0.5f)
                 {
                     manipulation = 4;
-                    gizmo->ParsePropertyValue("Color", "255:10:10:255");
+                    gizmo->ParsePropertyValue("Color", "1:0.1:0.1:1");
                     glm::vec3 dir = glm::normalize(glm::vec3(gizmo->GetObjectTransformation()[0][0], gizmo->GetObjectTransformation()[0][1], gizmo->GetObjectTransformation()[0][2]));
-                    pos = pos + dir * glm::vec3(gizmo_object->GetObjectBounds().x) * gizmo->GetPropertyValue("Scale", glm::vec3(1.f));
+                    pos = pos + dir * (glm::vec3(gizmo_object->GetObjectBounds().x) - glm::vec3(0.1f)) * gizmo->GetPropertyValue("Scale", glm::vec3(1.f));
                 }
-                else if (rgb[1] == 254)
+                else if (rgb[1] / 255.f >= 0.5f)
                 {
                     manipulation = 5;
-                    gizmo->ParsePropertyValue("Color", "10:255:10:255");
+                    gizmo->ParsePropertyValue("Color", "0.1:1:0.1:1");
                     glm::vec3 dir = glm::vec3(gizmo->GetObjectTransformation()[1][0], gizmo->GetObjectTransformation()[1][1], gizmo->GetObjectTransformation()[1][2]);
-                    pos = pos + dir * glm::vec3(gizmo_object->GetObjectBounds().y) * gizmo->GetPropertyValue("Scale", glm::vec3(1.f));
+                    pos = pos + dir * (glm::vec3(gizmo_object->GetObjectBounds().y) - glm::vec3(0.1f)) * gizmo->GetPropertyValue("Scale", glm::vec3(1.f));
                 }
-                else if (rgb[2] == 254)
+                else if (rgb[2] / 255.f >= 0.5f)
                 {
                     manipulation = 6;
-                    gizmo->ParsePropertyValue("Color", "10:10:255:255");
+                    gizmo->ParsePropertyValue("Color", "0.1:0.1:1:1");
                     glm::vec3 dir = glm::vec3(gizmo->GetObjectTransformation()[2][0], gizmo->GetObjectTransformation()[2][1], gizmo->GetObjectTransformation()[2][2]);
-                    pos = pos + dir * glm::vec3(gizmo_object->GetObjectBounds().z) * gizmo->GetPropertyValue("Scale", glm::vec3(1.f));
+                    pos = pos + dir * (glm::vec3(gizmo_object->GetObjectBounds().z) - glm::vec3(0.1f)) * gizmo->GetPropertyValue("Scale", glm::vec3(1.f));
                 }
                 else
                 {
@@ -298,6 +321,7 @@ namespace GrEngine
 
         void toggle_free_mode()
         {
+            if (char_mode) return;
             free_mode = !free_mode;
             SetCursorState(!free_mode);
         }
@@ -313,7 +337,7 @@ namespace GrEngine
             if (transform_target != nullptr && transform_target != gizmo)
             {
                 UINT id = transform_target->GetEntityID();
-                GetRenderer()->DeleteEntity(id);
+                DeleteEntity(id);
                 getEditorUI()->RemoveEntity(id);
                 static_cast<GrEngine::Object*>(GrEngine::Object::FindObject(gizmo))->SetVisisibility(false);
             }
@@ -461,6 +485,8 @@ namespace GrEngine
                     time = now;
                     first_call = false;
                 }
+
+                was_mask_updated = true;
             }
         }
 
@@ -630,6 +656,21 @@ namespace GrEngine
             blue_channel = blue;
         }
 
+        void App_SetUpCharacter()
+        {
+            shrek_coll->PositionObjectAt(GetRenderer()->getActiveViewport()->GetObjectPosition() - glm::vec3(0, 1.5f, 0));
+            GetRenderer()->getActiveViewport()->SetParentEntity(shrek_coll);
+            GetRenderer()->getActiveViewport()->PositionObjectAt({ 0, 1.5f, 0 });
+            free_mode = false;
+        }
+
+        void App_ClearCharacter()
+        {
+            GetRenderer()->getActiveViewport()->SetParentEntity(nullptr);
+            GetRenderer()->getActiveViewport()->PositionObjectAt(glm::vec3{ 0, 1.5f, 0 } + shrek_coll->GetObjectPosition());
+            free_mode = false;
+        }
+
     private:
         std::unordered_map<int, InfoChunk> info_chunks;
         std::unordered_map<int, InfoChunk> prev_chunk;
@@ -650,11 +691,11 @@ namespace GrEngine
         void LoadTools()
         {
             //Gizmo
-            gizmo = GetRenderer()->addEntity();
+            gizmo = GetRenderer()->addEntity(900900);
             Object* gizmo_object = static_cast<Object*>(gizmo->AddNewProperty("Drawable")->GetValueAdress());
             gizmo_object->DisableCollisions();
             gizmo_object->SetVisisibility(false);
-            gizmo_object->LoadMesh("Content\\Editor\\ManipulationTool.obj", nullptr);
+            gizmo_object->LoadMesh("Content\\Editor\\ManipulationTool.obj");
             gizmo->ParsePropertyValue("Shader", "Shaders\\gizmo");
             gizmo->AddNewProperty("Color");
             gizmo->ParsePropertyValue("Color", "1:1:1:1");
@@ -664,7 +705,7 @@ namespace GrEngine
             gizmo->ParsePropertyValue("CastShadow", "0");
 
             //Grid
-            grid = GetRenderer()->addEntity();
+            grid = GetRenderer()->addEntity(900901);
             Object* grid_object = static_cast<Object*>(grid->AddNewProperty("Drawable")->GetValueAdress());
             grid_object->GeneratePlaneMesh(1, 1);
             grid_object->DisableCollisions();
@@ -676,13 +717,13 @@ namespace GrEngine
             grid->ParsePropertyValue("CastShadow", "0");
 
             //Paint
-            brush = GetRenderer()->addEntity();
+            brush = GetRenderer()->addEntity(900902);
             Object* brush_object = static_cast<Object*>(brush->AddNewProperty("Drawable")->GetValueAdress());
             brush->ParsePropertyValue("Transparency", "1");
             brush->ParsePropertyValue("Shader", "Shaders\\brush");
             brush_object->DisableCollisions();
             brush_object->SetVisisibility(false);
-            brush_object->LoadMesh("Content\\Editor\\PaintingSphere.obj", nullptr);
+            brush_object->LoadMesh("Content\\Editor\\PaintingSphere.obj");
             brush->AddNewProperty("Color");
             brush->ParsePropertyValue("Color", "1:1:1:0.5");
             brush->AddNewProperty("Scale");
@@ -691,13 +732,11 @@ namespace GrEngine
             brush->AddNewProperty("CastShadow");
             brush->ParsePropertyValue("CastShadow", "0");
 
-            //shrek = GetRenderer()->addEntity();
-            //Object* shrek_object = static_cast<Object*>(shrek->AddNewProperty("Drawable")->GetValueAdress());
-            //shrek_object->LoadModel((Globals::getExecutablePath() + "Content\\Shrek\\shrek.gmf").c_str());
-            //PhysicsObject* phys_comp = static_cast<PhysicsObject*>(shrek->AddNewProperty("Physics")->GetValueAdress());
-            //shrek->ParsePropertyValue("Physics", "1");
-            //shrek->MoveObject(-1, 0, 0);
-            //shrek->Rotate(0, 15, 0);
+            shrek_coll = GetRenderer()->addEntity(900903);
+            PhysicsObject* phys_comp = static_cast<PhysicsObject*>(shrek_coll->AddNewProperty("Physics")->GetValueAdress());
+            phys_comp->GenerateCapsuleCollision(1, 2);
+            shrek_coll->ParsePropertyValue("Physics", "1");
+            shrek_coll->MakeStatic();
         }
 
         void UnloadTools()

@@ -89,7 +89,14 @@ namespace GrEngine
 
 		 virtual glm::vec3 GetObjectPosition() override
 		 {
-			 return *object_origin;
+			 if (parent == nullptr)
+			 {
+				 return *object_origin;
+			 }
+			 else
+			 {
+				 return *object_origin + parent->GetObjectPosition();
+			 }
 		 };
 
 		 virtual glm::quat GetObjectOrientation() override
@@ -125,7 +132,8 @@ namespace GrEngine
 		{
 			smoothing_factor = smoothing_factor == 1.f ? FLT_EPSILON : smoothing_factor;
 			static_cast<EntityPosition*>(properties[2])->SetPropertyValue(*object_origin + (object_position_target - *object_origin) * (1 - smoothing_factor));
-			return *object_origin;
+			glm::vec3 pos = GetObjectPosition();
+			return pos;
 		}
 
 		glm::quat& UpdateCameraOrientation(float smoothing_factor = 0.f)

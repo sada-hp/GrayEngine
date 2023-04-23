@@ -1,0 +1,12 @@
+mesh
+{
+   Content\Ball\test2.obj
+}
+collision
+{
+   Content\Ball\test2.obj
+}
+textures
+{
+   Content\Editor\MissingTexture.png
+}

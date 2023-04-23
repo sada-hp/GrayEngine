@@ -30,7 +30,7 @@ namespace GrEngine
 		virtual void AddInputCallback(UINT id, InputCallbackFun callback) { pWindow->AddInputProccess(id, callback); };
 		void RemoveInputCallback(UINT id) { pWindow->RemoveInput(id); };
 		bool IsKeyDown(int key) { return pWindow->IsKeyDown(key); }
-		void FocusViewport() { pWindow->Focus(); };
+		void FocusWindow() { pWindow->Focus(); };
 		virtual void TogglePhysicsState(bool state);
 		POINT GetWindowSize();
 		POINT GetWindowPosition();
@@ -38,13 +38,15 @@ namespace GrEngine
 		virtual void SetCursorPosition(double xpos, double ypos);
 		inline EventListener* GetEventListener() { return &eventListener; };
 		virtual void SetVSync(bool state);
+		virtual std::vector<std::string> GetMaterialNames(const char* mesh_path);
 
 		static void BindContext(Engine* new_context) { context = new_context; };
 		static Engine* GetContext() { return context; };
-		static bool WriteGMF(const char* filepath, const char* mesh_path, std::vector<std::string> textures_vector);
+		static bool WriteGMF(const char* filepath, const char* mesh_path, const char* collision_path, std::vector<std::string> textures_vector);
 		virtual void LoadScene(const char* path);
 		virtual void SaveScene(const char* path);
 		virtual void GenerateTerrain(int resolution, int width, int height, int depth, std::array<std::string, 6> maps);
+		virtual void DeleteEntity(UINT id);
 
 	protected:
 		void clearScene();

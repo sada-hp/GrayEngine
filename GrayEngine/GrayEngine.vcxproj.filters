@@ -41,6 +41,8 @@
     <ClInclude Include="Vulkan\VulkanSpotlight.h" />
     <ClInclude Include="Vulkan\VulkanCascade.h" />
     <ClInclude Include="Engine\Headers\Virtual\PhysicsObject.h" />
+    <ClInclude Include="Engine\Headers\Virtual\ResourceManager.h" />
+    <ClInclude Include="Bullet\BulletResourceManager.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Engine\Source\GL_App.cpp" />
@@ -58,6 +60,7 @@
     <ClCompile Include="Vulkan\VulkanRenderer.cpp" />
     <ClCompile Include="Vulkan\VulkanSpotlight.cpp" />
     <ClCompile Include="Vulkan\VulkanCascade.cpp" />
+    <ClCompile Include="Bullet\BulletResourceManager.cpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Engine\Libs\lib-vc2019\glfw3.dll" />

@@ -15,8 +15,7 @@ namespace GrEngine_Vulkan
 		void CalculateNormals() override;
 
 		void updateCollisions() override;
-		bool LoadMesh(const char* mesh_path, std::vector<std::string>* out_materials) override;
-		bool LoadModel(const char* model_path) override;
+		bool LoadMesh(const char* mesh_path) override;
 		bool LoadModel(const char* mesh_path, std::vector<std::string> textures_vector) override;
 		void GeneratePlaneMesh(float width, int subdivisions) override;
 		void GenerateBoxMesh(float width, float height, float depth) override;
@@ -30,7 +29,6 @@ namespace GrEngine_Vulkan
 		bool createGraphicsPipeline() override;
 
 		PickingBufferObject opo;
-		btTriangleMesh* colMesh;
 
 	private:
 		void updateSelectionPipeline();

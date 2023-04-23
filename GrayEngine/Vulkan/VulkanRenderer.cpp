@@ -411,8 +411,8 @@ namespace GrEngine_Vulkan
 		waitForRenderer();
 
 		uint32_t index = 0;
-		int frame = (currentFrame + 1) % max_async_frames;
-		vkAcquireNextImageKHR(logicalDevice, swapChain, UINT64_MAX, imageAvailableSemaphore[frame], VK_NULL_HANDLE, &index);
+		int frame = currentFrame;
+		//vkAcquireNextImageKHR(logicalDevice, swapChain, UINT64_MAX, imageAvailableSemaphore[frame], VK_NULL_HANDLE, &index);
 		vkWaitForFences(logicalDevice, 1, &renderFence[frame], TRUE, UINT64_MAX);
 
 		VkClearValue clearValues[2];
@@ -462,15 +462,14 @@ namespace GrEngine_Vulkan
 		submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
 
 		VkSemaphore waitSemaphores[] = { imageAvailableSemaphore[frame] };
-		VkSemaphore signalSemaphores[] = { renderFinishedSemaphore[frame] };
 		VkPipelineStageFlags waitStages[] = { VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT };
-		submitInfo.waitSemaphoreCount = 1;
-		submitInfo.pWaitSemaphores = waitSemaphores;
+		submitInfo.waitSemaphoreCount = 0;
+		submitInfo.pWaitSemaphores = nullptr;
 		submitInfo.pWaitDstStageMask = waitStages;
 		submitInfo.commandBufferCount = 1;
 		submitInfo.pCommandBuffers = &commandBuffers[frame];
-		submitInfo.signalSemaphoreCount = 1;
-		submitInfo.pSignalSemaphores = signalSemaphores;
+		submitInfo.signalSemaphoreCount = 0;
+		submitInfo.pSignalSemaphores = nullptr;
 
 		VkResult res;
 		vkResetFences(logicalDevice, 1, &renderFence[frame]);
@@ -482,17 +481,6 @@ namespace GrEngine_Vulkan
 			throw std::runtime_error("Logical device was lost!");
 		}
 
-		VkSwapchainKHR swapChains[] = { swapChain };
-		VkPresentInfoKHR presentInfo{};
-		presentInfo.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
-		presentInfo.waitSemaphoreCount = 1;
-		presentInfo.pWaitSemaphores = signalSemaphores;
-		presentInfo.swapchainCount = 1;
-		presentInfo.pSwapchains = swapChains;
-		presentInfo.pImageIndices = &index;
-		presentInfo.pResults = nullptr; // Optional
-
-		vkQueuePresentKHR(presentQueue, &presentInfo);
 		vkWaitForFences(logicalDevice, 1, &renderFence[frame], TRUE, UINT64_MAX);
 
 		POINTFLOAT cur = GrEngine::Engine::GetContext()->GetCursorPosition();
@@ -531,7 +519,7 @@ namespace GrEngine_Vulkan
 		VulkanAPI::m_destroyShaderBuffer(logicalDevice, memAllocator, &stagingBuffer);
 
 		selectEntity(sel);
-		currentFrame = (currentFrame + 1) % max_async_frames;
+		//currentFrame = (currentFrame + 1) % max_async_frames;
 		//Logger::Out("%d", OutputColor::Gray, OutputType::Log, sel);
 	}
 
@@ -1788,7 +1776,12 @@ namespace GrEngine_Vulkan
 
 	void VulkanRenderer::recreateSwapChain()
 	{
-		Initialized = false; //Block rendering for a time it takes to recreate swapchain
+		//Initialized = false; //Block rendering for a time it takes to recreate swapchain
+
+		for (int i = 0; i < commandBuffers.size(); i++)
+		{
+			vkWaitForFences(logicalDevice, 1, &renderFence[i], TRUE, UINT64_MAX);
+		}
 
 		vkDeviceWaitIdle(logicalDevice);
 		vkQueueWaitIdle(graphicsQueue);
@@ -1991,8 +1984,15 @@ namespace GrEngine_Vulkan
 	bool VulkanRenderer::loadModel(UINT id, const char* mesh_path, std::vector<std::string> textures_vector)
 	{
 		Initialized = false;
-		VulkanObject* ref_obj = dynamic_cast<VulkanObject*>(entities[id]);
-		ref_obj->LoadModel(mesh_path, textures_vector);
+		if (drawables.count(id) > 0)
+		{
+			VulkanObject* ref_obj = static_cast<VulkanObject*>(drawables[id]);
+			ref_obj->LoadModel(mesh_path, textures_vector);
+		}
+		else
+		{
+			return false;
+		}
 
 		Initialized = true;
 		return true;
@@ -2103,7 +2103,14 @@ namespace GrEngine_Vulkan
 
 				if ((*itt) != "empty_texture")
 				{
-					fullpath.push_back(solution + (*itt));
+					if ((*itt).size() >= solution.size() && (*itt).substr(0, solution.size()) == solution)
+					{
+						fullpath.push_back((*itt));
+					}
+					else
+					{
+						fullpath.push_back(solution + (*itt));
+					}
 					stbi_info(fullpath.back().c_str(), &width, &height, &channels);
 
 					maxW = width > maxW ? width : maxW;
@@ -2175,7 +2182,7 @@ namespace GrEngine_Vulkan
 			}
 
 
-			VulkanAPI::m_createVkBuffer(logicalDevice, memAllocator, data, sizeof(byte) * maxW * maxH * channels * texture_path.size(), VK_BUFFER_USAGE_TRANSFER_SRC_BIT, &stagingBuffer);
+			VulkanAPI::m_createVkBuffer(logicalDevice, memAllocator, data, maxW * maxH * channels * texture_path.size(), VK_BUFFER_USAGE_TRANSFER_SRC_BIT, &stagingBuffer);
 			free(data);
 
 			uint32_t mipLevels = static_cast<uint32_t>(std::floor(std::log2(std::max(maxW, maxH)))) + 1;
@@ -2848,6 +2855,11 @@ namespace GrEngine_Vulkan
 				break;
 			}
 			entities.erase(id);
+
+			if (id == selected_entity)
+			{
+				selectEntity(0);
+			}
 		}
 	}
 
@@ -2860,6 +2872,39 @@ namespace GrEngine_Vulkan
 	{
 		vkDeviceWaitIdle(logicalDevice);
 		vkQueueWaitIdle(graphicsQueue);
+	}
+
+	std::vector<std::string> VulkanRenderer::GetMaterialNames(const char* mesh_path)
+	{
+		std::string solution = GrEngine::Globals::getExecutablePath();
+		std::string model_path = mesh_path;
+		Assimp::Importer importer;
+		const aiScene* model;
+		std::vector<std::string> output;
+
+		if (model_path.size() >= solution.size() && model_path.substr(0, solution.size()) == solution)
+		{
+			model = importer.ReadFile(mesh_path, 0);
+		}
+		else
+		{
+			model = importer.ReadFile(solution + mesh_path, 0);
+		}
+
+		if (model == NULL)
+		{
+			Logger::Out("Could not load the mesh %c%s%c!", OutputColor::Red, OutputType::Error, '"', mesh_path, '"');
+			return output;
+		}
+
+		for (int mesh_ind = 0; mesh_ind < model->mNumMeshes; mesh_ind++)
+		{
+			aiString material;
+			aiGetMaterialString(model->mMaterials[model->mMeshes[mesh_ind]->mMaterialIndex], AI_MATKEY_NAME, &material);
+			output.push_back(material.C_Str());
+		}
+
+		return output;
 	}
 
 	void VulkanRenderer::SaveScene(const char* path)

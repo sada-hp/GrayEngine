@@ -54,17 +54,56 @@ namespace GrEngine
 
 	bool Engine::LoadObject(UINT id, const char* mesh_path, std::vector<std::string> textures_vector)
 	{
-		Pause();
+		bool res = false;
+		Entity* target = pWindow->getRenderer()->selectEntity(id);
+		Object* drawComponent = target->GetPropertyValue(PropertyType::Drawable, static_cast<Object*>(nullptr));
 
-		bool res = GetRenderer()->loadModel(id, mesh_path, textures_vector);
+		if (drawComponent != nullptr)
+		{
+			res = drawComponent->LoadModel(mesh_path, textures_vector);
+		}
 
-		Unpause();
 		return res;
 	}
 
 	bool Engine::LoadFromGMF(UINT id, const char* filepath)
 	{
-		return GetRenderer()->loadModel(id, filepath);
+		auto start = std::chrono::steady_clock::now();
+
+		std::string mesh_path = "";
+		std::string coll_path = "";
+		std::vector<std::string> textures_vector;
+
+		if (!GrEngine::Globals::readGMF(filepath, &mesh_path, &coll_path, &textures_vector))
+			return false;
+
+		Entity* target = pWindow->getRenderer()->GetEntitiesList()[id];
+		Object* drawComponent = target->GetPropertyValue(PropertyType::Drawable, static_cast<Object*>(nullptr));
+		PhysicsObject* physComponent = target->GetPropertyValue(PropertyType::PhysComponent, static_cast<PhysicsObject*>(nullptr));
+
+		target->drawable_path = mesh_path;
+		target->collision_path = coll_path;
+
+		if (drawComponent != nullptr)
+		{
+			drawComponent->LoadModel(mesh_path.c_str(), textures_vector);
+		}
+
+		if (physComponent != nullptr)
+		{
+			physComponent->LoadCollisionMesh(coll_path.c_str());
+		}
+
+		auto end = std::chrono::steady_clock::now();
+		auto time = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
+		Logger::Out("Model %s loaded in %d ms", OutputColor::Gray, OutputType::Log, filepath, (int)time);
+
+		return true;
+	}
+
+	std::vector<std::string> Engine::GetMaterialNames(const char* mesh_path)
+	{
+		return GetRenderer()->GetMaterialNames(mesh_path);
 	}
 
 	bool Engine::AssignTextures(std::vector<std::string> textures, Entity* target)
@@ -83,6 +122,12 @@ namespace GrEngine
 		pWindow->getRenderer()->clearDrawables();
 	}
 
+	void Engine::DeleteEntity(UINT id)
+	{
+		physEngine->RemoveSimulationObject(id);
+		GetRenderer()->DeleteEntity(id);
+	}
+
 	void Engine::TerminateLiraries()
 	{
 		glfwTerminate();
@@ -94,9 +139,9 @@ namespace GrEngine
 		return true;
 	}
 
-	bool Engine::WriteGMF(const char* filepath, const char* mesh_path, std::vector<std::string> textures_vector)
+	bool Engine::WriteGMF(const char* filepath, const char* mesh_path, const char* collision_path, std::vector<std::string> textures_vector)
 	{
-		return Globals::writeGMF(filepath, mesh_path, textures_vector);
+		return Globals::writeGMF(filepath, mesh_path, collision_path, textures_vector);
 	}
 
 	Entity* Engine::AddEntity()
@@ -160,7 +205,12 @@ namespace GrEngine
 
 	void Engine::SaveScene(const char* path)
 	{
+		auto start = std::chrono::steady_clock::now();
+
 		GetRenderer()->SaveScene(path);
+
+		auto time = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - start).count();
+		Logger::Out("Level %s saved in %d ms", OutputColor::Gray, OutputType::Log, path, (int)time);
 	}
 
 	POINTFLOAT Engine::GetCursorPosition()

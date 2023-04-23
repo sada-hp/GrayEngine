@@ -472,11 +472,11 @@ namespace GrEngine_Vulkan
 		//	colMesh->addTriangleIndices(*(++itt), *(++itt), *itt);
 		//}
 
-		GrEngine::PhysicsObject* physComponent = ownerEntity->GetPropertyValue(PropertyType::PhysComponent, static_cast<GrEngine::PhysicsObject*>(nullptr));
-		if (physComponent != nullptr && ownerEntity->GetPropertyValue(PropertyType::CollisionType, 0) == 2)
-		{
-			physComponent->UpdateCollisionShape(new btBvhTriangleMeshShape(&object_mesh->collisions, false));
-		}
+		//GrEngine::PhysicsObject* physComponent = ownerEntity->GetPropertyValue(PropertyType::PhysComponent, static_cast<GrEngine::PhysicsObject*>(nullptr));
+		//if (physComponent != nullptr) // && ownerEntity->GetPropertyValue(PropertyType::CollisionType, 0) == 2
+		//{
+		//	physComponent->UpdateCollisionShape(objCollision->shape);
+		//}
 	}
 
 	void VulkanObject::CalculateNormals()
@@ -501,25 +501,6 @@ namespace GrEngine_Vulkan
 		}
 	}
 
-	bool VulkanObject::LoadModel(const char* model_path)
-	{
-		auto start = std::chrono::steady_clock::now();
-
-		std::string mesh_path = "";
-		std::vector<std::string> textures_vector;
-
-		if (!GrEngine::Globals::readGMF(model_path, &mesh_path, &textures_vector)) 
-			return false;
-
-		LoadModel(mesh_path.c_str(), textures_vector);
-
-		auto end = std::chrono::steady_clock::now();
-		auto time = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
-		Logger::Out("Model %s loaded in %d ms", OutputColor::Gray, OutputType::Log, model_path, (int)time);
-
-		return true;
-	}
-
 	bool VulkanObject::LoadModel(const char* mesh_path, std::vector<std::string> textures_vector)
 	{
 		static_cast<VulkanRenderer*>(p_Owner)->waitForRenderer();
@@ -528,11 +509,9 @@ namespace GrEngine_Vulkan
 		GrEngine::Entity* ref_own = ownerEntity;
 
 		VulkanRenderer* inst = static_cast<VulkanRenderer*>(p_Owner);
-		std::vector<std::string>* out_materials_collection = &material_names;
 		std::map<int, std::future<void>> processes_map;
 		std::map<std::string, std::vector<int>> materials_map;
 
-		material_names.clear();
 		texture_names.clear();
 
 		processes_map[processes_map.size()] = std::async(std::launch::async, [textures_vector, ref_own, inst]()
@@ -540,9 +519,9 @@ namespace GrEngine_Vulkan
 				inst->assignTextures(textures_vector, ref_own);
 			});
 
-		processes_map[processes_map.size()] = std::async(std::launch::async, [mesh_path, textures_vector, ref_obj, out_materials_collection, inst]()
+		processes_map[processes_map.size()] = std::async(std::launch::async, [mesh_path, textures_vector, ref_obj, inst]()
 			{
-				ref_obj->LoadMesh(mesh_path, out_materials_collection);
+				ref_obj->LoadMesh(mesh_path);
 			});
 
 		for (int ind = 0; ind < processes_map.size(); ind++)
@@ -559,24 +538,34 @@ namespace GrEngine_Vulkan
 		return true;
 	}
 
-	bool VulkanObject::LoadMesh(const char* mesh_path, std::vector<std::string>* out_materials)
+	bool VulkanObject::LoadMesh(const char* mesh_path)
 	{
 		auto resource = resources->GetMeshResource(mesh_path);
 		std::string solution = GrEngine::Globals::getExecutablePath();
-
-		if (object_mesh != nullptr)
-		{
-			resources->RemoveMesh(object_mesh->mesh_path.c_str(), logicalDevice, memAllocator);
-			object_mesh = nullptr;
-		}
+		std::string model_path = mesh_path;
 
 		if (resource == nullptr)
 		{
+			if (object_mesh != nullptr)
+			{
+				resources->RemoveMesh(object_mesh->mesh_path.c_str(), logicalDevice, memAllocator);
+				object_mesh = nullptr;
+			}
+
 			std::unordered_map<Vertex, uint32_t> uniqueVertices{};
 			Assimp::Importer importer;
 			Mesh* target_mesh = new Mesh();
 
-			auto model = importer.ReadFile(solution + mesh_path, 0);
+			const aiScene* model;
+
+			if (model_path.size() >= solution.size() && model_path.substr(0, solution.size()) == solution)
+			{
+				model = importer.ReadFile(mesh_path, 0);
+			}
+			else
+			{
+				model = importer.ReadFile(solution + mesh_path, 0);
+			}
 
 			if (model == NULL)
 			{
@@ -585,14 +574,6 @@ namespace GrEngine_Vulkan
 			}
 
 			target_mesh->mesh_path = mesh_path;
-
-			if (colMesh != nullptr)
-			{
-				delete colMesh;
-				colMesh = nullptr;
-			}
-
-			colMesh = new btTriangleMesh();
 
 			float highest_pointx = 0.f;
 			float highest_pointy = 0.f;
@@ -622,7 +603,7 @@ namespace GrEngine_Vulkan
 					{
 						uniqueVertices[vertex] = static_cast<uint32_t>(target_mesh->vertices.size());
 						target_mesh->vertices.push_back(vertex);
-						target_mesh->collisions.findOrAddVertex(btVector3(vertex.pos.x, vertex.pos.y, vertex.pos.z), false);
+						//target_mesh->collisions.addPoint(btVector3(vertex.pos.x, vertex.pos.y, vertex.pos.z));
 					}
 
 					if (highest_pointx < cur_mesh->mVertices[vert_ind].x)
@@ -635,45 +616,31 @@ namespace GrEngine_Vulkan
 					int index = uniqueVertices[vertex];
 					target_mesh->indices.push_back(index);
 				}
-
-				aiString material;
-				aiGetMaterialString(model->mMaterials[model->mMeshes[mesh_ind]->mMaterialIndex], AI_MATKEY_NAME, &material);
-
-				if (out_materials)
-				{
-					out_materials->push_back(material.C_Str());
-				}
 			}
 
 			VulkanAPI::m_createVkBuffer(logicalDevice, memAllocator, target_mesh->vertices.data(), sizeof(target_mesh->vertices[0]) * target_mesh->vertices.size(), VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, &target_mesh->vertexBuffer);
 			VulkanAPI::m_createVkBuffer(logicalDevice, memAllocator, target_mesh->indices.data(), sizeof(target_mesh->indices[0]) * target_mesh->indices.size(), VK_BUFFER_USAGE_INDEX_BUFFER_BIT, &target_mesh->indexBuffer);
-
-			target_mesh->bounds = glm::uvec3(highest_pointx, highest_pointy, highest_pointz);
+			//target_mesh->collisions = btConvexHullShape((const btScalar*)hullVert.data(), hullVert.size(), sizeof(btVector3));
+			//target_mesh->collisions.setMargin(0);
+			target_mesh->bounds = glm::vec3(highest_pointx, highest_pointy, highest_pointz);
 			bound = target_mesh->bounds;
-
-			for (std::vector<uint32_t>::iterator itt = target_mesh->indices.begin(); itt != target_mesh->indices.end(); ++itt)
-			{
-				target_mesh->collisions.addTriangleIndices(*(++itt), *(++itt), *itt);
-			}
 
 			auto resource = resources->AddMeshResource(mesh_path, target_mesh);
 			object_mesh = resource->AddLink();
-			GrEngine::PhysicsObject* physComponent = ownerEntity->GetPropertyValue(PropertyType::PhysComponent, static_cast<GrEngine::PhysicsObject*>(nullptr));
-			if (physComponent != nullptr && ownerEntity->GetPropertyValue(PropertyType::CollisionType, 0) == 2)
-			{
-				physComponent->UpdateCollisionShape(new btBvhTriangleMeshShape(&object_mesh->collisions, false));
-			}
 		}
-		else
+		else if (!resource->Compare(object_mesh))
 		{
+			if (object_mesh != nullptr)
+			{
+				resources->RemoveMesh(object_mesh->mesh_path.c_str(), logicalDevice, memAllocator);
+				object_mesh = nullptr;
+			}
+
 			object_mesh = resource->AddLink();
 			bound = object_mesh->bounds;
-			GrEngine::PhysicsObject* physComponent = ownerEntity->GetPropertyValue(PropertyType::PhysComponent, static_cast<GrEngine::PhysicsObject*>(nullptr));
-			if (physComponent != nullptr && ownerEntity->GetPropertyValue(PropertyType::CollisionType, 0) == 2)
-			{
-				physComponent->UpdateCollisionShape(new btBvhTriangleMeshShape(&object_mesh->collisions, false));
-			}
 		}
+
+		return true;
 	}
 
 	void VulkanObject::GeneratePlaneMesh(float width, int subdivisions)
@@ -694,14 +661,6 @@ namespace GrEngine_Vulkan
 			Mesh* target_mesh = new Mesh();
 			double divisions = width / subdivisions;
 
-			if (colMesh != nullptr)
-			{
-				delete colMesh;
-				colMesh = nullptr;
-			}
-
-			colMesh = new btTriangleMesh();
-
 			for (int row = 0; row < subdivisions; row++)
 			{
 				for (int col = 0; col < subdivisions; col++)
@@ -710,7 +669,7 @@ namespace GrEngine_Vulkan
 					vertex.uv = glm::vec2(divisions * col, 1.0f - divisions * row);
 					vertex.pos = glm::vec4(width * (divisions * col - width / 2), 0, width * (divisions * row - width / 2), 1.0f);
 					target_mesh->vertices.push_back(vertex);
-					target_mesh->collisions.findOrAddVertex(btVector3(vertex.pos.x, vertex.pos.y, vertex.pos.z), false);
+					target_mesh->collisions.addPoint(btVector3(vertex.pos.x, vertex.pos.y, vertex.pos.z));
 
 					if (row + 1 < subdivisions && col + 1 < subdivisions)
 					{
@@ -729,19 +688,19 @@ namespace GrEngine_Vulkan
 
 			VulkanAPI::m_createVkBuffer(logicalDevice, memAllocator, target_mesh->vertices.data(), sizeof(target_mesh->vertices[0]) * target_mesh->vertices.size(), VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, &target_mesh->vertexBuffer);
 			VulkanAPI::m_createVkBuffer(logicalDevice, memAllocator, target_mesh->indices.data(), sizeof(target_mesh->indices[0]) * target_mesh->indices.size(), VK_BUFFER_USAGE_INDEX_BUFFER_BIT, &target_mesh->indexBuffer);
-
-			for (std::vector<uint32_t>::iterator itt = target_mesh->indices.begin(); itt != target_mesh->indices.end(); ++itt)
-			{
-				target_mesh->collisions.addTriangleIndices(*(++itt), *(++itt), *itt);
-			}
+			//target_mesh->collisions.setMargin(0.001f);
 
 			auto resource = resources->AddMeshResource(res_name.c_str(), target_mesh);
 			object_mesh = resource->AddLink();
-			GrEngine::PhysicsObject* physComponent = ownerEntity->GetPropertyValue(PropertyType::PhysComponent, static_cast<GrEngine::PhysicsObject*>(nullptr));
-			if (physComponent != nullptr)
-			{
-				physComponent->UpdateCollisionShape(new btBvhTriangleMeshShape(&object_mesh->collisions, false));
-			}
+			//GrEngine::PhysicsObject* physComponent = ownerEntity->GetPropertyValue(PropertyType::PhysComponent, static_cast<GrEngine::PhysicsObject*>(nullptr));
+			//if (physComponent != nullptr)
+			//{
+			//	btShapeHull* hull = new btShapeHull(&target_mesh->collisions);
+			//	hull->buildHull(0);
+			//	target_mesh->collisions = btConvexHullShape((const btScalar*)hull->getVertexPointer(), hull->numVertices(), sizeof(btVector3));
+			//	physComponent->UpdateCollisionShape(&target_mesh->collisions);
+			//	delete hull;
+			//}
 		}
 		else
 		{
@@ -749,7 +708,7 @@ namespace GrEngine_Vulkan
 			GrEngine::PhysicsObject* physComponent = ownerEntity->GetPropertyValue(PropertyType::PhysComponent, static_cast<GrEngine::PhysicsObject*>(nullptr));
 			if (physComponent != nullptr)
 			{
-				physComponent->UpdateCollisionShape(new btBvhTriangleMeshShape(&object_mesh->collisions, false));
+				physComponent->UpdateCollisionShape(&object_mesh->collisions);
 			}
 		}
 	}

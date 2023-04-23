@@ -154,6 +154,7 @@ namespace GrEngine_Vulkan
 		physComp->CalculatePhysics();
 
 		ready = true;
+		was_updated = true;
 	}
 
 	void VulkanTerrain::OffsetVertices(std::map<UINT, float> offsets)
@@ -167,34 +168,8 @@ namespace GrEngine_Vulkan
 		byte* data;
 		vmaMapMemory(memAllocator, object_mesh->vertexBuffer.Allocation, (void**)&data);
 
-		//std::optional<float> max_width = 0.f;
-		//std::optional<float> min_width = 0.f;
-
-		//std::optional<float> max_length = 0.f;
-		//std::optional<float> min_length = 0.f;
-
 		for (std::map<UINT, float>::iterator itt = offsets.begin(); itt != offsets.end(); ++itt)
 		{
-			//if (!max_width.has_value() || object_mesh->vertices[(*itt).first].pos.x > max_width.value())
-			//{
-			//	max_width = object_mesh->vertices[(*itt).first].pos.x;
-			//}
-
-			//if (!min_width.has_value() || object_mesh->vertices[(*itt).first].pos.x < min_width.value())
-			//{
-			//	min_width = glm::floor(object_mesh->vertices[(*itt).first].pos.x);
-			//}
-
-			//if (!max_length.has_value() || object_mesh->vertices[(*itt).first].pos.z > max_length.value())
-			//{
-			//	max_length = object_mesh->vertices[(*itt).first].pos.z;
-			//}
-
-			//if (!min_length.has_value() || object_mesh->vertices[(*itt).first].pos.z < min_length.value())
-			//{
-			//	min_length = object_mesh->vertices[(*itt).first].pos.z;
-			//}
-
 			object_mesh->vertices[(*itt).first].pos.y += (*itt).second;
 			memcpy(data + sizeof(Vertex) * (*itt).first, &object_mesh->vertices[(*itt).first], sizeof(Vertex));
 			vertArray[(*itt).first] = btVector4(vertArray[(*itt).first].x(), vertArray[(*itt).first].y() + (*itt).second, vertArray[(*itt).first].z(), 1);
@@ -212,9 +187,10 @@ namespace GrEngine_Vulkan
 		aabbMin.setY(minAABB);
 		colMesh->setPremadeAabb(aabbMin, aabbMax);
 		colShape->getOptimizedBvh()->setQuantizationValues(aabbMin, aabbMax);
-		//colShape->partialRefitTree(btVector3(min_width.value(), aabbMin.y(), min_width.value()), btVector3(max_width.value(), aabbMax.y(), max_length.value()));
 		colShape->partialRefitTree(aabbMin, aabbMax);
 		physComp->CalculatePhysics();
+
+		was_updated = true;
 	}
 
 	void VulkanTerrain::UpdateVertices(std::map<UINT, float> offsets)
@@ -228,38 +204,11 @@ namespace GrEngine_Vulkan
 		byte* data;
 		vmaMapMemory(memAllocator, object_mesh->vertexBuffer.Allocation, (void**)&data);
 
-		std::optional<float> max_width = 0.f;
-		std::optional<float> min_width = 0.f;
-
-		std::optional<float> max_length = 0.f;
-		std::optional<float> min_length = 0.f;
-
 		for (std::map<UINT, float>::iterator itt = offsets.begin(); itt != offsets.end(); ++itt)
 		{
 			object_mesh->vertices[(*itt).first].pos.y = (*itt).second;
 			memcpy(data + sizeof(Vertex) * (*itt).first, &object_mesh->vertices[(*itt).first], sizeof(Vertex));
 			vertArray[(*itt).first] = btVector4(object_mesh->vertices[(*itt).first].pos.x, object_mesh->vertices[(*itt).first].pos.y, object_mesh->vertices[(*itt).first].pos.z, 1);
-
-			if (!max_width.has_value() || object_mesh->vertices[(*itt).first].pos.x > max_width.value())
-			{
-				max_width = object_mesh->vertices[(*itt).first].pos.x;
-			}
-
-			if (!min_width.has_value() || object_mesh->vertices[(*itt).first].pos.x < min_width.value())
-			{
-				min_width = glm::floor(object_mesh->vertices[(*itt).first].pos.x);
-			}
-
-			if (!max_length.has_value() || object_mesh->vertices[(*itt).first].pos.z > max_length.value())
-			{
-				max_length = object_mesh->vertices[(*itt).first].pos.z;
-			}
-
-			if (!min_length.has_value() || object_mesh->vertices[(*itt).first].pos.z < min_length.value())
-			{
-				min_length = object_mesh->vertices[(*itt).first].pos.z;
-			}
-
 			maxAABB = glm::max(maxAABB, object_mesh->vertices[(*itt).first].pos.y);
 			minAABB = glm::min(minAABB, object_mesh->vertices[(*itt).first].pos.y);
 		}
@@ -274,8 +223,10 @@ namespace GrEngine_Vulkan
 		aabbMin.setY(minAABB);
 		colMesh->setPremadeAabb(aabbMin, aabbMax);
 		colShape->getOptimizedBvh()->setQuantizationValues(aabbMin, aabbMax);
-		colShape->partialRefitTree(btVector3(min_width.value(), aabbMin.y(), min_width.value()), btVector3(max_width.value(), aabbMax.y(), max_length.value()));
+		colShape->partialRefitTree(aabbMin, aabbMax);
 		physComp->CalculatePhysics();
+
+		was_updated = true;
 	}
 
 	glm::vec4& VulkanTerrain::GetVertexPosition(UINT at)
@@ -285,6 +236,8 @@ namespace GrEngine_Vulkan
 
 	void VulkanTerrain::SaveTerrain(const char* filepath)
 	{
+		if (!was_updated) return;
+
 		std::fstream new_file;
 		new_file.open(filepath, std::fstream::out | std::ios::trunc);
 
@@ -314,6 +267,7 @@ namespace GrEngine_Vulkan
 
 		new_file << '\0';
 		new_file.close();
+		was_updated = false;
 	}
 
 	bool VulkanTerrain::LoadTerrain(const char* filepath)
