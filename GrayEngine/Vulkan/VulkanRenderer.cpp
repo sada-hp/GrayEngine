@@ -46,9 +46,9 @@ namespace GrEngine_Vulkan
 			entities.erase((*pos).first);
 		}
 
-		vmaUnmapMemory(memAllocator, viewProjUBO.Allocation);
-		vmaUnmapMemory(memAllocator, shadowBuffer.Allocation);
-		vmaUnmapMemory(memAllocator, cascadeBuffer.Allocation);
+		//vmaUnmapMemory(memAllocator, viewProjUBO.Allocation);
+		//vmaUnmapMemory(memAllocator, shadowBuffer.Allocation);
+		//vmaUnmapMemory(memAllocator, cascadeBuffer.Allocation);
 
 		VulkanAPI::m_destroyShaderBuffer(logicalDevice, memAllocator, &viewProjUBO);
 		VulkanAPI::m_destroyShaderBuffer(logicalDevice, memAllocator, &shadowBuffer);
@@ -168,14 +168,6 @@ namespace GrEngine_Vulkan
 		getActiveViewport()->PositionObjectAt(0, 3, 4);
 		getActiveViewport()->SetRotation(30, 0, 0);
 
-		casent = addEntity();
-		casent->PositionObjectAt(0, 3, 4);
-		casent->SetRotation(-30, 180, 0);
-		spot = new VulkanCascade(casent);
-		spot->initLight(logicalDevice, memAllocator);
-		lights[casent->GetEntityID()] = spot;
-		cascade_count++;
-
 		prepareShadowPass();
 		prepareCompositionPass();
 		prepareTransparencyPass();
@@ -197,7 +189,7 @@ namespace GrEngine_Vulkan
 		}
 
 		VulkanAPI::m_createVkBuffer(logicalDevice, memAllocator, nullptr, sizeof(vpUBO), VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT, &viewProjUBO, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
-		vmaMapMemory(memAllocator, viewProjUBO.Allocation, (void**)&viewProjUBO.data);
+		//vmaMapMemory(memAllocator, viewProjUBO.Allocation, (void**)&viewProjUBO.data);
 
 		sky = new VulkanSkybox(1000000000);
 		sky->initObject(logicalDevice, memAllocator, this);
@@ -461,7 +453,6 @@ namespace GrEngine_Vulkan
 		VkSubmitInfo submitInfo{};
 		submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
 
-		VkSemaphore waitSemaphores[] = { imageAvailableSemaphore[frame] };
 		VkPipelineStageFlags waitStages[] = { VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT };
 		submitInfo.waitSemaphoreCount = 0;
 		submitInfo.pWaitSemaphores = nullptr;
@@ -771,7 +762,7 @@ namespace GrEngine_Vulkan
 		} specs;
 		specs.near_p = NearPlane;
 		specs.far_p = FarPlane;
-		specs.lights_count = lights.size() + cascade_count * (SHADOW_MAP_CASCADE_COUNT - 1);
+		specs.lights_count = lights.size() + cascade_count * (SHADOW_MAP_CASCADE_COUNT - 1) + omni_count * 5;
 		specs.cascade_count = SHADOW_MAP_CASCADE_COUNT;
 		std::array<VkSpecializationMapEntry, 4> entries;
 		entries[0].constantID = 0;
@@ -1368,9 +1359,9 @@ namespace GrEngine_Vulkan
 
 		////VulkanAPI::m_createVkBuffer(logicalDevice, memAllocator, nullptr, sizeof(VulkanSpotlight::ShadowProjection) * glm::max((int)lights.size(), 1), VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, &shadowBuffer, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
 		VulkanAPI::m_createVkBuffer(logicalDevice, memAllocator, nullptr, sizeof(VulkanSpotlight::ShadowProjection) * lightsCount(), VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT, &shadowBuffer, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
-		vmaMapMemory(memAllocator, shadowBuffer.Allocation, (void**)&shadowBuffer.data);
+		//vmaMapMemory(memAllocator, shadowBuffer.Allocation, (void**)&shadowBuffer.data);
 		VulkanAPI::m_createVkBuffer(logicalDevice, memAllocator, nullptr, 16 * SHADOW_MAP_CASCADE_COUNT, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT, &cascadeBuffer, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
-		vmaMapMemory(memAllocator, cascadeBuffer.Allocation, (void**)&cascadeBuffer.data);
+		//vmaMapMemory(memAllocator, cascadeBuffer.Allocation, (void**)&cascadeBuffer.data);
 
 		std::array<VkAttachmentDescription, 1> attchmentDescriptions = {};
 		attchmentDescriptions[0].format = depthFormat;
@@ -1451,10 +1442,11 @@ namespace GrEngine_Vulkan
 		vkCmdUpdateBuffer(commandBuffers[index], viewProjUBO.Buffer, 0, sizeof(ViewProjection), &vpUBO);
 
 		std::vector<VulkanSpotlight::ShadowProjection> projections;
+		std::vector<VulkanSpotlight::ShadowProjection> points;
 		if (lights.size() > 0)
 		{
 			
-			for (std::map<UINT, GrEngine::SpotlightObject*>::iterator light = lights.begin(); light != lights.end(); ++light)
+			for (std::map<UINT, GrEngine::LightObject*>::iterator light = lights.begin(); light != lights.end(); ++light)
 			{
 				LightType clt = ((*light).second)->GetLightType();
 				if (clt == LightType::Spot)
@@ -1479,6 +1471,32 @@ namespace GrEngine_Vulkan
 						vkCmdUpdateBuffer(commandBuffers[index], cascadeBuffer.Buffer, 16 * i, sizeof(float), &arr[i].splitDepth);
 						projections.push_back(prj);
 					}
+				}
+				else if (clt == LightType::Omni)
+				{
+					auto arr = static_cast<VulkanOmniLight*>((*light).second)->getLightUBO();
+					for (int i = 0; i < 6; i++)
+					{
+						VulkanSpotlight::ShadowProjection prj{};
+						prj.model = arr[i].model;
+						prj.viewproj = arr[i].viewproj;
+						prj.spec = arr[i].spec;
+						prj.color = arr[i].color;
+						//void* p = (byte*)cascadeBuffer.data + 16 * i;
+						//memcpy_s(p, sizeof(float), &arr[i].splitDepth, sizeof(float));
+						vkCmdUpdateBuffer(commandBuffers[index], shadowBuffer.Buffer, sizeof(VulkanSpotlight::ShadowProjection) * projections.size(), sizeof(VulkanSpotlight::ShadowProjection), &prj);
+						projections.push_back(prj);
+					}
+				}
+				else if (clt == LightType::Point)
+				{
+					auto arr = static_cast<VulkanPointLight*>((*light).second)->getLightUBO();
+					VulkanSpotlight::ShadowProjection prj{};
+					prj.color = arr.color;
+					prj.model = arr.model;
+					prj.viewproj = glm::mat4(1.f);
+					prj.spec = arr.spec;
+					points.push_back(prj);
 				}
 			}
 
@@ -1522,6 +1540,11 @@ namespace GrEngine_Vulkan
 		}
 
 		vkCmdEndRenderPass(commandBuffers[index]);
+
+		if (points.size() > 0)
+		{
+			vkCmdUpdateBuffer(commandBuffers[index], shadowBuffer.Buffer, sizeof(VulkanSpotlight::ShadowProjection) * projections.size(), sizeof(VulkanSpotlight::ShadowProjection) * points.size(), points.data());
+		}
 
 		VkClearValue clearValues[6];
 		VkRenderPassBeginInfo renderPassInfo{};
@@ -1852,8 +1875,8 @@ namespace GrEngine_Vulkan
 		vkDeviceWaitIdle(logicalDevice);
 		vkQueueWaitIdle(graphicsQueue);
 
-		vmaUnmapMemory(memAllocator, shadowBuffer.Allocation);
-		vmaUnmapMemory(memAllocator, cascadeBuffer.Allocation);
+		//vmaUnmapMemory(memAllocator, shadowBuffer.Allocation);
+		//vmaUnmapMemory(memAllocator, cascadeBuffer.Allocation);
 
 		VulkanAPI::m_destroyShaderBuffer(logicalDevice, memAllocator, &shadowBuffer);
 		VulkanAPI::m_destroyShaderBuffer(logicalDevice, memAllocator, &cascadeBuffer);
@@ -2770,11 +2793,43 @@ namespace GrEngine_Vulkan
 		return drawable;
 	}
 
-	GrEngine::SpotlightObject* VulkanRenderer::InitSpotlightObject(GrEngine::Entity* ownerEntity)
+	GrEngine::LightObject* VulkanRenderer::InitSpotlightObject(GrEngine::Entity* ownerEntity)
 	{
 		VulkanSpotlight* light = new VulkanSpotlight(ownerEntity);
 		light->initLight(logicalDevice, memAllocator);
-		lights[ownerEntity->GetEntityID()] = static_cast<GrEngine::SpotlightObject*>(light);
+		lights[ownerEntity->GetEntityID()] = static_cast<GrEngine::LightObject*>(light);
+		updateShadowResources();
+
+		return light;
+	}
+
+	GrEngine::LightObject* VulkanRenderer::InitCascadeLightObject(GrEngine::Entity* ownerEntity)
+	{
+		cascade_count++;
+		VulkanCascade* light = new VulkanCascade(ownerEntity);
+		light->initLight(logicalDevice, memAllocator);
+		lights[ownerEntity->GetEntityID()] = static_cast<GrEngine::LightObject*>(light);
+		updateShadowResources();
+
+		return light;
+	}
+
+	GrEngine::LightObject* VulkanRenderer::InitPointLightObject(GrEngine::Entity* ownerEntity)
+	{
+		VulkanPointLight* light = new VulkanPointLight(ownerEntity);
+		light->initLight(logicalDevice, memAllocator);
+		lights[ownerEntity->GetEntityID()] = static_cast<GrEngine::LightObject*>(light);
+		updateShadowResources();
+
+		return light;
+	}
+
+	GrEngine::LightObject* VulkanRenderer::InitOmniLightObject(GrEngine::Entity* ownerEntity)
+	{
+		omni_count++;
+		VulkanOmniLight* light = new VulkanOmniLight(ownerEntity);
+		light->initLight(logicalDevice, memAllocator);
+		lights[ownerEntity->GetEntityID()] = static_cast<GrEngine::LightObject*>(light);
 		updateShadowResources();
 
 		return light;
@@ -2850,6 +2905,23 @@ namespace GrEngine_Vulkan
 				break;
 			case GrEngine::EntityType::SpotlightEntity:
 				static_cast<VulkanSpotlight*>(lights.at(id))->destroyLight();
+				lights.erase(id);
+				updateShadowResources();
+				break;
+			case GrEngine::EntityType::CascadeLightEntity:
+				static_cast<VulkanCascade*>(lights.at(id))->destroyLight();
+				lights.erase(id);
+				cascade_count--;
+				updateShadowResources();
+				break;
+			case GrEngine::EntityType::PointLightEntity:
+				static_cast<VulkanCascade*>(lights.at(id))->destroyLight();
+				lights.erase(id);
+				updateShadowResources();
+				break;
+			case GrEngine::EntityType::OmniLightEntity:
+				static_cast<VulkanOmniLight*>(lights.at(id))->destroyLight();
+				omni_count--;
 				lights.erase(id);
 				updateShadowResources();
 				break;

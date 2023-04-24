@@ -26,7 +26,7 @@ namespace GrEngine_Vulkan
 		view[3][2] = glm::round(view[3][2] / f) * f;
 		lightPerspective.viewproj = proj * view;
 		lightPerspective.color = ownerEntity->GetPropertyValue(PropertyType::Color, glm::vec4(1.f));
-		lightPerspective.spec.x = LightType::Spot;
+		lightPerspective.spec.x = type;
 		lightPerspective.spec.y = 80.f;
 		lightPerspective.spec.z = 15.f;
 		//lightPerspective.proj *= -1;

@@ -1,12 +1,12 @@
 #pragma once
-#include "VulkanSpotlight.h"
-#include "Engine/Headers/Virtual/Renderer.h"
+#include "VulkanResourceManager.h"
+#include "Entities/Properties/Light.h"
 
 #define SHADOW_MAP_CASCADE_COUNT 6
 
 namespace GrEngine_Vulkan
 {
-	class VulkanCascade : public GrEngine::SpotlightObject
+	class VulkanCascade : public GrEngine::LightObject
 	{
 	public:
 		struct Cascade 
@@ -17,18 +17,18 @@ namespace GrEngine_Vulkan
 			glm::mat4 model;
 		};
 
-		VulkanCascade(GrEngine::Entity* owningEntity) : GrEngine::SpotlightObject(owningEntity) {};
+		VulkanCascade(GrEngine::Entity* owningEntity) : GrEngine::LightObject(owningEntity) {};
 
 		void initLight(VkDevice device, VmaAllocator allocator);
 		void destroyLight();
 		std::array<Cascade, SHADOW_MAP_CASCADE_COUNT>& getCascadeUBO();
 
-		std::array<Cascade, SHADOW_MAP_CASCADE_COUNT> lightPerspective;
 
 	protected:
 		VkDevice logicalDevice;
 		VmaAllocator memAllocator;
 	private:
+		std::array<Cascade, SHADOW_MAP_CASCADE_COUNT> lightPerspective;
 		float cascadeSplitLambda = 0.96f;
 		float cascadeSplits[SHADOW_MAP_CASCADE_COUNT];
 		Cascade cascades[SHADOW_MAP_CASCADE_COUNT];

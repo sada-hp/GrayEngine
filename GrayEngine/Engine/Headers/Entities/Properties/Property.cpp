@@ -7,7 +7,7 @@
 
 ////////////////////////////////////EntityID/////////////////////////////////////////////
 
-EntityID::EntityID(UINT id, void* parent)
+EntityIDProperty::EntityIDProperty(UINT id, void* parent)
 {
 	property_value = id;
 	property_name = "EntityID";
@@ -16,46 +16,46 @@ EntityID::EntityID(UINT id, void* parent)
 	owner = parent;
 }
 
-EntityID::~EntityID()
+EntityIDProperty::~EntityIDProperty()
 {
 
 }
 
-const char* EntityID::ValueString()
+const char* EntityIDProperty::ValueString()
 {
 	return string_value.c_str();
 }
 
-void EntityID::ParsePropertyValue(const char* value)
+void EntityIDProperty::ParsePropertyValue(const char* value)
 {
 	//property_value = std::atoi(value);
 	//string_value = value;
 }
 
-void EntityID::SetPropertyValue(UINT value)
+void EntityIDProperty::SetPropertyValue(UINT value)
 {
 	//property_value = value;
 	//string_value = std::to_string(value);
 }
 
-UINT EntityID::GetValue()
+UINT EntityIDProperty::GetValue()
 {
 	return property_value;
 }
 
-std::any EntityID::GetAnyValue()
+std::any EntityIDProperty::GetAnyValue()
 {
 	return property_value;
 }
 
-void* EntityID::GetValueAdress()
+void* EntityIDProperty::GetValueAdress()
 {
 	return &property_value;
 }
 
 ////////////////////////////////////Mass/////////////////////////////////////////////
 
-Mass::Mass(float mass, void* parent)
+MassProperty::MassProperty(float mass, void* parent)
 {
 	property_value = mass;
 	property_name = "Mass";
@@ -64,40 +64,40 @@ Mass::Mass(float mass, void* parent)
 	owner = parent;
 }
 
-Mass::~Mass()
+MassProperty::~MassProperty()
 {
 
 }
 
-const char* Mass::ValueString()
+const char* MassProperty::ValueString()
 {
 	string_value = GrEngine::Globals::FloatToString(property_value, 5);
 	return string_value.c_str();
 }
 
-void Mass::ParsePropertyValue(const char* value)
+void MassProperty::ParsePropertyValue(const char* value)
 {
 	SetPropertyValue(std::stof(value));
 }
 
-void Mass::SetPropertyValue(float value)
+void MassProperty::SetPropertyValue(float value)
 {
 	property_value = value;
 }
 
-std::any Mass::GetAnyValue()
+std::any MassProperty::GetAnyValue()
 {
 	return property_value;
 }
 
-void* Mass::GetValueAdress()
+void* MassProperty::GetValueAdress()
 {
 	return &property_value;
 }
 
 ////////////////////////////////////EntityName/////////////////////////////////////////////
 
-EntityName::EntityName(const char* name, void* parent)
+EntityNameProperty::EntityNameProperty(const char* name, void* parent)
 {
 	property_value = std::string(name);
 	property_name = "EntityName";
@@ -105,39 +105,39 @@ EntityName::EntityName(const char* name, void* parent)
 	owner = parent;
 }
 
-EntityName::~EntityName()
+EntityNameProperty::~EntityNameProperty()
 {
 
 }
 
-const char* EntityName::ValueString()
+const char* EntityNameProperty::ValueString()
 {
 	return property_value.c_str();
 }
 
-void EntityName::ParsePropertyValue(const char* value)
+void EntityNameProperty::ParsePropertyValue(const char* value)
 {
 	property_value = value;
 }
 
-void EntityName::SetPropertyValue(const char* value)
+void EntityNameProperty::SetPropertyValue(const char* value)
 {
 	property_value = value;
 }
 
-std::any EntityName::GetAnyValue()
+std::any EntityNameProperty::GetAnyValue()
 {
 	return property_value;
 }
 
-void* EntityName::GetValueAdress()
+void* EntityNameProperty::GetValueAdress()
 {
 	return &property_value;
 }
 
 ////////////////////////////////////Scale/////////////////////////////////////////////
 
-Scale::Scale(float x, float y, float z, void* parent)
+ScaleProperty::ScaleProperty(float x, float y, float z, void* parent)
 {
 	property_value = { x, y, z };
 	property_name = "Scale";
@@ -145,18 +145,18 @@ Scale::Scale(float x, float y, float z, void* parent)
 	owner = parent;
 }
 
-Scale::~Scale()
+ScaleProperty::~ScaleProperty()
 {
 
 }
 
-const char* Scale::ValueString()
+const char* ScaleProperty::ValueString()
 {
 	property_string = (GrEngine::Globals::FloatToString(property_value.x, 5) + ":" + GrEngine::Globals::FloatToString(property_value.y, 5) + ":" + GrEngine::Globals::FloatToString(property_value.z, 5));
 	return property_string.c_str();
 }
 
-void Scale::ParsePropertyValue(const char* value)
+void ScaleProperty::ParsePropertyValue(const char* value)
 {
 	auto cols = GrEngine::Globals::SeparateString(value, ':');
 	if (cols.size() < 3) return;
@@ -164,22 +164,22 @@ void Scale::ParsePropertyValue(const char* value)
 	property_value = { stof(cols[0]), stof(cols[1]), stof(cols[2]) };
 }
 
-void Scale::SetPropertyValue(const float& x, const float& y, const float& z)
+void ScaleProperty::SetPropertyValue(const float& x, const float& y, const float& z)
 {
 	property_value = { x, y, z };
 }
 
-void Scale::SetPropertyValue(const glm::vec3& value)
+void ScaleProperty::SetPropertyValue(const glm::vec3& value)
 {
 	property_value = value;
 }
 
-std::any Scale::GetAnyValue()
+std::any ScaleProperty::GetAnyValue()
 {
 	return property_value;
 }
 
-void* Scale::GetValueAdress()
+void* ScaleProperty::GetValueAdress()
 {
 	return &property_value;
 }
@@ -187,7 +187,7 @@ void* Scale::GetValueAdress()
 
 ////////////////////////////////////EntityPosition/////////////////////////////////////////////
 
-EntityPosition::EntityPosition(float x, float y, float z, void* parent)
+EntityPositionProperty::EntityPositionProperty(float x, float y, float z, void* parent)
 {
 	property_value = { x, y, z };
 	property_name = "EntityPosition";
@@ -195,18 +195,18 @@ EntityPosition::EntityPosition(float x, float y, float z, void* parent)
 	owner = parent;
 }
 
-EntityPosition::~EntityPosition()
+EntityPositionProperty::~EntityPositionProperty()
 {
 
 }
 
-const char* EntityPosition::ValueString()
+const char* EntityPositionProperty::ValueString()
 {
 	property_string = (GrEngine::Globals::FloatToString(property_value.x, 5) + ":" + GrEngine::Globals::FloatToString(property_value.y, 5) + ":" + GrEngine::Globals::FloatToString(property_value.z, 5));
 	return property_string.c_str();
 }
 
-void EntityPosition::ParsePropertyValue(const char* value)
+void EntityPositionProperty::ParsePropertyValue(const char* value)
 {
 	auto cols = GrEngine::Globals::SeparateString(value, ':');
 	if (cols.size() < 3) return;
@@ -227,29 +227,29 @@ void EntityPosition::ParsePropertyValue(const char* value)
 	static_cast<GrEngine::Entity*>(owner)->PositionObjectAt(res);
 }
 
-void EntityPosition::SetPropertyValue(const float& x, const float& y, const float& z)
+void EntityPositionProperty::SetPropertyValue(const float& x, const float& y, const float& z)
 {
 	SetPropertyValue({ x, y, z });
 }
 
-void EntityPosition::SetPropertyValue(const glm::vec3& value)
+void EntityPositionProperty::SetPropertyValue(const glm::vec3& value)
 {
 	property_value = value;
 }
 
-std::any EntityPosition::GetAnyValue()
+std::any EntityPositionProperty::GetAnyValue()
 {
 	return property_value;
 }
 
-void* EntityPosition::GetValueAdress()
+void* EntityPositionProperty::GetValueAdress()
 {
 	return &property_value;
 }
 
 ////////////////////////////////////EntityOrientation/////////////////////////////////////////////
 
-EntityOrientation::EntityOrientation(const float& pitch, const float& yaw, const float& roll, void* parent)
+EntityOrientationProperty::EntityOrientationProperty(const float& pitch, const float& yaw, const float& roll, void* parent)
 {
 	pitch_yaw_roll = { pitch, yaw, roll };
 	glm::quat q = glm::quat_cast(glm::mat3(1.f));
@@ -263,18 +263,18 @@ EntityOrientation::EntityOrientation(const float& pitch, const float& yaw, const
 	owner = parent;
 }
 
-EntityOrientation::~EntityOrientation()
+EntityOrientationProperty::~EntityOrientationProperty()
 {
 
 }
 
-const char* EntityOrientation::ValueString()
+const char* EntityOrientationProperty::ValueString()
 {
 	property_string = (GrEngine::Globals::FloatToString(pitch_yaw_roll.x, 5) + ":" + GrEngine::Globals::FloatToString(pitch_yaw_roll.y, 5) + ":" + GrEngine::Globals::FloatToString(pitch_yaw_roll.z, 5));
 	return property_string.c_str();
 }
 
-void EntityOrientation::ParsePropertyValue(const char* degress)
+void EntityOrientationProperty::ParsePropertyValue(const char* degress)
 {
 	auto cols = GrEngine::Globals::SeparateString(degress, ':');
 
@@ -284,7 +284,7 @@ void EntityOrientation::ParsePropertyValue(const char* degress)
 	//static_cast<GrEngine::Entity*>(owner)->SetRotation(stof(cols[0]), stof(cols[1]), stof(cols[2]));
 }
 
-void EntityOrientation::SetPropertyValue(glm::vec3 p_y_r)
+void EntityOrientationProperty::SetPropertyValue(glm::vec3 p_y_r)
 {
 	pitch_yaw_roll = p_y_r;
 	glm::quat q = glm::quat_cast(glm::mat3(1.f));
@@ -294,26 +294,26 @@ void EntityOrientation::SetPropertyValue(glm::vec3 p_y_r)
 	property_value = q;
 }
 
-void EntityOrientation::SetPropertyValue(glm::quat value)
+void EntityOrientationProperty::SetPropertyValue(glm::quat value)
 {
 	property_value = value;
 	glm::quat q = glm::inverse(value);
 	pitch_yaw_roll = glm::degrees(glm::eulerAngles(value));
 }
 
-std::any EntityOrientation::GetAnyValue()
+std::any EntityOrientationProperty::GetAnyValue()
 {
 	return property_value;
 }
 
-void* EntityOrientation::GetValueAdress()
+void* EntityOrientationProperty::GetValueAdress()
 {
 	return &property_value;
 }
 
 ////////////////////////////////////Color/////////////////////////////////////////////
 
-Color::Color(void* parent)
+ColorProperty::ColorProperty(void* parent)
 {
 	property_value = glm::vec4(1.f, 1.f, 1.f, 1.f);
 	property_name = "Color";
@@ -321,7 +321,7 @@ Color::Color(void* parent)
 	owner = parent;
 }
 
-Color::Color(const float& r, const float& g, const float& b, const float& a, void* parent)
+ColorProperty::ColorProperty(const float& r, const float& g, const float& b, const float& a, void* parent)
 {
 	property_value = glm::vec4(r, g, b, a);
 	property_name = "Color";
@@ -329,7 +329,7 @@ Color::Color(const float& r, const float& g, const float& b, const float& a, voi
 	owner = parent;
 }
 
-Color::Color(const float& r, const float& g, const float& b, void* parent)
+ColorProperty::ColorProperty(const float& r, const float& g, const float& b, void* parent)
 {
 	property_value = glm::vec4(r, g, b, 1.f);
 	property_name = "Color";
@@ -337,18 +337,18 @@ Color::Color(const float& r, const float& g, const float& b, void* parent)
 	owner = parent;
 }
 
-Color::~Color()
+ColorProperty::~ColorProperty()
 {
 
 }
 
-const char* Color::ValueString()
+const char* ColorProperty::ValueString()
 {
 	property_string = (GrEngine::Globals::FloatToString(property_value.x, 5) + ":" + GrEngine::Globals::FloatToString(property_value.y, 5) + ":" + GrEngine::Globals::FloatToString(property_value.z, 5) + ":" + GrEngine::Globals::FloatToString(property_value.w, 5));
 	return property_string.c_str();
 }
 
-void Color::ParsePropertyValue(const char* value)
+void ColorProperty::ParsePropertyValue(const char* value)
 {
 	auto cols = GrEngine::Globals::SeparateString(value, ':');
 
@@ -364,29 +364,29 @@ void Color::ParsePropertyValue(const char* value)
 	}
 }
 
-void Color::SetPropertyValue(const float& r, const float& g, const float& b, const float& a)
+void ColorProperty::SetPropertyValue(const float& r, const float& g, const float& b, const float& a)
 {
 	property_value = glm::vec4(r, g, b, a);
 }
 
-void Color::SetPropertyValue(glm::vec4 value)
+void ColorProperty::SetPropertyValue(glm::vec4 value)
 {
 	property_value = value;
 }
 
-std::any Color::GetAnyValue()
+std::any ColorProperty::GetAnyValue()
 {
 	return property_value;
 }
 
-void* Color::GetValueAdress()
+void* ColorProperty::GetValueAdress()
 {
 	return &property_value;
 }
 
 ////////////////////////////////////PhysComponent/////////////////////////////////////////////
 
-PhysComponent::PhysComponent(void* parent)
+PhysComponentProperty::PhysComponentProperty(void* parent)
 {
 	property_name = "PhysComponent";
 	property_type = PropertyType::PhysComponent;
@@ -394,63 +394,63 @@ PhysComponent::PhysComponent(void* parent)
 	phys = GrEngine::Engine::GetContext()->GetPhysics()->InitSimulationObject(static_cast<GrEngine::Entity*>(owner));
 }
 
-PhysComponent::~PhysComponent()
+PhysComponentProperty::~PhysComponentProperty()
 {
 	GrEngine::Engine::GetContext()->GetPhysics()->RemoveSimulationObject(static_cast<GrEngine::PhysicsObject*>(phys));
 }
 
-const char* PhysComponent::ValueString()
+const char* PhysComponentProperty::ValueString()
 {
 	property_string = std::to_string(property_value);
 	return property_string.c_str();
 }
 
-void PhysComponent::ParsePropertyValue(const char* value)
+void PhysComponentProperty::ParsePropertyValue(const char* value)
 {
 	SetPropertyValue(std::atoi(value));
 }
 
-void PhysComponent::SetPropertyValue(int value)
+void PhysComponentProperty::SetPropertyValue(int value)
 {
 	property_value = value;
 	static_cast<GrEngine::PhysicsObject*>(phys)->SetKinematic(value);
 }
 
-std::any PhysComponent::GetAnyValue()
+std::any PhysComponentProperty::GetAnyValue()
 {
 	return static_cast<GrEngine::PhysicsObject*>(phys);
 }
 
-void* PhysComponent::GetValueAdress()
+void* PhysComponentProperty::GetValueAdress()
 {
 	return phys;
 }
 
 ////////////////////////////////////CollisionType/////////////////////////////////////////////
 
-CollisionType::CollisionType(void* parent)
+CollisionTypeProperty::CollisionTypeProperty(void* parent)
 {
 	property_name = "CollisionType";
 	property_type = PropertyType::CollisionType;
 	owner = parent;
 }
 
-CollisionType::~CollisionType()
+CollisionTypeProperty::~CollisionTypeProperty()
 {
 }
 
-const char* CollisionType::ValueString()
+const char* CollisionTypeProperty::ValueString()
 {
 	property_string = std::to_string(property_value);
 	return property_string.c_str();
 }
 
-void CollisionType::ParsePropertyValue(const char* value)
+void CollisionTypeProperty::ParsePropertyValue(const char* value)
 {
 	SetPropertyValue(std::atoi(value));
 }
 
-void CollisionType::SetPropertyValue(int value)
+void CollisionTypeProperty::SetPropertyValue(int value)
 {
 	property_value = value;
 	GrEngine::PhysicsObject* comp = static_cast<GrEngine::Entity*>(owner)->GetPropertyValue(PropertyType::PhysComponent, static_cast<GrEngine::PhysicsObject*>(nullptr));
@@ -460,19 +460,19 @@ void CollisionType::SetPropertyValue(int value)
 	}
 }
 
-std::any CollisionType::GetAnyValue()
+std::any CollisionTypeProperty::GetAnyValue()
 {
 	return property_value;
 }
 
-void* CollisionType::GetValueAdress()
+void* CollisionTypeProperty::GetValueAdress()
 {
 	return &property_value;
 }
 
 ////////////////////////////////////Drawable/////////////////////////////////////////////
 
-Drawable::Drawable(const char* path, void* parent)
+DrawableProperty::DrawableProperty(const char* path, void* parent)
 {
 	property_name = "Drawable";
 	property_type = PropertyType::Drawable;
@@ -485,22 +485,22 @@ Drawable::Drawable(const char* path, void* parent)
 	}
 }
 
-Drawable::~Drawable()
+DrawableProperty::~DrawableProperty()
 {
 
 }
 
-const char* Drawable::ValueString()
+const char* DrawableProperty::ValueString()
 {
 	return property_value.c_str();
 }
 
-void Drawable::ParsePropertyValue(const char* value)
+void DrawableProperty::ParsePropertyValue(const char* value)
 {
 	SetPropertyValue(value);
 }
 
-void Drawable::SetPropertyValue(std::string value)
+void DrawableProperty::SetPropertyValue(std::string value)
 {
 	property_value = value;
 
@@ -508,19 +508,19 @@ void Drawable::SetPropertyValue(std::string value)
 		GrEngine::Engine::GetContext()->LoadFromGMF(static_cast<GrEngine::Entity*>(owner)->GetEntityID(), value.c_str());
 }
 
-std::any Drawable::GetAnyValue()
+std::any DrawableProperty::GetAnyValue()
 {
 	return static_cast<GrEngine::Object*>(drawable);
 }
 
-void* Drawable::GetValueAdress()
+void* DrawableProperty::GetValueAdress()
 {
 	return drawable;
 }
 
 ////////////////////////////////////Spotlight/////////////////////////////////////////////
 
-SpotLight::SpotLight(void* parent)
+SpotLightProperty::SpotLightProperty(void* parent)
 {
 	property_name = "Spotlight";
 	property_type = PropertyType::Spotlight;
@@ -528,37 +528,157 @@ SpotLight::SpotLight(void* parent)
 	spotlight = GrEngine::Engine::GetContext()->GetRenderer()->InitSpotlightObject(static_cast<GrEngine::Entity*>(owner));
 }
 
-SpotLight::~SpotLight()
+SpotLightProperty::~SpotLightProperty()
 {
 
 }
 
-const char* SpotLight::ValueString()
+const char* SpotLightProperty::ValueString()
 {
 	return property_value.c_str();
 }
 
-void SpotLight::ParsePropertyValue(const char* value)
+void SpotLightProperty::ParsePropertyValue(const char* value)
 {
 	SetPropertyValue(value);
 }
 
-void SpotLight::SetPropertyValue(std::string value)
+void SpotLightProperty::SetPropertyValue(std::string value)
 {
 	property_value = value;
 }
 
-std::any SpotLight::GetAnyValue()
+std::any SpotLightProperty::GetAnyValue()
+{
+	return static_cast<GrEngine::LightObject*>(spotlight);
+}
+
+void* SpotLightProperty::GetValueAdress()
 {
 	return spotlight;
 }
 
-void* SpotLight::GetValueAdress()
+////////////////////////////////////Cascade light/////////////////////////////////////////////
+
+CascadeProperty::CascadeProperty(void* parent)
 {
-	return spotlight;
+	property_name = "CascadeLight";
+	property_type = PropertyType::CascadeLight;
+	owner = parent;
+	cascade = GrEngine::Engine::GetContext()->GetRenderer()->InitCascadeLightObject(static_cast<GrEngine::Entity*>(owner));
 }
 
-////////////////////////////////////CubemapProperty/////////////////////////////////////////////
+CascadeProperty::~CascadeProperty()
+{
+
+}
+
+const char* CascadeProperty::ValueString()
+{
+	return property_value.c_str();
+}
+
+void CascadeProperty::ParsePropertyValue(const char* value)
+{
+	SetPropertyValue(value);
+}
+
+void CascadeProperty::SetPropertyValue(std::string value)
+{
+	property_value = value;
+}
+
+std::any CascadeProperty::GetAnyValue()
+{
+	return static_cast<GrEngine::LightObject*>(cascade);
+}
+
+void* CascadeProperty::GetValueAdress()
+{
+	return cascade;
+}
+
+////////////////////////////////////Point light/////////////////////////////////////////////
+
+PointLightPropery::PointLightPropery(void* parent)
+{
+	property_name = "PointLight";
+	property_type = PropertyType::PointLight;
+	owner = parent;
+	point = GrEngine::Engine::GetContext()->GetRenderer()->InitPointLightObject(static_cast<GrEngine::Entity*>(owner));
+}
+
+PointLightPropery::~PointLightPropery()
+{
+
+}
+
+const char* PointLightPropery::ValueString()
+{
+	return property_value.c_str();
+}
+
+void PointLightPropery::ParsePropertyValue(const char* value)
+{
+	SetPropertyValue(value);
+}
+
+void PointLightPropery::SetPropertyValue(std::string value)
+{
+	property_value = value;
+}
+
+std::any PointLightPropery::GetAnyValue()
+{
+	return static_cast<GrEngine::LightObject*>(point);
+}
+
+void* PointLightPropery::GetValueAdress()
+{
+	return point;
+}
+
+////////////////////////////////////Omni light/////////////////////////////////////////////
+
+OmniLightPropery::OmniLightPropery(void* parent)
+{
+	property_name = "OmniLight";
+	property_type = PropertyType::OmniLight;
+	owner = parent;
+	omni = GrEngine::Engine::GetContext()->GetRenderer()->InitOmniLightObject(static_cast<GrEngine::Entity*>(owner));
+}
+
+OmniLightPropery::~OmniLightPropery()
+{
+
+}
+
+const char* OmniLightPropery::ValueString()
+{
+	return property_value.c_str();
+}
+
+void OmniLightPropery::ParsePropertyValue(const char* value)
+{
+	SetPropertyValue(value);
+}
+
+void OmniLightPropery::SetPropertyValue(std::string value)
+{
+	property_value = value;
+}
+
+std::any OmniLightPropery::GetAnyValue()
+{
+	return static_cast<GrEngine::LightObject*>(omni);
+}
+
+void* OmniLightPropery::GetValueAdress()
+{
+	return omni;
+}
+
+////////////////////////////////////Cubemap Property/////////////////////////////////////////////
 
 CubemapProperty::CubemapProperty(std::array<std::string, 6> textures, void* parent)
 {
@@ -615,7 +735,7 @@ void* CubemapProperty::GetValueAdress()
 
 ////////////////////////////////////Shader/////////////////////////////////////////////
 
-Shader::Shader(const char* path, void* parent)
+ShaderProperty::ShaderProperty(const char* path, void* parent)
 {
 	property_name = "Shader";
 	property_value = path;
@@ -623,22 +743,22 @@ Shader::Shader(const char* path, void* parent)
 	owner = parent;
 }
 
-Shader::~Shader()
+ShaderProperty::~ShaderProperty()
 {
 
 }
 
-const char* Shader::ValueString()
+const char* ShaderProperty::ValueString()
 {
 	return property_value.c_str();
 }
 
-void Shader::ParsePropertyValue(const char* value)
+void ShaderProperty::ParsePropertyValue(const char* value)
 {
 	SetPropertyValue(value);
 }
 
-void Shader::SetPropertyValue(std::string value)
+void ShaderProperty::SetPropertyValue(std::string value)
 {
 	property_value = value;
 
@@ -652,19 +772,19 @@ void Shader::SetPropertyValue(std::string value)
 	}
 }
 
-std::any Shader::GetAnyValue()
+std::any ShaderProperty::GetAnyValue()
 {
 	return property_value;
 }
 
-void* Shader::GetValueAdress()
+void* ShaderProperty::GetValueAdress()
 {
 	return &property_value;
 }
 
 ////////////////////////////////////Transparency/////////////////////////////////////////////
 
-Transparency::Transparency(bool value, void* parent)
+TransparencyProperty::TransparencyProperty(bool value, void* parent)
 {
 	property_name = "Transparency";
 	property_value = value;
@@ -673,23 +793,23 @@ Transparency::Transparency(bool value, void* parent)
 	owner = parent;
 }
 
-Transparency::~Transparency()
+TransparencyProperty::~TransparencyProperty()
 {
 
 }
 
-const char* Transparency::ValueString()
+const char* TransparencyProperty::ValueString()
 {
 	return property_string.c_str();
 }
 
-void Transparency::ParsePropertyValue(const char* value)
+void TransparencyProperty::ParsePropertyValue(const char* value)
 {
 	SetPropertyValue(atoi(value));
 	property_string = value;
 }
 
-void Transparency::SetPropertyValue(bool value)
+void TransparencyProperty::SetPropertyValue(bool value)
 {
 	property_value = value;
 	property_string = std::to_string(value);
@@ -704,12 +824,12 @@ void Transparency::SetPropertyValue(bool value)
 	}
 }
 
-std::any Transparency::GetAnyValue()
+std::any TransparencyProperty::GetAnyValue()
 {
 	return property_value;
 }
 
-void* Transparency::GetValueAdress()
+void* TransparencyProperty::GetValueAdress()
 {
 	return &property_value;
 }
@@ -717,7 +837,7 @@ void* Transparency::GetValueAdress()
 
 ////////////////////////////////////Double sided/////////////////////////////////////////////
 
-DoubleSided::DoubleSided(bool value, void* parent)
+DoubleSidedProperty::DoubleSidedProperty(bool value, void* parent)
 {
 	property_name = "DoubleSided";
 	property_value = value;
@@ -726,23 +846,23 @@ DoubleSided::DoubleSided(bool value, void* parent)
 	owner = parent;
 }
 
-DoubleSided::~DoubleSided()
+DoubleSidedProperty::~DoubleSidedProperty()
 {
 
 }
 
-const char* DoubleSided::ValueString()
+const char* DoubleSidedProperty::ValueString()
 {
 	return property_string.c_str();
 }
 
-void DoubleSided::ParsePropertyValue(const char* value)
+void DoubleSidedProperty::ParsePropertyValue(const char* value)
 {
 	SetPropertyValue(atoi(value));
 	property_string = value;
 }
 
-void DoubleSided::SetPropertyValue(bool value)
+void DoubleSidedProperty::SetPropertyValue(bool value)
 {
 	property_value = value;
 	property_string = std::to_string(value);
@@ -757,19 +877,19 @@ void DoubleSided::SetPropertyValue(bool value)
 	}
 }
 
-std::any DoubleSided::GetAnyValue()
+std::any DoubleSidedProperty::GetAnyValue()
 {
 	return property_value;
 }
 
-void* DoubleSided::GetValueAdress()
+void* DoubleSidedProperty::GetValueAdress()
 {
 	return &property_value;
 }
 
 ////////////////////////////////////Cast shadow/////////////////////////////////////////////
 
-CastShadow::CastShadow(bool value, void* parent)
+CastShadowProperty::CastShadowProperty(bool value, void* parent)
 {
 	property_name = "CastShadow";
 	property_value = value;
@@ -777,34 +897,34 @@ CastShadow::CastShadow(bool value, void* parent)
 	owner = parent;
 }
 
-CastShadow::~CastShadow()
+CastShadowProperty::~CastShadowProperty()
 {
 
 }
 
-const char* CastShadow::ValueString()
+const char* CastShadowProperty::ValueString()
 {
 	return property_string.c_str();
 }
 
-void CastShadow::ParsePropertyValue(const char* value)
+void CastShadowProperty::ParsePropertyValue(const char* value)
 {
 	SetPropertyValue(atoi(value));
 	property_string = value;
 }
 
-void CastShadow::SetPropertyValue(int value)
+void CastShadowProperty::SetPropertyValue(int value)
 {
 	property_value = value;
 	property_string = std::to_string(value);
 }
 
-std::any CastShadow::GetAnyValue()
+std::any CastShadowProperty::GetAnyValue()
 {
 	return property_value;
 }
 
-void* CastShadow::GetValueAdress()
+void* CastShadowProperty::GetValueAdress()
 {
 	return &property_value;
 }

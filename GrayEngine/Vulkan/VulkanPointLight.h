@@ -1,31 +1,27 @@
 #pragma once
 #include "VulkanResourceManager.h"
 #include "Entities/Properties/Light.h"
-#include "VulkanAPI.h"
 
 namespace GrEngine_Vulkan
 {
-	class VulkanSpotlight : public GrEngine::LightObject
+	class VulkanPointLight : public GrEngine::LightObject
 	{
-	public:
-		struct ShadowProjection
+		struct UniformBuffer
 		{
 			glm::vec4 spec;
 			glm::vec4 color;
-			glm::mat4 viewproj;
 			glm::mat4 model;
 		} lightPerspective;
 
-
-		VulkanSpotlight(GrEngine::Entity* owningEntity) : GrEngine::LightObject(owningEntity) {};
+	public:
+		VulkanPointLight(GrEngine::Entity* owningEntity) : GrEngine::LightObject(owningEntity) {};
 
 		void initLight(VkDevice device, VmaAllocator allocator);
 		void destroyLight();
-		ShadowProjection& getLightUBO();
+		UniformBuffer& getLightUBO();
 
 	protected:
 		VkDevice logicalDevice;
 		VmaAllocator memAllocator;
 	};
-};
-
+}

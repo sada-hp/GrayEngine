@@ -9,7 +9,7 @@ namespace GrEngine_Vulkan
 {
 	void VulkanTerrain::initObject(VkDevice device, VmaAllocator allocator, GrEngine::Renderer* owner)
 	{
-		properties.push_back(new Shader("Shaders\\terrain", this));
+		properties.push_back(new ShaderProperty("Shaders\\terrain", this));
 		shader_path = "Shaders\\terrain";
 
 		p_Owner = owner;

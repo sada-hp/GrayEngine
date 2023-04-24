@@ -1,31 +1,30 @@
 #pragma once
 #include "VulkanResourceManager.h"
 #include "Entities/Properties/Light.h"
-#include "VulkanAPI.h"
 
 namespace GrEngine_Vulkan
 {
-	class VulkanSpotlight : public GrEngine::LightObject
+	class VulkanOmniLight : public GrEngine::LightObject
 	{
 	public:
-		struct ShadowProjection
+		struct OmniProjection
 		{
 			glm::vec4 spec;
 			glm::vec4 color;
 			glm::mat4 viewproj;
 			glm::mat4 model;
-		} lightPerspective;
+		};
 
-
-		VulkanSpotlight(GrEngine::Entity* owningEntity) : GrEngine::LightObject(owningEntity) {};
+		VulkanOmniLight(GrEngine::Entity* owningEntity) : GrEngine::LightObject(owningEntity) {};
 
 		void initLight(VkDevice device, VmaAllocator allocator);
 		void destroyLight();
-		ShadowProjection& getLightUBO();
+		std::array<OmniProjection, 6>& getLightUBO();
 
 	protected:
 		VkDevice logicalDevice;
 		VmaAllocator memAllocator;
+		std::array<OmniProjection, 6> lightPerspective;
 	};
-};
+}
 

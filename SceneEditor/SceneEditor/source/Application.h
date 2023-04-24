@@ -32,6 +32,7 @@ namespace GrEngine
         bool was_mask_updated = false;
         std::string fm;
         int mask_width, mask_height, mask_channels;
+        GrEngine::Entity* casent;
 
     public:
         std::string loaded_scene_path = "";
@@ -74,6 +75,12 @@ namespace GrEngine
             getEditorUI()->InitUI(VIEWPORT_EDITOR);
             getEditorUI()->SetViewportHWND(getViewportHWND(), VIEWPORT_EDITOR);
             Logger::JoinEventListener(GetEventListener());
+
+            casent = GetRenderer()->addEntity();
+            casent->PositionObjectAt(0, 3, 4);
+            casent->SetRotation(-30, 180, 0);
+            casent->AddNewProperty("Cascade");
+            casent->MakeStatic();
         }
 
         ~Application()

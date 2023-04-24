@@ -15,7 +15,7 @@
     <ClInclude Include="Bullet\BulletAPI.h" />
     <ClInclude Include="Engine\Headers\Entities\Properties\Drawable.h" />
     <ClInclude Include="Engine\Headers\Entities\Properties\Property.h" />
-    <ClInclude Include="Engine\Headers\Entities\Properties\Spotlight.h" />
+    <ClInclude Include="Engine\Headers\Entities\Properties\Light.h" />
     <ClInclude Include="Engine\Headers\Entities\Skybox.h" />
     <ClInclude Include="Engine\Headers\Virtual\AppWindow.h" />
     <ClInclude Include="Engine\Headers\Entities\Camera.h" />
@@ -26,6 +26,8 @@
     <ClInclude Include="Engine\Headers\Virtual\Renderer.h" />
     <ClInclude Include="Engine\Headers\Entities\Terrain.h" />
     <ClInclude Include="Engine\Headers\Virtual\ResourceManager.h" />
+    <ClInclude Include="Vulkan\VulkanOmniLight.h" />
+    <ClInclude Include="Vulkan\VulkanPointLight.h" />
     <ClInclude Include="Vulkan\VulkanCascade.h" />
     <ClInclude Include="Vulkan\VulkanSpotlight.h" />
     <ClInclude Include="Vulkan\VulkanRenderer.h" />
@@ -49,6 +51,8 @@
     <ClCompile Include="Engine\Headers\Entities\Properties\Property.cpp" />
     <ClCompile Include="Engine\Source\Engine.cpp" />
     <ClCompile Include="Engine\Source\Globals.cpp" />
+    <ClCompile Include="Vulkan\VulkanOmniLight.cpp" />
+    <ClCompile Include="Vulkan\VulkanPointLight.cpp" />
     <ClCompile Include="Vulkan\VulkanCascade.cpp" />
     <ClCompile Include="Vulkan\VulkanSpotlight.cpp" />
     <ClCompile Include="Vulkan\VulkanRenderer.cpp" />

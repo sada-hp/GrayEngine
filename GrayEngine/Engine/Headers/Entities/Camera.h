@@ -11,7 +11,7 @@ namespace GrEngine
 		Camera() 
 		{
 			Type |= EntityType::CameraEntity;
-			static_cast<EntityID*>(properties[1])->SetPropertyValue(std::rand() % 10000 + 1000);
+			static_cast<EntityIDProperty*>(properties[1])->SetPropertyValue(std::rand() % 10000 + 1000);
 		};
 		virtual ~Camera() {};
 
@@ -47,21 +47,21 @@ namespace GrEngine
 		 void SetRotation(const float& pitch, const float& yaw, const float& roll) override
 		 {
 			 pitch_yaw_roll = glm::vec3{ pitch, yaw, roll };
-			 static_cast<EntityOrientation*>(properties[3])->SetPropertyValue(pitch_yaw_roll);
+			 static_cast<EntityOrientationProperty*>(properties[3])->SetPropertyValue(pitch_yaw_roll);
 			 obj_orientation_target = *obj_orientation;
 		 };
 
 		 virtual void SetRotation(const glm::vec3& angle) override
 		 {
 			 pitch_yaw_roll = angle;
-			 static_cast<EntityOrientation*>(properties[3])->SetPropertyValue(pitch_yaw_roll);
+			 static_cast<EntityOrientationProperty*>(properties[3])->SetPropertyValue(pitch_yaw_roll);
 			 obj_orientation_target = *obj_orientation;
 		 };
 
 		 virtual void SetRotation(const glm::quat& angle) override
 		 {
 			 pitch_yaw_roll = glm::eulerAngles(angle);
-			 static_cast<EntityOrientation*>(properties[3])->SetPropertyValue(angle);
+			 static_cast<EntityOrientationProperty*>(properties[3])->SetPropertyValue(angle);
 			 obj_orientation_target = angle;
 		 };
 
@@ -78,13 +78,13 @@ namespace GrEngine
 		 virtual void PositionObjectAt(const float& x, const float& y, const float& z) override
 		 {
 			 object_position_target = glm::vec3(x, y, z);
-			 static_cast<EntityPosition*>(properties[2])->SetPropertyValue(x, y, z);
+			 static_cast<EntityPositionProperty*>(properties[2])->SetPropertyValue(x, y, z);
 		 };
 
 		 virtual void PositionObjectAt(const glm::vec3& vector) override
 		 {
 			 object_position_target = vector;
-			 static_cast<EntityPosition*>(properties[2])->SetPropertyValue(vector);
+			 static_cast<EntityPositionProperty*>(properties[2])->SetPropertyValue(vector);
 		 };
 
 		 virtual glm::vec3 GetObjectPosition() override
@@ -131,7 +131,7 @@ namespace GrEngine
 		glm::vec3& UpdateCameraPosition(float smoothing_factor = 0.f)
 		{
 			smoothing_factor = smoothing_factor == 1.f ? FLT_EPSILON : smoothing_factor;
-			static_cast<EntityPosition*>(properties[2])->SetPropertyValue(*object_origin + (object_position_target - *object_origin) * (1 - smoothing_factor));
+			static_cast<EntityPositionProperty*>(properties[2])->SetPropertyValue(*object_origin + (object_position_target - *object_origin) * (1 - smoothing_factor));
 			glm::vec3 pos = GetObjectPosition();
 			return pos;
 		}
@@ -139,7 +139,7 @@ namespace GrEngine
 		glm::quat& UpdateCameraOrientation(float smoothing_factor = 0.f)
 		{
 			smoothing_factor = smoothing_factor == 1.f ? FLT_EPSILON : smoothing_factor;
-			static_cast<EntityOrientation*>(properties[3])->SetPropertyValue(*obj_orientation + (obj_orientation_target - *obj_orientation) * (1 - smoothing_factor));
+			static_cast<EntityOrientationProperty*>(properties[3])->SetPropertyValue(*obj_orientation + (obj_orientation_target - *obj_orientation) * (1 - smoothing_factor));
 			return *obj_orientation;
 		}
 

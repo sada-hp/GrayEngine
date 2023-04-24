@@ -17,6 +17,9 @@ namespace GrEngine
 		TerrainEntity = 4,
 		CameraEntity = 8,
 		SpotlightEntity = 16,
+		CascadeLightEntity = 32,
+		PointLightEntity = 64,
+		OmniLightEntity = 128,
 	};
 
 	inline EntityType operator|(EntityType a, EntityType b)
@@ -54,10 +57,10 @@ namespace GrEngine
 			std::snprintf(_buf, sizeof(_buf), "1%03d%03d%03d", std::rand() % 255 + 1, std::rand() % 255 + 1, std::rand() % 255 + 1);
 
 			//Don't shuffle
-			properties.push_back(new EntityName("Object", this));
-			properties.push_back(new EntityID(atoi(_buf), this));
-			properties.push_back(new EntityPosition(0.f, 0.f, 0.f, this));
-			properties.push_back(new EntityOrientation(0.f, 0.f, 0.f, this));
+			properties.push_back(new EntityNameProperty("Object", this));
+			properties.push_back(new EntityIDProperty(atoi(_buf), this));
+			properties.push_back(new EntityPositionProperty(0.f, 0.f, 0.f, this));
+			properties.push_back(new EntityOrientationProperty(0.f, 0.f, 0.f, this));
 			//Don't shuffle
 
 			obj_name = static_cast<std::string*>(properties[0]->GetValueAdress());
@@ -69,10 +72,10 @@ namespace GrEngine
 		Entity(UINT id)
 		{
 			//Don't shuffle
-			properties.push_back(new EntityName("Object", this));
-			properties.push_back(new EntityID(id, this));
-			properties.push_back(new EntityPosition(0.f, 0.f, 0.f, this));
-			properties.push_back(new EntityOrientation(0.f, 0.f, 0.f, this));
+			properties.push_back(new EntityNameProperty("Object", this));
+			properties.push_back(new EntityIDProperty(id, this));
+			properties.push_back(new EntityPositionProperty(0.f, 0.f, 0.f, this));
+			properties.push_back(new EntityOrientationProperty(0.f, 0.f, 0.f, this));
 			//Don't shuffle
 
 			obj_name = static_cast<std::string*>(properties[0]->GetValueAdress());
@@ -99,57 +102,57 @@ namespace GrEngine
 		virtual void Rotate(const float& pitch, const float& yaw, const float& roll)
 		{
 			pitch_yaw_roll += glm::vec3{ pitch, yaw, roll };
-			static_cast<EntityOrientation*>(properties[3])->SetPropertyValue(pitch_yaw_roll);
+			static_cast<EntityOrientationProperty*>(properties[3])->SetPropertyValue(pitch_yaw_roll);
 		};
 
 		virtual void Rotate(const glm::vec3& angle)
 		{
 			pitch_yaw_roll += angle;
-			static_cast<EntityOrientation*>(properties[3])->SetPropertyValue(pitch_yaw_roll);
+			static_cast<EntityOrientationProperty*>(properties[3])->SetPropertyValue(pitch_yaw_roll);
 		};
 
 		virtual void Rotate(const glm::quat& angle)
 		{
 			pitch_yaw_roll += glm::degrees(glm::eulerAngles(angle));
-			static_cast<EntityOrientation*>(properties[3])->SetPropertyValue(angle);
+			static_cast<EntityOrientationProperty*>(properties[3])->SetPropertyValue(angle);
 		};
 
 		virtual void SetRotation(const float& pitch, const float& yaw, const float& roll)
 		{
 			pitch_yaw_roll = glm::vec3{ pitch, yaw, roll };
-			static_cast<EntityOrientation*>(properties[3])->SetPropertyValue(pitch_yaw_roll);
+			static_cast<EntityOrientationProperty*>(properties[3])->SetPropertyValue(pitch_yaw_roll);
 		};
 
 		virtual void SetRotation(const glm::vec3& angle)
 		{
 			pitch_yaw_roll = angle;
-			static_cast<EntityOrientation*>(properties[3])->SetPropertyValue(pitch_yaw_roll);
+			static_cast<EntityOrientationProperty*>(properties[3])->SetPropertyValue(pitch_yaw_roll);
 		};
 
 		virtual void SetRotation(const glm::quat& angle)
 		{
 			pitch_yaw_roll = glm::degrees(glm::eulerAngles(angle));
-			static_cast<EntityOrientation*>(properties[3])->SetPropertyValue(angle);
+			static_cast<EntityOrientationProperty*>(properties[3])->SetPropertyValue(angle);
 		};
 
 		virtual void MoveObject(const float& x, const float& y, const float& z)
 		{
-			static_cast<EntityPosition*>(properties[2])->SetPropertyValue(*object_origin + glm::vec3(x, y, z));
+			static_cast<EntityPositionProperty*>(properties[2])->SetPropertyValue(*object_origin + glm::vec3(x, y, z));
 		};
 
 		virtual void MoveObject(const glm::vec3& vector)
 		{
-			static_cast<EntityPosition*>(properties[2])->SetPropertyValue(*object_origin + vector);
+			static_cast<EntityPositionProperty*>(properties[2])->SetPropertyValue(*object_origin + vector);
 		};
 
 		virtual void PositionObjectAt(const float& x, const float& y, const float& z)
 		{
-			static_cast<EntityPosition*>(properties[2])->SetPropertyValue(x, y, z);
+			static_cast<EntityPositionProperty*>(properties[2])->SetPropertyValue(x, y, z);
 		};
 
 		virtual void PositionObjectAt(const glm::vec3& vector)
 		{
-			static_cast<EntityPosition*>(properties[2])->SetPropertyValue(vector);
+			static_cast<EntityPositionProperty*>(properties[2])->SetPropertyValue(vector);
 		};
 
 		virtual glm::vec3 GetObjectPosition()
@@ -280,7 +283,7 @@ namespace GrEngine
 
 		inline void UpdateNameTag(std::string new_name)
 		{
-			static_cast<EntityName*>(properties[0])->SetPropertyValue(new_name.c_str());
+			static_cast<EntityNameProperty*>(properties[0])->SetPropertyValue(new_name.c_str());
 		};
 
 		inline std::string& GetObjectName()
@@ -300,60 +303,78 @@ namespace GrEngine
 				std::string prop_str = std::string(property_name);
 				if (prop_str == "Mass")
 				{
-					properties.push_back(new Mass(0.f, this));
+					properties.push_back(new MassProperty(0.f, this));
 					return properties.back();
 				}
 				else if (prop_str == "Mesh" || std::string(property_name) == "Drawable")
 				{
-					properties.push_back(new Drawable("nil", this));
+					properties.push_back(new DrawableProperty("nil", this));
 					Type |= EntityType::ObjectEntity;
 					return properties.back();
 				}
 				else if (prop_str == "Scale")
 				{
-					properties.push_back(new Scale(1.f, 1.f, 1.f, this));
+					properties.push_back(new ScaleProperty(1.f, 1.f, 1.f, this));
 					return properties.back();
 				}
 				else if (prop_str == "Color")
 				{
-					properties.push_back(new Color(1.f, 1.f, 1.f, this));
+					properties.push_back(new ColorProperty(1.f, 1.f, 1.f, this));
 					return properties.back();
 				}
 				else if (prop_str == "Transparency")
 				{
-					properties.push_back(new Transparency(0, this));
+					properties.push_back(new TransparencyProperty(0, this));
 					return properties.back();
 				}
 				else if (prop_str == "DoubleSided")
 				{
-					properties.push_back(new DoubleSided(0, this));
+					properties.push_back(new DoubleSidedProperty(0, this));
 					return properties.back();
 				}
 				else if (prop_str == "Shader")
 				{
-					properties.push_back(new Shader("Shaders//default", this));
+					properties.push_back(new ShaderProperty("Shaders//default", this));
 					return properties.back();
 				}
 				else if (prop_str == "CastShadow")
 				{
-					properties.push_back(new CastShadow(1, this));
+					properties.push_back(new CastShadowProperty(1, this));
 					return properties.back();
 				}
 				else if (prop_str == "Spotlight")
 				{
-					properties.push_back(new SpotLight(this));
+					properties.push_back(new SpotLightProperty(this));
 					Type |= EntityType::SpotlightEntity;
 					return properties.back();
 				}
 				else if (prop_str == "CollisionType")
 				{
-					properties.push_back(new CollisionType(this));
+					properties.push_back(new CollisionTypeProperty(this));
 					return properties.back();
 				}
 				else if (prop_str == "PhysComponent" || prop_str == "Physics")
 				{
-					properties.push_back(new PhysComponent(this));
+					properties.push_back(new PhysComponentProperty(this));
 					physComp = static_cast<PhysicsObject*>(properties.back()->GetValueAdress());
+					return properties.back();
+				}
+				else if (prop_str == "PointLight" || prop_str == "Pointlight")
+				{
+					properties.push_back(new PointLightPropery(this));
+					Type |= EntityType::PointLightEntity;
+					return properties.back();
+				}
+				else if (prop_str == "Cascade" || prop_str == "CascadeLight")
+				{
+					properties.push_back(new CascadeProperty(this));
+					Type |= EntityType::CascadeLightEntity;
+					return properties.back();
+				}
+				else if (prop_str == "Omni" || prop_str == "OmniLight")
+				{
+					properties.push_back(new OmniLightPropery(this));
+					Type |= EntityType::OmniLightEntity;
 					return properties.back();
 				}
 				else

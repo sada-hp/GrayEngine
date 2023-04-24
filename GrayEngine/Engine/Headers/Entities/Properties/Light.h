@@ -9,21 +9,23 @@
 enum LightType
 {
 	Spot = 1,
-	Cascade
+	Cascade,
+	Point,
+	Omni
 };
 
 namespace GrEngine
 {
-	class SpotlightObject
+	class LightObject
 	{
 	public:
 
-		SpotlightObject(Entity* owner)
+		LightObject(Entity* owner)
 		{
 			ownerEntity = owner;
 		};
 
-		virtual ~SpotlightObject()
+		virtual ~LightObject()
 		{
 
 		};

@@ -3,6 +3,8 @@
 #include "VulkanSkybox.h"
 #include "VulkanTerrain.h"
 #include "VulkanSpotlight.h"
+#include "VulkanPointLight.h"
+#include "VulkanOmniLight.h"
 #include "VulkanCascade.h"
 #include "Engine/Headers/Core/Logger.h"
 #include "Engine/Headers/Virtual/Renderer.h"
@@ -29,8 +31,11 @@ namespace GrEngine_Vulkan
 		bool loadModel(UINT id, const char* model_path) override;
 		GrEngine::Entity* addEntity() override;
 		GrEngine::Entity* addEntity(UINT ID) override;
-		GrEngine::Object* InitDrawableObject(GrEngine::Entity* ownerEntity);
-		GrEngine::SpotlightObject* InitSpotlightObject(GrEngine::Entity* ownerEntity);
+		GrEngine::Object* InitDrawableObject(GrEngine::Entity* ownerEntity) override;
+		GrEngine::LightObject* InitSpotlightObject(GrEngine::Entity* ownerEntity) override;
+		GrEngine::LightObject* InitCascadeLightObject(GrEngine::Entity* ownerEntity) override;
+		GrEngine::LightObject* InitPointLightObject(GrEngine::Entity* ownerEntity) override;
+		GrEngine::LightObject* InitOmniLightObject(GrEngine::Entity* ownerEntity) override;
 
 		void addEntity(GrEngine::Entity* entity) override;
 		bool assignTextures(std::vector<std::string> textures, GrEngine::Entity* target) override;
@@ -89,16 +94,16 @@ namespace GrEngine_Vulkan
 			glm::mat4 viewProjMatrix;
 		};
 		VulkanSpotlight::ShadowProjection cascadePrj;
-		VulkanCascade* spot;
 
 		VkRenderPass shadowPass;
 		ShaderBuffer shadowBuffer;
 
 		int cascade_count = 0;
+		int omni_count = 0;
 
 		const uint32_t lightsCount()
 		{
-			return glm::max((int)lights.size() + cascade_count * (SHADOW_MAP_CASCADE_COUNT - 1), 1);
+			return glm::max((int)lights.size() + cascade_count * (SHADOW_MAP_CASCADE_COUNT - 1) + omni_count * 5, 1);
 		}
 	protected:
 		void SaveScreenshot(const char* filepath);
@@ -201,8 +206,6 @@ namespace GrEngine_Vulkan
 
 		VkFramebuffer shadowFramebuffer;
 		ShaderBuffer cascadeBuffer;
-
-		GrEngine::Entity* casent;
 
 		uint8_t max_async_frames = 1;
 		bool vsync = false;

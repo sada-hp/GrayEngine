@@ -3,7 +3,7 @@
 #include "Entities/Entity.h"
 #include "Entities/Skybox.h"
 #include "Entities/Properties/Drawable.h"
-#include "Entities/Properties/Spotlight.h"
+#include "Entities/Properties/Light.h"
 #include "Core/Logger.h"
 
 namespace GrEngine
@@ -32,7 +32,10 @@ namespace GrEngine
 		virtual Entity* addEntity(UINT ID) = 0;
 		virtual void addEntity(Entity* entity) = 0;
 		virtual Object* InitDrawableObject(Entity* ownerEntity) = 0;
-		virtual SpotlightObject* InitSpotlightObject(Entity* ownerEntity) = 0;
+		virtual LightObject* InitSpotlightObject(Entity* ownerEntity) = 0;
+		virtual LightObject* InitCascadeLightObject(Entity* ownerEntity) = 0;
+		virtual LightObject* InitPointLightObject(Entity* ownerEntity) = 0;
+		virtual LightObject* InitOmniLightObject(Entity* ownerEntity) = 0;
 		virtual void VSyncState(bool state) = 0;
 		std::map<UINT, Entity*>& GetEntitiesList()
 		{
@@ -75,6 +78,6 @@ namespace GrEngine
 		UINT32 selected_entity = 0;
 		std::map<UINT, Entity*> entities;
 		std::map<UINT, Object*> drawables;
-		std::map<UINT, SpotlightObject*> lights;
+		std::map<UINT, LightObject*> lights;
 	};
 }
