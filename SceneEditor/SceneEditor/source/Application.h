@@ -35,6 +35,7 @@ namespace GrEngine
         GrEngine::Entity* casent;
 
     public:
+        UINT copy_buf = 0;
         std::string loaded_scene_path = "";
         bool focused = true;
         bool free_mode = false;
@@ -676,6 +677,31 @@ namespace GrEngine
             GetRenderer()->getActiveViewport()->SetParentEntity(nullptr);
             GetRenderer()->getActiveViewport()->PositionObjectAt(glm::vec3{ 0, 1.5f, 0 } + shrek_coll->GetObjectPosition());
             free_mode = false;
+        }
+
+        void App_CloneEntity()
+        {
+            if (copy_buf != 0)
+            {
+                auto ent = GetRenderer()->CloneEntity(copy_buf);
+                App_UpdateEntity(ent);
+                GetRenderer()->selectEntity(ent->GetEntityID());
+
+                POINTFLOAT point = GetCursorPosition();
+                float fov = 60.f;
+                POINT vSize = GetWindowSize();
+                glm::mat4 model = glm::translate(glm::mat4_cast(GetRenderer()->getActiveViewport()->GetObjectOrientation()), -GetRenderer()->getActiveViewport()->GetObjectPosition());
+                glm::mat4 proj = glm::perspective(glm::radians(fov), (float)vSize.x / (float)vSize.y, 0.1f, 1000.0f);
+                glm::vec4 view(0, 0, vSize.x, vSize.y);
+                proj[1][1] *= -1;
+
+                glm::vec3 tset = glm::unProject(glm::vec3(point.x, point.y, 0.9f), model, proj, view);
+                glm::vec3 dir = glm::normalize(tset - GetRenderer()->getActiveViewport()->GetObjectPosition());
+                const RayCastResult res = GetPhysics()->CastRayToObject(GetRenderer()->getActiveViewport()->GetObjectPosition(), tset + dir * 1000.f, 100);
+
+                if (res.hasHit)
+                    ent->PositionObjectAt(res.hitPos);
+            }
         }
 
     private:

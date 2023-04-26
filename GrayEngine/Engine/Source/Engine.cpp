@@ -60,7 +60,7 @@ namespace GrEngine
 
 		if (drawComponent != nullptr)
 		{
-			res = drawComponent->LoadModel(mesh_path, textures_vector);
+			res = drawComponent->LoadModel("", mesh_path, textures_vector);
 		}
 
 		return res;
@@ -86,7 +86,7 @@ namespace GrEngine
 
 		if (drawComponent != nullptr)
 		{
-			drawComponent->LoadModel(mesh_path.c_str(), textures_vector);
+			drawComponent->LoadModel(filepath, mesh_path.c_str(), textures_vector);
 		}
 
 		if (physComponent != nullptr)

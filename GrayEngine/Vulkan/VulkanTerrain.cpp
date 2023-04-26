@@ -97,6 +97,7 @@ namespace GrEngine_Vulkan
 		VulkanAPI::GetDeviceQueue(logicalDevice, static_cast<VulkanRenderer*>(p_Owner)->compute_bit.value(), &computeQueue);
 		VulkanAPI::EndAndSubmitCommandBuffer(logicalDevice, computePool, computeCmd, computeQueue, computeFence);
 
+		vkWaitForFences(logicalDevice, 1, &computeFence, VK_TRUE, UINT64_MAX);
 		std::vector<ComputeVertex> vert;
 		vert.resize(resolution * resolution);
 		vmaMapMemory(memAllocator, terOut.Allocation, (void**)&terI);

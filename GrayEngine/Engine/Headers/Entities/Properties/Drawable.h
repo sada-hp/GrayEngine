@@ -72,7 +72,7 @@ namespace GrEngine
 
 		virtual bool LoadMesh(const char* mesh_path) = 0;
 
-		virtual bool LoadModel(const char* mesh_path, std::vector<std::string> textures_vector) = 0;
+		virtual bool LoadModel(const char* gmf_path, const char* mesh_path, std::vector<std::string> textures_vector) = 0;
 
 		virtual void GeneratePlaneMesh(float width, int subdivisions) = 0;
 
@@ -127,17 +127,6 @@ namespace GrEngine
 			return texture_names;
 		};
 
-		virtual void updateCollisions() = 0;
-
-		void recalculatePhysics(bool enabled)
-		{
-			GrEngine::PhysicsObject* physComponent = ownerEntity->GetPropertyValue(PropertyType::PhysComponent, static_cast<GrEngine::PhysicsObject*>(nullptr));
-			if (physComponent != nullptr)
-			{
-				physComponent->CalculatePhysics();
-			}
-		};
-
 		void DisableCollisions()
 		{
 			CollisionEnabled = false;
@@ -169,6 +158,8 @@ namespace GrEngine
 		};
 
 		std::vector<std::string> texture_names;
+		std::string mesh_name;
+		std::string gmf_name;
 
 	protected:
 

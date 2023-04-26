@@ -454,31 +454,6 @@ namespace GrEngine_Vulkan
 		createDescriptorSet();
 	}
 
-	void VulkanObject::updateCollisions()
-	{
-		//if (colMesh != nullptr)
-		//{
-		//	delete colMesh;
-		//}
-
-		//colMesh = new btTriangleMesh();
-		//for (std::vector<Vertex>::iterator itt = object_mesh->vertices.begin(); itt != object_mesh->vertices.end(); ++itt)
-		//{
-		//	colMesh->findOrAddVertex(btVector3((*itt).pos.x, (*itt).pos.y, (*itt).pos.z), false);
-		//}
-
-		//for (std::vector<uint32_t>::iterator itt = object_mesh->indices.begin(); itt != object_mesh->indices.end(); ++itt)
-		//{
-		//	colMesh->addTriangleIndices(*(++itt), *(++itt), *itt);
-		//}
-
-		//GrEngine::PhysicsObject* physComponent = ownerEntity->GetPropertyValue(PropertyType::PhysComponent, static_cast<GrEngine::PhysicsObject*>(nullptr));
-		//if (physComponent != nullptr) // && ownerEntity->GetPropertyValue(PropertyType::CollisionType, 0) == 2
-		//{
-		//	physComponent->UpdateCollisionShape(objCollision->shape);
-		//}
-	}
-
 	void VulkanObject::CalculateNormals()
 	{
 		if (object_mesh != nullptr)
@@ -501,7 +476,7 @@ namespace GrEngine_Vulkan
 		}
 	}
 
-	bool VulkanObject::LoadModel(const char* mesh_path, std::vector<std::string> textures_vector)
+	bool VulkanObject::LoadModel(const char* gmf_path, const char* mesh_path, std::vector<std::string> textures_vector)
 	{
 		static_cast<VulkanRenderer*>(p_Owner)->waitForRenderer();
 
@@ -533,6 +508,8 @@ namespace GrEngine_Vulkan
 		}
 
 		texture_names = textures_vector;
+		gmf_name = gmf_path;
+		mesh_name = mesh_path;
 		updateObject();
 
 		return true;

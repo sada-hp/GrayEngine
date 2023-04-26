@@ -36,7 +36,10 @@ namespace GrEngine
 		virtual LightObject* InitCascadeLightObject(Entity* ownerEntity) = 0;
 		virtual LightObject* InitPointLightObject(Entity* ownerEntity) = 0;
 		virtual LightObject* InitOmniLightObject(Entity* ownerEntity) = 0;
+		virtual Entity* CloneEntity(UINT id) = 0;
 		virtual void VSyncState(bool state) = 0;
+		virtual void SetUseDynamicLighting(bool state) = 0;
+		bool IsDynamicLightEnabled() { return use_dynamic_lighting; }
 		std::map<UINT, Entity*>& GetEntitiesList()
 		{
 			return entities;
@@ -79,5 +82,6 @@ namespace GrEngine
 		std::map<UINT, Entity*> entities;
 		std::map<UINT, Object*> drawables;
 		std::map<UINT, LightObject*> lights;
+		bool use_dynamic_lighting = false;
 	};
 }

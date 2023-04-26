@@ -296,96 +296,85 @@ namespace GrEngine
 			return *obj_id;
 		};
 
-		EntityProperty* AddNewProperty(const char* property_name)
+		EntityProperty* AddNewProperty(PropertyType type)
 		{
-			if (!HasProperty(property_name))
+			if (!HasProperty(type))
 			{
-				std::string prop_str = std::string(property_name);
-				if (prop_str == "Mass")
+				switch (type)
 				{
+				case PropertyType::Error:
+					break;
+				case PropertyType::EntityID:
+					break;
+				case PropertyType::Mass:
 					properties.push_back(new MassProperty(0.f, this));
 					return properties.back();
-				}
-				else if (prop_str == "Mesh" || std::string(property_name) == "Drawable")
-				{
-					properties.push_back(new DrawableProperty("nil", this));
-					Type |= EntityType::ObjectEntity;
-					return properties.back();
-				}
-				else if (prop_str == "Scale")
-				{
+				case PropertyType::EntityName:
+					break;
+				case PropertyType::Scale:
 					properties.push_back(new ScaleProperty(1.f, 1.f, 1.f, this));
 					return properties.back();
-				}
-				else if (prop_str == "Color")
-				{
+				case PropertyType::EntityPosition:
+					break;
+				case PropertyType::EntityOrientation:
+					break;
+				case PropertyType::Color:
 					properties.push_back(new ColorProperty(1.f, 1.f, 1.f, this));
 					return properties.back();
-				}
-				else if (prop_str == "Transparency")
-				{
-					properties.push_back(new TransparencyProperty(0, this));
-					return properties.back();
-				}
-				else if (prop_str == "DoubleSided")
-				{
-					properties.push_back(new DoubleSidedProperty(0, this));
-					return properties.back();
-				}
-				else if (prop_str == "Shader")
-				{
-					properties.push_back(new ShaderProperty("Shaders//default", this));
-					return properties.back();
-				}
-				else if (prop_str == "CastShadow")
-				{
-					properties.push_back(new CastShadowProperty(1, this));
-					return properties.back();
-				}
-				else if (prop_str == "Spotlight")
-				{
-					properties.push_back(new SpotLightProperty(this));
-					Type |= EntityType::SpotlightEntity;
-					return properties.back();
-				}
-				else if (prop_str == "CollisionType")
-				{
-					properties.push_back(new CollisionTypeProperty(this));
-					return properties.back();
-				}
-				else if (prop_str == "PhysComponent" || prop_str == "Physics")
-				{
+				case PropertyType::PhysComponent:
 					properties.push_back(new PhysComponentProperty(this));
 					physComp = static_cast<PhysicsObject*>(properties.back()->GetValueAdress());
 					return properties.back();
-				}
-				else if (prop_str == "PointLight" || prop_str == "Pointlight")
-				{
-					properties.push_back(new PointLightPropery(this));
-					Type |= EntityType::PointLightEntity;
+				case PropertyType::Drawable:
+					properties.push_back(new DrawableProperty("nil", this));
+					Type |= EntityType::ObjectEntity;
 					return properties.back();
-				}
-				else if (prop_str == "Cascade" || prop_str == "CascadeLight")
-				{
+				case PropertyType::Spotlight:
+					properties.push_back(new SpotLightProperty(this));
+					Type |= EntityType::SpotlightEntity;
+					return properties.back();
+				case PropertyType::CascadeLight:
 					properties.push_back(new CascadeProperty(this));
 					Type |= EntityType::CascadeLightEntity;
 					return properties.back();
-				}
-				else if (prop_str == "Omni" || prop_str == "OmniLight")
-				{
+				case PropertyType::PointLight:
+					properties.push_back(new PointLightPropery(this));
+					Type |= EntityType::PointLightEntity;
+					return properties.back();
+				case PropertyType::OmniLight:
 					properties.push_back(new OmniLightPropery(this));
 					Type |= EntityType::OmniLightEntity;
 					return properties.back();
-				}
-				else
-				{
-					return nullptr;
+				case PropertyType::Cubemap:
+					break;
+				case PropertyType::Shader:
+					properties.push_back(new ShaderProperty("Shaders//default", this));
+					return properties.back();
+				case PropertyType::Transparency:
+					properties.push_back(new TransparencyProperty(0, this));
+					return properties.back();
+				case PropertyType::DoubleSided:
+					properties.push_back(new DoubleSidedProperty(0, this));
+					return properties.back();
+				case PropertyType::CastShadow:
+					properties.push_back(new CastShadowProperty(1, this));
+					return properties.back();
+				case PropertyType::CollisionType:
+					properties.push_back(new CollisionTypeProperty(this));
+					return properties.back();
+				default:
+					break;
 				}
 			}
 			else
 			{
-				return GetProperty(property_name);
+				return GetProperty(type);
 			}
+		};
+
+		EntityProperty* AddNewProperty(const char* property_name)
+		{
+			return AddNewProperty(EntityProperty::StringToType(property_name));
 		};
 
 		inline const std::vector<EntityProperty*>& GetProperties()

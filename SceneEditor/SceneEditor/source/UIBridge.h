@@ -37,5 +37,6 @@ namespace SceneEditor
 		ExportDll void __stdcall EscKey(bool state);
 		ExportDll void __stdcall TabKey(bool state);
 		ExportDll void __stdcall SKey(bool state);
+		ExportDll void __stdcall ToggleLighting();
 	}
 }

@@ -137,15 +137,15 @@ namespace SceneEditor
                 normal = normal / (float)count;
                 normal = glm::normalize(normal);
 
-                constexpr float max_ang = glm::radians(35.f);
+                constexpr float max_ang = glm::radians(45.f);
                 float ang = glm::acos(glm::dot(glm::vec3(0, 1, 0), normal));
                 bool sliding = ang <= max_ang;
                 float sign = glm::sign(glm::dot(direction, normal));
                 if (!sliding)
                 {
-                    constexpr float limit = glm::radians(30.f) / 100.f;
-                    float bias = 0.15f * ((ang - max_ang) / limit) / 100.f;
-                    float speed = 0.15f + bias * sign;
+                    constexpr float limit = glm::radians(20.f) / 100.f;
+                    float bias = 0.05f * ((ang - max_ang) / limit) / 100.f;
+                    float speed = 0.1f + bias * sign;
                     speed = glm::abs(speed) + 1.65f;
                     phys_comp->SlideObjectForDuration(glm::vec3(speed, 0.f, speed) * glm::normalize((normal)), 0.1f);
                 }
@@ -388,6 +388,14 @@ namespace SceneEditor
                 else if (static_cast<int>(para[0]) == GLFW_KEY_S && app->ctr_down && static_cast<int>(para[2]) == GLFW_PRESS && !app->free_mode && !app->char_mode)
                 {
                     app->App_SaveScene();
+                }
+                else if (static_cast<int>(para[0]) == GLFW_KEY_C && app->ctr_down && static_cast<int>(para[2]) == GLFW_PRESS && !app->free_mode && !app->char_mode)
+                {
+                    app->copy_buf = app->GetRenderer()->GetSelectionID();
+                }
+                else if (static_cast<int>(para[0]) == GLFW_KEY_V && app->ctr_down && static_cast<int>(para[2]) == GLFW_PRESS && !app->free_mode && !app->char_mode)
+                {
+                    app->App_CloneEntity();
                 }
             });
 

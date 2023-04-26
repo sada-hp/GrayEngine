@@ -10,6 +10,10 @@
 #include "Engine/Headers/Virtual/Renderer.h"
 #include "VulkanAPI.h"
 
+#ifdef _DEBUG
+#define VALIDATION
+#endif
+
 namespace GrEngine_Vulkan
 {
 	class VulkanRenderer : public GrEngine::Renderer
@@ -31,11 +35,13 @@ namespace GrEngine_Vulkan
 		bool loadModel(UINT id, const char* model_path) override;
 		GrEngine::Entity* addEntity() override;
 		GrEngine::Entity* addEntity(UINT ID) override;
+		GrEngine::Entity* CloneEntity(UINT id) override;
 		GrEngine::Object* InitDrawableObject(GrEngine::Entity* ownerEntity) override;
 		GrEngine::LightObject* InitSpotlightObject(GrEngine::Entity* ownerEntity) override;
 		GrEngine::LightObject* InitCascadeLightObject(GrEngine::Entity* ownerEntity) override;
 		GrEngine::LightObject* InitPointLightObject(GrEngine::Entity* ownerEntity) override;
 		GrEngine::LightObject* InitOmniLightObject(GrEngine::Entity* ownerEntity) override;
+		void SetUseDynamicLighting(bool state) override;
 
 		void addEntity(GrEngine::Entity* entity) override;
 		bool assignTextures(std::vector<std::string> textures, GrEngine::Entity* target) override;
@@ -133,6 +139,7 @@ namespace GrEngine_Vulkan
 		std::vector<VkSemaphore> imageAvailableSemaphore;
 		std::vector<VkSemaphore> renderFinishedSemaphore;
 		std::vector<VkFence> renderFence;
+		VkFence transitionFence;
 
 		uint32_t currentFrame = 0;
 		uint32_t previousFrame = 0;
@@ -210,7 +217,7 @@ namespace GrEngine_Vulkan
 		uint8_t max_async_frames = 1;
 		bool vsync = false;
 
-#ifdef _DEBUG
+#ifdef VALIDATION
 
 		VkDebugUtilsMessengerEXT debugMessenger;
 		const std::vector<const char*> validationLayers = { "VK_LAYER_KHRONOS_validation" };

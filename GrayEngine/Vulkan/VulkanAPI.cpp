@@ -324,7 +324,7 @@ namespace GrEngine_Vulkan
 
 		dependencies[1].srcSubpass = VK_SUBPASS_EXTERNAL;
 		dependencies[1].dstSubpass = 0;
-		dependencies[1].srcStageMask = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
+		dependencies[1].srcStageMask = VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT;
 		dependencies[1].dstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
 		dependencies[1].srcAccessMask = VK_ACCESS_MEMORY_READ_BIT;
 		dependencies[1].dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_READ_BIT | VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
@@ -350,17 +350,17 @@ namespace GrEngine_Vulkan
 		dependencies[4].srcSubpass = 2;
 		dependencies[4].dstSubpass = 3;
 		dependencies[4].srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
-		dependencies[4].dstStageMask = VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT;
-		dependencies[4].srcAccessMask = VK_ACCESS_SHADER_READ_BIT;
-		dependencies[4].dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+		dependencies[4].dstStageMask = VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT | VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT;
+		dependencies[4].srcAccessMask = VK_ACCESS_COLOR_ATTACHMENT_READ_BIT | VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+		dependencies[4].dstAccessMask = VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
 		dependencies[4].dependencyFlags = VK_DEPENDENCY_BY_REGION_BIT;
 
 		dependencies[5].srcSubpass = 3;
 		dependencies[5].dstSubpass = VK_SUBPASS_EXTERNAL;
-		dependencies[5].srcStageMask = VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT;
-		dependencies[5].dstStageMask = VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT;
-		dependencies[5].srcAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
-		dependencies[5].dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_READ_BIT;
+		dependencies[5].srcStageMask = VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT | VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT;
+		dependencies[5].dstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+		dependencies[5].srcAccessMask = VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
+		dependencies[5].dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT | VK_ACCESS_COLOR_ATTACHMENT_READ_BIT;
 		dependencies[5].dependencyFlags = VK_DEPENDENCY_BY_REGION_BIT;
 
 		VkRenderPassCreateInfo renderPassInfo = {};
@@ -466,9 +466,13 @@ namespace GrEngine_Vulkan
 
 	bool VulkanAPI::CreateVkSemaphore(VkDevice device, VkSemaphore* outSemaphore)
 	{
+		VkSemaphoreTypeCreateInfo  type{};
+		type.sType = VK_STRUCTURE_TYPE_SEMAPHORE_TYPE_CREATE_INFO;
+		type.initialValue = 0;
+		type.semaphoreType = VK_SEMAPHORE_TYPE_BINARY;
 		VkSemaphoreCreateInfo semaphoreInfo{};
 		semaphoreInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
-
+		semaphoreInfo.pNext = &type;
 		VkResult res = vkCreateSemaphore(device, &semaphoreInfo, nullptr, outSemaphore);
 
 		if (res != VK_SUCCESS)

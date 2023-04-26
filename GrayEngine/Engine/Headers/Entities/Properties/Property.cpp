@@ -492,7 +492,7 @@ DrawableProperty::~DrawableProperty()
 
 const char* DrawableProperty::ValueString()
 {
-	return property_value.c_str();
+	return static_cast<GrEngine::Object*>(drawable)->gmf_name.c_str();
 }
 
 void DrawableProperty::ParsePropertyValue(const char* value)

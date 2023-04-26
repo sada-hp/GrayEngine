@@ -669,5 +669,10 @@ namespace EditorUI
                 UIBridge.TabKey(false);
             }
         }
+
+        private void LightingButton_Click(object sender, RoutedEventArgs e)
+        {
+            UIBridge.ToggleLighting();
+        }
     };
 }

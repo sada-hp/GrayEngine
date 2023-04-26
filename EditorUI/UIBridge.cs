@@ -82,6 +82,8 @@ namespace EditorUI
         public static extern void TabKey(bool state);
         [DllImport("SceneEditor.dll", CallingConvention = CallingConvention.Cdecl)]
         public static extern void SKey(bool state);
+        [DllImport("SceneEditor.dll", CallingConvention = CallingConvention.Cdecl)]
+        public static extern void ToggleLighting();
 
         public static Wrapper[] wrappers = new Wrapper[2];
         public static Thread uThread;

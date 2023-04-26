@@ -73,7 +73,7 @@ void SceneEditor::LoadModelFile(const char* model_path)
 
     if (drawComponent != nullptr)
     {
-        drawComponent->LoadModel(mesh_path.c_str(), textures_vector);
+        drawComponent->LoadModel(model_path, mesh_path.c_str(), textures_vector);
     }
 
     if (physComponent != nullptr)
@@ -327,4 +327,10 @@ void SceneEditor::SKey(bool state)
 
     SceneEditor::GetApplication()->FocusWindow();
     SceneEditor::GetApplication()->GetEventListener()->registerEvent(EventType::KeyPress, para);
+}
+
+
+void SceneEditor::ToggleLighting()
+{
+    SceneEditor::GetApplication()->GetRenderer()->SetUseDynamicLighting(!SceneEditor::GetApplication()->GetRenderer()->IsDynamicLightEnabled());
 }
