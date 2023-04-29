@@ -12,10 +12,10 @@ namespace GrEngine_Vulkan
 		virtual void initObject(VkDevice device, VmaAllocator allocator, GrEngine::Renderer* owner) override;
 		virtual bool pushConstants(VkCommandBuffer cmd) override;
 		void Refresh() override;
-		void CalculateNormals() override;
+		void CalculateNormals(GrEngine_Vulkan::Mesh* target);
 
 		bool LoadMesh(const char* mesh_path) override;
-		bool LoadModel(const char* gmf_path, const char* mesh_path, std::vector<std::string> textures_vector) override;
+		bool LoadModel(const char* gmf_path, const char* mesh_path, std::vector<std::string> textures_vector, std::vector<std::string> normals_vector) override;
 		void GeneratePlaneMesh(float width, int subdivisions) override;
 		void GenerateBoxMesh(float width, float height, float depth) override;
 		static uint32_t selected_id;

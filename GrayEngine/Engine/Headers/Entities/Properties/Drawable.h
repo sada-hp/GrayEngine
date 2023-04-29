@@ -15,8 +15,9 @@ namespace GrEngine
 	struct Vertex
 	{
 		glm::vec4 pos;
-		glm::vec4 norm;
-		glm::vec4 tang;
+		glm::vec3 norm;
+		glm::vec3 tang;
+		glm::vec3 bitang;
 		glm::vec4 color;
 		glm::vec2 uv;
 		uint32_t uv_index;
@@ -24,12 +25,13 @@ namespace GrEngine
 		Vertex()
 		{
 			pos = glm::vec4(0.f);
-			norm = glm::vec4(0.f);
-			tang = glm::vec4(0.f);
+			norm = glm::vec3(0.f);
+			tang = glm::vec3(0.f);
+			bitang = glm::vec3(0.f);
 			uv = glm::vec2(0.f);
 		}
 
-		Vertex(glm::vec4 position, glm::vec4 normal, glm::vec2 uv_coordinates, uint32_t material_index = 0)
+		Vertex(glm::vec4 position, glm::vec3 normal, glm::vec2 uv_coordinates, uint32_t material_index = 0)
 		{
 			pos = position;
 			uv = uv_coordinates;
@@ -72,7 +74,7 @@ namespace GrEngine
 
 		virtual bool LoadMesh(const char* mesh_path) = 0;
 
-		virtual bool LoadModel(const char* gmf_path, const char* mesh_path, std::vector<std::string> textures_vector) = 0;
+		virtual bool LoadModel(const char* gmf_path, const char* mesh_path, std::vector<std::string> textures_vector, std::vector<std::string> normals_vector) = 0;
 
 		virtual void GeneratePlaneMesh(float width, int subdivisions) = 0;
 
@@ -80,7 +82,7 @@ namespace GrEngine
 
 		virtual void Refresh() = 0;
 
-		virtual void CalculateNormals() = 0;
+		//virtual void CalculateNormals() = 0;
 
 		virtual glm::vec3 GetObjectPosition()
 		{
@@ -159,7 +161,7 @@ namespace GrEngine
 
 		std::vector<std::string> texture_names;
 		std::string mesh_name;
-		std::string gmf_name;
+		std::string gmf_name = "nil";
 
 	protected:
 

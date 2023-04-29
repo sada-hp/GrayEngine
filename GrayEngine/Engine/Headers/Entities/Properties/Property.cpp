@@ -293,13 +293,20 @@ void EntityOrientationProperty::SetPropertyValue(glm::vec3 p_y_r)
 	q = q * glm::angleAxis(glm::radians(pitch_yaw_roll.z), glm::vec3(0, 0, 1));
 	property_value = q;
 }
-
 void EntityOrientationProperty::SetPropertyValue(glm::quat value)
 {
 	property_value = value;
-	glm::quat q = glm::inverse(value);
-	pitch_yaw_roll = glm::degrees(glm::eulerAngles(value));
+	//Get approximation of PYR degree values
+	glm::mat4 q = glm::mat4_cast(value);
+	pitch_yaw_roll = glm::degrees(glm::vec3(glm::eulerAngles(glm::quat_cast(glm::inverse(q)))));
+	pitch_yaw_roll *= -1.f;
 }
+
+glm::vec3 EntityOrientationProperty::GetPitchYawRoll()
+{
+	return pitch_yaw_roll;
+}
+
 
 std::any EntityOrientationProperty::GetAnyValue()
 {

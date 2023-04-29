@@ -102,6 +102,11 @@ namespace EditorUI
             }
         }
 
+        public void OpenFormContextMenu()
+        {
+            FormHost.ContextMenu.IsOpen = true;
+        }
+
         internal void UpdateFrameCounter(string frames)
         {
             FrameBlock.Text = "FPS : " + frames;
@@ -267,8 +272,10 @@ namespace EditorUI
                 mode = "0";
             else if ((sender as PropertyControl).Contents == "Sphere")
                 mode = "1";
-            else
+            else if ((sender as PropertyControl).Contents == "Hull")
                 mode = "2";
+            else
+                mode = "3";
 
             UIBridge.UpdateEntityProperty(((PropertyControl)sender).ID, Marshal.StringToHGlobalAnsi("CollisionType"), Marshal.StringToHGlobalAnsi(mode));
         }
@@ -394,15 +401,19 @@ namespace EditorUI
                 {
                     if (value == "0")
                     {
-                        properties[name] = "Box:Sphere:Mesh";
+                        properties[name] = "Box:Sphere:Hull:Mesh";
                     }
                     else if (value == "1")
                     {
-                        properties[name] = "Sphere:Box:Mesh";
+                        properties[name] = "Sphere:Box:Hull:Mesh";
                     }
                     else if (value == "2")
                     {
-                        properties[name] = "Mesh:Box:Sphere";
+                        properties[name] = "Hull:Box:Sphere:Mesh";
+                    }
+                    else if (value == "3")
+                    {
+                        properties[name] = "Mesh:Box:Sphere:Hull";
                     }
 
                     types.Add(name, typeof(ListControl));
@@ -571,6 +582,26 @@ namespace EditorUI
             catch (Exception ee)
             {
                 UIBridge.LogMessage(Marshal.StringToHGlobalAnsi(ee.Message));
+            }
+        }
+
+        private void ContextItem_Click(object sender, RoutedEventArgs e)
+        {
+            if ((sender as System.Windows.Controls.MenuItem).Header.ToString() == "Copy")
+            {
+                UIBridge.CopyEntity();
+            }
+            else if ((sender as System.Windows.Controls.MenuItem).Header.ToString() == "Paste")
+            {
+                UIBridge.PasteEntity();
+            }
+            else if ((sender as System.Windows.Controls.MenuItem).Header.ToString() == "Delete")
+            {
+                UIBridge.DeleteEntity();
+            }
+            else if ((sender as System.Windows.Controls.MenuItem).Header.ToString() == "Snap to terrain")
+            {
+                UIBridge.SnapEntity();
             }
         }
 

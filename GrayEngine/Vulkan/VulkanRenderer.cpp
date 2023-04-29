@@ -2020,7 +2020,7 @@ namespace GrEngine_Vulkan
 		if (drawables.count(id) > 0)
 		{
 			VulkanObject* ref_obj = static_cast<VulkanObject*>(drawables[id]);
-			ref_obj->LoadModel("", mesh_path, textures_vector);
+			ref_obj->LoadModel("", mesh_path, textures_vector, {});
 		}
 		else
 		{
@@ -2089,6 +2089,36 @@ namespace GrEngine_Vulkan
 			}
 
 			object->object_texture = loadTexture(textures, VK_IMAGE_VIEW_TYPE_2D_ARRAY, VK_IMAGE_TYPE_2D)->AddLink();
+			object->updateObject();
+		}
+
+		return true;
+	}
+
+	bool VulkanRenderer::assignNormals(std::vector<std::string> normals, GrEngine::Entity* target)
+	{
+		if (target->GetEntityType() == GrEngine::EntityType::TerrainEntity)
+		{
+			VulkanTerrain* object = static_cast<VulkanTerrain*>(target);
+			if (object->object_normal != nullptr)
+			{
+				resources.RemoveTexture(object->object_normal->texture_collection, logicalDevice, memAllocator);
+				object->object_normal = nullptr;
+			}
+
+			object->object_normal = loadTexture(normals, VK_IMAGE_VIEW_TYPE_2D_ARRAY, VK_IMAGE_TYPE_2D)->AddLink();
+			object->updateObject();
+		}
+		else if (drawables.count(target->GetEntityID()) > 0)
+		{
+			VulkanObject* object = static_cast<VulkanObject*>(drawables[target->GetEntityID()]);
+			if (object->object_normal != nullptr)
+			{
+				resources.RemoveTexture(object->object_normal->texture_collection, logicalDevice, memAllocator);
+				object->object_normal = nullptr;
+			}
+
+			object->object_normal = loadTexture(normals, VK_IMAGE_VIEW_TYPE_2D_ARRAY, VK_IMAGE_TYPE_2D)->AddLink();
 			object->updateObject();
 		}
 
@@ -3046,15 +3076,7 @@ namespace GrEngine_Vulkan
 		std::vector<EntityProperty*> cur_props = getActiveViewport()->GetProperties();
 		for (std::vector<EntityProperty*>::iterator itt = cur_props.begin(); itt != cur_props.end(); ++itt)
 		{
-			if ((*itt)->PrpertyNameString() == "EntityOrientation")
-			{
-				glm::vec3 pyr = getActiveViewport()->GetActualPYR();
-				new_file << "    " << (*itt)->PrpertyNameString() << " " << (GrEngine::Globals::FloatToString(pyr.x, 5) + ":" + GrEngine::Globals::FloatToString(pyr.y, 5) + ":" + GrEngine::Globals::FloatToString(pyr.z, 5)) << "\n";
-			}
-			else
-			{
-				new_file << "    " << (*itt)->PrpertyNameString() << " " << (*itt)->ValueString() << "\n";
-			}
+			new_file << "    " << (*itt)->PrpertyNameString() << " " << (*itt)->ValueString() << "\n";
 		}
 		new_file << "}\n";
 
@@ -3150,7 +3172,8 @@ namespace GrEngine_Vulkan
 				LoadTerrain(terrain_path.c_str());
 			}
 		}
-
+		
+		viewport_camera.SetRotation(viewport_camera.GetObjectOrientation());
 		file.close();
 	}
 };

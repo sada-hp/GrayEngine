@@ -177,6 +177,7 @@ public:
 	void ParsePropertyValue(const char* value) override;
 	void SetPropertyValue(glm::vec3 p_y_r);
 	void SetPropertyValue(glm::quat value);
+	glm::vec3 GetPitchYawRoll();
 	std::any GetAnyValue() override;
 	virtual void* GetValueAdress() override;
 

@@ -33,7 +33,7 @@ namespace SceneEditor
 
         glm::quat q = glm::quat_cast(glm::mat3(1.f));
         q = q * glm::angleAxis(glm::radians(0.f), glm::vec3(1, 0, 0));
-        q = q * glm::angleAxis(glm::radians(-camera->GetActualPYR().y), glm::vec3(0, 1, 0));
+        q = q * glm::angleAxis(glm::radians(-camera->GetInternalPYR().y), glm::vec3(0, 1, 0));
         q = q * glm::angleAxis(glm::radians(0.f), glm::vec3(0, 0, 1));
         glm::mat4 trans = glm::translate(glm::mat4(1.f), camera->GetObjectPosition()) * glm::mat4_cast(q);
         if (app->IsKeyDown(GLFW_KEY_W))
@@ -56,15 +56,17 @@ namespace SceneEditor
         {
             sprint = 1.35f;
         }
+        glm::vec3 cap_pos = app->shrek_coll->GetObjectPosition();
+
         GrEngine::PhysicsObject* phys_comp = static_cast<GrEngine::PhysicsObject*>(app->shrek_coll->GetProperty(PropertyType::PhysComponent)->GetValueAdress());
+
         if (direction != glm::vec3(0.f))
         {
-            glm::vec3 cap_pos = app->shrek_coll->GetObjectPosition();
             GrEngine::RayCastResult ray = app->GetPhysics()->CastRayGetHit(cap_pos, glm::vec3(cap_pos.x, cap_pos.y - 2.5f, cap_pos.z));
             std::vector<GrEngine::RayCastResult> res;
             if (!ray.hasHit)
             {
-                res = app->GetPhysics()->GetObjectContactPoints(phys_comp, 25.f);
+                res = app->GetPhysics()->GetObjectContactPoints(phys_comp, 15.f);
             }
             else
             {
@@ -119,10 +121,18 @@ namespace SceneEditor
         }
         else
         {
-            //glm::vec3 cap_pos = app->shrek_coll->GetObjectPosition();
             //GrEngine::RayCastResult res = app->GetPhysics()->CastRayGetHit(cap_pos, glm::vec3(cap_pos.x, cap_pos.y - 4.5f, cap_pos.z));
 
-            std::vector<GrEngine::RayCastResult> res = app->GetPhysics()->GetObjectContactPoints(phys_comp, 25.f);
+            GrEngine::RayCastResult ray = app->GetPhysics()->CastRayGetHit(cap_pos, glm::vec3(cap_pos.x, cap_pos.y - 2.5f, cap_pos.z));
+            std::vector<GrEngine::RayCastResult> res;
+            if (!ray.hasHit)
+            {
+                res = app->GetPhysics()->GetObjectContactPoints(phys_comp, 15.f);
+            }
+            else
+            {
+                res.push_back(ray);
+            }
             if (res.size() > 0)
             {
                 glm::vec3 normal = glm::vec3(0.f);
@@ -180,7 +190,7 @@ namespace SceneEditor
             glm::vec3 dir = glm::vec3(trans[mInd][0], trans[mInd][1], trans[mInd][2]);
             float len = dist * (float)glm::dot(glm::vec2(app->manip_start.x - cursor.x, app->manip_start.y - cursor.y), app->direct) * 0.0012f * ((vSize.x) / (float)(vSize.y));
 
-            tPos = app->transform_target->GetObjectPosition() + dir * glm::vec3(len);
+            tPos = app->transform_target->GetObjectPosition() + glm::normalize(dir) * glm::vec3(len);
             app->transform_target->PositionObjectAt(tPos);
             app->manip_start = cursor;
             app->App_UpdateUIProperty("EntityPosition");
@@ -391,7 +401,7 @@ namespace SceneEditor
                 }
                 else if (static_cast<int>(para[0]) == GLFW_KEY_C && app->ctr_down && static_cast<int>(para[2]) == GLFW_PRESS && !app->free_mode && !app->char_mode)
                 {
-                    app->copy_buf = app->GetRenderer()->GetSelectionID();
+                    app->App_UpdateCopyBuffer();
                 }
                 else if (static_cast<int>(para[0]) == GLFW_KEY_V && app->ctr_down && static_cast<int>(para[2]) == GLFW_PRESS && !app->free_mode && !app->char_mode)
                 {
@@ -401,12 +411,12 @@ namespace SceneEditor
 
         app->GetEventListener()->pushEvent(EventType::MouseClick, [](std::vector<double> para)
             {
-                if (static_cast<int>(para[3]) == GLFW_PRESS)
+                if (static_cast<int>(para[3]) == GLFW_PRESS && static_cast<int>(para[2]) == GLFW_MOUSE_BUTTON_LEFT)
                 {
                     app->mouse_down = true;
                     app->GetRenderer()->SelectEntityAtCursor();
                 }
-                else if (static_cast<int>(para[3]) == GLFW_RELEASE)
+                else if (static_cast<int>(para[3]) == GLFW_RELEASE && static_cast<int>(para[2]) == GLFW_MOUSE_BUTTON_LEFT)
                 {
                     app->mouse_down = false;
                     app->SetCursorShape(GLFW_ARROW_CURSOR);
@@ -416,6 +426,13 @@ namespace SceneEditor
                     if (app->manipulation == 8)
                     {
                         app->App_RecalculateTerrain();
+                    }
+                }
+                else if (static_cast<int>(para[3]) == GLFW_PRESS && static_cast<int>(para[2]) == GLFW_MOUSE_BUTTON_RIGHT)
+                {
+                    if (app->transform_target != nullptr)
+                    {
+                        app->getEditorUI()->ShowContextMenu();
                     }
                 }
             });

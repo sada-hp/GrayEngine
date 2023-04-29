@@ -39,7 +39,11 @@ namespace GrEngine
 
 		 void Rotate(const glm::quat& angle) override
 		 {
-			 pitch_yaw_roll += glm::eulerAngles(angle);
+			 glm::quat rot = *obj_orientation * angle;
+			 //Get approximation of PYR degree values
+			 glm::mat4 q = glm::mat4_cast(rot);
+			 pitch_yaw_roll = glm::degrees(glm::vec3(glm::eulerAngles(glm::quat_cast(glm::inverse(q)))));
+			 pitch_yaw_roll *= -1.f;
 			 checkBorders();
 			 obj_orientation_target += angle;
 		 }
@@ -60,7 +64,10 @@ namespace GrEngine
 
 		 virtual void SetRotation(const glm::quat& angle) override
 		 {
-			 pitch_yaw_roll = glm::eulerAngles(angle);
+			 //Get approximation of PYR degree values
+			 glm::mat4 q = glm::mat4_cast(angle);
+			 pitch_yaw_roll = glm::degrees(glm::vec3(glm::eulerAngles(glm::quat_cast(glm::inverse(q)))));
+			 pitch_yaw_roll *= -1.f;
 			 static_cast<EntityOrientationProperty*>(properties[3])->SetPropertyValue(angle);
 			 obj_orientation_target = angle;
 		 };
@@ -104,11 +111,6 @@ namespace GrEngine
 			 return *obj_orientation;
 		 };
 
-		 const glm::vec3& GetActualPYR()
-		 {
-			 return pitch_yaw_roll;
-		 }
-
 		void LockAxes(float pitch_up, float pitch_low, float yaw_up, float yaw_low, float roll_up, float roll_low)
 		{
 			bounds_up = glm::vec3(pitch_up, yaw_up, roll_up);
@@ -126,6 +128,11 @@ namespace GrEngine
 		void UnlockAxes()
 		{
 			axes_lock = false;
+		}
+
+		glm::vec3 GetInternalPYR()
+		{
+			return pitch_yaw_roll;
 		}
 
 		glm::vec3& UpdateCameraPosition(float smoothing_factor = 0.f)

@@ -211,7 +211,7 @@ namespace GrEngineBullet
 			}
 		}
 
-		bool LoadCollisionMesh(const char* mesh_path) override
+		bool LoadCollisionMesh(const char* mesh_path, bool use_hull = true) override
 		{
 			if (mesh_path == NULL || mesh_path == "")
 			{
@@ -270,29 +270,39 @@ namespace GrEngineBullet
 							hullVert.push_back(vertex);
 							colMesh->findOrAddVertex(vertex, false);
 						}
-
+						
 						int index = uniqueVertices[vertex];
 						indices.push_back(index);
+
+						if (indices.size() % 3 == 0 && indices.size() > 0)
+						{
+							colMesh->addTriangleIndices(indices[indices.size() - 1], indices[indices.size() - 2], indices[indices.size() - 3]);
+						}
 					}
 				}
 
-				for (std::vector<uint32_t>::iterator itt = indices.begin(); itt != indices.end(); ++itt)
-				{
-					colMesh->addTriangleIndices(*(++itt), *(++itt), *itt);
-				}
-
 				CollisionMesh* cmesh = new CollisionMesh();
-				btConvexShape* tmpshape = new btConvexTriangleMeshShape(colMesh);
-				tmpshape->setMargin(0.001f);
-				btShapeHull* hull = new btShapeHull(tmpshape);
-				hull->buildHull(0);
-				cmesh->path = mesh_path;
-				cmesh->shape = new btConvexHullShape((const btScalar*)hull->getVertexPointer(), hull->numVertices(), sizeof(btVector3));
-				auto collision_mesh = resources->AddCollisionMeshResource(mesh_path, cmesh);
-				objCollision = collision_mesh->AddLink();
-				delete hull;
-				delete tmpshape;
-				delete colMesh;
+				if (use_hull)
+				{
+					btConvexTriangleMeshShape* tmpshape = new btConvexTriangleMeshShape(colMesh);
+					tmpshape->setMargin(0.001f);
+					btShapeHull* hull = new btShapeHull(tmpshape);
+					hull->buildHull(0);
+					cmesh->path = mesh_path;
+					cmesh->shape = new btConvexHullShape((const btScalar*)hull->getVertexPointer(), hull->numVertices(), sizeof(btVector3));
+					auto collision_mesh = resources->AddCollisionMeshResource(("Hull_" + std::string(mesh_path)).c_str(), cmesh);
+					objCollision = collision_mesh->AddLink();
+					delete hull;
+					delete tmpshape;
+					delete colMesh;
+				}
+				else
+				{
+					cmesh->path = mesh_path;
+					cmesh->shape = new btBvhTriangleMeshShape(colMesh, true);
+					auto collision_mesh = resources->AddCollisionMeshResource(("Mesh_" + std::string(mesh_path)).c_str(), cmesh);
+					objCollision = collision_mesh->AddLink();
+				}
 
 				UpdateCollisionShape(objCollision->shape);
 			}
@@ -306,7 +316,7 @@ namespace GrEngineBullet
 				UpdateCollisionShape(objCollision->shape);
 			}
 
-			shape_name = mesh_path;
+			shape_name = use_hull ? "Hull_" + std::string(mesh_path) : "Mesh_" + std::string(mesh_path);
 			pOwner->collision_path = mesh_path;
 			return true;
 		}
@@ -321,10 +331,10 @@ namespace GrEngineBullet
 			case CollisionTypeEnum::Sphere:
 				break;
 			case CollisionTypeEnum::ConvexHullMesh:
-				LoadCollisionMesh(pOwner->collision_path.c_str());
+				LoadCollisionMesh(pOwner->collision_path.c_str(), true);
 				break;
 			case CollisionTypeEnum::Mesh:
-				LoadCollisionMesh(pOwner->collision_path.c_str());
+				LoadCollisionMesh(pOwner->collision_path.c_str(), false);
 				break;
 			case CollisionTypeEnum::Capsule:
 				GenerateCapsuleCollision(1, 2);
@@ -564,6 +574,7 @@ namespace GrEngineBullet
 	struct CollisionTest : public btCollisionWorld::ContactResultCallback
 	{
 		std::vector<GrEngine::RayCastResult>* out{};
+
 		CollisionTest(std::vector<GrEngine::RayCastResult>* output)
 		{
 			out = output;
@@ -577,6 +588,27 @@ namespace GrEngineBullet
 			r.hitNorm = glm::vec3(cp.m_normalWorldOnB.x(), cp.m_normalWorldOnB.y(), cp.m_normalWorldOnB.z());
 			r.distance = cp.getDistance();
 			out->push_back(r);
+			return 1;
+		}
+	};
+
+	struct CollisionTestSingle : public btCollisionWorld::ContactResultCallback
+	{
+		GrEngine::RayCastResult& outSingle;
+
+		CollisionTestSingle(GrEngine::RayCastResult& output) : outSingle(output)
+		{
+			outSingle = output;
+		}
+
+		btScalar addSingleResult(btManifoldPoint& cp, const btCollisionObjectWrapper* colObj0Wrap, int partId0, int index0, const btCollisionObjectWrapper* colObj1Wrap, int partId1, int index1) override
+		{
+			GrEngine::RayCastResult r{};
+			r.hitPos = glm::vec3(cp.getPositionWorldOnB().x(), cp.getPositionWorldOnB().y(), cp.getPositionWorldOnB().z());
+			r.hasHit = true;
+			r.hitNorm = glm::vec3(cp.m_normalWorldOnB.x(), cp.m_normalWorldOnB.y(), cp.m_normalWorldOnB.z());
+			r.distance = cp.getDistance();
+			outSingle = r;
 			return 1;
 		}
 	};

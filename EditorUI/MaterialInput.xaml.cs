@@ -16,6 +16,7 @@ namespace EditorUI
         public int material_index;
 
         public event EventHandler event_load_material;
+        public event EventHandler event_load_normal;
         public MaterialInput()
         {
             InitializeComponent();
@@ -24,6 +25,11 @@ namespace EditorUI
         private void LoadBtn_Click(object sender, RoutedEventArgs e)
         {
             event_load_material?.Invoke(this, null);
+        }
+
+        private void NormalBtn_Click(object sender, RoutedEventArgs e)
+        {
+            event_load_normal?.Invoke(this, null);
         }
     }
 }

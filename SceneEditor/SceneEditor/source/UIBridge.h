@@ -38,5 +38,9 @@ namespace SceneEditor
 		ExportDll void __stdcall TabKey(bool state);
 		ExportDll void __stdcall SKey(bool state);
 		ExportDll void __stdcall ToggleLighting();
+		ExportDll void __stdcall CopyEntity();
+		ExportDll void __stdcall PasteEntity();
+		ExportDll void __stdcall DeleteEntity();
+		ExportDll void __stdcall SnapEntity();
 	}
 }

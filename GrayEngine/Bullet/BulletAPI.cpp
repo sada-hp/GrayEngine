@@ -5,6 +5,7 @@ namespace GrEngineBullet
 {
 	void BulletAPI::SimulateStep()
 	{
+		constexpr double physics_step = 1 / 60.0;
 		if (simulate)
 		{
 			dynamicsWorld->stepSimulation(GrEngine::Globals::delta_time, 1, GrEngine::Globals::delta_time);
@@ -119,6 +120,8 @@ namespace GrEngineBullet
 
 	const GrEngine::RayCastResult BulletAPI::CastRayGetHit(glm::vec3 startPoint, glm::vec3 endPoint)
 	{
+		if (startPoint == endPoint) return GrEngine::RayCastResult{};
+
 		//updateObjects();
 		dynamicsWorld->updateAabbs();
 		dynamicsWorld->computeOverlappingPairs();
@@ -137,16 +140,19 @@ namespace GrEngineBullet
 		if (res.hasHit())
 		{
 			btVector3 p = start.lerp(end, res.m_hitFractions[0]);
-			btVector3 n = res.m_hitNormalWorld[0];
+			btVector3 n = btVector3(res.m_hitNormalWorld[0].m_floats[0], res.m_hitNormalWorld[0].m_floats[1], res.m_hitNormalWorld[0].m_floats[2]);
 			raycastResult.hasHit = true;
 			raycastResult.hitPos = glm::vec3{ p.x(), p.y(), p.z() };
 			raycastResult.hitNorm = glm::vec3{ n.x(), n.y(), n.z() };
+			//raycastResult.hitNorm = glm::normalize(raycastResult.hitNorm);
 		}
 		return raycastResult;
 	}
 
 	const GrEngine::RayCastResult BulletAPI::CastRayToObject(glm::vec3 startPoint, glm::vec3 endPoint, UINT id)
 	{
+		if (startPoint == endPoint) return GrEngine::RayCastResult{};
+
 		//updateObjects();
 		dynamicsWorld->updateAabbs();
 		dynamicsWorld->computeOverlappingPairs();
@@ -164,15 +170,16 @@ namespace GrEngineBullet
 
 		if (res.hasHit())
 		{
-			for (int i = 0; i < res.m_hitFractions.size(); i++)
+			for (int i = 0; i < res.m_collisionObjects.size(); i++)
 			{
 				if ((UINT)res.m_collisionObjects[i]->getUserPointer() == id)
 				{
 					btVector3 p = start.lerp(end, res.m_hitFractions[i]);
-					btVector3 n = res.m_hitNormalWorld[i];
+					btVector3 n = btVector3(res.m_hitNormalWorld[i].m_floats[0], res.m_hitNormalWorld[i].m_floats[1], res.m_hitNormalWorld[i].m_floats[2]);
 					raycastResult.hitPos = glm::vec3{ p.x(), p.y(), p.z() };
 					raycastResult.hasHit = true;
 					raycastResult.hitNorm = glm::vec3{ n.x(), n.y(), n.z() };
+					//raycastResult.hitNorm = glm::normalize(raycastResult.hitNorm);
 					break;
 				}
 			}
@@ -187,6 +194,28 @@ namespace GrEngineBullet
 		std::vector<GrEngine::RayCastResult> out;
 		CollisionTest callback(&out);
 		dynamicsWorld->getCollisionWorld()->contactTest(btObject->body, callback);
+
+		//BulletPhysObject* btObject = static_cast<BulletPhysObject*>(object);
+		//std::vector<GrEngine::RayCastResult> out;
+		//glm::vec3 orig1 = glm::vec3(btObject->body->getWorldTransform().getOrigin().x(), btObject->body->getWorldTransform().getOrigin().y(), btObject->body->getWorldTransform().getOrigin().z());
+
+		//for (std::vector<GrEngine::PhysicsObject*>::iterator itt = objects.begin(); itt != objects.end(); ++itt)
+		//{
+		//	BulletPhysObject* objectSecond = static_cast<BulletPhysObject*>(*itt);
+		//	glm::vec3 orig2 = glm::vec3(objectSecond->body->getWorldTransform().getOrigin().x(), objectSecond->body->getWorldTransform().getOrigin().y(), objectSecond->body->getWorldTransform().getOrigin().z());
+		//	btVector3 min;
+		//	btVector3 max;
+		//	btTransform t;
+		//	objectSecond->colShape->getAabb(t, min, max);
+		//	if ((glm::distance(orig1, orig2) < radius && btObject != objectSecond ||
+		//		(orig1.x < max.x() && orig1.x > min.x() && orig1.y < max.y() && orig1.y > min.y() && orig1.z < max.z() && orig1.z > min.z())) && btObject != objectSecond)
+		//	{
+		//		GrEngine::RayCastResult temp;
+		//		CollisionTestSingle callback(temp);
+		//		dynamicsWorld->getCollisionWorld()->contactPairTest(btObject->body, objectSecond->body, callback);
+		//		out.push_back(temp);
+		//	}
+		//}
 
 		//int numManifolds = dynamicsWorld->getDispatcher()->getNumManifolds();
 		//for (int i = 0; i < numManifolds; i++)

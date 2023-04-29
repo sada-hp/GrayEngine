@@ -406,6 +406,14 @@ namespace GrEngine
             SendUIInfo();
         }
 
+        void App_UpdateCopyBuffer()
+        {
+            if (transform_target != nullptr)
+            {
+                copy_buf = transform_target->GetEntityID();
+            }
+        }
+
         void App_GenerateTerrain(int resolution, int x, int y, int z, std::array<std::string, 6> maps)
         {
             if (foliage_mask != nullptr)
@@ -700,7 +708,37 @@ namespace GrEngine
                 const RayCastResult res = GetPhysics()->CastRayToObject(GetRenderer()->getActiveViewport()->GetObjectPosition(), tset + dir * 1000.f, 100);
 
                 if (res.hasHit)
-                    ent->PositionObjectAt(res.hitPos);
+                {
+                    glm::vec3 pos = res.hitPos;
+                    ent->PositionObjectAt(pos);
+                }
+            }
+        }
+
+        void App_SnapToGround()
+        {
+            if (transform_target != nullptr)
+            {
+                glm::vec3 pos = transform_target->GetObjectPosition();
+                RayCastResult res = GetPhysics()->CastRayToObject(pos + glm::vec3(0, 1, 0), pos - glm::vec3(0, 1000, 0), 100);
+
+                if (!res.hasHit)
+                {
+                    res = GetPhysics()->CastRayToObject(pos - glm::vec3(0, 1, 0), pos + glm::vec3(0, 1000, 0), 100);
+                    res.hitNorm = -res.hitNorm;
+                }
+
+                if (res.hasHit)
+                {
+                    transform_target->PositionObjectAt(res.hitPos);
+                    //transform_target->Rotate(glm::angleAxis(res.hitNorm.x, glm::vec3(1, 0, 0)));
+                    //transform_target->Rotate(glm::angleAxis(res.hitNorm.y, glm::vec3(0, 1, 0)));
+                    //transform_target->Rotate(glm::angleAxis(res.hitNorm.z, glm::vec3(0, 0, 1)));
+                    float x = glm::acos(glm::dot(res.hitNorm, glm::vec3(1, 0, 0)));
+                    float y = glm::acos(glm::dot(res.hitNorm, glm::vec3(0, 1, 0)));
+                    float z = glm::acos(glm::dot(res.hitNorm, glm::vec3(0, 0, 1)));
+                    transform_target->SetRotation(90.f - glm::degrees(z), glm::degrees(y), glm::degrees(x) - 90.f);
+                }
             }
         }
 

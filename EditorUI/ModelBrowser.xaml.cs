@@ -23,6 +23,7 @@ namespace EditorUI
         SortType sorting = SortType.NAME_ASC;
         System.Windows.Forms.Panel panel = new System.Windows.Forms.Panel();
         SortedDictionary<int, string> Materials = new SortedDictionary<int, string>();
+        SortedDictionary<int, string> Normals = new SortedDictionary<int, string>();
         SortedDictionary<string, System.Windows.Controls.Control> LoadedAssets = new SortedDictionary<string, System.Windows.Controls.Control>();
         public static string distr_location = System.IO.Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location);
         public static string content_folder = distr_location + @"\Content\";
@@ -148,9 +149,84 @@ namespace EditorUI
             }
         }
 
-        internal void LoadDataAsync()
+        internal void ReadModel(string filepath)
         {
-            LoadData();
+            try
+            {
+                Normals.Clear();
+                Materials.Clear();
+                System.IO.FileStream file = new System.IO.FileStream(filepath, System.IO.FileMode.Open);
+                byte[] byte_array = new byte[file.Length];
+                file.Read(byte_array, 0, byte_array.Length);
+                string oper = "";
+                string mode = "";
+                string mesh_path = "";
+                string collision_path = "";
+                bool writing = false;
+
+                foreach (char chr in byte_array)
+                {
+                    if (chr == ' ' || chr == '\n')
+                    {
+                        continue;
+                    }
+                    else if (chr == '{')
+                    {
+                        writing = true;
+                        oper = "";
+                    }
+                    else if (chr == '}')
+                    {
+                        if (mode.Contains("mesh"))
+                        {
+                            loaded_mesh = oper.Trim();
+                        }
+                        else if (mode.Contains("collision"))
+                        {
+                            loaded_collision = oper.Trim();
+                        }
+                        else if (mode.Contains("textures"))
+                        {
+                            int offset = 0;
+                            for (int i = 0; i < oper.Count(x => x == '.'); i++)
+                            {
+                                string map = oper.Substring(offset, oper.Substring(offset, oper.Length - offset - 1).IndexOf('.') + 4);
+                                Materials[Materials.Count] = map.Trim();
+                                offset += map.Length;
+                            }
+                        }
+                        else if (mode.Contains("normals"))
+                        {
+                            int offset = 0;
+                            for (int i = 0; i < oper.Count(x => x == '.'); i++)
+                            {
+                                string map = oper.Substring(offset, oper.Substring(offset, oper.Length - offset - 1).IndexOf('.') + 4);
+                                Normals[Normals.Count] = map.Trim();
+                                offset += map.Length;
+                            }
+                        }
+                        writing = false;
+                        oper = "";
+                        mode = "";
+                    }
+                    else
+                    {
+                        if (writing)
+                        {
+                            oper += chr;
+                        }
+                        else
+                        {
+                            mode += chr;
+                        }
+                    }
+                }
+            }
+            catch (Exception e)
+            {
+                UIBridge.LogMessage(Marshal.StringToHGlobalAnsi("Exception occured in " + new StackFrame(1, true).GetMethod().Name + ": " + e.Message));
+                UIBridge.CloseContext();
+            }
         }
 
         private void ClearBrowser()
@@ -184,6 +260,7 @@ namespace EditorUI
             UIBridge.CloseContext();
             LoadedAssets.Clear();
             Materials.Clear();
+            Normals.Clear();
             IdBox.TextInput -= IdBox_TextInput;
 
             GC.Collect();
@@ -199,6 +276,7 @@ namespace EditorUI
             if (openFileDialog.ShowDialog() == System.Windows.Forms.DialogResult.OK)
             {
                 Materials.Clear();
+                Normals.Clear();
                 loaded_mesh = openFileDialog.FileName;
                 MeshPath.Text = loaded_mesh;
                 MeshPath.ToolTip = loaded_mesh;
@@ -242,42 +320,50 @@ namespace EditorUI
             GC.Collect();
         }
 
-        internal void AddMaterialToTheTable(string material_names, string texture_names, int redraw)
+        private void LoadNormals(object sender, EventArgs e)
+        {
+            System.Windows.Forms.OpenFileDialog openFileDialog = new System.Windows.Forms.OpenFileDialog();
+            openFileDialog.Filter = "png files (*.png)|*.png";
+            openFileDialog.InitialDirectory = content_folder;
+            openFileDialog.RestoreDirectory = true;
+
+            if (openFileDialog.ShowDialog() == System.Windows.Forms.DialogResult.OK)
+            {
+                Normals[((MaterialInput)sender).material_index] = openFileDialog.FileName;
+                ((MaterialInput)sender).NormalPath.Text = openFileDialog.FileName;
+                ((MaterialInput)sender).NormalPath.ToolTip = openFileDialog.FileName;
+
+                //UIBridge.AssignTextures(Marshal.StringToHGlobalAnsi(GetTexturesString()));
+            }
+
+            GC.Collect();
+        }
+
+        internal void AddMaterialToTheTable(string material_names, int redraw)
         {
             MaterialsPanel.Children.Clear();
 
             int mat_index = 0;
             string[] materials = material_names.Split('|');
-            string[] textures = texture_names.Split('|');
 
             foreach (string material_name in materials)
             {
                 if (material_name != String.Empty)
                 {
-                    if (!Materials.ContainsKey(mat_index))
-                    {
-                        if (textures[mat_index] != "nil")
-                            Materials.Add(mat_index, textures[mat_index]);
-                        else
-                        {
-                            Materials.Add(mat_index, missing_texture);
-                        }
-                    }
-                    else
-                    {
-                        if (textures[mat_index] != "nil")
-                            Materials[mat_index] = textures[mat_index];
-                        else
-                        {
-                            Materials[mat_index] = missing_texture;
-                        }
-                    }
-
                     MaterialInput material_panel = new MaterialInput();
                     material_panel.NameTextBlock.Text = material_name;
-                    material_panel.MaterialPath.Text = Materials[mat_index];
-                    material_panel.MaterialPath.ToolTip = Materials[mat_index];
+                    if (mat_index < Materials.Count)
+                    {
+                        material_panel.MaterialPath.Text = Materials[mat_index];
+                        material_panel.MaterialPath.ToolTip = Materials[mat_index];
+                    }
+                    if (mat_index < Normals.Count)
+                    {
+                        material_panel.NormalPath.Text = Normals[mat_index];
+                        material_panel.NormalPath.ToolTip = Normals[mat_index];
+                    }
                     material_panel.event_load_material += LoadMaterial;
+                    material_panel.event_load_normal += LoadNormals;
                     material_panel.material_index = mat_index++;
                     MaterialsPanel.Children.Add(material_panel);
                     System.Windows.Controls.DockPanel.SetDock(material_panel, System.Windows.Controls.Dock.Top);
@@ -305,7 +391,11 @@ namespace EditorUI
             string material_string = "";
             foreach (var texture in Materials.Values)
             {
-                material_string += texture.Remove(0, distr_location.Length + 1) + "|";
+                material_string += ":Color:" + texture.Remove(0, distr_location.Length + 1) + "|";
+            }
+            foreach (var normal in Normals.Values)
+            {
+                material_string += ":Normal:" + normal.Remove(0, distr_location.Length + 1) + "|";
             }
 
             string file = loaded_mesh.Substring(0, loaded_mesh.LastIndexOf('\\')) + '\\' + IdBox.Text + ".gmf";
@@ -321,13 +411,12 @@ namespace EditorUI
             {
                 if (Browser.SelectedIndex < 0) return;
 
+                ReadModel(((BrowserItem)Browser.SelectedItem).ToolTip.ToString());
                 IdBox.Text = ((BrowserItem)Browser.SelectedItem).ToolTip.ToString().Split('\\').Last().Split('.')[0];
-                loaded_mesh = distr_location + '\\' + ((BrowserItem)Browser.SelectedItem).mesh_path;
-                loaded_collision = distr_location + '\\' + ((BrowserItem)Browser.SelectedItem).collision_path;
-                MeshPath.Text = ((BrowserItem)Browser.SelectedItem).mesh_path;
-                MeshPath.ToolTip = ((BrowserItem)Browser.SelectedItem).mesh_path;
-                ColPath.Text = ((BrowserItem)Browser.SelectedItem).collision_path;
-                ColPath.ToolTip = ((BrowserItem)Browser.SelectedItem).collision_path;
+                MeshPath.Text = loaded_mesh;
+                MeshPath.ToolTip = loaded_mesh;
+                ColPath.Text = loaded_collision;
+                ColPath.ToolTip = loaded_collision;
                 UIBridge.LoadModelFile(Marshal.StringToHGlobalAnsi(((BrowserItem)Browser.SelectedItem).ToolTip.ToString()));
                 GC.Collect();
             }
@@ -464,7 +553,6 @@ namespace EditorUI
 
             if (openFileDialog.ShowDialog() == System.Windows.Forms.DialogResult.OK)
             {
-                Materials.Clear();
                 loaded_collision = openFileDialog.FileName;
                 ColPath.Text = loaded_collision;
                 ColPath.ToolTip = loaded_collision;

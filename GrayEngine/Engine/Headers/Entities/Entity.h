@@ -101,37 +101,40 @@ namespace GrEngine
 
 		virtual void Rotate(const float& pitch, const float& yaw, const float& roll)
 		{
-			pitch_yaw_roll += glm::vec3{ pitch, yaw, roll };
-			static_cast<EntityOrientationProperty*>(properties[3])->SetPropertyValue(pitch_yaw_roll);
+			static_cast<EntityOrientationProperty*>(properties[3])->SetPropertyValue({ pitch, yaw, roll });
 		};
 
 		virtual void Rotate(const glm::vec3& angle)
 		{
-			pitch_yaw_roll += angle;
-			static_cast<EntityOrientationProperty*>(properties[3])->SetPropertyValue(pitch_yaw_roll);
+			static_cast<EntityOrientationProperty*>(properties[3])->SetPropertyValue(angle);
 		};
 
 		virtual void Rotate(const glm::quat& angle)
 		{
-			pitch_yaw_roll += glm::degrees(glm::eulerAngles(angle));
-			static_cast<EntityOrientationProperty*>(properties[3])->SetPropertyValue(angle);
+			glm::quat rot = *obj_orientation * angle;
+			//Get approximation of PYR degree values
+			glm::mat4 q = glm::mat4_cast(rot);
+			pitch_yaw_roll = glm::degrees(glm::vec3(glm::eulerAngles(glm::quat_cast(glm::inverse(q)))));
+			pitch_yaw_roll *= -1.f;
+			static_cast<EntityOrientationProperty*>(properties[3])->SetPropertyValue(rot);
 		};
 
 		virtual void SetRotation(const float& pitch, const float& yaw, const float& roll)
 		{
-			pitch_yaw_roll = glm::vec3{ pitch, yaw, roll };
-			static_cast<EntityOrientationProperty*>(properties[3])->SetPropertyValue(pitch_yaw_roll);
+			static_cast<EntityOrientationProperty*>(properties[3])->SetPropertyValue({ pitch, yaw, roll });
 		};
 
 		virtual void SetRotation(const glm::vec3& angle)
 		{
-			pitch_yaw_roll = angle;
-			static_cast<EntityOrientationProperty*>(properties[3])->SetPropertyValue(pitch_yaw_roll);
+			static_cast<EntityOrientationProperty*>(properties[3])->SetPropertyValue(angle);
 		};
 
 		virtual void SetRotation(const glm::quat& angle)
 		{
-			pitch_yaw_roll = glm::degrees(glm::eulerAngles(angle));
+			//Get approximation of PYR degree values
+			glm::mat4 q = glm::mat4_cast(angle);
+			pitch_yaw_roll = glm::degrees(glm::vec3(glm::eulerAngles(glm::quat_cast(glm::inverse(q)))));
+			pitch_yaw_roll *= -1.f;
 			static_cast<EntityOrientationProperty*>(properties[3])->SetPropertyValue(angle);
 		};
 
@@ -187,6 +190,11 @@ namespace GrEngine
 				return *obj_orientation;
 			}
 		};
+
+		virtual glm::vec3 GetPitchYawRoll()
+		{
+			return static_cast<EntityOrientationProperty*>(properties[3])->GetPitchYawRoll();
+		}
 
 		virtual glm::mat4 GetObjectTransformation()
 		{

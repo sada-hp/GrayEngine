@@ -60,8 +60,9 @@ void SceneEditor::LoadModelFile(const char* model_path)
     std::string mesh_path = "";
     std::string coll_path = "";
     std::vector<std::string> textures_vector;
+    std::vector<std::string> normals_vector;
 
-    if (!GrEngine::Globals::readGMF(model_path, &mesh_path, &coll_path, &textures_vector))
+    if (!GrEngine::Globals::readGMF(model_path, &mesh_path, &coll_path, &textures_vector, &normals_vector))
         return;
 
     GrEngine::Entity* target = GrEngine::Engine::GetContext()->GetRenderer()->GetSelectedEntity();
@@ -73,7 +74,7 @@ void SceneEditor::LoadModelFile(const char* model_path)
 
     if (drawComponent != nullptr)
     {
-        drawComponent->LoadModel(model_path, mesh_path.c_str(), textures_vector);
+        drawComponent->LoadModel(model_path, mesh_path.c_str(), textures_vector, normals_vector);
     }
 
     if (physComponent != nullptr)
@@ -87,19 +88,12 @@ void SceneEditor::LoadModelFile(const char* model_path)
 
     std::vector<std::string> materials = GrEngine::Engine::GetContext()->GetMaterialNames(mesh_path.c_str());
     std::string out_materials;
-    std::string out_textures;
     for (auto mat : materials)
     {
         out_materials += mat + "|";
     }
 
-    materials = static_cast<GrEngine::Object*>(GrEngine::Object::FindObject(GrEngine::Engine::GetContext()->GetRenderer()->GetSelectedEntity()))->GetTextureCollection();
-    for (auto tex : materials)
-    {
-        out_textures += tex + "|";
-    }
-
-    GrEngine::Engine::GetContext()->GetEventListener()->registerEvent("RequireMaterialsUpdate", { out_materials, out_textures, 0 });
+    GrEngine::Engine::GetContext()->GetEventListener()->registerEvent("RequireMaterialsUpdate", { out_materials, 0 });
 }
 
 void SceneEditor::LoadObject(const char* mesh_path, const char* textures_path)
@@ -136,13 +130,7 @@ void SceneEditor::LoadObject(const char* mesh_path, const char* textures_path)
         out_materials += mat + "|";
     }
 
-    materials = static_cast<GrEngine::Object*>(GrEngine::Object::FindObject(GrEngine::Engine::GetContext()->GetRenderer()->GetSelectedEntity()))->GetTextureCollection();
-    for (auto tex : materials)
-    {
-        out_textures += tex + "|";
-    }
-
-    GrEngine::Engine::GetContext()->GetEventListener()->registerEvent("RequireMaterialsUpdate", { out_materials, out_textures, 1});
+    GrEngine::Engine::GetContext()->GetEventListener()->registerEvent("RequireMaterialsUpdate", { out_materials, 1});
 }
 
 void SceneEditor::AssignTextures(const char* textures_path)
@@ -329,8 +317,27 @@ void SceneEditor::SKey(bool state)
     SceneEditor::GetApplication()->GetEventListener()->registerEvent(EventType::KeyPress, para);
 }
 
-
 void SceneEditor::ToggleLighting()
 {
     SceneEditor::GetApplication()->GetRenderer()->SetUseDynamicLighting(!SceneEditor::GetApplication()->GetRenderer()->IsDynamicLightEnabled());
+}
+
+void SceneEditor::CopyEntity()
+{
+    SceneEditor::GetApplication()->App_UpdateCopyBuffer();
+}
+
+void SceneEditor::PasteEntity()
+{
+    SceneEditor::GetApplication()->App_CloneEntity();
+}
+
+void SceneEditor::DeleteEntity()
+{
+    SceneEditor::GetApplication()->App_RemoveEntity();
+}
+
+void SceneEditor::SnapEntity()
+{
+    SceneEditor::GetApplication()->App_SnapToGround();
 }

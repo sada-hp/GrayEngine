@@ -39,7 +39,7 @@ namespace GrEngine
 		virtual void UpdateCollisionShape(void* shape) = 0;
 		virtual void GenerateBoxCollision(float width, float height, float length) = 0;
 		virtual void GenerateCapsuleCollision(float radius, float height) = 0;
-		virtual bool LoadCollisionMesh(const char* mesh_path) = 0;
+		virtual bool LoadCollisionMesh(const char* mesh_path, bool use_hull = true) = 0;
 		virtual void ResetMotion() = 0;
 		virtual void MoveObject(glm::vec3 vector) = 0;
 		virtual void SlideObjectForDuration(glm::vec3 vector, float dur) = 0;

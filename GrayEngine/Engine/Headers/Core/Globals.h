@@ -63,7 +63,7 @@ namespace GrEngine
 			return false;
 		}
 
-		static bool readGMF(const std::string& filepath, std::string* mesh, std::string* collisions, std::vector<std::string>* textures)
+		static bool readGMF(const std::string& filepath, std::string* mesh, std::string* collisions, std::vector<std::string>* textures, std::vector<std::string>* normals)
 		{
 			std::string stream = "";
 			std::string distro = getExecutablePath();
@@ -103,6 +103,10 @@ namespace GrEngine
 					{
 						collisions->append(stream);
 					}
+					else if (value == 3)
+					{
+						normals->push_back(stream);
+					}
 				}
 				else if (!block_open && stream == "mesh")
 				{
@@ -111,6 +115,10 @@ namespace GrEngine
 				else if (!block_open && stream == "collision")
 				{
 					value = 2;
+				}
+				else if (!block_open && stream == "normals")
+				{
+					value = 3;
 				}
 				else if (!block_open && stream == "textures")
 				{
@@ -134,7 +142,23 @@ namespace GrEngine
 			new_file << "textures\n{\n";
 			for (std::vector<std::string>::iterator itt = textures_vector.begin(); itt != textures_vector.end(); ++itt)
 			{
-				new_file << "   " << (*itt) << '\n';
+				if ((*itt).starts_with(":Color:"))
+				{
+					new_file << "   " << (*itt).substr(7, (*itt).size() - 7) << '\n';
+				}
+				else if (!(*itt).starts_with(":Normal:"))
+				{
+					new_file << "   " << (*itt) << '\n';
+				}
+			}
+			new_file << "}\n\0";
+			new_file << "normals\n{\n";
+			for (std::vector<std::string>::iterator itt = textures_vector.begin(); itt != textures_vector.end(); ++itt)
+			{
+				if ((*itt).starts_with(":Normal:"))
+				{
+					new_file << "   " << (*itt).substr(8, (*itt).size() - 8) << '\n';
+				}
 			}
 			new_file << "}\n\0";
 			new_file.close();

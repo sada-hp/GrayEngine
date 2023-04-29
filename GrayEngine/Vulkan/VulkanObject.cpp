@@ -26,6 +26,7 @@ namespace GrEngine_Vulkan
 		GenerateBoxMesh(0.5, 0.5, 0.5);
 
 		static_cast<VulkanRenderer*>(p_Owner)->assignTextures({""}, ownerEntity);
+		static_cast<VulkanRenderer*>(p_Owner)->assignNormals({""}, ownerEntity);
 		updateSelectionPipeline();
 		updateShadowPipeline();
 	}
@@ -42,6 +43,8 @@ namespace GrEngine_Vulkan
 
 	void VulkanObject::Refresh()
 	{
+		static_cast<VulkanRenderer*>(p_Owner)->waitForRenderer();
+
 		updateObject();
 		updateSelectionPipeline();
 		updateShadowPipeline();
@@ -277,7 +280,6 @@ namespace GrEngine_Vulkan
 		pushConstant.size = sizeof(VertexConstants);
 		pushConstant.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
 
-
 		VulkanAPI::CreatePipelineLayout(logicalDevice, { pushConstant }, { descriptorSets[1].descriptorSetLayout }, &shadowLayout);
 
 		VkPipelineVertexInputStateCreateInfo vertexInputInfo{};
@@ -417,7 +419,278 @@ namespace GrEngine_Vulkan
 		transparency = ownerEntity->GetPropertyValue(PropertyType::Transparency, 0);
 		double_sided = ownerEntity->GetPropertyValue(PropertyType::DoubleSided, 0);
 
-		return VulkanDrawable::createGraphicsPipeline();
+		std::string solution_path = GrEngine::Globals::getExecutablePath();
+		std::vector<char> vertShaderCode;
+		std::vector<char> geomShaderCode;
+		std::vector<char> fragShaderCode;
+
+		VkPipelineVertexInputStateCreateInfo vertexInputInfo{};
+		vertexInputInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
+
+		auto bindingDescription = Vertex::getBindingDescription();
+		auto attributeDescriptions = Vertex::getAttributeDescriptions();
+
+		vertexInputInfo.vertexBindingDescriptionCount = 1;
+		vertexInputInfo.vertexAttributeDescriptionCount = static_cast<uint32_t>(attributeDescriptions.size());
+		vertexInputInfo.pVertexBindingDescriptions = &bindingDescription;
+		vertexInputInfo.pVertexAttributeDescriptions = attributeDescriptions.data();
+
+		VkPipelineInputAssemblyStateCreateInfo inputAssemblyState{};
+		inputAssemblyState.sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;
+		inputAssemblyState.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
+		inputAssemblyState.primitiveRestartEnable = VK_FALSE;
+
+		VkPipelineRasterizationStateCreateInfo rasterizationState{};
+		rasterizationState.sType = VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO;
+		rasterizationState.depthClampEnable = VK_FALSE;
+		rasterizationState.rasterizerDiscardEnable = VK_FALSE;
+		rasterizationState.polygonMode = VK_POLYGON_MODE_FILL;
+		rasterizationState.lineWidth = 1.0f;
+		rasterizationState.cullMode = double_sided == 1 ? VK_CULL_MODE_NONE : VK_CULL_MODE_BACK_BIT;
+		rasterizationState.frontFace = VK_FRONT_FACE_COUNTER_CLOCKWISE;
+		rasterizationState.depthBiasEnable = VK_FALSE;
+		rasterizationState.depthBiasConstantFactor = 0.0f;
+		rasterizationState.depthBiasClamp = 0.0f;
+		rasterizationState.depthBiasSlopeFactor = 0.0f;
+
+		VkPipelineColorBlendAttachmentState blendAttachmentState{};
+		blendAttachmentState.colorWriteMask = VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT;
+		blendAttachmentState.blendEnable = VK_FALSE;
+
+		VkPipelineColorBlendStateCreateInfo colorBlendState{};
+		colorBlendState.sType = VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO;
+		colorBlendState.logicOpEnable = VK_FALSE;
+		colorBlendState.logicOp = VK_LOGIC_OP_COPY; // Optional
+		colorBlendState.attachmentCount = 1;
+		colorBlendState.pAttachments = &blendAttachmentState;
+		colorBlendState.blendConstants[0] = 1.0f; // Optional
+		colorBlendState.blendConstants[1] = 1.0f; // Optional
+		colorBlendState.blendConstants[2] = 1.0f; // Optional
+		colorBlendState.blendConstants[3] = 1.0f; // Optional
+
+		VkPipelineDepthStencilStateCreateInfo depthStencilState{};
+		depthStencilState.sType = VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO;
+		depthStencilState.pNext = nullptr;
+		depthStencilState.depthTestEnable = VK_TRUE;
+		depthStencilState.depthWriteEnable = VK_TRUE;
+		depthStencilState.depthCompareOp = VK_COMPARE_OP_LESS_OR_EQUAL;
+		depthStencilState.depthBoundsTestEnable = VK_FALSE;
+		depthStencilState.minDepthBounds = 0.0f; // Optional
+		depthStencilState.maxDepthBounds = 1.0f; // Optional
+		depthStencilState.stencilTestEnable = VK_FALSE;
+
+		VkPipelineViewportStateCreateInfo viewportState{};
+		viewportState.sType = VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO;
+		viewportState.viewportCount = 1;
+		viewportState.pViewports = nullptr;
+		viewportState.scissorCount = 1;
+		viewportState.pScissors = nullptr;
+
+		VkPipelineMultisampleStateCreateInfo multisampleState{};
+		multisampleState.sType = VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO;
+		multisampleState.rasterizationSamples = VK_SAMPLE_COUNT_1_BIT;
+		multisampleState.sampleShadingEnable = VK_FALSE;
+		multisampleState.minSampleShading = 0;
+
+		std::vector<VkDynamicState> dynamicStates = { VK_DYNAMIC_STATE_VIEWPORT, VK_DYNAMIC_STATE_SCISSOR };
+		VkPipelineDynamicStateCreateInfo dynamicState{};
+		dynamicState.sType = VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO;
+		dynamicState.pNext = nullptr;
+		dynamicState.flags = 0;
+		dynamicState.dynamicStateCount = (uint32_t)dynamicStates.size();
+		dynamicState.pDynamicStates = dynamicStates.data();
+
+
+		// Final fullscreen pass pipeline
+		VkGraphicsPipelineCreateInfo pipelineCI{};
+		pipelineCI.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
+		pipelineCI.layout = pipelineLayout;
+		pipelineCI.renderPass = static_cast<VulkanRenderer*>(p_Owner)->getRenderPass();
+		pipelineCI.pInputAssemblyState = &inputAssemblyState;
+		pipelineCI.pRasterizationState = &rasterizationState;
+		pipelineCI.pColorBlendState = &colorBlendState;
+		pipelineCI.pMultisampleState = &multisampleState;
+		pipelineCI.pViewportState = &viewportState;
+		pipelineCI.pDepthStencilState = &depthStencilState;
+		pipelineCI.pDynamicState = &dynamicState;
+		pipelineCI.subpass = 0;
+		pipelineCI.pVertexInputState = &vertexInputInfo;
+
+		VkPipelineShaderStageCreateInfo vertShaderStageInfo{};
+		VkPipelineShaderStageCreateInfo geomShaderStageInfo{};
+		VkPipelineShaderStageCreateInfo fragShaderStageInfo{};
+		std::vector<VkPipelineShaderStageCreateInfo> shaderStages;
+		std::vector<VkShaderModule> shaders;
+		std::vector<VkPipelineColorBlendAttachmentState> blendAttachmentStates;
+
+		if (transparency == 0)
+		{
+			struct Specs
+			{
+				float far_pl;
+				float near_pl;
+				uint32_t use_normal;
+			} specs;
+			bool use_normal = false;
+			if (object_normal != nullptr && object_normal->texture_collection.size() > 0)
+			{
+				use_normal = !(object_normal->texture_collection.size() == 1 && object_normal->texture_collection[0] == "empty_texture");
+			}
+			specs = { VulkanRenderer::NearPlane, VulkanRenderer::FarPlane, (uint32_t)use_normal };
+			std::array<VkSpecializationMapEntry, 3> entries;
+			entries[0].constantID = 0;
+			entries[0].offset = 0;
+			entries[0].size = sizeof(float);
+			entries[1].constantID = 1;
+			entries[1].offset = sizeof(float);
+			entries[1].size = sizeof(float);
+			entries[2].constantID = 2;
+			entries[2].offset = sizeof(float) * 2;
+			entries[2].size = sizeof(uint32_t);
+
+			VkSpecializationInfo specializationInfo;
+			specializationInfo.mapEntryCount = entries.size();
+			specializationInfo.pMapEntries = entries.data();
+			specializationInfo.dataSize = sizeof(float) * 2 + sizeof(uint32_t);
+			specializationInfo.pData = &specs;
+
+			vertShaderCode = GrEngine::Globals::readFile(solution_path + shader_path + "_vert.spv");
+			geomShaderCode = GrEngine::Globals::readFile(solution_path + shader_path + "_geom.spv");
+			fragShaderCode = GrEngine::Globals::readFile(solution_path + shader_path + "_frag.spv");
+			if (vertShaderCode.size() > 0)
+			{
+				shaders.push_back(VulkanAPI::m_createShaderModule(logicalDevice, vertShaderCode));
+				vertShaderStageInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+				vertShaderStageInfo.stage = VK_SHADER_STAGE_VERTEX_BIT;
+				vertShaderStageInfo.module = shaders.back();
+				vertShaderStageInfo.pName = "main";
+				shaderStages.push_back(vertShaderStageInfo);
+			}
+			if (geomShaderCode.size() > 0)
+			{
+				shaders.push_back(VulkanAPI::m_createShaderModule(logicalDevice, geomShaderCode));
+				geomShaderStageInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+				geomShaderStageInfo.stage = VK_SHADER_STAGE_GEOMETRY_BIT;
+				geomShaderStageInfo.module = shaders.back();
+				geomShaderStageInfo.pName = "main";
+				shaderStages.push_back(geomShaderStageInfo);
+			}
+			if (fragShaderCode.size() > 0)
+			{
+				shaders.push_back(VulkanAPI::m_createShaderModule(logicalDevice, fragShaderCode));
+				fragShaderStageInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+				fragShaderStageInfo.stage = VK_SHADER_STAGE_FRAGMENT_BIT;
+				fragShaderStageInfo.module = shaders.back();
+				fragShaderStageInfo.pName = "main";
+				shaderStages.push_back(fragShaderStageInfo);
+				shaderStages.back().pSpecializationInfo = &specializationInfo;
+			}
+
+			//shaders = { VulkanAPI::m_createShaderModule(logicalDevice, vertShaderCode), VulkanAPI::m_createShaderModule(logicalDevice, geomShaderCode), VulkanAPI::m_createShaderModule(logicalDevice, fragShaderCode) };
+			//shaderStages = { vertShaderStageInfo, geomShaderStageInfo, fragShaderStageInfo };
+			//shaderStages[2].pSpecializationInfo = &specializationInfo;
+
+			pipelineCI.stageCount = static_cast<uint32_t>(shaderStages.size());
+			pipelineCI.pStages = shaderStages.data();
+
+			blendAttachmentStates.resize(4);
+			blendAttachmentStates[0].colorWriteMask = VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT;
+			blendAttachmentStates[0].blendEnable = VK_FALSE;
+			blendAttachmentStates[1].colorWriteMask = VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT;
+			blendAttachmentStates[1].blendEnable = VK_FALSE;
+			blendAttachmentStates[2].colorWriteMask = VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT;
+			blendAttachmentStates[2].blendEnable = VK_FALSE;
+			blendAttachmentStates[3].colorWriteMask = VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT;
+			blendAttachmentStates[3].blendEnable = VK_FALSE;
+
+			colorBlendState.attachmentCount = static_cast<uint32_t>(blendAttachmentStates.size());
+			colorBlendState.pAttachments = blendAttachmentStates.data();
+
+			VulkanAPI::CreateGraphicsPipeline(logicalDevice, &pipelineCI, &graphicsPipeline);
+
+			for (int i = 0; i < shaders.size(); i++)
+			{
+				vkDestroyShaderModule(logicalDevice, shaders[i], nullptr);
+			}
+		}
+		else
+		{
+			std::array<float, 2> specs = { VulkanRenderer::NearPlane, VulkanRenderer::FarPlane };
+			std::array<VkSpecializationMapEntry, 2> entries;
+			entries[0].constantID = 0;
+			entries[0].offset = 0;
+			entries[0].size = sizeof(float);
+			entries[1].constantID = 1;
+			entries[1].offset = sizeof(float);
+			entries[1].size = sizeof(float);
+
+			VkSpecializationInfo specializationInfo;
+			specializationInfo.mapEntryCount = entries.size();
+			specializationInfo.pMapEntries = entries.data();
+			specializationInfo.dataSize = sizeof(float) * 2;
+			specializationInfo.pData = &specs;
+
+			vertShaderCode = GrEngine::Globals::readFile(solution_path + shader_path + "_vert_transparent.spv");
+			geomShaderCode = GrEngine::Globals::readFile(solution_path + shader_path + "_geom.spv");
+			fragShaderCode = GrEngine::Globals::readFile(solution_path + shader_path + "_frag_transparent.spv");
+
+			if (vertShaderCode.size() > 0)
+			{
+				shaders.push_back(VulkanAPI::m_createShaderModule(logicalDevice, vertShaderCode));
+				vertShaderStageInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+				vertShaderStageInfo.stage = VK_SHADER_STAGE_VERTEX_BIT;
+				vertShaderStageInfo.module = shaders.back();
+				vertShaderStageInfo.pName = "main";
+				shaderStages.push_back(vertShaderStageInfo);
+			}
+			if (geomShaderCode.size() > 0)
+			{
+				shaders.push_back(VulkanAPI::m_createShaderModule(logicalDevice, geomShaderCode));
+				geomShaderStageInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+				geomShaderStageInfo.stage = VK_SHADER_STAGE_GEOMETRY_BIT;
+				geomShaderStageInfo.module = shaders.back();
+				geomShaderStageInfo.pName = "main";
+				shaderStages.push_back(geomShaderStageInfo);
+			}
+			if (fragShaderCode.size() > 0)
+			{
+				shaders.push_back(VulkanAPI::m_createShaderModule(logicalDevice, fragShaderCode));
+				fragShaderStageInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+				fragShaderStageInfo.stage = VK_SHADER_STAGE_FRAGMENT_BIT;
+				fragShaderStageInfo.module = shaders.back();
+				fragShaderStageInfo.pName = "main";
+				shaderStages.push_back(fragShaderStageInfo);
+				shaderStages.back().pSpecializationInfo = &specializationInfo;
+			}
+
+			pipelineCI.stageCount = static_cast<uint32_t>(shaderStages.size());
+			pipelineCI.pStages = shaderStages.data();
+
+			depthStencilState.sType = VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO;
+			depthStencilState.pNext = nullptr;
+			depthStencilState.depthTestEnable = VK_FALSE;
+			depthStencilState.depthWriteEnable = VK_FALSE;
+			depthStencilState.depthCompareOp = VK_COMPARE_OP_LESS_OR_EQUAL;
+			depthStencilState.depthBoundsTestEnable = VK_FALSE;
+			depthStencilState.minDepthBounds = 0.0f; // Optional
+			depthStencilState.maxDepthBounds = 1.0f; // Optional
+			depthStencilState.stencilTestEnable = VK_FALSE;
+
+			blendAttachmentStates.resize(0);
+
+			colorBlendState.attachmentCount = static_cast<uint32_t>(blendAttachmentStates.size());
+			colorBlendState.pAttachments = blendAttachmentStates.data();
+
+			pipelineCI.subpass = 2;
+			VulkanAPI::CreateGraphicsPipeline(logicalDevice, &pipelineCI, &graphicsPipeline);
+
+			for (int i = 0; i < shaders.size(); i++)
+			{
+				vkDestroyShaderModule(logicalDevice, shaders[i], nullptr);
+			}
+		}
+
+		return true;
 	}
 
 	void VulkanObject::populateDescriptorSets()
@@ -432,11 +705,15 @@ namespace GrEngine_Vulkan
 
 		subscribeDescriptor(VK_SHADER_STAGE_VERTEX_BIT, 0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, static_cast<VulkanRenderer*>(p_Owner)->viewProjUBO.BufferInfo);
 		subscribeDescriptor(VK_SHADER_STAGE_FRAGMENT_BIT, 1, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, object_texture->texInfo.descriptor);
+		if (object_normal != NULL)
+		{
+			subscribeDescriptor(VK_SHADER_STAGE_FRAGMENT_BIT, 2, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, object_normal->texInfo.descriptor);
+		}
 		subscribeDescriptor(VK_SHADER_STAGE_VERTEX_BIT, 0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, static_cast<VulkanRenderer*>(p_Owner)->shadowBuffer.BufferInfo, 1);
 		subscribeDescriptor(VK_SHADER_STAGE_FRAGMENT_BIT, 1, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, object_texture->texInfo.descriptor, 1);
 		subscribeDescriptor(VK_SHADER_STAGE_VERTEX_BIT, 0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, static_cast<VulkanRenderer*>(p_Owner)->viewProjUBO.BufferInfo, 2);
 
-		int index = 2;
+		int index = 3;
 
 		if (transparency > 0)
 		{
@@ -454,29 +731,56 @@ namespace GrEngine_Vulkan
 		createDescriptorSet();
 	}
 
-	void VulkanObject::CalculateNormals()
+	void VulkanObject::CalculateNormals(GrEngine_Vulkan::Mesh* target)
 	{
-		if (object_mesh != nullptr)
+		if (target != nullptr)
 		{
-			for (int i = 0; i < object_mesh->indices.size(); i += 3)
+			for (int i = 0; i < target->indices.size(); i += 3)
 			{
-				glm::vec3 A = object_mesh->vertices[object_mesh->indices[i]].pos;
-				glm::vec3 B = object_mesh->vertices[object_mesh->indices[i + 1]].pos;
-				glm::vec3 C = object_mesh->vertices[object_mesh->indices[i + 2]].pos;
-				glm::vec3 faceNormal = glm::cross(B - A, C - A);
-				object_mesh->vertices[object_mesh->indices[i]].norm += glm::vec4(faceNormal, 1.f);
-				object_mesh->vertices[object_mesh->indices[i + 1]].norm += glm::vec4(faceNormal, 1.f);
-				object_mesh->vertices[object_mesh->indices[i + 2]].norm += glm::vec4(faceNormal, 1.f);
+				auto A = target->vertices[target->indices[i]];
+				auto B = target->vertices[target->indices[i + 1]];
+				auto C = target->vertices[target->indices[i + 2]];
+				//glm::vec3 faceNormal = glm::normalize(glm::cross(glm::vec3(B.pos) - glm::vec3(A.pos), glm::vec3(C.pos) - glm::vec3(A.pos)));
+				//target->vertices[target->indices[i]].norm = faceNormal;
+				//target->vertices[target->indices[i + 1]].norm = faceNormal;
+				//target->vertices[target->indices[i + 2]].norm = faceNormal;
+
+				glm::vec3 diff1 = B.pos - A.pos;
+				glm::vec3 diff2 = C.pos - A.pos;
+
+				glm::vec2 delta1 = glm::vec2(B.uv.x, 1.f - B.uv.y) - glm::vec2(A.uv.x, 1.f - A.uv.y);
+				glm::vec2 delta2 = glm::vec2(C.uv.x, 1.f - C.uv.y) - glm::vec2(A.uv.x, 1.f - A.uv.y);
+
+				float f = 1.0f / (delta1.x * delta2.y - delta1.y * delta2.x);
+				glm::vec3 tangent;
+				glm::vec3 bitangent;
+
+				tangent.x = f * (delta2.y * diff1.x - delta1.y * diff2.x);
+				tangent.y = f * (delta2.y * diff1.y - delta1.y * diff2.y);
+				tangent.z = f * (delta2.y * diff1.z - delta1.y * diff2.z);
+
+				//bitangent.x = f * (-delta2.x * diff1.x + delta1.x * diff2.x);
+				//bitangent.y = f * (-delta2.x * diff1.y + delta1.x * diff2.y);
+				//bitangent.z = f * (-delta2.x * diff1.z + delta1.x * diff2.z);
+
+				target->vertices[target->indices[i]].tang = tangent;
+				//target->vertices[target->indices[i]].bitang = bitangent;
+				target->vertices[target->indices[i + 1]].tang = tangent;
+				//target->vertices[target->indices[i + 1]].bitang = bitangent;
+				target->vertices[target->indices[i + 2]].tang = tangent;
+				//target->vertices[target->indices[i + 2]].bitang = bitangent;
 			}
 
-			for (std::vector<Vertex>::iterator itt = object_mesh->vertices.begin(); itt != object_mesh->vertices.end(); ++itt)
-			{
-				(*itt).norm = glm::normalize((*itt).norm);
-			}
+			//for (std::vector<Vertex>::iterator itt = target->vertices.begin(); itt != target->vertices.end(); ++itt)
+			//{
+			//	(*itt).norm = glm::normalize((*itt).norm);
+			//	(*itt).tang = glm::normalize((*itt).tang - (*itt).norm * glm::dot((*itt).norm, glm::normalize((*itt).tang)));
+			//	(*itt).bitang = glm::cross(glm::vec3((*itt).tang), glm::vec3((*itt).norm));
+			//}
 		}
 	}
 
-	bool VulkanObject::LoadModel(const char* gmf_path, const char* mesh_path, std::vector<std::string> textures_vector)
+	bool VulkanObject::LoadModel(const char* gmf_path, const char* mesh_path, std::vector<std::string> textures_vector, std::vector<std::string> normals_vector)
 	{
 		static_cast<VulkanRenderer*>(p_Owner)->waitForRenderer();
 
@@ -488,16 +792,13 @@ namespace GrEngine_Vulkan
 		std::map<std::string, std::vector<int>> materials_map;
 
 		texture_names.clear();
-
-		processes_map[processes_map.size()] = std::async(std::launch::async, [textures_vector, ref_own, inst]()
-			{
-				inst->assignTextures(textures_vector, ref_own);
-			});
-
 		processes_map[processes_map.size()] = std::async(std::launch::async, [mesh_path, textures_vector, ref_obj, inst]()
 			{
 				ref_obj->LoadMesh(mesh_path);
 			});
+
+		inst->assignTextures(textures_vector, ref_own);
+		inst->assignNormals(normals_vector, ref_own);
 
 		for (int ind = 0; ind < processes_map.size(); ind++)
 		{
@@ -572,9 +873,12 @@ namespace GrEngine_Vulkan
 					vertex.uv = { coord[vert_ind].x, 1.0f - coord[vert_ind].y };
 					vertex.uv_index = uv_ind;
 					if (cur_mesh->HasNormals())
-						vertex.norm = { cur_mesh->mNormals[vert_ind].x, cur_mesh->mNormals[vert_ind].y, cur_mesh->mNormals[vert_ind].z, 1.0f };
+						vertex.norm = { cur_mesh->mNormals[vert_ind].x, cur_mesh->mNormals[vert_ind].y, cur_mesh->mNormals[vert_ind].z };
 					if (cur_mesh->HasTangentsAndBitangents())
-						vertex.tang = { cur_mesh->mTangents[vert_ind].x, cur_mesh->mTangents[vert_ind].y, cur_mesh->mTangents[vert_ind].z, 1.0f };
+					{
+						vertex.tang = { cur_mesh->mTangents[vert_ind].x, cur_mesh->mTangents[vert_ind].y, cur_mesh->mTangents[vert_ind].z };
+						vertex.bitang = { cur_mesh->mBitangents[vert_ind].x, cur_mesh->mBitangents[vert_ind].y, cur_mesh->mBitangents[vert_ind].z };
+					}
 
 					if (uniqueVertices.count(vertex) == 0)
 					{
@@ -595,6 +899,7 @@ namespace GrEngine_Vulkan
 				}
 			}
 
+			CalculateNormals(target_mesh);
 			VulkanAPI::m_createVkBuffer(logicalDevice, memAllocator, target_mesh->vertices.data(), sizeof(target_mesh->vertices[0]) * target_mesh->vertices.size(), VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, &target_mesh->vertexBuffer);
 			VulkanAPI::m_createVkBuffer(logicalDevice, memAllocator, target_mesh->indices.data(), sizeof(target_mesh->indices[0]) * target_mesh->indices.size(), VK_BUFFER_USAGE_INDEX_BUFFER_BIT, &target_mesh->indexBuffer);
 			//target_mesh->collisions = btConvexHullShape((const btScalar*)hullVert.data(), hullVert.size(), sizeof(btVector3));
@@ -663,6 +968,7 @@ namespace GrEngine_Vulkan
 				}
 			}
 
+			//CalculateNormals(target_mesh);
 			VulkanAPI::m_createVkBuffer(logicalDevice, memAllocator, target_mesh->vertices.data(), sizeof(target_mesh->vertices[0]) * target_mesh->vertices.size(), VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, &target_mesh->vertexBuffer);
 			VulkanAPI::m_createVkBuffer(logicalDevice, memAllocator, target_mesh->indices.data(), sizeof(target_mesh->indices[0]) * target_mesh->indices.size(), VK_BUFFER_USAGE_INDEX_BUFFER_BIT, &target_mesh->indexBuffer);
 			//target_mesh->collisions.setMargin(0.001f);
@@ -710,37 +1016,37 @@ namespace GrEngine_Vulkan
 			Mesh* target_mesh = new Mesh();
 
 			target_mesh->vertices = {
-				{{{xcoord, ycoord, -zcoord, 1.f},{0.577400, 0.577400, -0.577300, 1.f},{ 1.f, 1.0f }}},
-				{{{xcoord, ycoord, zcoord, 1.f},{0.577400, 0.577400, 0.577300, 1.f},{ 1.f, 1.0f }}},
-				{{{xcoord, -ycoord, zcoord, 1.f},{0.577400, -0.577300, 0.577400, 1.f},{ 1.f, 1.0f }}},
-				{{{-xcoord, ycoord, -zcoord, 1.f},{-0.577300, 0.577400, -0.577400, 1.f},{ 1.f, 1.0f }}},
-				{{{xcoord, -ycoord, -zcoord, 1.f},{0.577400, -0.577300, -0.577400, 1.f},{ 1.f, 1.0f }}},
-				{{{-xcoord, -ycoord, -zcoord, 1.f},{-0.577400, -0.577300, -0.577400, 1.f},{ 1.f, 1.0f }}},
-				{{{xcoord, ycoord, -zcoord, 1.f},{0.577300, 0.577400, -0.577400, 1.f},{ 1.f, 1.0f }}},
-				{{{xcoord, ycoord, zcoord, 1.f},{0.577300, 0.577400, 0.577400, 1.f},{ 1.f, 1.0f }}},
-				{{{-xcoord, ycoord, zcoord, 1.f},{-0.577300, 0.577400, 0.577400, 1.f},{ 1.f, 1.0f }}},
-				{{{-xcoord, -ycoord, zcoord, 1.f},{-0.577400, -0.577300, 0.577400, 1.f},{ 1.f, 1.0f }}},
-				{{{-xcoord, ycoord, zcoord, 1.f},{-0.577400, 0.577400, 0.577300, 1.f},{ 1.f, 1.0f }}},
-				{{{-xcoord, ycoord, -zcoord, 1.f},{-0.577400, 0.577300, -0.577400, 1.f},{ 1.f, 1.0f }}},
-				{{{-xcoord, -ycoord, -zcoord, 1.f},{-0.577400, -0.577300, -0.577400, 1.f},{ 1.f, 1.0f }}},
-				{{{-xcoord, ycoord, -zcoord, 1.f},{-0.577300, 0.577400, -0.577400, 1.f},{ 1.f, 1.0f }}},
-				{{{-xcoord, ycoord, zcoord, 1.f},{-0.577300, 0.577400, 0.577400, 1.f},{ 1.f, 1.0f }}},
-				{{{xcoord, -ycoord, zcoord, 1.f},{0.577400, -0.577300, 0.577400, 1.f},{ 1.f, 1.0f }}},
-				{{{-xcoord, -ycoord, zcoord, 1.f},{-0.577400, -0.577300, 0.577400, 1.f},{ 1.f, 1.0f }}},
-				{{{xcoord, ycoord, -zcoord, 1.f},{0.577300, 0.577400, -0.577400, 1.f},{ 1.f, 1.0f }}},
-				{{{xcoord, -ycoord, -zcoord, 1.f},{0.577400, -0.577400, -0.577300, 1.f},{ 1.f, 1.0f }}},
-				{{{-xcoord, -ycoord, zcoord, 1.f},{-0.577400, -0.577400, 0.577300, 1.f},{ 1.f, 1.0f }}},
-				{{{-xcoord, -ycoord, -zcoord, 1.f},{-0.577300, -0.577400, -0.577400, 1.f},{ 1.f, 1.0f }}},
-				{{ {xcoord, -ycoord, zcoord, 1.f},{0.577300, -0.577400, 0.577400, 1.f},{ 1.f, 1.0f }}}
+				{{{xcoord, ycoord, -zcoord, 1.f},{0.577400, 0.577400, -0.577300},{ 1.f, 1.0f }}},
+				{{{xcoord, ycoord, zcoord, 1.f},{0.577400, 0.577400, 0.577300},{ 1.f, 1.0f }}},
+				{{{xcoord, -ycoord, zcoord, 1.f},{0.577400, -0.577300, 0.577400},{ 1.f, 1.0f }}},
+				{{{-xcoord, ycoord, -zcoord, 1.f},{-0.577300, 0.577400, -0.577400},{ 1.f, 1.0f }}},
+				{{{xcoord, -ycoord, -zcoord, 1.f},{0.577400, -0.577300, -0.577400},{ 1.f, 1.0f }}},
+				{{{-xcoord, -ycoord, -zcoord, 1.f},{-0.577400, -0.577300, -0.577400},{ 1.f, 1.0f }}},
+				{{{xcoord, ycoord, -zcoord, 1.f},{0.577300, 0.577400, -0.577400},{ 1.f, 1.0f }}},
+				{{{xcoord, ycoord, zcoord, 1.f},{0.577300, 0.577400, 0.577400},{ 1.f, 1.0f }}},
+				{{{-xcoord, ycoord, zcoord, 1.f},{-0.577300, 0.577400, 0.577400},{ 1.f, 1.0f }}},
+				{{{-xcoord, -ycoord, zcoord, 1.f},{-0.577400, -0.577300, 0.577400},{ 1.f, 1.0f }}},
+				{{{-xcoord, ycoord, zcoord, 1.f},{-0.577400, 0.577400, 0.577300},{ 1.f, 1.0f }}},
+				{{{-xcoord, ycoord, -zcoord, 1.f},{-0.577400, 0.577300, -0.577400},{ 1.f, 1.0f }}},
+				{{{-xcoord, -ycoord, -zcoord, 1.f},{-0.577400, -0.577300, -0.577400},{ 1.f, 1.0f }}},
+				{{{-xcoord, ycoord, -zcoord, 1.f},{-0.577300, 0.577400, -0.577400},{ 1.f, 1.0f }}},
+				{{{-xcoord, ycoord, zcoord, 1.f},{-0.577300, 0.577400, 0.577400},{ 1.f, 1.0f }}},
+				{{{xcoord, -ycoord, zcoord, 1.f},{0.577400, -0.577300, 0.577400},{ 1.f, 1.0f }}},
+				{{{-xcoord, -ycoord, zcoord, 1.f},{-0.577400, -0.577300, 0.577400},{ 1.f, 1.0f }}},
+				{{{xcoord, ycoord, -zcoord, 1.f},{0.577300, 0.577400, -0.577400},{ 1.f, 1.0f }}},
+				{{{xcoord, -ycoord, -zcoord, 1.f},{0.577400, -0.577400, -0.577300},{ 1.f, 1.0f }}},
+				{{{-xcoord, -ycoord, zcoord, 1.f},{-0.577400, -0.577400, 0.577300},{ 1.f, 1.0f }}},
+				{{{-xcoord, -ycoord, -zcoord, 1.f},{-0.577300, -0.577400, -0.577400},{ 1.f, 1.0f }}},
+				{{ {xcoord, -ycoord, zcoord, 1.f},{0.577300, -0.577400, 0.577400},{ 1.f, 1.0f }}}
 			};
 
 			target_mesh->indices = { 0, 1, 2, 3, 4, 5, 3, 6, 4, 7, 8, 9, 10, 11, 12, 13, 14, 7, 0, 2, 4, 7, 9, 15, 10, 12, 16, 13, 7, 17, 18, 19, 20, 18, 21, 19 };
 
-			resource = resources->AddMeshResource(res_name.c_str(), target_mesh);
-			object_mesh = resource->AddLink();
-
+			//CalculateNormals(target_mesh);
 			VulkanAPI::m_createVkBuffer(logicalDevice, memAllocator, target_mesh->vertices.data(), sizeof(target_mesh->vertices[0]) * target_mesh->vertices.size(), VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, &target_mesh->vertexBuffer);
 			VulkanAPI::m_createVkBuffer(logicalDevice, memAllocator, target_mesh->indices.data(), sizeof(target_mesh->indices[0]) * target_mesh->indices.size(), VK_BUFFER_USAGE_INDEX_BUFFER_BIT, &target_mesh->indexBuffer);
+			resource = resources->AddMeshResource(res_name.c_str(), target_mesh);
+			object_mesh = resource->AddLink();
 			GrEngine::PhysicsObject* physComponent = ownerEntity->GetPropertyValue(PropertyType::PhysComponent, static_cast<GrEngine::PhysicsObject*>(nullptr));
 			if (physComponent != nullptr && ownerEntity->GetPropertyValue(PropertyType::CollisionType, 0) == 0)
 			{

@@ -8,6 +8,7 @@ namespace GrEngine_Vulkan
 	{
 	public:
 		Texture* object_texture;
+		Texture* object_normal;
 		std::string shader_path = "Shaders//default";
 		float near_plane = 0.1;
 		float far_plane = 1000;

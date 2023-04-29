@@ -84,6 +84,14 @@ namespace EditorUI
         public static extern void SKey(bool state);
         [DllImport("SceneEditor.dll", CallingConvention = CallingConvention.Cdecl)]
         public static extern void ToggleLighting();
+        [DllImport("SceneEditor.dll", CallingConvention = CallingConvention.Cdecl)]
+        public static extern void CopyEntity();
+        [DllImport("SceneEditor.dll", CallingConvention = CallingConvention.Cdecl)]
+        public static extern void PasteEntity();
+        [DllImport("SceneEditor.dll", CallingConvention = CallingConvention.Cdecl)]
+        public static extern void DeleteEntity();
+        [DllImport("SceneEditor.dll", CallingConvention = CallingConvention.Cdecl)]
+        public static extern void SnapEntity();
 
         public static Wrapper[] wrappers = new Wrapper[2];
         public static Thread uThread;
@@ -164,14 +172,22 @@ namespace EditorUI
         }
 
         [DllExport]
-        public static void PassMaterialString(IntPtr value1, IntPtr value2, IntPtr redraw)
+        public static void OpenContextMenuForMainWindow()
+        {
+            wrappers[0].ui_window.Dispatcher.Invoke((Action)(() =>
+            {
+                ((MainView)wrappers[0].ui_window).OpenFormContextMenu();
+            }));
+        }
+
+        [DllExport]
+        public static void PassMaterialString(IntPtr value1, IntPtr redraw)
         {
             var input1 = Marshal.PtrToStringAnsi(value1);
-            var input2 = Marshal.PtrToStringAnsi(value2);
 
             wrappers[1].ui_window.Dispatcher.BeginInvoke((Action)(() =>
             {
-                ((ModelBrowser)wrappers[1].ui_window).AddMaterialToTheTable(input1, input2, (int)redraw);
+                ((ModelBrowser)wrappers[1].ui_window).AddMaterialToTheTable(input1, (int)redraw);
             }));
         }
 

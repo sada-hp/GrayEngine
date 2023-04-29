@@ -60,7 +60,7 @@ namespace GrEngine
 
 		if (drawComponent != nullptr)
 		{
-			res = drawComponent->LoadModel("", mesh_path, textures_vector);
+			res = drawComponent->LoadModel("", mesh_path, textures_vector, {});
 		}
 
 		return res;
@@ -73,8 +73,9 @@ namespace GrEngine
 		std::string mesh_path = "";
 		std::string coll_path = "";
 		std::vector<std::string> textures_vector;
+		std::vector<std::string> normals_vector;
 
-		if (!GrEngine::Globals::readGMF(filepath, &mesh_path, &coll_path, &textures_vector))
+		if (!GrEngine::Globals::readGMF(filepath, &mesh_path, &coll_path, &textures_vector, &normals_vector))
 			return false;
 
 		Entity* target = pWindow->getRenderer()->GetEntitiesList()[id];
@@ -86,7 +87,7 @@ namespace GrEngine
 
 		if (drawComponent != nullptr)
 		{
-			drawComponent->LoadModel(filepath, mesh_path.c_str(), textures_vector);
+			drawComponent->LoadModel(filepath, mesh_path.c_str(), textures_vector, normals_vector);
 		}
 
 		if (physComponent != nullptr)

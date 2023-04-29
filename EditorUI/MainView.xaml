@@ -29,7 +29,7 @@
                     <ColumnDefinition Width="15*"/>
                 </Grid.ColumnDefinitions>
                 <DockPanel Grid.Column="0">
-                    <StackPanel Name="GlobalControls" Background="#FF353538" Margin="0" DockPanel.Dock="Top">
+                    <StackPanel x:Name="GlobalControls" Background="#FF353538" Margin="0" DockPanel.Dock="Top">
                         <Button x:Name="LightingButton" Content="Toggle lighting" Background="#FF5D5D5D" BorderBrush="#FFC8C8C8" BorderThickness="1" Margin="5" Foreground="White" FontFamily="Lucida Sans Unicode" TextOptions.TextHintingMode="Fixed" Padding="2" Cursor="Hand" Click="LightingButton_Click"/>
                         <Button x:Name="ClearButton" Content="Save screenshot" Background="#FF5D5D5D" BorderBrush="#FFC8C8C8" BorderThickness="1" Margin="5" Foreground="White" FontFamily="Lucida Sans Unicode" TextOptions.TextHintingMode="Fixed" Padding="2" Cursor="Hand" Click="ClearButton_Click"/>
                         <!--<Button x:Name="BrowserButton" Content="Model browser" Background="#FF5D5D5D" BorderBrush="#FFC8C8C8" BorderThickness="1" Margin="5" Foreground="White" FontFamily="Lucida Sans Unicode" TextOptions.TextHintingMode="Fixed" Padding="2" Cursor="Hand" Click="BrowserButton_Click"/>-->
@@ -38,16 +38,25 @@
                         <Button x:Name="BrushButton" Content="Terrain brush" Background="#FF5D5D5D" BorderBrush="#FFC8C8C8" BorderThickness="1" Margin="5" Foreground="White" FontFamily="Lucida Sans Unicode" TextOptions.TextHintingMode="Fixed" Padding="2" Cursor="Hand" Click="BrushButton_Click"/>
                         <Button x:Name="SCulptButton" Content="Terrain sculpt" Background="#FF5D5D5D" BorderBrush="#FFC8C8C8" BorderThickness="1" Margin="5" Foreground="White" FontFamily="Lucida Sans Unicode" TextOptions.TextHintingMode="Fixed" Padding="2" Cursor="Hand" Click="SCulptButton_Click"/>
                     </StackPanel>
-                    <comp:ListBoxEx x:Name="EntitiesList" Background="#FF242427" Margin="5, 5, 5, 5" IsSynchronizedWithCurrentItem="True" SelectionChanged="EntitiesList_SelectionChanged">
-
-                    </comp:ListBoxEx>
+                    <comp:ListBoxEx x:Name="EntitiesList" Background="#FF242427" Margin="5, 5, 5, 5" IsSynchronizedWithCurrentItem="True" SelectionChanged="EntitiesList_SelectionChanged"/>
                 </DockPanel>
                 <Grid Grid.Column="1">
                     <Grid.RowDefinitions>
                         <RowDefinition Height="75*"/>
                         <RowDefinition Height="25*"/>
                     </Grid.RowDefinitions>
-                    <WindowsFormsHost x:Name="FormHost" Background="Black" SizeChanged="FormHost_SizeChanged" DockPanel.Dock="Top" Margin="5" Grid.Row="0"/>
+                    <WindowsFormsHost x:Name="FormHost" Background="Black" SizeChanged="FormHost_SizeChanged" DockPanel.Dock="Top" Margin="5" Grid.Row="0">
+                        <WindowsFormsHost.ContextMenu>
+                            <ContextMenu>
+                                <MenuItem Name="Snap" Header="Snap to terrain" ToolTip="LCtrl + G" Click="ContextItem_Click"/>
+                                <Separator/>
+                                <MenuItem Name="Copy" Header="Copy" ToolTip="LCtrl + C" Click="ContextItem_Click"/>
+                                <MenuItem Name="Paste" Header="Paste" ToolTip="LCtrl + V"  Click="ContextItem_Click"/>
+                                <Separator/>
+                                <MenuItem Name="Delete" Header="Delete" ToolTip="Del"  Click="ContextItem_Click"/>
+                            </ContextMenu>
+                        </WindowsFormsHost.ContextMenu>
+                    </WindowsFormsHost>
                     <TextBox x:Name="OutputConsole" TextWrapping="Wrap" Foreground="#FFB9B9B9" Background="#FF262629" SelectionBrush="#FF8A9299" Padding="5" Margin="2" VerticalScrollBarVisibility="Auto" BorderThickness="0" IsReadOnly="True" HorizontalScrollBarVisibility="Auto" Grid.Row="1"/>
                 </Grid>
                 <Grid Grid.Column="2">
@@ -56,53 +65,53 @@
                         <RowDefinition Height="*"/>
                     </Grid.RowDefinitions>
                     <DockPanel Background="#FF262629" Margin="5" Cursor="Hand" LostFocus="DockPanel_LostFocus">
-                        <MenuItem Name="ExtraProps" HorizontalContentAlignment="Left" VerticalContentAlignment="Center" Padding="0" PreviewMouseUp="ExtraProps_PreviewMouseUp" BorderBrush="#FFC8C8C8" BorderThickness="1">
+                        <MenuItem x:Name="ExtraProps" HorizontalContentAlignment="Left" VerticalContentAlignment="Center" Padding="0" PreviewMouseUp="ExtraProps_PreviewMouseUp" BorderBrush="#FFC8C8C8" BorderThickness="1">
                             <MenuItem.Header>
                                 <TextBlock Text="Add property" Foreground="White" Background="#FF262629" />
                             </MenuItem.Header>
-                            <MenuItem Name="Mesh" HorizontalContentAlignment="Left" Click="MenuItem_Click" Cursor="Hand">
+                            <MenuItem x:Name="Mesh" HorizontalContentAlignment="Left" Click="MenuItem_Click" Cursor="Hand">
                                 <MenuItem.Header>
                                     <TextBlock Text="Mesh" HorizontalAlignment="Left" RenderTransformOrigin="0.5,0.5"/>
                                 </MenuItem.Header>
                             </MenuItem>
-                            <MenuItem Name="Scale" HorizontalContentAlignment="Left" Click="MenuItem_Click" Cursor="Hand">
+                            <MenuItem x:Name="Scale" HorizontalContentAlignment="Left" Click="MenuItem_Click" Cursor="Hand">
                                 <MenuItem.Header>
                                     <TextBlock Text="Scale" HorizontalAlignment="Left" RenderTransformOrigin="0.5,0.5"/>
                                 </MenuItem.Header>
                             </MenuItem>
-                            <MenuItem Name="Color" HorizontalContentAlignment="Left" Click="MenuItem_Click" Cursor="Hand">
+                            <MenuItem x:Name="Color" HorizontalContentAlignment="Left" Click="MenuItem_Click" Cursor="Hand">
                                 <MenuItem.Header>
                                     <TextBlock Text="Color" HorizontalAlignment="Left" RenderTransformOrigin="0.5,0.5"/>
                                 </MenuItem.Header>
                             </MenuItem>
                             <Separator/>
-                            <MenuItem Name="Physics" HorizontalContentAlignment="Left" Click="MenuItem_Click" Cursor="Hand">
+                            <MenuItem x:Name="Physics" HorizontalContentAlignment="Left" Click="MenuItem_Click" Cursor="Hand">
                                 <MenuItem.Header>
                                     <TextBlock Text="Physics" HorizontalAlignment="Left" RenderTransformOrigin="0.5,0.5"/>
                                 </MenuItem.Header>
                             </MenuItem>
-                            <MenuItem Name="Mass" HorizontalContentAlignment="Left" Click="MenuItem_Click" Cursor="Hand">
+                            <MenuItem x:Name="Mass" HorizontalContentAlignment="Left" Click="MenuItem_Click" Cursor="Hand">
                                 <MenuItem.Header>
                                     <TextBlock Text="Mass" HorizontalAlignment="Left" RenderTransformOrigin="0.5,0.5"/>
                                 </MenuItem.Header>
                             </MenuItem>
-                            <MenuItem Name="CollisionType" HorizontalContentAlignment="Left" Click="MenuItem_Click" Cursor="Hand">
+                            <MenuItem x:Name="CollisionType" HorizontalContentAlignment="Left" Click="MenuItem_Click" Cursor="Hand">
                                 <MenuItem.Header>
                                     <TextBlock Text="CollisionType" HorizontalAlignment="Left" RenderTransformOrigin="0.5,0.5"/>
                                 </MenuItem.Header>
                             </MenuItem>
                             <Separator/>
-                            <MenuItem Name="Spotlight" HorizontalContentAlignment="Left" Click="MenuItem_Click" Cursor="Hand">
+                            <MenuItem x:Name="Spotlight" HorizontalContentAlignment="Left" Click="MenuItem_Click" Cursor="Hand">
                                 <MenuItem.Header>
                                     <TextBlock Text="Spotlight" HorizontalAlignment="Left" RenderTransformOrigin="0.5,0.5"/>
                                 </MenuItem.Header>
                             </MenuItem>
-                            <MenuItem Name="PointLight" HorizontalContentAlignment="Left" Click="MenuItem_Click" Cursor="Hand">
+                            <MenuItem x:Name="PointLight" HorizontalContentAlignment="Left" Click="MenuItem_Click" Cursor="Hand">
                                 <MenuItem.Header>
                                     <TextBlock Text="PointLight" HorizontalAlignment="Left" RenderTransformOrigin="0.5,0.5"/>
                                 </MenuItem.Header>
                             </MenuItem>
-                            <MenuItem Name="OmniLight" HorizontalContentAlignment="Left" Click="MenuItem_Click" Cursor="Hand">
+                            <MenuItem x:Name="OmniLight" HorizontalContentAlignment="Left" Click="MenuItem_Click" Cursor="Hand">
                                 <MenuItem.Header>
                                     <TextBlock Text="OmniLight" HorizontalAlignment="Left" RenderTransformOrigin="0.5,0.5"/>
                                 </MenuItem.Header>
@@ -110,9 +119,7 @@
                         </MenuItem>
                     </DockPanel>
 
-                    <ListBox Name="PropertiesCollection" Grid.Column="2" Background="#FF242427" Margin="5, 5, 5, 5" Grid.Row="1">
-
-                    </ListBox>
+                    <ListBox x:Name="PropertiesCollection" Grid.Column="2" Background="#FF242427" Margin="5, 5, 5, 5" Grid.Row="1"/>
                 </Grid>
             </Grid>
         </DockPanel>

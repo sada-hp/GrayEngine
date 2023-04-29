@@ -36,7 +36,7 @@ namespace GrEngine
                 {
                     if (para.size() > 1)
                     {
-                        dynamic_cast<ModelBrowser*>(GetContext())->getEditorUI()->UpdateMaterials((char*)std::any_cast<std::string>(para[0]).c_str(), (char*)std::any_cast<std::string>(para[1]).c_str(), std::any_cast<int>(para[2]));
+                        static_cast<ModelBrowser*>(GetContext())->getEditorUI()->UpdateMaterials((char*)std::any_cast<std::string>(para[0]).c_str(), std::any_cast<int>(para[1]));
                     }
                 });
         }

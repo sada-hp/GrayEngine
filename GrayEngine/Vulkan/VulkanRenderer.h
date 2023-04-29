@@ -11,7 +11,7 @@
 #include "VulkanAPI.h"
 
 #ifdef _DEBUG
-#define VALIDATION
+//#define VALIDATION
 #endif
 
 namespace GrEngine_Vulkan
@@ -45,6 +45,7 @@ namespace GrEngine_Vulkan
 
 		void addEntity(GrEngine::Entity* entity) override;
 		bool assignTextures(std::vector<std::string> textures, GrEngine::Entity* target) override;
+		bool assignNormals(std::vector<std::string> normals, GrEngine::Entity* target);
 		void clearDrawables() override;
 		void createSkybox(const char* East, const char* West, const char* Top, const char* Bottom, const char* North, const char* South) override;
 

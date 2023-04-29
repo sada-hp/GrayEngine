@@ -28,7 +28,7 @@ public:
 	typedef void(*DestroyUserInterfaceFunc)(UINT);
 	DestroyUserInterfaceFunc DestroyUserInterface;
 
-	typedef void(*UpdateMaterialsFunc)(char*, char*, int);
+	typedef void(*UpdateMaterialsFunc)(char*, int);
 	UpdateMaterialsFunc UpdateMaterials;
 
 	typedef void(*UpdateEntityFunc)(int, char*);
@@ -42,6 +42,9 @@ public:
 
 	typedef void(*SetInputModeFunc)(UINT, int);
 	SetInputModeFunc SetInputMode;
+
+	typedef void(*ShowContextFunc)();
+	ShowContextFunc ShowContextMenu;
 
 	EditorUI()
 	{
@@ -60,6 +63,7 @@ public:
 		SendInfoChunk = (SendInfoChunkCall)GetProcAddress(dotNetGUILibrary, "RecieveInfoChunk");
 		RemoveEntity = (RemoveEntityFunc)GetProcAddress(dotNetGUILibrary, "RemoveEntity");
 		SetInputMode = (SetInputModeFunc)GetProcAddress(dotNetGUILibrary, "SetInputMode");
+		ShowContextMenu = (ShowContextFunc)GetProcAddress(dotNetGUILibrary, "OpenContextMenuForMainWindow");
 	};
 
 	~EditorUI()
