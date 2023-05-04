@@ -7,6 +7,139 @@
              xmlns:comp="clr-namespace:EditorUI.Components"
              mc:Ignorable="d" 
              d:DesignHeight="450" d:DesignWidth="800" WindowStartupLocation="CenterScreen" Background="#FF15161F" Title="Gray Engine: World Editor" Closed="Window_Closed" KeyDown="Window_KeyDown" KeyUp="Window_KeyUp">
+    <Window.Resources>
+        <SolidColorBrush x:Key="ListBox.Static.Background" Color="#FF242427"/>
+        <SolidColorBrush x:Key="ListBox.Static.Border" Color="#FFABADB3"/>
+        <SolidColorBrush x:Key="ListBox.Disabled.Background" Color="#FF242427"/>
+        <SolidColorBrush x:Key="ListBox.Disabled.Border" Color="#FFD9D9D9"/>
+        <Style TargetType="{x:Type ListBox}">
+            <Setter Property="Background" Value="{StaticResource ListBox.Static.Background}"/>
+            <Setter Property="BorderBrush" Value="{StaticResource ListBox.Static.Border}"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="Foreground" Value="{DynamicResource {x:Static SystemColors.ControlTextBrushKey}}"/>
+            <Setter Property="ScrollViewer.HorizontalScrollBarVisibility" Value="Auto"/>
+            <Setter Property="ScrollViewer.VerticalScrollBarVisibility" Value="Auto"/>
+            <Setter Property="ScrollViewer.CanContentScroll" Value="true"/>
+            <Setter Property="ScrollViewer.PanningMode" Value="Both"/>
+            <Setter Property="Stylus.IsFlicksEnabled" Value="False"/>
+            <Setter Property="VerticalContentAlignment" Value="Center"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="{x:Type ListBox}">
+                        <Border x:Name="Bd" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}" Background="{TemplateBinding Background}" Padding="1" SnapsToDevicePixels="true">
+                            <ScrollViewer Focusable="false" Padding="{TemplateBinding Padding}">
+                                <ItemsPresenter SnapsToDevicePixels="{TemplateBinding SnapsToDevicePixels}"/>
+                            </ScrollViewer>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsEnabled" Value="false">
+                                <Setter Property="Background" TargetName="Bd" Value="{StaticResource ListBox.Disabled.Background}"/>
+                                <Setter Property="BorderBrush" TargetName="Bd" Value="{StaticResource ListBox.Disabled.Border}"/>
+                            </Trigger>
+                            <MultiTrigger>
+                                <MultiTrigger.Conditions>
+                                    <Condition Property="IsGrouping" Value="true"/>
+                                    <Condition Property="VirtualizingPanel.IsVirtualizingWhenGrouping" Value="false"/>
+                                </MultiTrigger.Conditions>
+                                <Setter Property="ScrollViewer.CanContentScroll" Value="false"/>
+                            </MultiTrigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+        <Style x:Key="FocusVisual">
+            <Setter Property="Control.Template">
+                <Setter.Value>
+                    <ControlTemplate>
+                        <Rectangle Margin="2" SnapsToDevicePixels="true" Stroke="{DynamicResource {x:Static SystemColors.ControlTextBrushKey}}" StrokeThickness="1" StrokeDashArray="1 2"/>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+        <SolidColorBrush x:Key="Button.Static.Background" Color="#FFDDDDDD"/>
+        <SolidColorBrush x:Key="Button.Static.Border" Color="#FF707070"/>
+        <SolidColorBrush x:Key="Button.MouseOver.Background" Color="#FFBEE6FD"/>
+        <SolidColorBrush x:Key="Button.MouseOver.Border" Color="#FF3C7FB1"/>
+        <SolidColorBrush x:Key="Button.Pressed.Background" Color="#FFC4E5F6"/>
+        <SolidColorBrush x:Key="Button.Pressed.Border" Color="#FF2C628B"/>
+        <SolidColorBrush x:Key="Button.Disabled.Background" Color="#FF5D5D5D"/>
+        <SolidColorBrush x:Key="Button.Disabled.Border" Color="#FFADB2B5"/>
+        <SolidColorBrush x:Key="Button.Disabled.Foreground" Color="#FF838383"/>
+        <Style TargetType="{x:Type Button}">
+            <Setter Property="FocusVisualStyle" Value="{StaticResource FocusVisual}"/>
+            <Setter Property="Background" Value="{StaticResource Button.Static.Background}"/>
+            <Setter Property="BorderBrush" Value="{StaticResource Button.Static.Border}"/>
+            <Setter Property="Foreground" Value="{DynamicResource {x:Static SystemColors.ControlTextBrushKey}}"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="HorizontalContentAlignment" Value="Center"/>
+            <Setter Property="VerticalContentAlignment" Value="Center"/>
+            <Setter Property="Padding" Value="1"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="{x:Type Button}">
+                        <Border x:Name="border" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}" Background="{TemplateBinding Background}" SnapsToDevicePixels="true">
+                            <ContentPresenter x:Name="contentPresenter" Focusable="False" HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}" Margin="{TemplateBinding Padding}" RecognizesAccessKey="True" SnapsToDevicePixels="{TemplateBinding SnapsToDevicePixels}" VerticalAlignment="{TemplateBinding VerticalContentAlignment}"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsDefaulted" Value="true">
+                                <Setter Property="BorderBrush" TargetName="border" Value="{DynamicResource {x:Static SystemColors.HighlightBrushKey}}"/>
+                            </Trigger>
+                            <Trigger Property="IsMouseOver" Value="true">
+                                <Setter Property="Background" TargetName="border" Value="{StaticResource Button.MouseOver.Background}"/>
+                                <Setter Property="BorderBrush" TargetName="border" Value="{StaticResource Button.MouseOver.Border}"/>
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="true">
+                                <Setter Property="Background" TargetName="border" Value="{StaticResource Button.Pressed.Background}"/>
+                                <Setter Property="BorderBrush" TargetName="border" Value="{StaticResource Button.Pressed.Border}"/>
+                            </Trigger>
+                            <Trigger Property="IsEnabled" Value="false">
+                                <Setter Property="Background" TargetName="border" Value="{StaticResource Button.Disabled.Background}"/>
+                                <Setter Property="BorderBrush" TargetName="border" Value="{StaticResource Button.Disabled.Border}"/>
+                                <Setter Property="TextElement.Foreground" TargetName="contentPresenter" Value="{StaticResource Button.Disabled.Foreground}"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+        <Style TargetType="{x:Type comp:ListBoxEx}">
+            <Setter Property="Background" Value="{StaticResource ListBox.Static.Background}"/>
+            <Setter Property="BorderBrush" Value="{StaticResource ListBox.Static.Border}"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="Foreground" Value="{DynamicResource {x:Static SystemColors.ControlTextBrushKey}}"/>
+            <Setter Property="ScrollViewer.HorizontalScrollBarVisibility" Value="Auto"/>
+            <Setter Property="ScrollViewer.VerticalScrollBarVisibility" Value="Auto"/>
+            <Setter Property="ScrollViewer.CanContentScroll" Value="true"/>
+            <Setter Property="ScrollViewer.PanningMode" Value="Both"/>
+            <Setter Property="Stylus.IsFlicksEnabled" Value="False"/>
+            <Setter Property="VerticalContentAlignment" Value="Center"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="{x:Type comp:ListBoxEx}">
+                        <Border x:Name="Bd" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}" Background="{TemplateBinding Background}" Padding="1" SnapsToDevicePixels="true">
+                            <ScrollViewer Focusable="false" Padding="{TemplateBinding Padding}">
+                                <ItemsPresenter SnapsToDevicePixels="{TemplateBinding SnapsToDevicePixels}"/>
+                            </ScrollViewer>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsEnabled" Value="false">
+                                <Setter Property="Background" TargetName="Bd" Value="{StaticResource ListBox.Disabled.Background}"/>
+                                <Setter Property="BorderBrush" TargetName="Bd" Value="{StaticResource ListBox.Disabled.Border}"/>
+                            </Trigger>
+                            <MultiTrigger>
+                                <MultiTrigger.Conditions>
+                                    <Condition Property="IsGrouping" Value="true"/>
+                                    <Condition Property="VirtualizingPanel.IsVirtualizingWhenGrouping" Value="false"/>
+                                </MultiTrigger.Conditions>
+                                <Setter Property="ScrollViewer.CanContentScroll" Value="false"/>
+                            </MultiTrigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+    </Window.Resources>
 
     <DockPanel Background="#FF6D88FF" LastChildFill="True" KeyDown="Window_KeyDown" KeyUp="Window_KeyUp">
         <Menu Height="25" Background="#FF353538" Padding="0,2,0,0" DockPanel.Dock="Top" KeyDown="Window_KeyDown" KeyUp="Window_KeyUp">
@@ -16,7 +149,11 @@
             </MenuItem>
             <MenuItem Header="Level" Foreground="WhiteSmoke" Margin="0">
                 <MenuItem Name="SkyboxMenu" Header="Skybox" Foreground="Black" Click="SkyboxSettings_Click"></MenuItem>
-                <MenuItem Name="TerrainMenu" Header="Terrain" Foreground="Black" Click="TerrainSettings_Click"></MenuItem>
+                <MenuItem Name="TerrainMenu" Header="Terrain" Foreground="Black">
+                    <MenuItem Header="Generate" Foreground="Black" Click="TerrainSettings_Click"/>
+                    <MenuItem Header="Update" Foreground="Black" Click="TerrainSettings_Click"/>
+                </MenuItem>
+                <MenuItem Name="SunMenu" Header="Directional light" Foreground="Black" Click="SunMenu_Click"></MenuItem>
             </MenuItem>
             <MenuItem Header="Help" Foreground="WhiteSmoke" Margin="0"/>
             <TextBlock Name="FrameBlock" Text="0,0" Foreground="WhiteSmoke"/>
@@ -84,6 +221,26 @@
                                     <TextBlock Text="Color" HorizontalAlignment="Left" RenderTransformOrigin="0.5,0.5"/>
                                 </MenuItem.Header>
                             </MenuItem>
+                            <MenuItem x:Name="Transparency" HorizontalContentAlignment="Left" Click="MenuItem_Click" Cursor="Hand">
+                                <MenuItem.Header>
+                                    <TextBlock Text="Transparency" HorizontalAlignment="Left" RenderTransformOrigin="0.5,0.5"/>
+                                </MenuItem.Header>
+                            </MenuItem>
+                            <MenuItem x:Name="DoubleSided" HorizontalContentAlignment="Left" Click="MenuItem_Click" Cursor="Hand">
+                                <MenuItem.Header>
+                                    <TextBlock Text="DoubleSided" HorizontalAlignment="Left" RenderTransformOrigin="0.5,0.5"/>
+                                </MenuItem.Header>
+                            </MenuItem>
+                            <MenuItem x:Name="AlphaThreshold" HorizontalContentAlignment="Left" Click="MenuItem_Click" Cursor="Hand">
+                                <MenuItem.Header>
+                                    <TextBlock Text="AlphaThreshold" HorizontalAlignment="Left" RenderTransformOrigin="0.5,0.5"/>
+                                </MenuItem.Header>
+                            </MenuItem>
+                            <MenuItem x:Name="MaximumDistance" HorizontalContentAlignment="Left" Click="MenuItem_Click" Cursor="Hand">
+                                <MenuItem.Header>
+                                    <TextBlock Text="MaximumDistance" HorizontalAlignment="Left" RenderTransformOrigin="0.5,0.5"/>
+                                </MenuItem.Header>
+                            </MenuItem>
                             <Separator/>
                             <MenuItem x:Name="Physics" HorizontalContentAlignment="Left" Click="MenuItem_Click" Cursor="Hand">
                                 <MenuItem.Header>
@@ -93,6 +250,11 @@
                             <MenuItem x:Name="Mass" HorizontalContentAlignment="Left" Click="MenuItem_Click" Cursor="Hand">
                                 <MenuItem.Header>
                                     <TextBlock Text="Mass" HorizontalAlignment="Left" RenderTransformOrigin="0.5,0.5"/>
+                                </MenuItem.Header>
+                            </MenuItem>
+                            <MenuItem x:Name="BodyType" HorizontalContentAlignment="Left" Click="MenuItem_Click" Cursor="Hand">
+                                <MenuItem.Header>
+                                    <TextBlock Text="BodyType" HorizontalAlignment="Left" RenderTransformOrigin="0.5,0.5"/>
                                 </MenuItem.Header>
                             </MenuItem>
                             <MenuItem x:Name="CollisionType" HorizontalContentAlignment="Left" Click="MenuItem_Click" Cursor="Hand">
@@ -116,10 +278,22 @@
                                     <TextBlock Text="OmniLight" HorizontalAlignment="Left" RenderTransformOrigin="0.5,0.5"/>
                                 </MenuItem.Header>
                             </MenuItem>
+                            <MenuItem x:Name="CastShadow" HorizontalContentAlignment="Left" Click="MenuItem_Click" Cursor="Hand">
+                                <MenuItem.Header>
+                                    <TextBlock Text="CastShadow" HorizontalAlignment="Left" RenderTransformOrigin="0.5,0.5"/>
+                                </MenuItem.Header>
+                            </MenuItem>
+                            <MenuItem x:Name="Brightness" HorizontalContentAlignment="Left" Click="MenuItem_Click" Cursor="Hand">
+                                <MenuItem.Header>
+                                    <TextBlock Text="Brightness" HorizontalAlignment="Left" RenderTransformOrigin="0.5,0.5"/>
+                                </MenuItem.Header>
+                            </MenuItem>
                         </MenuItem>
                     </DockPanel>
 
-                    <ListBox x:Name="PropertiesCollection" Grid.Column="2" Background="#FF242427" Margin="5, 5, 5, 5" Grid.Row="1"/>
+                    <ListBox x:Name="PropertiesCollection" Grid.Column="2" Background="#FF242427" Margin="5, 5, 5, 5" Grid.Row="1">
+
+                    </ListBox>
                 </Grid>
             </Grid>
         </DockPanel>

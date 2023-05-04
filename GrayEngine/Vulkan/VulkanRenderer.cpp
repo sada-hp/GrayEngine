@@ -65,6 +65,10 @@ namespace GrEngine_Vulkan
 		VulkanAPI::FreeCommandBuffers(commandBuffers.data(), commandBuffers.size());
 		VulkanAPI::Destroy(logicalDevice, memAllocator);
 
+#ifdef VALIDATION
+		DestroyDebugUtilsMessengerEXT(_vulkan, debugMessenger, nullptr);
+#endif // VALIDATION
+
 		vkDestroySurfaceKHR(_vulkan, surface, nullptr);
 		vkDestroyInstance(_vulkan, nullptr);
 	}
@@ -72,7 +76,7 @@ namespace GrEngine_Vulkan
 	bool VulkanRenderer::init(void* window) //Vulkan integration done with a help of vulkan-tutorial.com
 	{
 		bool res = true;
-		pParentWindow = reinterpret_cast<GLFWwindow*>(window);
+		pParentWindow = static_cast<GLFWwindow*>(window);
 
 		if (!createVKInstance())
 			throw std::runtime_error("Failed to create vulkan instance!");
@@ -169,6 +173,7 @@ namespace GrEngine_Vulkan
 		createAttachment(VK_FORMAT_R16G16B16A16_SFLOAT, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT, &normal);
 		createAttachment(swapChainImageFormat, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT, &albedo);
 
+		viewport_camera = new GrEngine::Camera();
 		getActiveViewport()->PositionObjectAt(0, 3, 4);
 		getActiveViewport()->SetRotation(30, 0, 0);
 
@@ -202,6 +207,7 @@ namespace GrEngine_Vulkan
 		entities[sky->GetEntityID()] = sky;
 
 		vkDeviceWaitIdle(logicalDevice);
+		Logger::Out("Initialized device %p", OutputColor::Blue, OutputType::Log, logicalDevice);
 
 		return Initialized = res;
 	}
@@ -631,9 +637,14 @@ namespace GrEngine_Vulkan
 		setLayoutBindings[6].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
 		setLayoutBindings[6].descriptorCount = 1;
 
+		VkPushConstantRange pushConstant;
+		pushConstant.offset = 0;
+		pushConstant.size = 16;
+		pushConstant.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
+
 		VulkanAPI::CreateDescriptorPool(logicalDevice, poolSizes, &compositionSetPool);
 		VulkanAPI::CreateDescriptorSetLayout(logicalDevice, setLayoutBindings, &compositionSetLayout);
-		VulkanAPI::CreatePipelineLayout(logicalDevice, {}, { compositionSetLayout }, &compositionPipelineLayout);
+		VulkanAPI::CreatePipelineLayout(logicalDevice, { pushConstant }, { compositionSetLayout }, &compositionPipelineLayout);
 		VulkanAPI::AllocateDescriptorSet(logicalDevice, compositionSetPool, compositionSetLayout, &compositionSet);
 
 		std::vector<VkWriteDescriptorSet> writeDescriptorSets;
@@ -1473,6 +1484,8 @@ namespace GrEngine_Vulkan
 						prj.viewproj = arr[i].proj * arr[i].view;
 						prj.spec.x = LightType::Cascade;
 						prj.spec.y = i;
+						prj.spec.z = 0.5;
+						prj.color = arr[i].color;
 						//void* p = (byte*)cascadeBuffer.data + 16 * i;
 						//memcpy_s(p, sizeof(float), &arr[i].splitDepth, sizeof(float));
 						vkCmdUpdateBuffer(commandBuffers[index], shadowBuffer.Buffer, sizeof(VulkanSpotlight::ShadowProjection) * projections.size(), sizeof(VulkanSpotlight::ShadowProjection), &prj);
@@ -1614,6 +1627,7 @@ namespace GrEngine_Vulkan
 		vkCmdNextSubpass(commandBuffers[index], VK_SUBPASS_CONTENTS_INLINE);
 
 		vkCmdBindPipeline(commandBuffers[index], VK_PIPELINE_BIND_POINT_GRAPHICS, compositionPipeline);
+		vkCmdPushConstants(commandBuffers[index], compositionPipelineLayout, VK_SHADER_STAGE_FRAGMENT_BIT, 0, 16, &ambient);
 		vkCmdBindDescriptorSets(commandBuffers[index], VK_PIPELINE_BIND_POINT_GRAPHICS, compositionPipelineLayout, 0, 1, &compositionSet, 0, NULL);
 		vkCmdDraw(commandBuffers[index], 3, 1, 0, 0);
 
@@ -1994,9 +2008,37 @@ namespace GrEngine_Vulkan
 					delete drawables[(*pos).first];
 					drawables.erase((*pos).first);
 				}
-				else if ((*pos).second->GetEntityType() == GrEngine::EntityType::SpotlightEntity)
+				else if ((*pos).second->GetEntityType() == GrEngine::EntityType::TerrainEntity)
+				{
+					static_cast<VulkanTerrain*>((*pos).second)->destroyObject();
+					terrain = nullptr;
+				}
+				else if ((*pos).second->GetEntityType() == GrEngine::EntityType::SkyboxEntity)
+				{
+					static_cast<VulkanSkybox*>((*pos).second)->destroyObject();
+					sky = nullptr;
+				}
+				if ((*pos).second->GetEntityType() == GrEngine::EntityType::SpotlightEntity)
 				{
 					static_cast<VulkanSpotlight*>(lights[(*pos).first])->destroyLight();
+					delete lights[(*pos).first];
+					lights.erase((*pos).first);
+				}
+				else if ((*pos).second->GetEntityType() == GrEngine::EntityType::OmniLightEntity)
+				{
+					static_cast<VulkanOmniLight*>(lights[(*pos).first])->destroyLight();
+					delete lights[(*pos).first];
+					lights.erase((*pos).first);
+				}
+				else if ((*pos).second->GetEntityType() == GrEngine::EntityType::PointLightEntity)
+				{
+					static_cast<VulkanPointLight*>(lights[(*pos).first])->destroyLight();
+					delete lights[(*pos).first];
+					lights.erase((*pos).first);
+				}
+				else if ((*pos).second->GetEntityType() == GrEngine::EntityType::CascadeLightEntity)
+				{
+					static_cast<VulkanCascade*>(lights[(*pos).first])->destroyLight();
 					delete lights[(*pos).first];
 					lights.erase((*pos).first);
 				}
@@ -2333,142 +2375,10 @@ namespace GrEngine_Vulkan
 			return false;
 		}
 
-		Resource<Texture*>* resource = resources.GetTextureResource(object->object_texture->texture_collection);
-		std::string solution = GrEngine::Globals::getExecutablePath();
-
-		if (resource != nullptr)
+		bool res = updateResource(object->object_texture, textureIndex);
+		if (res)
 		{
-			int maxW = object->object_texture->srcInfo.width;
-			int maxH = object->object_texture->srcInfo.height;
-			int channels = object->object_texture->srcInfo.channels;
-			uint32_t mipLevels = object->object_texture->texInfo.mipLevels;
-
-			VkCommandBuffer commandBuffer;
-			std::vector<VkBufferImageCopy> regions;
-			uint32_t offset = 0;
-
-			for (int i = 0; i < object->object_texture->texture_collection.size(); i++)
-			{
-				VkBufferImageCopy region{};
-				region.bufferOffset = offset;
-
-				region.imageSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-				region.imageSubresource.mipLevel = 0;
-				region.imageSubresource.baseArrayLayer = i;
-				region.imageSubresource.layerCount = 1;
-
-				region.imageOffset = { 0, 0, 0 };
-				region.imageExtent = {
-					(uint32_t)maxW,
-					(uint32_t)maxH,
-					1
-				};
-
-				regions.push_back(region);
-				offset += maxW * maxH * channels;
-			}
-
-			ShaderBuffer stagingBuffer;
-			VulkanAPI::m_createVkBuffer(logicalDevice, memAllocator, nullptr, maxW * maxH * channels * object->object_texture->texture_collection.size(), VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_TRANSFER_SRC_BIT, &stagingBuffer);
-			VkImageSubresourceRange subresourceRange = VulkanAPI::StructSubresourceRange(VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, object->object_texture->texture_collection.size());
-
-			vkWaitForFences(logicalDevice, 1, &transitionFence, VK_TRUE, UINT64_MAX);
-			VulkanAPI::AllocateCommandBuffers(logicalDevice, commandPool, &commandBuffer, 1);
-			VulkanAPI::BeginCommandBuffer(commandBuffer, VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT);
-			VulkanAPI::TransitionImageLayout(object->object_texture->newImage.allocatedImage, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, subresourceRange, commandBuffer);
-			vkCmdCopyImageToBuffer(commandBuffer, object->object_texture->newImage.allocatedImage, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, stagingBuffer.Buffer, regions.size(), regions.data());
-			VulkanAPI::EndAndSubmitCommandBuffer(logicalDevice, commandPool, commandBuffer, graphicsQueue, transitionFence);
-
-			size_t alloc_size = maxW * maxH * channels * object->object_texture->texture_collection.size();
-			unsigned char* data;
-			vmaMapMemory(memAllocator, stagingBuffer.Allocation, (void**)&data);
-
-			uint32_t buf_offset = maxW * maxH * channels * textureIndex;
-			int width;
-			int height;
-			stbi_uc* pixels = stbi_load((solution + object->object_texture->texture_collection[textureIndex]).c_str(), &width, &height, &channels, STBI_rgb_alpha);
-
-			if (!pixels)
-			{
-				Logger::Out("An error occurred while loading the texture: %s", OutputColor::Green, OutputType::Error, object->object_texture->texture_collection[textureIndex].c_str());
-				vmaUnmapMemory(memAllocator, stagingBuffer.Allocation);
-				return false;
-			}
-
-			if (width < maxW || height < maxH)
-			{
-				auto output = (unsigned char*)malloc( maxW * maxH * channels);
-				stbir_resize_uint8(pixels, width, height, 0, output, maxW, maxH, 0, channels);
-				memcpy_s(data + buf_offset, maxW * maxH * channels, output, maxW * maxH * channels); //sizeof(byte)
-				free(pixels);
-				free(output);
-			}
-			else
-			{
-				memcpy_s(data + buf_offset, width * height * channels, pixels, width * height * channels); //sizeof(byte)
-				stbi_image_free(pixels);
-			}
-
-			vmaUnmapMemory(memAllocator, stagingBuffer.Allocation);
-
-			VulkanAPI::DestroyImageView(object->object_texture->textureImageView);
-			VulkanAPI::DestroySampler(object->object_texture->textureSampler);
-			VulkanAPI::DestroyImage(object->object_texture->newImage.allocatedImage);
-			object->object_texture->initialized = false;
-
-			VkExtent3D imageExtent;
-			imageExtent.width = static_cast<uint32_t>(maxW);
-			imageExtent.height = static_cast<uint32_t>(maxH);
-			imageExtent.depth = 1;
-
-			VkImageCreateInfo dimg_info = VulkanAPI::StructImageCreateInfo(imageExtent, VK_FORMAT_R8G8B8A8_SRGB, VK_SAMPLE_COUNT_1_BIT, VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT);
-			dimg_info.arrayLayers = object->object_texture->texture_collection.size();
-			dimg_info.mipLevels = mipLevels;
-			dimg_info.flags = 0;
-
-			VulkanAPI::CreateImage(memAllocator, &dimg_info, &object->object_texture->newImage.allocatedImage, &object->object_texture->newImage.allocation);
-
-			vkWaitForFences(logicalDevice, 1, &transitionFence, VK_TRUE, UINT64_MAX);
-			VulkanAPI::AllocateCommandBuffers(logicalDevice, commandPool, &commandBuffer, 1);
-			VulkanAPI::BeginCommandBuffer(commandBuffer, VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT);
-			VulkanAPI::TransitionImageLayout(object->object_texture->newImage.allocatedImage, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, subresourceRange, commandBuffer);
-			VulkanAPI::EndAndSubmitCommandBuffer(logicalDevice, commandPool, commandBuffer, graphicsQueue, transitionFence);
-
-			vkWaitForFences(logicalDevice, 1, &transitionFence, VK_TRUE, UINT64_MAX);
-			VulkanAPI::CopyBufferToImage(logicalDevice, commandPool, stagingBuffer.Buffer, object->object_texture->newImage.allocatedImage, graphicsQueue, transitionFence, { (uint32_t)maxW, (uint32_t)maxH, (uint32_t)channels }, object->object_texture->texture_collection.size());
-
-
-			generateMipmaps(object->object_texture->newImage.allocatedImage, maxW, maxH, mipLevels, object->object_texture->texture_collection.size());
-
-
-			subresourceRange.levelCount = mipLevels;
-			vkWaitForFences(logicalDevice, 1, &transitionFence, VK_TRUE, UINT64_MAX);
-			VulkanAPI::AllocateCommandBuffers(logicalDevice, commandPool, &commandBuffer, 1);
-			VulkanAPI::BeginCommandBuffer(commandBuffer, VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT);
-			VulkanAPI::TransitionImageLayout(object->object_texture->newImage.allocatedImage, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, subresourceRange, commandBuffer);
-			VulkanAPI::EndAndSubmitCommandBuffer(logicalDevice, commandPool, commandBuffer, graphicsQueue, transitionFence);
-
-			VulkanAPI::CreateImageView(logicalDevice, VK_FORMAT_R8G8B8A8_SRGB, object->object_texture->newImage.allocatedImage, subresourceRange, &object->object_texture->textureImageView, VK_IMAGE_VIEW_TYPE_2D_ARRAY);
-			VulkanAPI::CreateSampler(physicalDevice, logicalDevice, &object->object_texture->textureSampler, (float)mipLevels);
-
-			object->object_texture->texture_collection = object->object_texture->texture_collection;
-			object->object_texture->srcInfo.width = maxW;
-			object->object_texture->srcInfo.height = maxH;
-			object->object_texture->srcInfo.channels = channels;
-			object->object_texture->texInfo.mipLevels = mipLevels;
-			object->object_texture->texInfo.format = VK_FORMAT_R8G8B8A8_SRGB;
-			object->object_texture->texInfo.descriptor.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-			object->object_texture->texInfo.descriptor.sampler = object->object_texture->textureSampler;
-			object->object_texture->texInfo.descriptor.imageView = object->object_texture->textureImageView;
-			object->object_texture->initialized = true;
 			object->updateObject();
-
-			VulkanAPI::m_destroyShaderBuffer(logicalDevice, memAllocator, &stagingBuffer);
-			return true;
-		}
-		else
-		{
-			return false;
 		}
 	}
 
@@ -2595,6 +2505,146 @@ namespace GrEngine_Vulkan
 			object->object_texture->texInfo.descriptor.imageView = object->object_texture->textureImageView;
 			object->object_texture->initialized = true;
 			object->updateObject();
+
+			VulkanAPI::m_destroyShaderBuffer(logicalDevice, memAllocator, &stagingBuffer);
+			return true;
+		}
+		else
+		{
+			return false;
+		}
+	}
+
+	bool VulkanRenderer::updateResource(Texture* target, int textureIndex)
+	{
+		Resource<Texture*>* resource = resources.GetTextureResource(target->texture_collection);
+		std::string solution = GrEngine::Globals::getExecutablePath();
+
+		if (resource != nullptr)
+		{
+			int maxW = target->srcInfo.width;
+			int maxH = target->srcInfo.height;
+			int channels = target->srcInfo.channels;
+			uint32_t mipLevels = target->texInfo.mipLevels;
+
+			VkCommandBuffer commandBuffer;
+			std::vector<VkBufferImageCopy> regions;
+			uint32_t offset = 0;
+
+			for (int i = 0; i < target->texture_collection.size(); i++)
+			{
+				VkBufferImageCopy region{};
+				region.bufferOffset = offset;
+
+				region.imageSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+				region.imageSubresource.mipLevel = 0;
+				region.imageSubresource.baseArrayLayer = i;
+				region.imageSubresource.layerCount = 1;
+
+				region.imageOffset = { 0, 0, 0 };
+				region.imageExtent = {
+					(uint32_t)maxW,
+					(uint32_t)maxH,
+					1
+				};
+
+				regions.push_back(region);
+				offset += maxW * maxH * channels;
+			}
+
+			ShaderBuffer stagingBuffer;
+			VulkanAPI::m_createVkBuffer(logicalDevice, memAllocator, nullptr, maxW * maxH * channels * target->texture_collection.size(), VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_TRANSFER_SRC_BIT, &stagingBuffer);
+			VkImageSubresourceRange subresourceRange = VulkanAPI::StructSubresourceRange(VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, target->texture_collection.size());
+
+			vkWaitForFences(logicalDevice, 1, &transitionFence, VK_TRUE, UINT64_MAX);
+			VulkanAPI::AllocateCommandBuffers(logicalDevice, commandPool, &commandBuffer, 1);
+			VulkanAPI::BeginCommandBuffer(commandBuffer, VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT);
+			VulkanAPI::TransitionImageLayout(target->newImage.allocatedImage, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, subresourceRange, commandBuffer);
+			vkCmdCopyImageToBuffer(commandBuffer, target->newImage.allocatedImage, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, stagingBuffer.Buffer, regions.size(), regions.data());
+			VulkanAPI::EndAndSubmitCommandBuffer(logicalDevice, commandPool, commandBuffer, graphicsQueue, transitionFence);
+
+			size_t alloc_size = maxW * maxH * channels * target->texture_collection.size();
+			unsigned char* data;
+			vmaMapMemory(memAllocator, stagingBuffer.Allocation, (void**)&data);
+
+			uint32_t buf_offset = maxW * maxH * channels * textureIndex;
+			int width;
+			int height;
+			stbi_uc* pixels = stbi_load((solution + target->texture_collection[textureIndex]).c_str(), &width, &height, &channels, STBI_rgb_alpha);
+
+			if (!pixels)
+			{
+				Logger::Out("An error occurred while loading the texture: %s", OutputColor::Green, OutputType::Error, target->texture_collection[textureIndex].c_str());
+				vmaUnmapMemory(memAllocator, stagingBuffer.Allocation);
+				return false;
+			}
+
+			if (width < maxW || height < maxH)
+			{
+				auto output = (unsigned char*)malloc(maxW * maxH * channels);
+				stbir_resize_uint8(pixels, width, height, 0, output, maxW, maxH, 0, channels);
+				memcpy_s(data + buf_offset, maxW * maxH * channels, output, maxW * maxH * channels); //sizeof(byte)
+				free(pixels);
+				free(output);
+			}
+			else
+			{
+				memcpy_s(data + buf_offset, width * height * channels, pixels, width * height * channels); //sizeof(byte)
+				stbi_image_free(pixels);
+			}
+
+			vmaUnmapMemory(memAllocator, stagingBuffer.Allocation);
+
+			VulkanAPI::DestroyImageView(target->textureImageView);
+			VulkanAPI::DestroySampler(target->textureSampler);
+			VulkanAPI::DestroyImage(target->newImage.allocatedImage);
+			target->initialized = false;
+
+			VkExtent3D imageExtent;
+			imageExtent.width = static_cast<uint32_t>(maxW);
+			imageExtent.height = static_cast<uint32_t>(maxH);
+			imageExtent.depth = 1;
+
+			VkImageCreateInfo dimg_info = VulkanAPI::StructImageCreateInfo(imageExtent, VK_FORMAT_R8G8B8A8_SRGB, VK_SAMPLE_COUNT_1_BIT, VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT);
+			dimg_info.arrayLayers = target->texture_collection.size();
+			dimg_info.mipLevels = mipLevels;
+			dimg_info.flags = 0;
+
+			VulkanAPI::CreateImage(memAllocator, &dimg_info, &target->newImage.allocatedImage, &target->newImage.allocation);
+
+			vkWaitForFences(logicalDevice, 1, &transitionFence, VK_TRUE, UINT64_MAX);
+			VulkanAPI::AllocateCommandBuffers(logicalDevice, commandPool, &commandBuffer, 1);
+			VulkanAPI::BeginCommandBuffer(commandBuffer, VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT);
+			VulkanAPI::TransitionImageLayout(target->newImage.allocatedImage, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, subresourceRange, commandBuffer);
+			VulkanAPI::EndAndSubmitCommandBuffer(logicalDevice, commandPool, commandBuffer, graphicsQueue, transitionFence);
+
+			vkWaitForFences(logicalDevice, 1, &transitionFence, VK_TRUE, UINT64_MAX);
+			VulkanAPI::CopyBufferToImage(logicalDevice, commandPool, stagingBuffer.Buffer, target->newImage.allocatedImage, graphicsQueue, transitionFence, { (uint32_t)maxW, (uint32_t)maxH, (uint32_t)channels }, target->texture_collection.size());
+
+
+			generateMipmaps(target->newImage.allocatedImage, maxW, maxH, mipLevels, target->texture_collection.size());
+
+
+			subresourceRange.levelCount = mipLevels;
+			vkWaitForFences(logicalDevice, 1, &transitionFence, VK_TRUE, UINT64_MAX);
+			VulkanAPI::AllocateCommandBuffers(logicalDevice, commandPool, &commandBuffer, 1);
+			VulkanAPI::BeginCommandBuffer(commandBuffer, VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT);
+			VulkanAPI::TransitionImageLayout(target->newImage.allocatedImage, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, subresourceRange, commandBuffer);
+			VulkanAPI::EndAndSubmitCommandBuffer(logicalDevice, commandPool, commandBuffer, graphicsQueue, transitionFence);
+
+			VulkanAPI::CreateImageView(logicalDevice, VK_FORMAT_R8G8B8A8_SRGB, target->newImage.allocatedImage, subresourceRange, &target->textureImageView, VK_IMAGE_VIEW_TYPE_2D_ARRAY);
+			VulkanAPI::CreateSampler(physicalDevice, logicalDevice, &target->textureSampler, (float)mipLevels);
+
+			target->texture_collection = target->texture_collection;
+			target->srcInfo.width = maxW;
+			target->srcInfo.height = maxH;
+			target->srcInfo.channels = channels;
+			target->texInfo.mipLevels = mipLevels;
+			target->texInfo.format = VK_FORMAT_R8G8B8A8_SRGB;
+			target->texInfo.descriptor.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+			target->texInfo.descriptor.sampler = target->textureSampler;
+			target->texInfo.descriptor.imageView = target->textureImageView;
+			target->initialized = true;
 
 			VulkanAPI::m_destroyShaderBuffer(logicalDevice, memAllocator, &stagingBuffer);
 			return true;
@@ -2967,35 +3017,38 @@ namespace GrEngine_Vulkan
 
 		if (entities.at(id) != nullptr)
 		{
-			switch (entities.at(id)->GetEntityType())
+			if ((entities.at(id)->GetEntityType() & GrEngine::EntityType::ObjectEntity) != 0)
 			{
-			case GrEngine::EntityType::ObjectEntity:
 				static_cast<VulkanObject*>(drawables.at(id))->destroyObject();
 				drawables.erase(id);
-				break;
-			case GrEngine::EntityType::SpotlightEntity:
+			}
+			if ((entities.at(id)->GetEntityType() & GrEngine::EntityType::SpotlightEntity) != 0)
+			{
 				static_cast<VulkanSpotlight*>(lights.at(id))->destroyLight();
 				lights.erase(id);
 				updateShadowResources();
-				break;
-			case GrEngine::EntityType::CascadeLightEntity:
+			}
+			else if ((entities.at(id)->GetEntityType() & GrEngine::EntityType::CascadeLightEntity) != 0)
+			{
 				static_cast<VulkanCascade*>(lights.at(id))->destroyLight();
 				lights.erase(id);
 				cascade_count--;
 				updateShadowResources();
-				break;
-			case GrEngine::EntityType::PointLightEntity:
+			}
+			else if ((entities.at(id)->GetEntityType() & GrEngine::EntityType::PointLightEntity) != 0)
+			{
 				static_cast<VulkanCascade*>(lights.at(id))->destroyLight();
 				lights.erase(id);
 				updateShadowResources();
-				break;
-			case GrEngine::EntityType::OmniLightEntity:
+			}
+			else if ((entities.at(id)->GetEntityType() & GrEngine::EntityType::OmniLightEntity) != 0)
+			{
 				static_cast<VulkanOmniLight*>(lights.at(id))->destroyLight();
 				omni_count--;
 				lights.erase(id);
 				updateShadowResources();
-				break;
 			}
+
 			entities.erase(id);
 
 			if (id == selected_entity)
@@ -3013,15 +3066,6 @@ namespace GrEngine_Vulkan
 	void VulkanRenderer::waitForRenderer()
 	{
 		vkWaitForFences(logicalDevice, renderFence.size(), renderFence.data(), TRUE, UINT64_MAX);
-		//VkSemaphoreWaitInfo inf{};
-		//inf.sType = VK_STRUCTURE_TYPE_SEMAPHORE_WAIT_INFO;
-		//inf.semaphoreCount = renderFinishedSemaphore.size();
-		//inf.pSemaphores = renderFinishedSemaphore.data();
-		//std::vector<uint64_t> sig{};
-		//sig.resize(renderFinishedSemaphore.size());
-		//std::fill(sig.begin(), sig.end(), 1);
-		//inf.pValues = sig.data();
-		//vkWaitSemaphores(logicalDevice, &inf, UINT64_MAX);
 		//vkDeviceWaitIdle(logicalDevice);
 		//vkQueueWaitIdle(graphicsQueue);
 	}
@@ -3076,7 +3120,7 @@ namespace GrEngine_Vulkan
 		std::vector<EntityProperty*> cur_props = getActiveViewport()->GetProperties();
 		for (std::vector<EntityProperty*>::iterator itt = cur_props.begin(); itt != cur_props.end(); ++itt)
 		{
-			new_file << "    " << (*itt)->PrpertyNameString() << " " << (*itt)->ValueString() << "\n";
+			new_file << "    " << (*itt)->PropertyNameString() << " " << (*itt)->ValueString() << "\n";
 		}
 		new_file << "}\n";
 
@@ -3088,7 +3132,7 @@ namespace GrEngine_Vulkan
 				cur_props = (*itt).second->GetProperties();
 				for (std::vector<EntityProperty*>::iterator itt = cur_props.begin(); itt != cur_props.end(); ++itt)
 				{
-					new_file << "   " << (*itt)->PrpertyNameString() << " " << (*itt)->ValueString() << "\n";
+					new_file << "   " << (*itt)->PropertyNameString() << " " << (*itt)->ValueString() << "\n";
 				}
 				new_file << "}\n";
 			}
@@ -3157,7 +3201,7 @@ namespace GrEngine_Vulkan
 			}
 			else if (!block_open && stream == "viewport")
 			{
-				cur_ent = &viewport_camera;
+				cur_ent = viewport_camera;
 			}
 			else if (!block_open && stream == "Skybox")
 			{
@@ -3173,7 +3217,8 @@ namespace GrEngine_Vulkan
 			}
 		}
 		
-		viewport_camera.SetRotation(viewport_camera.GetObjectOrientation());
+		viewport_camera->SetRotation(viewport_camera->GetObjectOrientation());
+		viewport_camera->PositionObjectAt(viewport_camera->GetObjectPosition());
 		file.close();
 	}
 };

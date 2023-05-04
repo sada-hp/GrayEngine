@@ -6,51 +6,67 @@
 
 namespace GrEngine
 {
-    class ModelBrowser : public Engine
+    class ModelBrowser
     {
         EditorUI editorUI;
-        Entity* dummy_entity;
-        Object* dummy_mesh;
+        Entity* dummy_entity = nullptr;
+        Object* dummy_mesh = nullptr;
+        Engine* pEngine = nullptr;
+        Camera* camera = nullptr;
+        bool keep = false;
 
     public:
-        ModelBrowser(const AppParameters& Properties = AppParameters()) : Engine(Properties)
+        ModelBrowser()
         {
         }
 
         ~ModelBrowser()
         {
             getEditorUI()->destroyUI(VIEWPORT_MODEL_BROWSER);
-            dummy_entity = nullptr;
+            if (!keep)
+            {
+                pEngine->DeleteEntity(dummy_entity->GetEntityID());
+            }
+            pEngine->RemoveInputCallback(100);
+            delete camera;
         }
 
-        void init(ModelBrowser* instance)
+        void init(HWND window, Engine* engine)
         {
-            initModelBrowser();
-            GetRenderer()->SetHighlightingMode(false);
-            dummy_entity = AddEntity();
+            pEngine = engine;
+            initModelBrowser(window);
+            engine->GetRenderer()->SetHighlightingMode(false);
+            camera = new Camera();
+            engine->GetRenderer()->SetActiveViewport(camera);
+            dummy_entity = engine->AddEntity();
+            dummy_entity->PositionObjectAt(14000.f, 14000.f, 14000.f);
             dummy_mesh = static_cast<Object*>(dummy_entity->AddNewProperty("Drawable")->GetValueAdress());
-            SelectEntity(dummy_entity->GetEntityID());
-            AddInputCallback(0, Inputs);
+            engine->SelectEntity(dummy_entity->GetEntityID());
+            engine->AddInputCallback(100, Inputs);
 
-            GetEventListener()->pushEvent("RequireMaterialsUpdate", [](std::vector<std::any> para)
-                {
-                    if (para.size() > 1)
-                    {
-                        static_cast<ModelBrowser*>(GetContext())->getEditorUI()->UpdateMaterials((char*)std::any_cast<std::string>(para[0]).c_str(), std::any_cast<int>(para[1]));
-                    }
-                });
+            getEditorUI()->ShowScene();
         }
 
-        void StartEngine()
+        void UpdateMaterials(std::string string, int redraw)
         {
-            getEditorUI()->ShowScene();
-            Run();
+            getEditorUI()->UpdateMaterials((char*)string.c_str(), redraw);
+        }
+
+        Entity* getDummy()
+        {
+            return dummy_entity;
+        }
+
+        void KeepDummy()
+        {
+            keep = true;
         }
 
         static void Inputs()
         {
+            constexpr glm::vec3 origin = glm::vec3(14000.f, 14000.f, 14000.f);
             static float rotation = 0;
-            Renderer* render = GetContext()->GetRenderer();
+            Renderer* render = Engine::GetContext()->GetRenderer();
             Object* drawable = Object::FindObject(render->GetSelectedEntity());
             Camera* camera = render->getActiveViewport();
 
@@ -62,7 +78,7 @@ namespace GrEngine
                 axis = glm::vec3(axis.z * glm::cos(rotation) + axis.x * glm::sin(rotation), axis.y, axis.z * glm::sin(rotation) - axis.x * glm::cos(rotation));
 
                 camera->SetRotation(glm::lookAt(axis, glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f)));
-                camera->PositionObjectAt(axis);
+                camera->PositionObjectAt(origin + axis);
             }
             else
             {
@@ -76,11 +92,6 @@ namespace GrEngine
             return &editorUI;
         }
 
-        HWND getViewportHWND()
-        {
-            return reinterpret_cast<HWND>(getNativeWindow());
-        }
-
         void redrawDesigner()
         {
             if (getEditorUI()->wpf_hwnd != nullptr)
@@ -90,15 +101,13 @@ namespace GrEngine
             }
         }
 
-        void initModelBrowser()
+        void initModelBrowser(HWND wnd)
         {
-
             if (!getEditorUI()->InitUI(VIEWPORT_MODEL_BROWSER))
             {
-                Stop();
                 return;
             }
-            getEditorUI()->SetViewportHWND(getViewportHWND(), 1);
+            getEditorUI()->SetViewportHWND(wnd, 1);
         }
     };
 }

@@ -32,7 +32,9 @@ namespace GrEngine
         bool was_mask_updated = false;
         std::string fm;
         int mask_width, mask_height, mask_channels;
-        GrEngine::Entity* casent;
+        ModelBrowser* mdlBrowser;
+        Camera* camera;
+        Entity* mdl_dummy = nullptr;
 
     public:
         UINT copy_buf = 0;
@@ -71,17 +73,15 @@ namespace GrEngine
         {
             log_path = getExecutablePath() + std::string("grayengine.log");
 
-            GetRenderer()->getActiveViewport()->LockAxes(89, -89, 0, 0, 0, 0);
-
             getEditorUI()->InitUI(VIEWPORT_EDITOR);
             getEditorUI()->SetViewportHWND(getViewportHWND(), VIEWPORT_EDITOR);
             Logger::JoinEventListener(GetEventListener());
 
-            casent = GetRenderer()->addEntity();
-            casent->PositionObjectAt(0, 3, 4);
-            casent->SetRotation(-30, 180, 0);
-            casent->AddNewProperty("Cascade");
-            casent->MakeStatic();
+            //casent = GetRenderer()->addEntity();
+            //casent->PositionObjectAt(1, 1, 1);
+            //casent->AddNewProperty(PropertyType::Color);
+            //casent->AddNewProperty(PropertyType::CascadeLight);
+            //casent->MakeStatic();
         }
 
         ~Application()
@@ -98,6 +98,9 @@ namespace GrEngine
 
         void StartEngine()
         {
+            GetRenderer()->getActiveViewport()->LockAxes(89, -89, 0, 0, 0, 0);
+            camera = GetRenderer()->getActiveViewport();
+
             getEditorUI()->ShowScene();
             LoadTools();
             App_GetAllEntities();
@@ -155,6 +158,43 @@ namespace GrEngine
                 stbi_write_png(fm.c_str(), mask_width, mask_height, 4, foliage_mask, mask_width * mask_channels);
                 was_mask_updated = false;
             }
+        }
+
+        void App_RotateCascade(float pitch, float yaw)
+        {
+            GrEngine::Entity* casent = GetRenderer()->GetEntitiesOfType(EntityType::CascadeLightEntity)[0];
+
+            glm::quat q = glm::quat_cast(glm::mat3(1.f));
+            q = q * glm::angleAxis(glm::radians(yaw), glm::vec3(0, 1, 0));
+            q = q * glm::angleAxis(glm::radians(pitch), glm::vec3(1, 0, 0));
+            q = q * glm::angleAxis(glm::radians(casent->GetPitchYawRoll().z), glm::vec3(0, 0, 1));
+            casent->PositionObjectAt(q * glm::vec3(1, 1, 1));
+        }
+
+        void App_ColorCascade(const char* color_string)
+        {
+            GrEngine::Entity* casent = GetRenderer()->GetEntitiesOfType(EntityType::CascadeLightEntity)[0];
+            casent->ParsePropertyValue(PropertyType::Color, color_string);
+        }
+
+        void App_AddCascadeEntity()
+        {
+            GrEngine::Entity* casent = GetRenderer()->addEntity();
+            casent->PositionObjectAt(1, 1, 1);
+            casent->AddNewProperty(PropertyType::Color);
+            casent->AddNewProperty(PropertyType::CascadeLight);
+        }
+
+        bool HasCascade()
+        {
+            return GetRenderer()->GetEntitiesOfType(EntityType::CascadeLightEntity).size() > 0;
+        }
+
+        const char* App_GetCascadeProperty(PropertyType prop)
+        {
+            GrEngine::Entity* casent = GetRenderer()->GetEntitiesOfType(EntityType::CascadeLightEntity)[0];
+
+            return casent->GetProperty(prop)->ValueString();
         }
 
         void App_UpdateSelection(UINT id)
@@ -306,7 +346,7 @@ namespace GrEngine
 
         HWND getViewportHWND()
         {
-            return reinterpret_cast<HWND>(getNativeWindow());
+            return static_cast<HWND>(getNativeWindow());
         }
 
         void redrawDesiger()
@@ -319,12 +359,47 @@ namespace GrEngine
 
         void initModelBrowser()
         {
-            Pause();
-            std::thread mdl(RunModelBrowser);   
-            mdl.join();
+            Logger::AllowMessages(MessageMode::Block);
+            GetEventListener()->setEventsPermissions(false, true);
+            mdlBrowser = new ModelBrowser();
+            mdlBrowser->init(getViewportHWND(), this);
+            getEditorUI()->SetInputMode(VIEWPORT_EDITOR, 0);
+        }
+
+        void ModelBrowser_KeepResource()
+        {
+            mdl_dummy = mdlBrowser->getDummy();
+            mdlBrowser->KeepDummy();
+        }
+
+        void ModelBrowser_ReleaseDummyResource()
+        {
+            if (mdl_dummy != nullptr)
+            {
+                DeleteEntity(mdl_dummy->GetEntityID());
+                mdl_dummy = nullptr;
+            }
+        }
+
+        void closeModelBrowser()
+        {
+            getEditorUI()->SetInputMode(VIEWPORT_EDITOR, 1);
+            getEditorUI()->SetViewportHWND(getViewportHWND(), VIEWPORT_EDITOR);
+            getEditorUI()->ShowScene();
+            GetRenderer()->SetActiveViewport(camera);
+            if (transform_target != nullptr)
+            {
+                SelectEntity(transform_target->GetEntityID());
+            }
+            delete mdlBrowser;
+            Logger::AllowMessages(MessageMode::Allow);
             GetRenderer()->SetHighlightingMode(true);
-            BindContext(this);
-            Unpause();
+            GetEventListener()->setEventsPermissions(true, true);
+        }
+
+        ModelBrowser* GetBrowserContext()
+        {
+            return mdlBrowser;
         }
 
         void toggle_free_mode()
@@ -357,7 +432,7 @@ namespace GrEngine
 
             for (auto obj : ent_vec)
             {
-                if ((obj.second->GetEntityType() != EntityType::SkyboxEntity && obj.second->GetEntityType() != EntityType::TerrainEntity) && !obj.second->IsStatic())
+                if ((obj.second->GetEntityType() != EntityType::SkyboxEntity && obj.second->GetEntityType() != EntityType::TerrainEntity) && obj.second->GetEntityType() != EntityType::CascadeLightEntity && !obj.second->IsStatic())
                 {
                     App_UpdateEntity(obj.second);
                 }
@@ -430,6 +505,26 @@ namespace GrEngine
             subdivisions = 1.f / resolution;
         }
 
+        void App_UpdateTerrain(std::array<std::string, 5> maps)
+        {
+            if (GetRenderer()->GetEntitiesList().count(100) > 0)
+            {
+                Terrain* ter = static_cast<Terrain*>(GetRenderer()->GetEntitiesList().at(100));
+                ter->UpdateTextures(maps);
+
+                if (maps[0] != "")
+                {
+                    if (foliage_mask != nullptr)
+                    {
+                        free(foliage_mask);
+                        foliage_mask = nullptr;
+                    }
+
+                    fm = (Globals::getExecutablePath() + maps[0]);
+                    foliage_mask = stbi_load(fm.c_str(), &mask_width, &mask_height, &mask_channels, STBI_rgb_alpha);
+                }
+            }
+        }
         void App_PaintMask()
         {
             if (mouse_down)
@@ -747,66 +842,57 @@ namespace GrEngine
         std::unordered_map<int, InfoChunk> prev_chunk;
         bool chunk_delivered = false;
 
-        static void RunModelBrowser()
-        {
-            Logger::AllowMessages(MessageMode::Block);
-            AppParameters props;
-            ModelBrowser* mdlBrowser = new ModelBrowser(props);
-            BindContext(mdlBrowser);
-            mdlBrowser->init(mdlBrowser);
-            mdlBrowser->StartEngine();
-            delete mdlBrowser;
-            Logger::AllowMessages(MessageMode::Allow);
-        }
-
         void LoadTools()
         {
             //Gizmo
             gizmo = GetRenderer()->addEntity(900900);
-            Object* gizmo_object = static_cast<Object*>(gizmo->AddNewProperty("Drawable")->GetValueAdress());
+            Object* gizmo_object = static_cast<Object*>(gizmo->AddNewProperty(PropertyType::Drawable)->GetValueAdress());
             gizmo_object->DisableCollisions();
             gizmo_object->SetVisisibility(false);
             gizmo_object->LoadMesh("Content\\Editor\\ManipulationTool.obj");
-            gizmo->ParsePropertyValue("Shader", "Shaders\\gizmo");
-            gizmo->AddNewProperty("Color");
-            gizmo->ParsePropertyValue("Color", "1:1:1:1");
-            gizmo->AddNewProperty("Scale");
+            gizmo->ParsePropertyValue(PropertyType::Shader, "Shaders\\gizmo");
+            gizmo->AddNewProperty(PropertyType::Color);
+            gizmo->ParsePropertyValue(PropertyType::Color, "1:1:1:1");
+            gizmo->AddNewProperty(PropertyType::Scale);
+            gizmo->AddNewProperty(PropertyType::CastShadow);
+            gizmo->ParsePropertyValue(PropertyType::CastShadow, "0");
             gizmo->MakeStatic();
-            gizmo->AddNewProperty("CastShadow");
-            gizmo->ParsePropertyValue("CastShadow", "0");
 
             //Grid
             grid = GetRenderer()->addEntity(900901);
-            Object* grid_object = static_cast<Object*>(grid->AddNewProperty("Drawable")->GetValueAdress());
+            Object* grid_object = static_cast<Object*>(grid->AddNewProperty(PropertyType::Drawable)->GetValueAdress());
             grid_object->GeneratePlaneMesh(1, 1);
             grid_object->DisableCollisions();
             //grid_object->SetVisisibility(false);
-            grid->ParsePropertyValue("Transparency", "1");
-            grid->ParsePropertyValue("Shader", "Shaders\\grid");
+            grid->AddNewProperty(PropertyType::Transparency);
+            grid->ParsePropertyValue(PropertyType::Transparency, "1");
+            grid->ParsePropertyValue(PropertyType::Shader, "Shaders\\grid");
+            grid->AddNewProperty(PropertyType::CastShadow);
+            grid->ParsePropertyValue(PropertyType::CastShadow, "0");
             grid->MakeStatic();
-            grid->AddNewProperty("CastShadow");
-            grid->ParsePropertyValue("CastShadow", "0");
 
             //Paint
             brush = GetRenderer()->addEntity(900902);
-            Object* brush_object = static_cast<Object*>(brush->AddNewProperty("Drawable")->GetValueAdress());
-            brush->ParsePropertyValue("Transparency", "1");
-            brush->ParsePropertyValue("Shader", "Shaders\\brush");
+            Object* brush_object = static_cast<Object*>(brush->AddNewProperty(PropertyType::Drawable)->GetValueAdress());
+            brush->AddNewProperty(PropertyType::Transparency);
+            brush->ParsePropertyValue(PropertyType::Transparency, "1");
+            brush->ParsePropertyValue(PropertyType::Shader, "Shaders\\brush");
             brush_object->DisableCollisions();
             brush_object->SetVisisibility(false);
             brush_object->LoadMesh("Content\\Editor\\PaintingSphere.obj");
-            brush->AddNewProperty("Color");
-            brush->ParsePropertyValue("Color", "1:1:1:0.5");
-            brush->AddNewProperty("Scale");
-            brush->ParsePropertyValue("Scale", "2:2:2");
+            brush->AddNewProperty(PropertyType::Color);
+            brush->ParsePropertyValue(PropertyType::Color, "1:1:1:0.5");
+            brush->AddNewProperty(PropertyType::Scale);
+            brush->ParsePropertyValue(PropertyType::Scale, "2:2:2");
+            brush->AddNewProperty(PropertyType::CastShadow);
+            brush->ParsePropertyValue(PropertyType::CastShadow, "0");
             brush->MakeStatic();
-            brush->AddNewProperty("CastShadow");
-            brush->ParsePropertyValue("CastShadow", "0");
 
             shrek_coll = GetRenderer()->addEntity(900903);
-            PhysicsObject* phys_comp = static_cast<PhysicsObject*>(shrek_coll->AddNewProperty("Physics")->GetValueAdress());
+            PhysicsObject* phys_comp = static_cast<PhysicsObject*>(shrek_coll->AddNewProperty(PropertyType::PhysComponent)->GetValueAdress());
             phys_comp->GenerateCapsuleCollision(1, 2);
-            shrek_coll->ParsePropertyValue("Physics", "1");
+            shrek_coll->AddNewProperty(PropertyType::BodyType);
+            shrek_coll->ParsePropertyValue(PropertyType::BodyType, "1");
             shrek_coll->MakeStatic();
         }
 
@@ -864,11 +950,11 @@ namespace GrEngine
             auto props = ent->GetProperties();
             int numProps = props.size();
 
-            if (ent->GetEntityType() != EntityType::SkyboxEntity && ent->GetEntityType() != EntityType::TerrainEntity)
+            if (ent->GetEntityType() != EntityType::SkyboxEntity && ent->GetEntityType() != EntityType::TerrainEntity && ent->GetEntityType() != EntityType::CascadeLightEntity)
             {
                 for (int i = 0; i < numProps; i++)
                 {
-                    getEditorUI()->SendInfoChunk((int)ChunkType::ENTITY_INFO, (char*)props[i]->property_name, (char*)props[i]->ValueString());
+                    getEditorUI()->SendInfoChunk((int)ChunkType::ENTITY_INFO, (char*)props[i]->PropertyNameString(), (char*)props[i]->ValueString());
                 }
             }
         }

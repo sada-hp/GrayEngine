@@ -1,0 +1,16 @@
+mesh
+{
+   Content\Toy\toy.obj
+}
+collision
+{
+   Content\Toy\toy.obj
+}
+textures
+{
+   Content\Toy\toy_Col.png
+}
+normals
+{
+   Content\Toy\toy_Norm.png
+}

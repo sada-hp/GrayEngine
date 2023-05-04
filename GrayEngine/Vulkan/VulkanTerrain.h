@@ -21,6 +21,7 @@ namespace GrEngine_Vulkan
 		void destroyObject() override;
 		void calculateCollisions() override;
 		void GenerateTerrain(int resolution, int width, int height, int depth, std::array<std::string, 6> images) override;
+		void UpdateTextures(std::array<std::string, 5> images) override;
 		void UpdateFoliageMask(void* pixels) override;
 		void UpdateFoliageMask(void* pixels, uint32_t width, uint32_t height, uint32_t offset_x, uint32_t offset_y) override;
 		void OffsetVertices(std::map<UINT, float> offsets) override;

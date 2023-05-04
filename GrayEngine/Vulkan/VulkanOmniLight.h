@@ -20,6 +20,7 @@ namespace GrEngine_Vulkan
 		void initLight(VkDevice device, VmaAllocator allocator);
 		void destroyLight();
 		std::array<OmniProjection, 6>& getLightUBO();
+		void UpdateLight() override;
 
 	protected:
 		VkDevice logicalDevice;

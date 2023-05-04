@@ -1,8 +1,0 @@
-mesh
-{
-   Content\Box\cube.obj
-}
-textures
-{
-   Content\Box\dirty_crate_texture.png
-}

@@ -2,6 +2,11 @@
 #include "pch.h"
 #include "Engine/Headers/Core/Globals.h"
 
+namespace GrEngine
+{
+	class Entity;
+};
+
 enum class PropertyType
 {
 	Error = -1,
@@ -13,6 +18,7 @@ enum class PropertyType
 	EntityOrientation,
 	Color,
 	PhysComponent,
+	BodyType,
 	Drawable,
 	Spotlight,
 	CascadeLight,
@@ -23,19 +29,27 @@ enum class PropertyType
 	Transparency,
 	DoubleSided,
 	CastShadow,
-	CollisionType
+	CollisionType,
+	ModelPath,
+	AlphaThreshold,
+	MaximumDistance,
+	Brightness,
+	Custom
 };
 
 struct EntityProperty
 {
 public:
+	typedef void (*PropertyChangedCallback)(GrEngine::Entity* owner, EntityProperty* self);
+	typedef void (*DestructionCallback)(GrEngine::Entity* owner, EntityProperty* self);
+
 	EntityProperty() {};
 	virtual ~EntityProperty() { owner = nullptr; property_name = nullptr; };
 	virtual const char* ValueString() = 0;
 	virtual std::any GetAnyValue() = 0;
 	virtual void ParsePropertyValue(const char* value) = 0;
 	virtual void* GetValueAdress() = 0;
-	const char* PrpertyNameString()
+	const char* PropertyNameString()
 	{
 		return property_name;
 	}
@@ -43,11 +57,6 @@ public:
 	{
 		return property_type;
 	}
-
-	const char* property_name;
-	PropertyType property_type;
-	void* property_value;
-	void* owner;
 
 	static PropertyType StringToType(const char* property_name)
 	{
@@ -61,6 +70,7 @@ public:
 		{"Color", PropertyType::Color},
 		{"Physics", PropertyType::PhysComponent},
 		{"PhysComponent", PropertyType::PhysComponent},
+		{"BodyType", PropertyType::BodyType},
 		{"Drawable", PropertyType::Drawable},
 		{"Mesh", PropertyType::Drawable},
 		{"Spotlight", PropertyType::Spotlight},
@@ -76,7 +86,11 @@ public:
 		{"Transparency", PropertyType::Transparency},
 		{"DoubleSided", PropertyType::DoubleSided},
 		{"CastShadow", PropertyType::CastShadow},
-		{"CollisionType", PropertyType::CollisionType}
+		{"CollisionType", PropertyType::CollisionType},
+		{"ModelPath", PropertyType::ModelPath},
+		{"AlphaThreshold", PropertyType::AlphaThreshold},
+		{"MaximumDistance", PropertyType::MaximumDistance},
+		{"Brightness", PropertyType::Brightness}
 		};
 
 		auto it = type_hash.find(std::string(property_name));
@@ -85,93 +99,191 @@ public:
 		else
 			throw "Unknow type provided!";
 	}
+
+	static const char* TypeToString(PropertyType property_type)
+	{
+		switch (property_type)
+		{
+		case PropertyType::Error:
+			return "nil";
+		case PropertyType::EntityID:
+			return "EntityID";
+		case PropertyType::Mass:
+			return "Mass";
+		case PropertyType::EntityName:
+			return "EntityName";
+		case PropertyType::Scale:
+			return "Scale";
+		case PropertyType::EntityPosition:
+			return "EntityPosition";
+		case PropertyType::EntityOrientation:
+			return "EntityOrientation";
+		case PropertyType::Color:
+			return "Color";
+		case PropertyType::PhysComponent:
+			return "PhysComponent";
+		case PropertyType::Drawable:
+			return "Drawable";
+		case PropertyType::Spotlight:
+			return "Spotlight";
+		case PropertyType::CascadeLight:
+			return "CascadeLight";
+		case PropertyType::PointLight:
+			return "PointLight";
+		case PropertyType::OmniLight:
+			return "OmniLight";
+		case PropertyType::Cubemap:
+			return "CubemapProperty";
+		case PropertyType::Shader:
+			return "Shader";
+		case PropertyType::Transparency:
+			return "Transparency";
+		case PropertyType::DoubleSided:
+			return "DoubleSided";
+		case PropertyType::CastShadow:
+			return "CastShadow";
+		case PropertyType::CollisionType:
+			return "CollisionType";
+		case PropertyType::BodyType:
+			return "BodyType";
+		case PropertyType::ModelPath:
+			return "ModelPath";
+		case PropertyType::AlphaThreshold:
+			return "AlphaThreshold";
+		case PropertyType::MaximumDistance:
+			return "MaximumDistance";
+		case PropertyType::Brightness:
+			return "Brightness";
+		default:
+			return "Custom";
+		}
+	}
+
+	void SetCallback(PropertyChangedCallback function)
+	{
+		callback = function;
+	}
+protected:
+	const char* property_name;
+	PropertyType property_type;
+	GrEngine::Entity* owner;
+	bool locked = false;
+	std::optional<PropertyChangedCallback> callback;
 };
 
-struct EntityIDProperty : public EntityProperty
+struct StringProperty : public EntityProperty
 {
 public:
-	EntityIDProperty(UINT id, void* parent = nullptr);
-	~EntityIDProperty();
+	StringProperty(const char* name, std::string value, GrEngine::Entity* parent = nullptr, bool read_only = false);
+	StringProperty(PropertyType type, std::string value, GrEngine::Entity* parent = nullptr, bool read_only = false);
+	~StringProperty();
 	const char* ValueString() override;
 	void ParsePropertyValue(const char* value) override;
-	void SetPropertyValue(UINT value);
-	UINT GetValue();
+	void SetPropertyValue(std::string value);
 	std::any GetAnyValue() override;
 	virtual void* GetValueAdress() override;
 
-	UINT property_value;
 private:
-	std::string string_value;
+	std::string property_value;
 };
 
-struct MassProperty : public EntityProperty
+struct FloatProperty : public EntityProperty
 {
 public:
-	MassProperty(float mass, void* parent = nullptr);
-	~MassProperty();
+	FloatProperty(const char* name, float value, GrEngine::Entity* parent = nullptr, bool read_only = false);
+	FloatProperty(PropertyType type, float value, GrEngine::Entity* parent = nullptr, bool read_only = false);
+	~FloatProperty();
 	const char* ValueString() override;
 	void ParsePropertyValue(const char* value) override;
 	void SetPropertyValue(float value);
 	std::any GetAnyValue() override;
 	virtual void* GetValueAdress() override;
 
-	float property_value;
 private:
 	std::string string_value;
+	float property_value;
 };
 
-struct EntityNameProperty : public EntityProperty
+struct IntegerProperty : public EntityProperty
 {
 public:
-	EntityNameProperty(const char* name, void* parent = nullptr);
-	~EntityNameProperty();
+	IntegerProperty(const char* name, int value, GrEngine::Entity* parent = nullptr, bool read_only = false);
+	IntegerProperty(PropertyType type, int value, GrEngine::Entity* parent = nullptr, bool read_only = false);
+	~IntegerProperty();
 	const char* ValueString() override;
 	void ParsePropertyValue(const char* value) override;
-	void SetPropertyValue(const char* value);
+	void SetPropertyValue(int value);
 	std::any GetAnyValue() override;
 	virtual void* GetValueAdress() override;
 
-	std::string property_value;
-};
-
-struct ScaleProperty : public EntityProperty
-{
-public:
-	ScaleProperty(float x, float y, float z, void* parent = nullptr);
-	~ScaleProperty();
-	const char* ValueString() override;
-	void ParsePropertyValue(const char* value) override;
-	void SetPropertyValue(const float& x, const float& y, const float& z);
-	void SetPropertyValue(const glm::vec3& value);
-	std::any GetAnyValue() override;
-	virtual void* GetValueAdress() override;
-
-	glm::vec3 property_value;
 private:
-	std::string property_string;
+	std::string string_value;
+	int property_value;
 };
 
-struct EntityPositionProperty : public EntityProperty
+struct Vector3fProperty : public EntityProperty
 {
 public:
-	EntityPositionProperty(float x, float y, float z, void* parent = nullptr);
-	~EntityPositionProperty();
+	Vector3fProperty(const char* name, glm::vec3 value, GrEngine::Entity* parent = nullptr, bool read_only = false);
+	Vector3fProperty(PropertyType type, glm::vec3 value, GrEngine::Entity* parent = nullptr, bool read_only = false);
+	Vector3fProperty(const char* name, float x, float y, float z, GrEngine::Entity* parent = nullptr, bool read_only = false);
+	Vector3fProperty(PropertyType type, float x, float y, float z, GrEngine::Entity* parent = nullptr, bool read_only = false);
+	~Vector3fProperty();
 	const char* ValueString() override;
 	void ParsePropertyValue(const char* value) override;
+	void SetPropertyValue(glm::vec3 value);
 	void SetPropertyValue(const float& x, const float& y, const float& z);
-	void SetPropertyValue(const glm::vec3& value);
 	std::any GetAnyValue() override;
 	virtual void* GetValueAdress() override;
 
-	glm::vec3 property_value;
 private:
-	std::string property_string;
+	std::string string_value;
+	glm::vec3 property_value;
 };
+
+struct Vector4fProperty : public EntityProperty
+{
+public:
+	Vector4fProperty(const char* name, glm::vec4 value, GrEngine::Entity* parent = nullptr, bool read_only = false);
+	Vector4fProperty(PropertyType type, glm::vec4 value, GrEngine::Entity* parent = nullptr, bool read_only = false);
+	Vector4fProperty(const char* name, float x, float y, float z, float w, GrEngine::Entity* parent = nullptr, bool read_only = false);
+	Vector4fProperty(PropertyType type, float x, float y, float z, float w, GrEngine::Entity* parent = nullptr, bool read_only = false);
+	~Vector4fProperty();
+	const char* ValueString() override;
+	void ParsePropertyValue(const char* value) override;
+	void SetPropertyValue(glm::vec4 value);
+	void SetPropertyValue(const float& x, const float& y, const float& z, const float& w);
+	std::any GetAnyValue() override;
+	virtual void* GetValueAdress() override;
+
+private:
+	std::string string_value;
+	glm::vec4 property_value;
+};
+
+struct PointerProperty : public EntityProperty
+{
+public:
+	PointerProperty(const char* name, void* value, DestructionCallback function, GrEngine::Entity* parent = nullptr);
+	PointerProperty(PropertyType type, void* value, DestructionCallback function, GrEngine::Entity* parent = nullptr);
+	~PointerProperty();
+	const char* ValueString() override;
+	void ParsePropertyValue(const char* value) override;
+	void SetPropertyValue(void* value);
+	std::any GetAnyValue() override;
+	virtual void* GetValueAdress() override;
+
+private:
+	void* property_value;
+	std::optional<DestructionCallback> destruct;
+};
+
+
 
 struct EntityOrientationProperty : public EntityProperty
 {
 public:
-	EntityOrientationProperty(const float& pitch, const float& yaw, const float& roll, void* parent = nullptr);
+	EntityOrientationProperty(const float& pitch, const float& yaw, const float& roll, GrEngine::Entity* parent = nullptr);
 	~EntityOrientationProperty();
 	const char* ValueString() override;
 	void ParsePropertyValue(const char* value) override;
@@ -187,138 +299,10 @@ private:
 	glm::vec3 pitch_yaw_roll = { 0.f, 0.f, 0.f };
 };
 
-struct ColorProperty : public EntityProperty
-{
-public:
-	ColorProperty(void* parent = nullptr);
-	ColorProperty(const float& r, const float& g, const float& b, const float& a, void* parent = nullptr);
-	ColorProperty(const float& r, const float& g, const float& b, void* parent = nullptr);
-	~ColorProperty();
-	const char* ValueString() override;
-	void ParsePropertyValue(const char* value) override;
-	void SetPropertyValue(const float& r, const float& g, const float& b, const float& a);
-	void SetPropertyValue(glm::vec4 value);
-	std::any GetAnyValue() override;
-	virtual void* GetValueAdress() override;
-
-	glm::vec4 property_value;
-private:
-	std::string property_string;
-};
-
-struct PhysComponentProperty : public EntityProperty
-{
-public:
-	PhysComponentProperty(void* parent = nullptr);
-	~PhysComponentProperty();
-	const char* ValueString() override;
-	void ParsePropertyValue(const char* value) override;
-	void SetPropertyValue(int value);
-	std::any GetAnyValue() override;
-	virtual void* GetValueAdress() override;
-
-	void* phys = nullptr;
-	int property_value = 0;
-private:
-	std::string property_string = "0";
-};
-
-struct CollisionTypeProperty : public EntityProperty
-{
-public:
-	CollisionTypeProperty(void* parent = nullptr);
-	~CollisionTypeProperty();
-	const char* ValueString() override;
-	void ParsePropertyValue(const char* value) override;
-	void SetPropertyValue(int value);
-	std::any GetAnyValue() override;
-	virtual void* GetValueAdress() override;
-
-	int property_value = 0;
-private:
-	std::string property_string = "0";
-};
-
-struct DrawableProperty : public EntityProperty
-{
-public:
-	DrawableProperty(const char* path, void* parent = nullptr);
-	~DrawableProperty();
-	const char* ValueString() override;
-	void ParsePropertyValue(const char* value) override;
-	void SetPropertyValue(std::string value);
-	std::any GetAnyValue() override;
-	virtual void* GetValueAdress() override;
-
-	std::string property_value = "nil";
-	void* drawable = nullptr;
-};
-
-struct SpotLightProperty : public EntityProperty
-{
-public:
-	SpotLightProperty(void* parent = nullptr);
-	~SpotLightProperty();
-	const char* ValueString() override;
-	void ParsePropertyValue(const char* value) override;
-	void SetPropertyValue(std::string value);
-	std::any GetAnyValue() override;
-	virtual void* GetValueAdress() override;
-
-	std::string property_value = "nil";
-	void* spotlight = nullptr;
-};
-
-struct CascadeProperty : public EntityProperty
-{
-public:
-	CascadeProperty(void* parent = nullptr);
-	~CascadeProperty();
-	const char* ValueString() override;
-	void ParsePropertyValue(const char* value) override;
-	void SetPropertyValue(std::string value);
-	std::any GetAnyValue() override;
-	virtual void* GetValueAdress() override;
-
-	std::string property_value = "nil";
-	void* cascade = nullptr;
-};
-
-struct PointLightPropery : public EntityProperty
-{
-public:
-	PointLightPropery(void* parent = nullptr);
-	~PointLightPropery();
-	const char* ValueString() override;
-	void ParsePropertyValue(const char* value) override;
-	void SetPropertyValue(std::string value);
-	std::any GetAnyValue() override;
-	virtual void* GetValueAdress() override;
-
-	std::string property_value = "nil";
-	void* point = nullptr;
-};
-
-struct OmniLightPropery : public EntityProperty
-{
-public:
-	OmniLightPropery(void* parent = nullptr);
-	~OmniLightPropery();
-	const char* ValueString() override;
-	void ParsePropertyValue(const char* value) override;
-	void SetPropertyValue(std::string value);
-	std::any GetAnyValue() override;
-	virtual void* GetValueAdress() override;
-
-	std::string property_value = "nil";
-	void* omni = nullptr;
-};
-
-
 struct CubemapProperty : public EntityProperty
 {
 public:
-	CubemapProperty(std::array<std::string,6> textures, void* parent = nullptr);
+	CubemapProperty(std::array<std::string,6> textures, GrEngine::Entity* parent = nullptr);
 	~CubemapProperty();
 	const char* ValueString() override;
 	void ParsePropertyValue(const char* value) override;
@@ -327,68 +311,6 @@ public:
 	virtual void* GetValueAdress() override;
 
 	std::array<std::string, 6> property_value;
-private:
-	std::string property_string;
-};
-
-struct ShaderProperty : public EntityProperty
-{
-public:
-	ShaderProperty(const char* path, void* parent = nullptr);
-	~ShaderProperty();
-	const char* ValueString() override;
-	void ParsePropertyValue(const char* value) override;
-	void SetPropertyValue(std::string value);
-	std::any GetAnyValue() override;
-	virtual void* GetValueAdress() override;
-
-	std::string property_value;
-};
-
-struct TransparencyProperty : public EntityProperty
-{
-public:
-	TransparencyProperty(bool value, void* parent = nullptr);
-	~TransparencyProperty();
-	const char* ValueString() override;
-	void ParsePropertyValue(const char* value) override;
-	void SetPropertyValue(bool value);
-	std::any GetAnyValue() override;
-	virtual void* GetValueAdress() override;
-
-	int property_value;
-private:
-	std::string property_string;
-};
-
-struct DoubleSidedProperty : public EntityProperty
-{
-public:
-	DoubleSidedProperty(bool value, void* parent = nullptr);
-	~DoubleSidedProperty();
-	const char* ValueString() override;
-	void ParsePropertyValue(const char* value) override;
-	void SetPropertyValue(bool value);
-	std::any GetAnyValue() override;
-	virtual void* GetValueAdress() override;
-
-	int property_value;
-private:
-	std::string property_string;
-};
-
-struct CastShadowProperty : public EntityProperty
-{
-public:
-	CastShadowProperty(bool value, void* parent = nullptr);
-	~CastShadowProperty();
-	const char* ValueString() override;
-	void ParsePropertyValue(const char* value) override;
-	void SetPropertyValue(int value);
-	std::any GetAnyValue() override;
-	virtual void* GetValueAdress() override;
-
-	int property_value;
 private:
 	std::string property_string;
 };

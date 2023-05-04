@@ -2,6 +2,10 @@ mesh
 {
    Content\Slope\Ramp.obj
 }
+collision
+{
+   Content\Slope\Ramp.obj
+}
 textures
 {
    Content\Editor\MissingTexture.png

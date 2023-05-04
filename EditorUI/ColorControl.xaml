@@ -15,6 +15,5 @@
 
             </ColumnDefinition>
         </Grid.ColumnDefinitions>
-        <TextBox Name="Src" Text="" Grid.Column="0" Foreground="White" BorderBrush="Black" BorderThickness="2" Background="{x:Null}" IsReadOnly="True" VerticalContentAlignment="Center"></TextBox>
     </Grid>
 </UserControl>

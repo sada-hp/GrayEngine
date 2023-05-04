@@ -20,7 +20,8 @@ namespace EditorUI
     /// </summary>
     public partial class TerrainSettings : Window
     {
-        public TerrainSettings()
+        private int settings_mode;
+        public TerrainSettings(int mode)
         {
             InitializeComponent();
             ImgHolder.Source = null;
@@ -31,43 +32,62 @@ namespace EditorUI
             RedBtn.ToolTip = "";
             GreenBtn.ToolTip = "";
             BlueBtn.ToolTip = "";
+            settings_mode = mode;
+            if (settings_mode == 1)
+            {
+                Tab.Items.RemoveAt(0);
+            }
         }
 
         private void Button_Click(object sender, RoutedEventArgs e)
         {
-            int resolution;
-            int width;
-            int height;
-            int depth;
+            if (settings_mode == 1)
+            {
+                string blend_mask = MaskBtn.ToolTip.ToString();
+                string base_layer = BaseBtn.ToolTip.ToString();
+                string red_ch = RedBtn.ToolTip.ToString();
+                string green_ch = GreenBtn.ToolTip.ToString();
+                string blue_ch = BlueBtn.ToolTip.ToString();
 
-            bool res = int.TryParse(ResolutionTB.Text, out resolution);
-            resolution = res && resolution >= 2 ? resolution : 2;
+                UIBridge.UpdateTerrain(Marshal.StringToHGlobalAnsi(blend_mask), Marshal.StringToHGlobalAnsi(base_layer), Marshal.StringToHGlobalAnsi(red_ch), Marshal.StringToHGlobalAnsi(green_ch), Marshal.StringToHGlobalAnsi(blue_ch));
+            }
+            else
+            {
+                int resolution;
+                int width;
+                int height;
+                int depth;
 
-            res = int.TryParse(WidthTB.Text, out width);
-            width = res && width >= 1 ? width : 1;
+                bool res = int.TryParse(ResolutionTB.Text, out resolution);
+                resolution = res && resolution >= 2 ? resolution : 2;
 
-            res = int.TryParse(HeightTB.Text, out height);
-            height = res && height >= 1 ? height : 1;
+                res = int.TryParse(WidthTB.Text, out width);
+                width = res && width >= 1 ? width : 1;
 
-            res = int.TryParse(DepthTB.Text, out depth);
-            depth = res && depth >= 1 ? depth : 1;
+                res = int.TryParse(HeightTB.Text, out height);
+                height = res && height >= 1 ? height : 1;
 
-            string height_map = ImgHolder.ToolTip.ToString();
-            string blend_mask = MaskBtn.ToolTip.ToString();
-            string base_layer = BaseBtn.ToolTip.ToString();
-            string red_ch = RedBtn.ToolTip.ToString();
-            string green_ch = GreenBtn.ToolTip.ToString();
-            string blue_ch = BlueBtn.ToolTip.ToString();
+                res = int.TryParse(DepthTB.Text, out depth);
+                depth = res && depth >= 1 ? depth : 1;
 
-            UIBridge.GenerateTerrain(resolution, width, height, depth, Marshal.StringToHGlobalAnsi(height_map), Marshal.StringToHGlobalAnsi(blend_mask), Marshal.StringToHGlobalAnsi(base_layer), Marshal.StringToHGlobalAnsi(red_ch), Marshal.StringToHGlobalAnsi(green_ch), Marshal.StringToHGlobalAnsi(blue_ch));
+                string height_map = ImgHolder.ToolTip.ToString();
+                string blend_mask = MaskBtn.ToolTip.ToString();
+                string base_layer = BaseBtn.ToolTip.ToString();
+                string red_ch = RedBtn.ToolTip.ToString();
+                string green_ch = GreenBtn.ToolTip.ToString();
+                string blue_ch = BlueBtn.ToolTip.ToString();
 
-            ImgHolder.Source = null;
+                UIBridge.GenerateTerrain(resolution, width, height, depth, Marshal.StringToHGlobalAnsi(height_map), Marshal.StringToHGlobalAnsi(blend_mask), Marshal.StringToHGlobalAnsi(base_layer), Marshal.StringToHGlobalAnsi(red_ch), Marshal.StringToHGlobalAnsi(green_ch), Marshal.StringToHGlobalAnsi(blue_ch));
+
+                ImgHolder.Source = null;
+                ImgHolder.UpdateLayout();
+            }
+
             MaskBtn.Background = null;
             BaseBtn.Background = null;
             RedBtn.Background = null;
             GreenBtn.Background = null;
             BlueBtn.Background = null;
-            ImgHolder.UpdateLayout();
             MaskBtn.UpdateLayout();
             BaseBtn.UpdateLayout();
             RedBtn.UpdateLayout();

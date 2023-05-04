@@ -9,10 +9,10 @@
 
 namespace GrEngine_Vulkan
 {
-#ifdef NDEBUG
-	const bool enableValidationLayers = false;
-#else
+#ifdef VALIDATION
 	const bool enableValidationLayers = true;
+#else
+	const bool enableValidationLayers = false;
 #endif
 
 	struct SwapChainSupportDetails {

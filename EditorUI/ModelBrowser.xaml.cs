@@ -246,7 +246,7 @@ namespace EditorUI
 
         public void UpdateChildPosition()
         {
-            if (child_hwnd != null)
+            if (child_hwnd != IntPtr.Zero)
             {
                 UIBridge.SetWindowPos(child_hwnd, IntPtr.Zero, 0, 0, panel.Width, panel.Height, 0);
             }
@@ -257,7 +257,7 @@ namespace EditorUI
             child_hwnd = IntPtr.Zero;
 
             ClearBrowser();
-            UIBridge.CloseContext();
+            UIBridge.CloseModelBrowser();
             LoadedAssets.Clear();
             Materials.Clear();
             Normals.Clear();
@@ -289,6 +289,7 @@ namespace EditorUI
                     ColPath.Text = loaded_collision;
                     ColPath.ToolTip = loaded_collision;
                 }
+                Materials[0] = missing_texture;
 
                 UIBridge.LoadObject(Marshal.StringToHGlobalAnsi(openFileDialog.FileName), Marshal.StringToHGlobalAnsi(missing_texture + '|'));
             }
@@ -357,6 +358,12 @@ namespace EditorUI
                         material_panel.MaterialPath.Text = Materials[mat_index];
                         material_panel.MaterialPath.ToolTip = Materials[mat_index];
                     }
+                    else
+                    {
+                        Materials[mat_index] = missing_texture;
+                        material_panel.MaterialPath.Text = Materials[mat_index];
+                        material_panel.MaterialPath.ToolTip = Materials[mat_index];
+                    }
                     if (mat_index < Normals.Count)
                     {
                         material_panel.NormalPath.Text = Normals[mat_index];
@@ -380,7 +387,12 @@ namespace EditorUI
             string res = "";
             foreach (var tex in Materials)
             {
-                res += tex.Value + '|';
+                string itt = tex.Value;
+                if (itt == "")
+                {
+                    itt = missing_texture;
+                }
+                res += itt + '|';
             }
 
             return res;
@@ -547,7 +559,7 @@ namespace EditorUI
         private void BtnLoadCol_Click(object sender, RoutedEventArgs e)
         {
             System.Windows.Forms.OpenFileDialog openFileDialog = new System.Windows.Forms.OpenFileDialog();
-            openFileDialog.Filter = "obj files (*.obj *.fbx)|*.obj *.fbx";
+            openFileDialog.Filter = "mesh files (*.obj; *.fbx)|*.obj;*.fbx";
             openFileDialog.InitialDirectory = content_folder;
             openFileDialog.RestoreDirectory = true;
 

@@ -1,3 +1,7 @@
+#ifdef _DEBUG
+#define VALIDATION
+#endif
+
 #pragma once
 #include "VulkanObject.h"
 #include "VulkanSkybox.h"
@@ -9,10 +13,6 @@
 #include "Engine/Headers/Core/Logger.h"
 #include "Engine/Headers/Virtual/Renderer.h"
 #include "VulkanAPI.h"
-
-#ifdef _DEBUG
-//#define VALIDATION
-#endif
 
 namespace GrEngine_Vulkan
 {
@@ -67,6 +67,7 @@ namespace GrEngine_Vulkan
 		Resource<Texture*>* loadTexture(std::vector<std::string> texture_path, VkImageViewType type_view = VK_IMAGE_VIEW_TYPE_2D, VkImageType type_img = VK_IMAGE_TYPE_2D);
 		bool updateTexture(GrEngine::Entity* target, int textureIndex);
 		bool updateTexture(GrEngine::Entity* target, void* pixels, int textureIndex);
+		bool updateResource(Texture* target, int textureIndex);
 		bool updateResource(Texture* target, byte* pixels);
 		bool updateResource(Texture* target, byte* pixels, uint32_t width, uint32_t height, uint32_t offset_x, uint32_t offset_y);
 
@@ -243,8 +244,8 @@ namespace GrEngine_Vulkan
 		void populateDebugMessengerCreateInfo(VkDebugUtilsMessengerCreateInfoEXT& createInfo) {
 			createInfo = {};
 			createInfo.sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT;
-			createInfo.messageSeverity = VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT;
-			createInfo.messageType = VK_DEBUG_UTILS_MESSAGE_TYPE_GENERAL_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT;
+			createInfo.messageSeverity = VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT;
+			createInfo.messageType = VK_DEBUG_UTILS_MESSAGE_TYPE_GENERAL_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_TYPE_GENERAL_BIT_EXT;
 			createInfo.pfnUserCallback = debugCallback;
 		}
 

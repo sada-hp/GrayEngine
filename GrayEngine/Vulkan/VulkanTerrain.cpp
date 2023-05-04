@@ -9,7 +9,7 @@ namespace GrEngine_Vulkan
 {
 	void VulkanTerrain::initObject(VkDevice device, VmaAllocator allocator, GrEngine::Renderer* owner)
 	{
-		properties.push_back(new ShaderProperty("Shaders\\terrain", this));
+		properties.push_back(new StringProperty(PropertyType::Shader, "Shaders\\terrain", this));
 		shader_path = "Shaders\\terrain";
 
 		p_Owner = owner;
@@ -156,6 +156,35 @@ namespace GrEngine_Vulkan
 
 		ready = true;
 		was_updated = true;
+	}
+
+	void VulkanTerrain::UpdateTextures(std::array<std::string, 5> images)
+	{
+		std::vector<std::string> textures;
+		textures.resize(object_texture->texture_collection.size());
+		std::copy(object_texture->texture_collection.begin(), object_texture->texture_collection.end(), textures.begin());
+
+		if (images[0] != "")
+		{
+			if (foliageMask != nullptr && images[0] == foliageMask->texture_collection[0])
+			{
+				static_cast<VulkanRenderer*>(p_Owner)->updateResource(foliageMask, 0);
+			}
+			else
+			{
+				foliageMask = static_cast<VulkanRenderer*>(p_Owner)->loadTexture({ images[0] }, VK_IMAGE_VIEW_TYPE_2D_ARRAY)->AddLink();
+			}
+		}
+
+		for (int i = 1; i < 4; i++)
+		{
+			if (images[i] != "")
+			{
+				textures[i - 1] = images[i];
+			}
+		}
+
+		static_cast<VulkanRenderer*>(p_Owner)->assignTextures(textures, this);
 	}
 
 	void VulkanTerrain::OffsetVertices(std::map<UINT, float> offsets)

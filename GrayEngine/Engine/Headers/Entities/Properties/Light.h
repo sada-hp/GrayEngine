@@ -35,8 +35,12 @@ namespace GrEngine
 			return type;
 		}
 
+		virtual void UpdateLight() = 0;
+
 	protected:
 		Entity* ownerEntity = nullptr;
 		LightType type;
+		float max_distance = -1.f;
+		float brightness = 1.f;
 	};
 };

@@ -56,7 +56,7 @@ namespace GrEngine
 	{
 		bool res = false;
 		Entity* target = pWindow->getRenderer()->selectEntity(id);
-		Object* drawComponent = target->GetPropertyValue(PropertyType::Drawable, static_cast<Object*>(nullptr));
+		Object* drawComponent = (Object*)target->GetPropertyValue(PropertyType::Drawable, (void*)nullptr);
 
 		if (drawComponent != nullptr)
 		{
@@ -79,11 +79,8 @@ namespace GrEngine
 			return false;
 
 		Entity* target = pWindow->getRenderer()->GetEntitiesList()[id];
-		Object* drawComponent = target->GetPropertyValue(PropertyType::Drawable, static_cast<Object*>(nullptr));
-		PhysicsObject* physComponent = target->GetPropertyValue(PropertyType::PhysComponent, static_cast<PhysicsObject*>(nullptr));
-
-		target->drawable_path = mesh_path;
-		target->collision_path = coll_path;
+		Object* drawComponent = (Object*)target->GetPropertyValue(PropertyType::Drawable, (void*)nullptr);
+		PhysicsObject* physComponent = (PhysicsObject*)target->GetPropertyValue(PropertyType::PhysComponent, (void*)nullptr);
 
 		if (drawComponent != nullptr)
 		{

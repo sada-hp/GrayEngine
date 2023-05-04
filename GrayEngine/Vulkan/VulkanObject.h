@@ -40,6 +40,7 @@ namespace GrEngine_Vulkan
 		VkPipeline shadowPipeline;
 
 		bool selectable = false;
+		float alpha_threshold = 0.5f;
 	};
 }
 

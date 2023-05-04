@@ -113,6 +113,9 @@
       <DependentUpon>CheckBoxControl.xaml</DependentUpon>
     </Compile>
     <Compile Include="Components\ListBoxEx.cs" />
+    <Compile Include="DirectionalLightSettings.xaml.cs">
+      <DependentUpon>DirectionalLightSettings.xaml</DependentUpon>
+    </Compile>
     <Compile Include="EditorWindow.cs" />
     <Compile Include="EntityItem.xaml.cs">
       <DependentUpon>EntityItem.xaml</DependentUpon>
@@ -170,6 +173,10 @@
       <Generator>MSBuild:Compile</Generator>
     </Page>
     <Page Include="CheckBoxControl.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="DirectionalLightSettings.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>

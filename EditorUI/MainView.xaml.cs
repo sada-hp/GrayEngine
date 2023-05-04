@@ -199,7 +199,7 @@ namespace EditorUI
             UIBridge.UpdateEntityProperty(((PropertyControl)sender).ID, Marshal.StringToHGlobalAnsi("EntityOrientation"), Marshal.StringToHGlobalAnsi(((PropertyControl)sender).Contents));
         }
 
-        private void Shader_callback(object sender)
+        private void Empty_callback(object sender)
         {
 
         }
@@ -227,6 +227,11 @@ namespace EditorUI
             UIBridge.UpdateEntityProperty(((PropertyControl)sender).ID, Marshal.StringToHGlobalAnsi("Transparency"), Marshal.StringToHGlobalAnsi(((PropertyControl)sender).Contents));
         }
 
+        private void CastShadow_callback(object sender)
+        {
+            UIBridge.UpdateEntityProperty(((PropertyControl)sender).ID, Marshal.StringToHGlobalAnsi("CastShadow"), Marshal.StringToHGlobalAnsi(((PropertyControl)sender).Contents));
+        }
+
         private void DoubleSided_callback(object sender)
         {
             UIBridge.UpdateEntityProperty(((PropertyControl)sender).ID, Marshal.StringToHGlobalAnsi("DoubleSided"), Marshal.StringToHGlobalAnsi(((PropertyControl)sender).Contents));
@@ -245,6 +250,21 @@ namespace EditorUI
         private void Mass_callback(object sender)
         {
             UIBridge.UpdateEntityProperty(((PropertyControl)sender).ID, Marshal.StringToHGlobalAnsi("Mass"), Marshal.StringToHGlobalAnsi(((PropertyControl)sender).Contents));
+        }
+
+        private void AlphaThreshold_callback(object sender)
+        {
+            UIBridge.UpdateEntityProperty(((PropertyControl)sender).ID, Marshal.StringToHGlobalAnsi("AlphaThreshold"), Marshal.StringToHGlobalAnsi(((PropertyControl)sender).Contents));
+        }
+
+        private void MaximumDistance_callback(object sender)
+        {
+            UIBridge.UpdateEntityProperty(((PropertyControl)sender).ID, Marshal.StringToHGlobalAnsi("MaximumDistance"), Marshal.StringToHGlobalAnsi(((PropertyControl)sender).Contents));
+        }
+
+        private void Brightness_callback(object sender)
+        {
+            UIBridge.UpdateEntityProperty(((PropertyControl)sender).ID, Marshal.StringToHGlobalAnsi("Brightness"), Marshal.StringToHGlobalAnsi(((PropertyControl)sender).Contents));
         }
 
         private void Opacity_callback(object sender)
@@ -280,7 +300,7 @@ namespace EditorUI
             UIBridge.UpdateEntityProperty(((PropertyControl)sender).ID, Marshal.StringToHGlobalAnsi("CollisionType"), Marshal.StringToHGlobalAnsi(mode));
         }
 
-        private void PhysComponent_callback(object sender)
+        private void BodyType_callback(object sender)
         {
             string mode = "0";
             if ((sender as PropertyControl).Contents == "RigidBody")
@@ -290,7 +310,7 @@ namespace EditorUI
             else if ((sender as PropertyControl).Contents == "StaticObject")
                 mode = "2";
 
-            UIBridge.UpdateEntityProperty(((PropertyControl)sender).ID, Marshal.StringToHGlobalAnsi("PhysComponent"), Marshal.StringToHGlobalAnsi(mode));
+            UIBridge.UpdateEntityProperty(((PropertyControl)sender).ID, Marshal.StringToHGlobalAnsi("BodyType"), Marshal.StringToHGlobalAnsi(mode));
         }
 
         private void BrushMode_callback(object sender)
@@ -360,9 +380,10 @@ namespace EditorUI
                     types.Add(name, typeof(_3VectorControl));
                     events.Add(name, "VectorPropertyChanged");
                 }
-                else if (name == "EntityID")
+                else if (name == "EntityName" || name == "AlphaThreshold" || name == "Mass" || name == "MaximumDistance" || name == "Brightness")
                 {
-                    types.Add(name, typeof(TextControl));
+                    types.Add(name, typeof(LabelControl));
+                    events.Add(name, "TextBoxTextChanged");
                 }
                 else if (name == "Color")
                 {
@@ -374,12 +395,12 @@ namespace EditorUI
                     types.Add(name, typeof(ResourceControl));
                     events.Add(name, "DialogOpen");
                 }
-                else if (name == "Transparency" || name == "DoubleSided")
+                else if (name == "Transparency" || name == "DoubleSided" || name == "CastShadow")
                 {
                     types.Add(name, typeof(CheckBoxControl));
                     events.Add(name, "CheckPropertyChanged");
                 }
-                else if (name == "PhysComponent")
+                else if (name == "BodyType")
                 {
                     if (value == "0")
                     {
@@ -419,14 +440,18 @@ namespace EditorUI
                     types.Add(name, typeof(ListControl));
                     events.Add(name, "ControlSelectionChanged");
                 }
+                else if (value == "nil")
+                {
+                    types.Add(name, typeof(TextControl));
+                    properties[name] = "";
+                }
                 else if (name == "Shader")
                 {
                     return;
                 }
                 else
                 {
-                    types.Add(name, typeof(LabelControl));
-                    events.Add(name, "TextBoxTextChanged");
+                    types.Add(name, typeof(TextControl));
                 }
 
                 handlers.Add(name, name + "_callback");
@@ -643,8 +668,16 @@ namespace EditorUI
 
         private void TerrainSettings_Click(object sender, RoutedEventArgs e)
         {
-            TerrainSettings settings = new TerrainSettings();
-            settings.ShowDialog();
+            if ((sender as System.Windows.Controls.MenuItem).Header.ToString() == "Generate")
+            {
+                TerrainSettings settings = new TerrainSettings(0);
+                settings.ShowDialog();
+            }
+            else
+            {
+                TerrainSettings settings = new TerrainSettings(1);
+                settings.ShowDialog();
+            }
         }
 
         private void BrushButton_Click(object sender, RoutedEventArgs e)
@@ -704,6 +737,12 @@ namespace EditorUI
         private void LightingButton_Click(object sender, RoutedEventArgs e)
         {
             UIBridge.ToggleLighting();
+        }
+
+        private void SunMenu_Click(object sender, RoutedEventArgs e)
+        {
+            DirectionalLightSettings settings = new DirectionalLightSettings();
+            settings.Show();
         }
     };
 }

@@ -25,6 +25,10 @@ namespace EditorUI
         int entity_id;
         ColorPicker picker;
         public event DummyEvent ColorPropertyChanged;
+        int red;
+        int green;
+        int blue;
+        int alpha;
 
         public string Contents
         {
@@ -69,8 +73,6 @@ namespace EditorUI
             float g = Convert.ToInt32(float.Parse(color[1], System.Globalization.CultureInfo.InvariantCulture.NumberFormat) * 255);
             float b = Convert.ToInt32(float.Parse(color[2], System.Globalization.CultureInfo.InvariantCulture.NumberFormat) * 255);
             float a = Convert.ToInt32(float.Parse(color[3], System.Globalization.CultureInfo.InvariantCulture.NumberFormat) * 255);
-
-
             picker.SelectedColor = System.Windows.Media.Color.FromArgb((byte)a, (byte)r, (byte)g, (byte)b);
         }
 
@@ -81,14 +83,33 @@ namespace EditorUI
 
         private void ColorUpdate(object sender, RoutedPropertyChangedEventArgs<System.Windows.Media.Color?> e)
         {
-
-            int red = (int)e.NewValue.Value.R;
-            int green = (int)e.NewValue.Value.G;
-            int blue = (int)e.NewValue.Value.B;
-            int alpha = (int)e.NewValue.Value.A;
+            red = (int)e.NewValue.Value.R;
+            green = (int)e.NewValue.Value.G;
+            blue = (int)e.NewValue.Value.B;
+            alpha = (int)e.NewValue.Value.A;
 
             Contents = red.ToString() + ':' + green.ToString() + ':' + blue.ToString() + ':' + alpha.ToString();
             ColorPropertyChanged.Invoke(this);
+        }
+
+        public int Red()
+        {
+            return red;
+        }
+
+        public int Green()
+        {
+            return green;
+        }
+
+        public int Blue()
+        {
+            return blue;
+        }
+
+        public int Alpha()
+        {
+            return alpha;
         }
 
         private void Test(object sender)

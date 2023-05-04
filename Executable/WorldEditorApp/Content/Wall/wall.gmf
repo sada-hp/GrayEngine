@@ -1,0 +1,16 @@
+mesh
+{
+   Content\Wall\wall.obj
+}
+collision
+{
+   Content\Wall\wall.obj
+}
+textures
+{
+   Content\Wall\wall_Col.png
+}
+normals
+{
+   Content\Wall\wall_Norm.png
+}

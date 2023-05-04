@@ -1,8 +1,0 @@
-mesh
-{
-   Content\Glass\Glass.obj
-}
-textures
-{
-   Content\Glass\Glass.png
-}

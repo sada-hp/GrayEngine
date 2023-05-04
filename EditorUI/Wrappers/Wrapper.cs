@@ -16,7 +16,7 @@ namespace EditorUI.Wrappers
         public abstract IntPtr CreateWrapper();
         public void DestroyWrapper()
         {
-            ui_window.Close();
+            //ui_window.Close();
             ui_handle = IntPtr.Zero;
         }
 

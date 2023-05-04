@@ -10,6 +10,11 @@ void SceneEditor::InitModelBrowser()
 	SceneEditor::GetApplication()->initModelBrowser();
 }
 
+void SceneEditor::CloseModelBrowser()
+{
+    SceneEditor::GetApplication()->closeModelBrowser();
+}
+
 void SceneEditor::AddEntity()
 {
 	SceneEditor::GetApplication()->App_UpdateEntity(SceneEditor::GetApplication()->GetContext()->AddEntity());
@@ -66,11 +71,8 @@ void SceneEditor::LoadModelFile(const char* model_path)
         return;
 
     GrEngine::Entity* target = GrEngine::Engine::GetContext()->GetRenderer()->GetSelectedEntity();
-    GrEngine::Object* drawComponent = target->GetPropertyValue(PropertyType::Drawable, static_cast<GrEngine::Object*>(nullptr));
-    GrEngine::PhysicsObject* physComponent = target->GetPropertyValue(PropertyType::PhysComponent, static_cast<GrEngine::PhysicsObject*>(nullptr));
-
-    target->drawable_path = mesh_path;
-    target->collision_path = coll_path;
+    GrEngine::Object* drawComponent = (GrEngine::Object*)target->GetPropertyValue(PropertyType::Drawable, (void*)nullptr);
+    GrEngine::PhysicsObject* physComponent = (GrEngine::PhysicsObject*)target->GetPropertyValue(PropertyType::PhysComponent, (void*)nullptr);
 
     if (drawComponent != nullptr)
     {
@@ -93,7 +95,7 @@ void SceneEditor::LoadModelFile(const char* model_path)
         out_materials += mat + "|";
     }
 
-    GrEngine::Engine::GetContext()->GetEventListener()->registerEvent("RequireMaterialsUpdate", { out_materials, 0 });
+    SceneEditor::GetApplication()->GetBrowserContext()->UpdateMaterials(out_materials, 0);
 }
 
 void SceneEditor::LoadObject(const char* mesh_path, const char* textures_path)
@@ -130,7 +132,7 @@ void SceneEditor::LoadObject(const char* mesh_path, const char* textures_path)
         out_materials += mat + "|";
     }
 
-    GrEngine::Engine::GetContext()->GetEventListener()->registerEvent("RequireMaterialsUpdate", { out_materials, 1});
+    SceneEditor::GetApplication()->GetBrowserContext()->UpdateMaterials(out_materials, 1);
 }
 
 void SceneEditor::AssignTextures(const char* textures_path)
@@ -177,7 +179,8 @@ void SceneEditor::AddToTheScene(const char* model_path)
     }
 
     GrEngine::Engine::GetContext()->GetEventListener()->clearEventQueue();
-    GrEngine::Engine::GetContext()->Pause();
+    //GrEngine::Engine::GetContext()->Pause();
+    SceneEditor::GetApplication()->ModelBrowser_KeepResource();
     SceneEditor::GetApplication()->GetEventListener()->registerEvent("LoadModel", para);
 }
 
@@ -250,6 +253,24 @@ void SceneEditor::GenerateTerrain(int resolution, int x, int y, int z, const cha
 
     SceneEditor::GetApplication()->App_GenerateTerrain(resolution, x, y, z, 
         { std::string(height).erase(0, solution.size()), std::string(blend).erase(0, solution.size()),
+        std::string(base).erase(0, solution.size()), std::string(red).erase(0, solution.size()),
+        std::string(green).erase(0, solution.size()), std::string(blue).erase(0, solution.size()) });
+}
+
+void SceneEditor::UpdateTerrain(const char* blend, const char* base, const char* red, const char* green, const char* blue)
+{
+    std::string solution = GrEngine::Globals::getExecutablePath();
+    if ((std::string(blend) != "" && std::string(blend).substr(0, solution.size()) != solution)
+        || (std::string(base) != "" && std::string(base).substr(0, solution.size()) != solution)
+        || (std::string(red) != "" && std::string(red).substr(0, solution.size()) != solution) || (std::string(green) != "" && std::string(green).substr(0, solution.size()) != solution)
+        || (std::string(blue) != "" && std::string(blue).substr(0, solution.size()) != solution))
+    {
+        Logger::Out("Resource outside the solution is being used!", OutputColor::Red, OutputType::Error);
+        return;
+    }
+
+    SceneEditor::GetApplication()->App_UpdateTerrain(
+        { std::string(blend).erase(0, solution.size()),
         std::string(base).erase(0, solution.size()), std::string(red).erase(0, solution.size()),
         std::string(green).erase(0, solution.size()), std::string(blue).erase(0, solution.size()) });
 }
@@ -340,4 +361,34 @@ void SceneEditor::DeleteEntity()
 void SceneEditor::SnapEntity()
 {
     SceneEditor::GetApplication()->App_SnapToGround();
+}
+
+void SceneEditor::RotateSun(float pitch, float yaw)
+{
+    SceneEditor::GetApplication()->App_RotateCascade(pitch, yaw);
+}
+
+void SceneEditor::SetSunColor(const char* color)
+{
+    SceneEditor::GetApplication()->App_ColorCascade(color);
+}
+
+void SceneEditor::SetAmbientModulator(float value)
+{
+    SceneEditor::GetApplication()->GetRenderer()->SetAmbientValue(value);
+}
+
+bool SceneEditor::CheckCascade()
+{
+    return SceneEditor::GetApplication()->HasCascade();
+}
+
+void SceneEditor::AddCascade()
+{
+    SceneEditor::GetApplication()->App_AddCascadeEntity();
+}
+
+const char* SceneEditor::GetCascadeColor()
+{
+    return SceneEditor::GetApplication()->App_GetCascadeProperty(PropertyType::Color);
 }

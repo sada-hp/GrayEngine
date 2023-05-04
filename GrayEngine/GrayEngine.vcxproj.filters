@@ -65,6 +65,7 @@
     <ClCompile Include="Bullet\BulletResourceManager.cpp" />
     <ClCompile Include="Vulkan\VulkanPointLight.cpp" />
     <ClCompile Include="Vulkan\VulkanOmniLight.cpp" />
+    <ClCompile Include="Engine\Source\Entity.cpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Engine\Libs\lib-vc2019\glfw3.dll" />

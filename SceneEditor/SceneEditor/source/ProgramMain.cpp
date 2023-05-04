@@ -62,7 +62,7 @@ namespace SceneEditor
 
         if (direction != glm::vec3(0.f))
         {
-            GrEngine::RayCastResult ray = app->GetPhysics()->CastRayGetHit(cap_pos, glm::vec3(cap_pos.x, cap_pos.y - 2.5f, cap_pos.z));
+            GrEngine::RayCastResult ray = app->GetPhysics()->CastRayGetHit(cap_pos, glm::vec3(cap_pos.x, cap_pos.y - 3.f, cap_pos.z));
             std::vector<GrEngine::RayCastResult> res;
             if (!ray.hasHit)
             {
@@ -76,16 +76,17 @@ namespace SceneEditor
             if (res.size() > 0)
             {
                 glm::vec3 normal = glm::vec3(0.f);
-                int count = 0;
+                //int count = 0;
 
-                for (int i = 0; i < res.size(); i++)
-                {
-                    normal += res[i].hitNorm;
-                    count++;
-                }
+                //for (int i = 0; i < res.size(); i++)
+                //{
+                //    normal += res[i].hitNorm;
+                //    count++;
+                //}
 
-                normal = normal / (float)count;
-                normal = glm::normalize(normal);
+                //normal = normal / (float)count;
+                //normal = glm::normalize(normal);
+                normal = glm::normalize(res[0].hitNorm);
 
                 float max_ang = glm::radians(45.f);
                 float ang = glm::acos(glm::dot(glm::vec3(0, 1, 0), normal));
@@ -123,7 +124,7 @@ namespace SceneEditor
         {
             //GrEngine::RayCastResult res = app->GetPhysics()->CastRayGetHit(cap_pos, glm::vec3(cap_pos.x, cap_pos.y - 4.5f, cap_pos.z));
 
-            GrEngine::RayCastResult ray = app->GetPhysics()->CastRayGetHit(cap_pos, glm::vec3(cap_pos.x, cap_pos.y - 2.5f, cap_pos.z));
+            GrEngine::RayCastResult ray = app->GetPhysics()->CastRayGetHit(cap_pos, glm::vec3(cap_pos.x, cap_pos.y - 3.f, cap_pos.z));
             std::vector<GrEngine::RayCastResult> res;
             if (!ray.hasHit)
             {
@@ -306,15 +307,21 @@ namespace SceneEditor
 
         app->GetEventListener()->pushEvent("LoadModel", [](std::vector<std::any> para)
             {
-                std::string model_path = "";
-                std::string solution = GrEngine::Globals::getExecutablePath();
-
-                for (auto chr : para)
+                if (app->transform_target != nullptr)
                 {
-                    model_path += std::any_cast<char>(chr);
-                }
+                    std::string model_path = "";
+                    std::string solution = GrEngine::Globals::getExecutablePath();
 
-                app->LoadFromGMF(app->transform_target->GetEntityID(), model_path.erase(0, solution.size()).c_str());
+                    for (auto chr : para)
+                    {
+                        model_path += std::any_cast<char>(chr);
+                    }
+
+                    model_path = model_path.starts_with(solution.c_str()) ? model_path.substr(solution.size(), model_path.size() - solution.size()) : model_path;
+                    app->transform_target->AddNewProperty(PropertyType::ModelPath)->ParsePropertyValue(model_path.c_str());
+                    app->App_UpdateUIProperty("ModelPath");
+                    app->ModelBrowser_ReleaseDummyResource();
+                }
             });
 
         app->GetEventListener()->pushEvent("TerrainBlendMask", [](std::vector<std::any> para)

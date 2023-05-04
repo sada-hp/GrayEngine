@@ -50,6 +50,7 @@
     <ClCompile Include="Bullet\BulletAPI.cpp" />
     <ClCompile Include="Engine\Headers\Entities\Properties\Property.cpp" />
     <ClCompile Include="Engine\Source\Engine.cpp" />
+    <ClCompile Include="Engine\Source\Entity.cpp" />
     <ClCompile Include="Engine\Source\Globals.cpp" />
     <ClCompile Include="Vulkan\VulkanOmniLight.cpp" />
     <ClCompile Include="Vulkan\VulkanPointLight.cpp" />

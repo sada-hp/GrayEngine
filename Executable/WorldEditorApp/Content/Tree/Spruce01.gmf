@@ -2,6 +2,10 @@ mesh
 {
    Content\Tree\Spruce01.obj
 }
+collision
+{
+   Content\Tree\SpruceCollision.obj
+}
 textures
 {
    Content\Tree\BarkDark.png

@@ -13,7 +13,7 @@ namespace GrEngine
 	public:
 		double delta_time = 0;
 		bool Initialized = false;
-		Camera viewport_camera;
+		Camera* viewport_camera;
 
 		Renderer() {};
 		virtual ~Renderer() {};
@@ -49,7 +49,16 @@ namespace GrEngine
 		virtual void LoadTerrain(const char* filepath) = 0;
 		virtual void createSkybox(const char* East, const char* West, const char* Top, const char* Bottom, const char* North, const char* South) = 0;
 		virtual void DeleteEntity(UINT id) = 0;
-		inline Camera* getActiveViewport() { return &viewport_camera; };
+		virtual void SetAmbientValue(float new_value)
+		{
+			ambient = new_value;
+		}
+		virtual float GetAmbientValue()
+		{
+			return ambient;
+		}
+		inline Camera* getActiveViewport() { return viewport_camera; };
+		inline void SetActiveViewport(Camera* viewport) { viewport_camera = viewport; };
 		virtual Entity* selectEntity(UINT32 ID)
 		{ 
 			if (auto search = entities.find(ID); search != entities.end())
@@ -64,6 +73,19 @@ namespace GrEngine
 		virtual Entity* GetSelectedEntity() 
 		{ 
 			return selected_entity == 0 ? nullptr : entities[selected_entity];
+		};
+		virtual std::vector<Entity*> GetEntitiesOfType(EntityType type)
+		{
+			std::vector<Entity*> res;
+			for (std::map<UINT, GrEngine::Entity*>::iterator itt = entities.begin(); itt != entities.end(); ++itt)
+			{
+				if (((*itt).second->GetEntityType() & type) != 0)
+				{
+					res.push_back((*itt).second);
+				}
+			}
+
+			return res;
 		};
 		UINT32& GetSelectionID() { return selected_entity; };
 		virtual void SaveScreenshot(const char* filepath) = 0;
@@ -83,5 +105,6 @@ namespace GrEngine
 		std::map<UINT, Object*> drawables;
 		std::map<UINT, LightObject*> lights;
 		bool use_dynamic_lighting = false;
+		float ambient = 0.25f;
 	};
 }

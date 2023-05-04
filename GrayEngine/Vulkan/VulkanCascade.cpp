@@ -9,9 +9,22 @@ namespace GrEngine_Vulkan
 		logicalDevice = device;
 		memAllocator = allocator;
 		type = LightType::Cascade;
+		max_distance = GrEngine::Renderer::FarPlane;
+		UpdateLight();
+	}
 
+	void VulkanCascade::destroyLight()
+	{
+
+	}
+
+	void VulkanCascade::UpdateLight()
+	{
+		max_distance = ownerEntity->GetPropertyValue(PropertyType::MaximumDistance, GrEngine::Renderer::FarPlane);
+		max_distance = max_distance < 0 ? GrEngine::Renderer::FarPlane : max_distance;
+		brightness = ownerEntity->GetPropertyValue(PropertyType::Brightness, 1.f);
 		float nearClip = GrEngine::Renderer::NearPlane;
-		float farClip = GrEngine::Renderer::FarPlane;
+		float farClip = max_distance;
 		float clipRange = farClip - nearClip;
 
 		float minZ = nearClip;
@@ -30,17 +43,13 @@ namespace GrEngine_Vulkan
 		}
 	}
 
-	void VulkanCascade::destroyLight()
-	{
-
-	}
-
 	std::array<VulkanCascade::Cascade, SHADOW_MAP_CASCADE_COUNT>& VulkanCascade::getCascadeUBO()
 	{
 		float nearClip = GrEngine::Renderer::NearPlane;
 		float farClip = GrEngine::Renderer::FarPlane;
 		float clipRange = farClip - nearClip;
 		float lastSplitDist = 0.0;
+		glm::vec4 color = ownerEntity->GetPropertyValue(PropertyType::Color, glm::vec4(1.f));
 
 		for (uint32_t i = 0; i < SHADOW_MAP_CASCADE_COUNT; i++) {
 			float splitDist = cascadeSplits[i];
@@ -87,15 +96,15 @@ namespace GrEngine_Vulkan
 				float distance = glm::length(frustumCorners[i] - frustumCenter);
 				radius = glm::max(radius, distance);
 			}
-			radius = glm::ceil(radius * 16.f) / 16.f;
+			radius = glm::ceil(radius / 8.f) * 8.f;
 
 
 			glm::vec3 maxExtents = glm::vec3(radius);
 			glm::vec3 minExtents = -maxExtents;
 
 			lightPerspective[i].model = ownerEntity->GetObjectTransformation();
-			glm::vec3 lightDir = (glm::vec3(lightPerspective[i].model[2][0], lightPerspective[i].model[2][1], lightPerspective[i].model[2][2]));
-			//glm::vec3 lightDir = normalize(-ownerEntity->GetObjectPosition());
+			//glm::vec3 lightDir = (glm::vec3(lightPerspective[i].model[2][0], lightPerspective[i].model[2][1], lightPerspective[i].model[2][2]));
+			glm::vec3 lightDir = normalize(-ownerEntity->GetObjectPosition());
 			lightPerspective[i].view = glm::lookAt(frustumCenter - lightDir * maxExtents.z, frustumCenter, glm::vec3(0.0f, 1.0f, 0.0f));
 			lightPerspective[i].proj = glm::ortho(minExtents.x, maxExtents.x, minExtents.y, maxExtents.y, minExtents.z * 2, maxExtents.z * 2);
 			//lightPerspective[i].proj[1][1] *= -1;
@@ -103,10 +112,12 @@ namespace GrEngine_Vulkan
 
 
 			//Fixes shadow shimmering
-			float f = (radius * 2.0) / (SHADOW_MAP_DIM);
-			lightPerspective[i].view[3][0] = glm::round(lightPerspective[i].view[3][0] / f) * f;
-			lightPerspective[i].view[3][1] = glm::round(lightPerspective[i].view[3][1] / f) * f;
-			lightPerspective[i].view[3][2] = glm::round(lightPerspective[i].view[3][2] / f) * f;
+			float f = (radius * 8.0) / (SHADOW_MAP_DIM);
+			lightPerspective[i].view[3][0] = glm::ceil(lightPerspective[i].view[3][0] / f) * f;
+			lightPerspective[i].view[3][1] = glm::ceil(lightPerspective[i].view[3][1] / f) * f;
+			lightPerspective[i].view[3][2] = glm::ceil(lightPerspective[i].view[3][2] / f) * f;
+
+			lightPerspective[i].color = color;
 
 			lastSplitDist = cascadeSplits[i];
 		}

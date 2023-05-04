@@ -39,7 +39,8 @@ namespace EditorUI
 
         [DllImport("SceneEditor.dll", CallingConvention = CallingConvention.Cdecl)]
         public static extern void InitModelBrowser();
-
+        [DllImport("SceneEditor.dll", CallingConvention = CallingConvention.Cdecl)]
+        public static extern void CloseModelBrowser();
         [DllImport("SceneEditor.dll", CallingConvention = CallingConvention.Cdecl)]
         public static extern void UpdateEntityProperty(int ID, IntPtr property, IntPtr value);
 
@@ -63,6 +64,8 @@ namespace EditorUI
 
         [DllImport("SceneEditor.dll", CallingConvention = CallingConvention.Cdecl)]
         public static extern void GenerateTerrain(int resolution, int x, int y, int z, IntPtr height, IntPtr blend, IntPtr baselayer, IntPtr red, IntPtr green, IntPtr blue);
+        [DllImport("SceneEditor.dll", CallingConvention = CallingConvention.Cdecl)]
+        public static extern void UpdateTerrain(IntPtr blend, IntPtr baselayer, IntPtr red, IntPtr green, IntPtr blue);
 
         [DllImport("SceneEditor.dll", CallingConvention = CallingConvention.Cdecl)]
         public static extern void ToggleBrush(int mode);
@@ -92,6 +95,18 @@ namespace EditorUI
         public static extern void DeleteEntity();
         [DllImport("SceneEditor.dll", CallingConvention = CallingConvention.Cdecl)]
         public static extern void SnapEntity();
+        [DllImport("SceneEditor.dll", CallingConvention = CallingConvention.Cdecl)]
+        public static extern void RotateSun(float pitch, float yaw);
+        [DllImport("SceneEditor.dll", CallingConvention = CallingConvention.Cdecl)]
+        public static extern void SetSunColor(IntPtr color);
+        [DllImport("SceneEditor.dll", CallingConvention = CallingConvention.Cdecl)]
+        public static extern void SetAmbientModulator(float value);
+        [DllImport("SceneEditor.dll", CallingConvention = CallingConvention.Cdecl)]
+        public static extern bool CheckCascade();
+        [DllImport("SceneEditor.dll", CallingConvention = CallingConvention.Cdecl)]
+        public static extern void AddCascade();
+        [DllImport("SceneEditor.dll", CallingConvention = CallingConvention.Cdecl)]
+        public static extern IntPtr GetCascadeColor();
 
         public static Wrapper[] wrappers = new Wrapper[2];
         public static Thread uThread;
@@ -142,7 +157,7 @@ namespace EditorUI
                 wrappers[index].DestroyWrapper();
             }));
 
-            wrappers[index].ui_window.Dispatcher.InvokeShutdown();
+            //wrappers[index].ui_window.Dispatcher.InvokeShutdown();
             WrappersCount--;
 
             if (WrappersCount <= 0)

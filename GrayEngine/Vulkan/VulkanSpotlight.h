@@ -22,6 +22,7 @@ namespace GrEngine_Vulkan
 		void initLight(VkDevice device, VmaAllocator allocator);
 		void destroyLight();
 		ShadowProjection& getLightUBO();
+		void UpdateLight() override;
 
 	protected:
 		VkDevice logicalDevice;

@@ -46,8 +46,8 @@
             <RowDefinition Height="85*"/>
             <RowDefinition Height="15*"/>
         </Grid.RowDefinitions>
-        <TabControl Background="#FF343440">
-            <TabItem Header="Height map" Foreground="WhiteSmoke" Background="{x:Null}">
+        <TabControl x:Name="Tab" Background="#FF343440">
+            <TabItem Name="TabGenerate" Header="Height map" Foreground="WhiteSmoke" Background="{x:Null}">
                 <Grid Background="#FF353538">
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="70*"/>
@@ -80,7 +80,7 @@
                     </Grid>
                 </Grid>
             </TabItem>
-            <TabItem Header="Blend mask" Foreground="WhiteSmoke" Background="{x:Null}">
+            <TabItem Name="TabMaps" Header="Blend mask" Foreground="WhiteSmoke" Background="{x:Null}">
                 <Grid Background="#FF353538">
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="45*"/>

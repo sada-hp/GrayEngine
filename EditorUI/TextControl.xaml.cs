@@ -30,6 +30,7 @@ namespace EditorUI
             {
                 prop_content = value;
                 ContentLabel.Content = prop_content;
+                ContentLabel.ToolTip = prop_content;
             }
         }
 

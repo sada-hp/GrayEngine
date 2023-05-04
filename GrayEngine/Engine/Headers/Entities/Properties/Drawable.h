@@ -134,7 +134,7 @@ namespace GrEngine
 			CollisionEnabled = false;
 			ownerEntity->ParsePropertyValue("Mass", "0");
 
-			GrEngine::PhysicsObject* physComponent = ownerEntity->GetPropertyValue(PropertyType::PhysComponent, static_cast<GrEngine::PhysicsObject*>(nullptr));
+			GrEngine::PhysicsObject* physComponent = (GrEngine::PhysicsObject*)ownerEntity->GetPropertyValue(PropertyType::PhysComponent, (void*)nullptr);
 			if (physComponent != nullptr)
 			{
 				physComponent->DisablePhysics();

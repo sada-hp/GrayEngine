@@ -31,6 +31,7 @@ namespace GrEngine_Vulkan
 			offset--;
 		}
 
+		Logger::Out("Removerd device %p", OutputColor::Blue, OutputType::Log, logicalDevice);
 		VulkanAPI::DestroyMemoryAllocator(allocator);
 		VulkanAPI::DestroyLogicalDevice(logicalDevice);
 	}

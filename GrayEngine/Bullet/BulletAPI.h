@@ -317,12 +317,14 @@ namespace GrEngineBullet
 			}
 
 			shape_name = use_hull ? "Hull_" + std::string(mesh_path) : "Mesh_" + std::string(mesh_path);
-			pOwner->collision_path = mesh_path;
 			return true;
 		}
 
 		void UpdateCollisionType(CollisionTypeEnum value) override
 		{
+			std::string coll_path = "";
+			std::string model_path = "";
+
 			switch (value)
 			{
 			case CollisionTypeEnum::Box:
@@ -331,10 +333,14 @@ namespace GrEngineBullet
 			case CollisionTypeEnum::Sphere:
 				break;
 			case CollisionTypeEnum::ConvexHullMesh:
-				LoadCollisionMesh(pOwner->collision_path.c_str(), true);
+				model_path = pOwner->GetPropertyValue(PropertyType::ModelPath, coll_path);
+				GrEngine::Globals::readGMF(model_path, nullptr, &coll_path, nullptr, nullptr);
+				LoadCollisionMesh(coll_path.c_str(), true);
 				break;
 			case CollisionTypeEnum::Mesh:
-				LoadCollisionMesh(pOwner->collision_path.c_str(), false);
+				model_path = pOwner->GetPropertyValue(PropertyType::ModelPath, coll_path);
+				GrEngine::Globals::readGMF(model_path, nullptr, &coll_path, nullptr, nullptr);
+				LoadCollisionMesh(coll_path.c_str(), false);
 				break;
 			case CollisionTypeEnum::Capsule:
 				GenerateCapsuleCollision(1, 2);

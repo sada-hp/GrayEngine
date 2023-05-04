@@ -72,16 +72,13 @@ public:
 
 	bool InitUI(UINT viewport_index)
 	{
-		if (CoInitializeEx(NULL, COINIT_APARTMENTTHREADED) == 0)
+		CoInitializeEx(NULL, COINIT_APARTMENTTHREADED);
+		wpf_hwnd = CreateUserInterface(viewport_index);
+		if (wpf_hwnd != nullptr)
 		{
-			wpf_hwnd = CreateUserInterface(viewport_index);
-			if (wpf_hwnd != nullptr)
-			{
-				DisplayUserInterface(viewport_index);
-				return true;
-			}
+			DisplayUserInterface(viewport_index);
+			return true;
 		}
-
 		return false;
 	}
 
@@ -89,12 +86,13 @@ public:
 	{
 		if (wpf_hwnd != NULL)
 		{
+			//CoUninitialize();
 			DestroyUserInterface(viewport_index);
 			DestroyWindow(wpf_hwnd);
 		}
 
 		FreeLibrary(dotNetGUILibrary);
-		CoUninitialize();
+		//CoUninitialize();
 		return true;
 	}
 

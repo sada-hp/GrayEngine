@@ -12,8 +12,8 @@ namespace GrEngine_Vulkan
 	void VulkanObject::initObject(VkDevice device, VmaAllocator allocator, GrEngine::Renderer* owner)
 	{
 		UINT id = ownerEntity->GetEntityID();
-		ownerEntity->AddNewProperty("Transparency");
-		ownerEntity->AddNewProperty("DoubleSided");
+		//ownerEntity->AddNewProperty("Transparency");
+		//ownerEntity->AddNewProperty("DoubleSided");
 		ownerEntity->AddNewProperty("Shader");
 
 		//ownerEntity->AddNewProperty("PhysComponent");
@@ -388,6 +388,19 @@ namespace GrEngine_Vulkan
 
 		shaderStages[0].pSpecializationInfo = &specializationInfo;
 
+		std::array<VkSpecializationMapEntry, 1> entriesFrag;
+		entriesFrag[0].constantID = 0;
+		entriesFrag[0].offset = 0;
+		entriesFrag[0].size = sizeof(float);
+
+		VkSpecializationInfo specializationInfoFrag;
+		specializationInfoFrag.mapEntryCount = entriesFrag.size();
+		specializationInfoFrag.pMapEntries = entriesFrag.data();
+		specializationInfoFrag.dataSize = sizeof(float);
+		specializationInfoFrag.pData = &alpha_threshold;
+
+		shaderStages[2].pSpecializationInfo = &specializationInfoFrag;
+
 		VkGraphicsPipelineCreateInfo pipelineCI{};
 
 		pipelineCI.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
@@ -418,6 +431,7 @@ namespace GrEngine_Vulkan
 		shader_path = ownerEntity->GetPropertyValue(PropertyType::Shader, std::string(shader_path));
 		transparency = ownerEntity->GetPropertyValue(PropertyType::Transparency, 0);
 		double_sided = ownerEntity->GetPropertyValue(PropertyType::DoubleSided, 0);
+		alpha_threshold = ownerEntity->GetPropertyValue(PropertyType::AlphaThreshold, 0.5f);
 
 		std::string solution_path = GrEngine::Globals::getExecutablePath();
 		std::vector<char> vertShaderCode;
@@ -530,14 +544,15 @@ namespace GrEngine_Vulkan
 				float far_pl;
 				float near_pl;
 				uint32_t use_normal;
+				float threshold;
 			} specs;
 			bool use_normal = false;
 			if (object_normal != nullptr && object_normal->texture_collection.size() > 0)
 			{
 				use_normal = !(object_normal->texture_collection.size() == 1 && object_normal->texture_collection[0] == "empty_texture");
 			}
-			specs = { VulkanRenderer::NearPlane, VulkanRenderer::FarPlane, (uint32_t)use_normal };
-			std::array<VkSpecializationMapEntry, 3> entries;
+			specs = { VulkanRenderer::NearPlane, VulkanRenderer::FarPlane, (uint32_t)use_normal, alpha_threshold };
+			std::array<VkSpecializationMapEntry,4> entries;
 			entries[0].constantID = 0;
 			entries[0].offset = 0;
 			entries[0].size = sizeof(float);
@@ -547,11 +562,14 @@ namespace GrEngine_Vulkan
 			entries[2].constantID = 2;
 			entries[2].offset = sizeof(float) * 2;
 			entries[2].size = sizeof(uint32_t);
+			entries[3].constantID = 3;
+			entries[3].offset = sizeof(float) * 2 + sizeof(uint32_t);
+			entries[3].size = sizeof(float);
 
 			VkSpecializationInfo specializationInfo;
 			specializationInfo.mapEntryCount = entries.size();
 			specializationInfo.pMapEntries = entries.data();
-			specializationInfo.dataSize = sizeof(float) * 2 + sizeof(uint32_t);
+			specializationInfo.dataSize = sizeof(Specs);
 			specializationInfo.pData = &specs;
 
 			vertShaderCode = GrEngine::Globals::readFile(solution_path + shader_path + "_vert.spv");
@@ -988,7 +1006,7 @@ namespace GrEngine_Vulkan
 		else
 		{
 			object_mesh = resource->AddLink();
-			GrEngine::PhysicsObject* physComponent = ownerEntity->GetPropertyValue(PropertyType::PhysComponent, static_cast<GrEngine::PhysicsObject*>(nullptr));
+			GrEngine::PhysicsObject* physComponent = (GrEngine::PhysicsObject*)ownerEntity->GetPropertyValue(PropertyType::PhysComponent, (void*)nullptr);
 			if (physComponent != nullptr)
 			{
 				physComponent->UpdateCollisionShape(&object_mesh->collisions);
@@ -1047,7 +1065,7 @@ namespace GrEngine_Vulkan
 			VulkanAPI::m_createVkBuffer(logicalDevice, memAllocator, target_mesh->indices.data(), sizeof(target_mesh->indices[0]) * target_mesh->indices.size(), VK_BUFFER_USAGE_INDEX_BUFFER_BIT, &target_mesh->indexBuffer);
 			resource = resources->AddMeshResource(res_name.c_str(), target_mesh);
 			object_mesh = resource->AddLink();
-			GrEngine::PhysicsObject* physComponent = ownerEntity->GetPropertyValue(PropertyType::PhysComponent, static_cast<GrEngine::PhysicsObject*>(nullptr));
+			GrEngine::PhysicsObject* physComponent = (GrEngine::PhysicsObject*)ownerEntity->GetPropertyValue(PropertyType::PhysComponent, (void*)nullptr);
 			if (physComponent != nullptr && ownerEntity->GetPropertyValue(PropertyType::CollisionType, 0) == 0)
 			{
 				physComponent->UpdateCollisionShape(new btBoxShape(btVector3(xcoord, ycoord, zcoord)));
@@ -1056,7 +1074,7 @@ namespace GrEngine_Vulkan
 		else
 		{
 			object_mesh = resource->AddLink();
-			GrEngine::PhysicsObject* physComponent = ownerEntity->GetPropertyValue(PropertyType::PhysComponent, static_cast<GrEngine::PhysicsObject*>(nullptr));
+			GrEngine::PhysicsObject* physComponent = (GrEngine::PhysicsObject*)ownerEntity->GetPropertyValue(PropertyType::PhysComponent, (void*)nullptr);
 			if (physComponent != nullptr && ownerEntity->GetPropertyValue(PropertyType::CollisionType, 0) == 0)
 			{
 				physComponent->UpdateCollisionShape(new btBoxShape(btVector3(xcoord, ycoord, zcoord)));

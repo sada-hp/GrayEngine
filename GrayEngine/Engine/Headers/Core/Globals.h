@@ -65,6 +65,9 @@ namespace GrEngine
 
 		static bool readGMF(const std::string& filepath, std::string* mesh, std::string* collisions, std::vector<std::string>* textures, std::vector<std::string>* normals)
 		{
+			if (filepath == "")
+				return false;
+
 			std::string stream = "";
 			std::string distro = getExecutablePath();
 			std::ifstream file(distro + filepath, std::ios::ate | std::ios::binary);
@@ -93,19 +96,31 @@ namespace GrEngine
 				{
 					if (value == 0)
 					{
-						textures->push_back(stream);
+						if (textures != nullptr)
+						{
+							textures->push_back(stream);
+						}
 					}
 					else if (value == 1)
 					{
-						mesh->append(stream);
+						if (mesh != nullptr)
+						{
+							mesh->append(stream);
+						}
 					}
 					else if (value == 2)
 					{
-						collisions->append(stream);
+						if (collisions != nullptr)
+						{
+							collisions->append(stream);
+						}
 					}
 					else if (value == 3)
 					{
-						normals->push_back(stream);
+						if (normals != nullptr)
+						{
+							normals->push_back(stream);
+						}
 					}
 				}
 				else if (!block_open && stream == "mesh")
