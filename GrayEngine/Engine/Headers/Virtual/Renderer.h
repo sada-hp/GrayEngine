@@ -21,7 +21,7 @@ namespace GrEngine
 		virtual bool init(void* window) = 0;
 		virtual void destroy() = 0;
 		virtual void RenderFrame() = 0;
-		virtual bool assignTextures(std::vector<std::string> textures, Entity* target) = 0;
+		virtual bool assignTextures(std::vector<std::string> textures, Entity* target, bool update_object = true) = 0;
 		virtual bool updateTexture(Entity* target, int textureIndex) = 0;
 		virtual bool updateTexture(Entity* target, void* pixels, int textureIndex) = 0;
 		virtual bool loadModel(UINT id, const char* mesh_path, std::vector<std::string> textures_vector) = 0;
@@ -45,7 +45,7 @@ namespace GrEngine
 			return entities;
 		}
 		virtual void Update() = 0;
-		virtual void LoadTerrain(int resolution, int width, int height, int depth, std::array<std::string, 6> maps) = 0;
+		virtual void LoadTerrain(int resolution, int width, int height, int depth, std::array<std::string, 6> maps, std::array<std::string, 4> normals, std::array<std::string, 4> displacement) = 0;
 		virtual void LoadTerrain(const char* filepath) = 0;
 		virtual void createSkybox(const char* East, const char* West, const char* Top, const char* Bottom, const char* North, const char* South) = 0;
 		virtual void DeleteEntity(UINT id) = 0;

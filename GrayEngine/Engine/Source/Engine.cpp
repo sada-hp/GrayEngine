@@ -247,8 +247,8 @@ namespace GrEngine
 		glfwSetCursorPos(pWindow->getWindow(), xpos, ypos);
 	}
 
-	void Engine::GenerateTerrain(int resolution, int width, int height, int depth, std::array<std::string, 6> maps)
+	void Engine::GenerateTerrain(int resolution, int width, int height, int depth, std::array<std::string, 6> maps, std::array<std::string, 4> normals, std::array<std::string, 4> displacement)
 	{
-		GetRenderer()->LoadTerrain(resolution, width, height, depth, maps);
+		GetRenderer()->LoadTerrain(resolution, width, height, depth, maps, normals, displacement);
 	}
 }

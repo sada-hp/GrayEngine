@@ -22,7 +22,7 @@ namespace GrEngine_Vulkan
 
 		if (object_mesh != nullptr)
 		{
-			resources->RemoveMesh(object_mesh->mesh_path.c_str(), logicalDevice, memAllocator);
+			resources->RemoveMesh(object_mesh, logicalDevice, memAllocator);
 			object_mesh = nullptr;
 		}
 

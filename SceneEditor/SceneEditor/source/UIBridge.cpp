@@ -239,13 +239,18 @@ void SceneEditor::LoadScene(const char* path)
     SceneEditor::GetApplication()->LoadScene(path);
 }
 
-void SceneEditor::GenerateTerrain(int resolution, int x, int y, int z, const char* height, const char* blend, const char* base, const char* red, const char* green, const char* blue)
+void SceneEditor::GenerateTerrain(int resolution, int x, int y, int z, const char* height, const char* blend, const char* base, const char* red, const char* green, const char* blue,
+    const char* base_nrm, const char* red_nrm, const char* green_nrm, const char* blue_nrm, const char* base_dis, const char* red_dis, const char* green_dis, const char* blue_dis)
 {
     std::string solution = GrEngine::Globals::getExecutablePath();
     if ((std::string(height) != "" && std::string(height).substr(0, solution.size()) != solution) || (std::string(blend) != "" && std::string(blend).substr(0, solution.size()) != solution)
         || (std::string(base) != "" && std::string(base).substr(0, solution.size()) != solution)
         || (std::string(red) != "" && std::string(red).substr(0, solution.size()) != solution) || (std::string(green) != "" && std::string(green).substr(0, solution.size()) != solution)
-        || (std::string(blue) != "" && std::string(blue).substr(0, solution.size()) != solution))
+        || (std::string(blue) != "" && std::string(blue).substr(0, solution.size()) != solution) || (std::string(base_nrm) != "" && std::string(base_nrm).substr(0, solution.size()) != solution)
+        || (std::string(red_nrm) != "" && std::string(red_nrm).substr(0, solution.size()) != solution) || (std::string(green_nrm) != "" && std::string(green_nrm).substr(0, solution.size()) != solution)
+        || (std::string(blue_nrm) != "" && std::string(blue_nrm).substr(0, solution.size()) != solution) || (std::string(base_dis) != "" && std::string(base_dis).substr(0, solution.size()) != solution)
+        || (std::string(red_dis) != "" && std::string(red_dis).substr(0, solution.size()) != solution) || (std::string(green_dis) != "" && std::string(green_dis).substr(0, solution.size()) != solution)
+        || (std::string(blue_dis) != "" && std::string(blue_dis).substr(0, solution.size()) != solution))
     {
         Logger::Out("Resource outside the solution is being used!", OutputColor::Red, OutputType::Error);
         return;
@@ -254,16 +259,27 @@ void SceneEditor::GenerateTerrain(int resolution, int x, int y, int z, const cha
     SceneEditor::GetApplication()->App_GenerateTerrain(resolution, x, y, z, 
         { std::string(height).erase(0, solution.size()), std::string(blend).erase(0, solution.size()),
         std::string(base).erase(0, solution.size()), std::string(red).erase(0, solution.size()),
-        std::string(green).erase(0, solution.size()), std::string(blue).erase(0, solution.size()) });
+        std::string(green).erase(0, solution.size()), std::string(blue).erase(0, solution.size()) },
+        { std::string(base_nrm).erase(0, solution.size()), std::string(red_nrm).erase(0, solution.size()),
+        std::string(green_nrm).erase(0, solution.size()), std::string(blue_nrm).erase(0, solution.size())},
+        { std::string(base_dis).erase(0, solution.size()), std::string(red_dis).erase(0, solution.size()),
+        std::string(green_dis).erase(0, solution.size()), std::string(blue_dis).erase(0, solution.size()) }
+    );
 }
 
-void SceneEditor::UpdateTerrain(const char* blend, const char* base, const char* red, const char* green, const char* blue)
+void SceneEditor::UpdateTerrain(const char* blend, const char* base, const char* red, const char* green, const char* blue,
+    const char* base_nrm, const char* red_nrm, const char* green_nrm, const char* blue_nrm,
+    const char* base_dis, const char* red_dis, const char* green_dis, const char* blue_dis)
 {
     std::string solution = GrEngine::Globals::getExecutablePath();
     if ((std::string(blend) != "" && std::string(blend).substr(0, solution.size()) != solution)
         || (std::string(base) != "" && std::string(base).substr(0, solution.size()) != solution)
         || (std::string(red) != "" && std::string(red).substr(0, solution.size()) != solution) || (std::string(green) != "" && std::string(green).substr(0, solution.size()) != solution)
-        || (std::string(blue) != "" && std::string(blue).substr(0, solution.size()) != solution))
+        || (std::string(blue) != "" && std::string(blue).substr(0, solution.size()) != solution) || (std::string(base_nrm) != "" && std::string(base_nrm).substr(0, solution.size()) != solution)
+        || (std::string(red_nrm) != "" && std::string(red_nrm).substr(0, solution.size()) != solution) || (std::string(green_nrm) != "" && std::string(green_nrm).substr(0, solution.size()) != solution)
+        || (std::string(blue_nrm) != "" && std::string(blue_nrm).substr(0, solution.size()) != solution) || (std::string(base_dis) != "" && std::string(base_dis).substr(0, solution.size()) != solution)
+        || (std::string(red_dis) != "" && std::string(red_dis).substr(0, solution.size()) != solution) || (std::string(green_dis) != "" && std::string(green_dis).substr(0, solution.size()) != solution)
+        || (std::string(blue_dis) != "" && std::string(blue_dis).substr(0, solution.size()) != solution))
     {
         Logger::Out("Resource outside the solution is being used!", OutputColor::Red, OutputType::Error);
         return;
@@ -272,7 +288,11 @@ void SceneEditor::UpdateTerrain(const char* blend, const char* base, const char*
     SceneEditor::GetApplication()->App_UpdateTerrain(
         { std::string(blend).erase(0, solution.size()),
         std::string(base).erase(0, solution.size()), std::string(red).erase(0, solution.size()),
-        std::string(green).erase(0, solution.size()), std::string(blue).erase(0, solution.size()) });
+        std::string(green).erase(0, solution.size()), std::string(blue).erase(0, solution.size()) },
+        { std::string(base_nrm).erase(0, solution.size()), std::string(red_nrm).erase(0, solution.size()),
+        std::string(green_nrm).erase(0, solution.size()), std::string(blue_nrm).erase(0, solution.size()) },
+        { std::string(base_dis).erase(0, solution.size()), std::string(red_dis).erase(0, solution.size()),
+        std::string(green_dis).erase(0, solution.size()), std::string(blue_dis).erase(0, solution.size()) });
 }
 
 void SceneEditor::ToggleBrush(int mode)
@@ -391,4 +411,9 @@ void SceneEditor::AddCascade()
 const char* SceneEditor::GetCascadeColor()
 {
     return SceneEditor::GetApplication()->App_GetCascadeProperty(PropertyType::Color);
+}
+
+void SceneEditor::WriteImage(const char* filepath, int width, int height)
+{
+    SceneEditor::GetApplication()->App_CreateEmptyImage(filepath, width, height);
 }

@@ -44,8 +44,8 @@ namespace GrEngine_Vulkan
 		void SetUseDynamicLighting(bool state) override;
 
 		void addEntity(GrEngine::Entity* entity) override;
-		bool assignTextures(std::vector<std::string> textures, GrEngine::Entity* target) override;
-		bool assignNormals(std::vector<std::string> normals, GrEngine::Entity* target);
+		bool assignTextures(std::vector<std::string> textures, GrEngine::Entity* target, bool update_object = true) override;
+		bool assignNormals(std::vector<std::string> normals, GrEngine::Entity* target, bool update_object = true);
 		void clearDrawables() override;
 		void createSkybox(const char* East, const char* West, const char* Top, const char* Bottom, const char* North, const char* South) override;
 
@@ -57,14 +57,14 @@ namespace GrEngine_Vulkan
 		void SaveScene(const char* path) override;
 		void LoadScene(const char* path) override;
 		void waitForRenderer() override;
-		void LoadTerrain(int resolution, int width, int height, int depth, std::array<std::string, 6> maps) override;
+		void LoadTerrain(int resolution, int width, int height, int depth, std::array<std::string, 6> maps, std::array<std::string, 4> normals, std::array<std::string, 4> displacement) override;
 		void LoadTerrain(const char* filepath) override;
 		std::vector<std::string> GetMaterialNames(const char* mesh_path) override;
 
 		void Update() override;
 		VkSampleCountFlagBits GetSampling() { return msaaSamples; };
 		inline VulkanResourceManager& GetResourceManager() { return resources; }
-		Resource<Texture*>* loadTexture(std::vector<std::string> texture_path, VkImageViewType type_view = VK_IMAGE_VIEW_TYPE_2D, VkImageType type_img = VK_IMAGE_TYPE_2D);
+		Resource<Texture*>* loadTexture(std::vector<std::string> texture_path, VkImageViewType type_view = VK_IMAGE_VIEW_TYPE_2D, VkImageType type_img = VK_IMAGE_TYPE_2D, VkFormat format_img = VK_FORMAT_R8G8B8A8_SRGB, bool default_to_black = false);
 		bool updateTexture(GrEngine::Entity* target, int textureIndex);
 		bool updateTexture(GrEngine::Entity* target, void* pixels, int textureIndex);
 		bool updateResource(Texture* target, int textureIndex);

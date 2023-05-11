@@ -279,7 +279,10 @@ namespace GrEngine_Vulkan
 		vkResetFences(logicalDevice, 1, &renderFence[frame]);
 
 		if (!updateDrawables(frame, DrawMode::NORMAL, extent))
+		{
+			Logger::Out("Logical device was lost!", OutputColor::Red, OutputType::Error);
 			throw std::runtime_error("Logical device was lost!");
+		}
 
 		VkSubmitInfo submitInfo{};
 		submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
@@ -2095,80 +2098,81 @@ namespace GrEngine_Vulkan
 		return true;
 	}
 
-	bool VulkanRenderer::assignTextures(std::vector<std::string> textures, GrEngine::Entity* target)
+	bool VulkanRenderer::assignTextures(std::vector<std::string> textures, GrEngine::Entity* target, bool update_object)
 	{
 		if (target->GetEntityType() == GrEngine::EntityType::SkyboxEntity)
 		{
 			VulkanSkybox* object = static_cast<VulkanSkybox*>(target);
 			if (object->object_texture != nullptr)
 			{
-				resources.RemoveTexture(object->object_texture->texture_collection, logicalDevice, memAllocator);
+				resources.RemoveTexture(object->object_texture, logicalDevice, memAllocator);
 				object->object_texture = nullptr;
 			}
 
 			object->object_texture = loadTexture(textures, VK_IMAGE_VIEW_TYPE_CUBE, VK_IMAGE_TYPE_2D)->AddLink();
-			object->updateObject();
+			if (update_object) object->updateObject();
 		}
 		else if (target->GetEntityType() == GrEngine::EntityType::TerrainEntity)
 		{
 			VulkanTerrain* object = static_cast<VulkanTerrain*>(target);
 			if (object->object_texture != nullptr)
 			{
-				resources.RemoveTexture(object->object_texture->texture_collection, logicalDevice, memAllocator);
+				resources.RemoveTexture(object->object_texture, logicalDevice, memAllocator);
 				object->object_texture = nullptr;
 			}
 
 			object->object_texture = loadTexture(textures, VK_IMAGE_VIEW_TYPE_2D_ARRAY, VK_IMAGE_TYPE_2D)->AddLink();
-			object->updateObject();
+			if (update_object) object->updateObject();
 		}
 		else if (drawables.count(target->GetEntityID()) > 0)
 		{
 			VulkanObject* object = static_cast<VulkanObject*>(drawables[target->GetEntityID()]);
 			if (object->object_texture != nullptr)
 			{
-				resources.RemoveTexture(object->object_texture->texture_collection, logicalDevice, memAllocator);
+				resources.RemoveTexture(object->object_texture, logicalDevice, memAllocator);
 				object->object_texture = nullptr;
 			}
 
 			object->object_texture = loadTexture(textures, VK_IMAGE_VIEW_TYPE_2D_ARRAY, VK_IMAGE_TYPE_2D)->AddLink();
-			object->updateObject();
+			if (update_object) object->updateObject();
 		}
 
 		return true;
 	}
 
-	bool VulkanRenderer::assignNormals(std::vector<std::string> normals, GrEngine::Entity* target)
+	bool VulkanRenderer::assignNormals(std::vector<std::string> normals, GrEngine::Entity* target, bool update_object)
 	{
 		if (target->GetEntityType() == GrEngine::EntityType::TerrainEntity)
 		{
 			VulkanTerrain* object = static_cast<VulkanTerrain*>(target);
 			if (object->object_normal != nullptr)
 			{
-				resources.RemoveTexture(object->object_normal->texture_collection, logicalDevice, memAllocator);
+				resources.RemoveTexture(object->object_normal, logicalDevice, memAllocator);
 				object->object_normal = nullptr;
 			}
 
-			object->object_normal = loadTexture(normals, VK_IMAGE_VIEW_TYPE_2D_ARRAY, VK_IMAGE_TYPE_2D)->AddLink();
-			object->updateObject();
+			object->object_normal = loadTexture(normals, VK_IMAGE_VIEW_TYPE_2D_ARRAY, VK_IMAGE_TYPE_2D, VK_FORMAT_R8G8B8A8_UNORM)->AddLink();
+			if (update_object) object->updateObject();
 		}
 		else if (drawables.count(target->GetEntityID()) > 0)
 		{
 			VulkanObject* object = static_cast<VulkanObject*>(drawables[target->GetEntityID()]);
 			if (object->object_normal != nullptr)
 			{
-				resources.RemoveTexture(object->object_normal->texture_collection, logicalDevice, memAllocator);
+				resources.RemoveTexture(object->object_normal, logicalDevice, memAllocator);
 				object->object_normal = nullptr;
 			}
 
-			object->object_normal = loadTexture(normals, VK_IMAGE_VIEW_TYPE_2D_ARRAY, VK_IMAGE_TYPE_2D)->AddLink();
-			object->updateObject();
+			object->object_normal = loadTexture(normals, VK_IMAGE_VIEW_TYPE_2D_ARRAY, VK_IMAGE_TYPE_2D, VK_FORMAT_R8G8B8A8_UNORM)->AddLink();
+			if (update_object) object->updateObject();
 		}
 
 		return true;
 	}
 
-	Resource<Texture*>* VulkanRenderer::loadTexture(std::vector<std::string> texture_path, VkImageViewType type_view, VkImageType type_img)
+	Resource<Texture*>* VulkanRenderer::loadTexture(std::vector<std::string> texture_path, VkImageViewType type_view, VkImageType type_img, VkFormat format_img, bool default_to_black)
 	{
+		bool new_empty = false;
 		if (texture_path.size() == 0)
 		{
 			int size = type_view == VK_IMAGE_VIEW_TYPE_CUBE ? 6 : 1;
@@ -2176,16 +2180,21 @@ namespace GrEngine_Vulkan
 			{
 				texture_path.push_back("empty_texture");
 			}
+			new_empty = true;
 		}
 		else
 		{
+			int empties = 0;
 			for (int i = 0; i < texture_path.size(); i++)
 			{
 				if (texture_path[i] == "")
 				{
 					texture_path[i] = "empty_texture";
+					empties++;
 				}
 			}
+
+			new_empty = empties == texture_path.size();
 		}
 
 		Resource<Texture*>* resource = resources.GetTextureResource(texture_path);
@@ -2269,7 +2278,7 @@ namespace GrEngine_Vulkan
 				else
 				{
 					unsigned char* pixels = (unsigned char*)malloc(image_size);
-					memset(pixels, (byte)255, image_size);
+					memset(pixels, (byte)(255 * (1 - default_to_black)), image_size);
 					memcpy_s(data + image_size * procNum, image_size, pixels, image_size);
 					free(pixels);
 					//texture_path[procNum] = "empty_texture";
@@ -2297,7 +2306,7 @@ namespace GrEngine_Vulkan
 			imageExtent.height = static_cast<uint32_t>(maxH);
 			imageExtent.depth = 1;
 
-			VkImageCreateInfo dimg_info = VulkanAPI::StructImageCreateInfo(imageExtent, VK_FORMAT_R8G8B8A8_SRGB, VK_SAMPLE_COUNT_1_BIT, VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT, type_img);
+			VkImageCreateInfo dimg_info = VulkanAPI::StructImageCreateInfo(imageExtent, format_img, VK_SAMPLE_COUNT_1_BIT, VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT, type_img);
 			dimg_info.arrayLayers = texture_path.size();
 			dimg_info.mipLevels = mipLevels;
 			dimg_info.flags = type_view == VK_IMAGE_VIEW_TYPE_CUBE ? VK_IMAGE_CREATE_CUBE_COMPATIBLE_BIT : 0;
@@ -2326,7 +2335,7 @@ namespace GrEngine_Vulkan
 			generateMipmaps(new_texture->newImage.allocatedImage, maxW, maxH, mipLevels, texture_path.size());
 
 
-			VulkanAPI::CreateImageView(logicalDevice, VK_FORMAT_R8G8B8A8_SRGB, new_texture->newImage.allocatedImage, subresourceRange, &new_texture->textureImageView, type_view);
+			VulkanAPI::CreateImageView(logicalDevice, format_img, new_texture->newImage.allocatedImage, subresourceRange, &new_texture->textureImageView, type_view);
 			VulkanAPI::m_destroyShaderBuffer(logicalDevice, memAllocator, &stagingBuffer);
 			VulkanAPI::CreateSampler(physicalDevice, logicalDevice, &new_texture->textureSampler, (float)mipLevels);
 
@@ -2335,7 +2344,7 @@ namespace GrEngine_Vulkan
 			new_texture->srcInfo.height = maxH;
 			new_texture->srcInfo.channels = channels;
 			new_texture->texInfo.mipLevels = mipLevels;
-			new_texture->texInfo.format = VK_FORMAT_R8G8B8A8_SRGB;
+			new_texture->texInfo.format = format_img;
 			new_texture->texInfo.descriptor.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
 			new_texture->texInfo.descriptor.sampler = new_texture->textureSampler;
 			new_texture->texInfo.descriptor.imageView = new_texture->textureImageView;
@@ -2347,7 +2356,15 @@ namespace GrEngine_Vulkan
 			}
 			else
 			{
-				resource = resources.AddTextureResource(new_texture->texture_collection, new_texture);
+				if (new_empty)
+				{
+					resource = resources.AddTextureResource((std::string("empty_texture") + std::to_string(resources.CountTextures())).c_str(), new_texture);
+				}
+				else
+				{
+					resource = resources.AddTextureResource(new_texture->texture_collection, new_texture);
+				}
+
 			}
 		}
 
@@ -2853,7 +2870,7 @@ namespace GrEngine_Vulkan
 		}
 	}
 
-	void VulkanRenderer::LoadTerrain(int resolution, int width, int height, int depth, std::array<std::string, 6> maps)
+	void VulkanRenderer::LoadTerrain(int resolution, int width, int height, int depth, std::array<std::string, 6> maps, std::array<std::string, 4> normals, std::array<std::string, 4> displacement)
 	{
 		if (terrain != nullptr)
 		{
@@ -2867,7 +2884,7 @@ namespace GrEngine_Vulkan
 		terrain->initObject(logicalDevice, memAllocator, this);
 		entities[terrain->GetEntityID()] = terrain;
 
-		terrain->GenerateTerrain(resolution, width, height, depth, maps);
+		terrain->GenerateTerrain(resolution, width, height, depth, maps, normals, displacement);
 	}
 
 	void VulkanRenderer::LoadTerrain(const char* filepath)

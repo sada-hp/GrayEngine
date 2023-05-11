@@ -29,8 +29,12 @@ namespace SceneEditor
 		ExportDll void __stdcall AddNewEntityProperty(int id, const char* property);
 		ExportDll void __stdcall SaveScene(const char* path);
 		ExportDll void __stdcall LoadScene(const char* path);
-		ExportDll void __stdcall GenerateTerrain(int resolution, int x, int y, int z, const char* height, const char* blend, const char* base, const char* red, const char* green, const char* blue);
-		ExportDll void __stdcall UpdateTerrain(const char* blend, const char* base, const char* red, const char* green, const char* blue);
+		ExportDll void __stdcall GenerateTerrain(int resolution, int x, int y, int z, const char* height, const char* blend, const char* base, const char* red, const char* green, const char* blue,
+			const char* base_nrm, const char* red_nrm, const char* green_nrm, const char* blue_nrm,
+			const char* base_dis, const char* red_dis, const char* green_dis, const char* blue_dis);
+		ExportDll void __stdcall UpdateTerrain(const char* blend, const char* base, const char* red, const char* green, const char* blue, 
+			const char* base_nrm, const char* red_nrm, const char* green_nrm, const char* blue_nrm,
+			const char* base_dis, const char* red_dis, const char* green_dis, const char* blue_dis);
 		ExportDll void __stdcall ToggleBrush(int mode);
 		ExportDll void __stdcall ToggleSculpt(int mode);
 		ExportDll void __stdcall UpdateBrush(int mode, float opacity, float size, float falloff);
@@ -50,5 +54,6 @@ namespace SceneEditor
 		ExportDll bool __stdcall CheckCascade();
 		ExportDll void __stdcall AddCascade();
 		ExportDll const char* __stdcall GetCascadeColor();
+		ExportDll void __stdcall WriteImage(const char* filepath, int width, int height);
 	}
 }

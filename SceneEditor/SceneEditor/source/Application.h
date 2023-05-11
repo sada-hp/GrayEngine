@@ -489,7 +489,7 @@ namespace GrEngine
             }
         }
 
-        void App_GenerateTerrain(int resolution, int x, int y, int z, std::array<std::string, 6> maps)
+        void App_GenerateTerrain(int resolution, int x, int y, int z, std::array<std::string, 6> maps, std::array<std::string, 4> normals, std::array<std::string, 4> displacement)
         {
             if (foliage_mask != nullptr)
             {
@@ -501,16 +501,16 @@ namespace GrEngine
             foliage_mask = stbi_load(fm.c_str(), &mask_width, &mask_height, &mask_channels, STBI_rgb_alpha);
             mask_aspect_x = mask_width / 1024;
             mask_aspect_y = mask_height / 1024;
-            GenerateTerrain(resolution, x, y, z, maps);
+            GenerateTerrain(resolution, x, y, z, maps, normals, displacement);
             subdivisions = 1.f / resolution;
         }
 
-        void App_UpdateTerrain(std::array<std::string, 5> maps)
+        void App_UpdateTerrain(std::array<std::string, 5> maps, std::array<std::string, 4> normals, std::array<std::string, 4> displacement)
         {
             if (GetRenderer()->GetEntitiesList().count(100) > 0)
             {
                 Terrain* ter = static_cast<Terrain*>(GetRenderer()->GetEntitiesList().at(100));
-                ter->UpdateTextures(maps);
+                ter->UpdateTextures(maps, normals, displacement);
 
                 if (maps[0] != "")
                 {
@@ -534,18 +534,17 @@ namespace GrEngine
                 auto now = std::chrono::steady_clock::now();
                 auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(now - time).count();
 
-                if (duration > 100.f || first_call)
+                if (duration > 50.f || first_call)
                 {
                     Terrain::TerrainSize ter_size = static_cast<Terrain*>(transform_target)->GetTerrainSize();
 
-                    int actual_falloff = brush_falloff * mask_aspect_x * mask_aspect_y;
+                    float actual_falloff = brush_falloff * mask_aspect_x * mask_aspect_y;
 
                     float radius = brush_size * mask_aspect_x;
                     int radiusx = glm::ceil(brush_size * mask_aspect_x + actual_falloff);
                     int radiusy = glm::ceil(brush_size * mask_aspect_y + actual_falloff);
 
-                    int sign = paint_mode == 1 ? 1 : -1;
-                    int strength = 255 * brush_opacity * paint_mode * sign;
+                    int strength = 255 * brush_opacity;
                     int falloff_part = strength / actual_falloff;
 
                     glm::vec3 tset = brush->GetObjectPosition();
@@ -569,20 +568,20 @@ namespace GrEngine
 
                             if (point_sq <= radius_sq)
                             {
-                                int red = foliage_mask[row + col] + strength * red_channel;
-                                int green = foliage_mask[row + col + 1] + strength * green_channel;
-                                int blue = foliage_mask[row + col + 2] + strength * blue_channel;
+                                int red = paint_mode == 1 ? glm::max((int)foliage_mask[row + col], strength * red_channel) : foliage_mask[row + col] - strength * red_channel;
+                                int green = paint_mode == 1 ? glm::max((int)foliage_mask[row + col + 1], strength * green_channel) : foliage_mask[row + col + 1] - strength * green_channel;
+                                int blue = paint_mode == 1 ? glm::max((int)foliage_mask[row + col + 2], strength * blue_channel) : foliage_mask[row + col + 2] - strength * blue_channel;
                                 foliage_mask[row + col] = glm::clamp(red, 0, 255);
                                 foliage_mask[row + col + 1] = glm::clamp(green, 0, 255);
                                 foliage_mask[row + col + 2] = glm::clamp(blue, 0, 255);
                             }
                             else if (point_sq <= falloff_sq)
                             {
-                                int falloff_strength = (strength - ((float)(glm::sqrt(point_sq) - (float)radius) * falloff_part));
+                                int falloff_strength = strength - ((float)(glm::sqrt(point_sq) - (float)radius) * falloff_part);
 
-                                int red = foliage_mask[row + col] + falloff_strength * red_channel;
-                                int green = foliage_mask[row + col + 1] + falloff_strength * green_channel;
-                                int blue = foliage_mask[row + col + 2] + falloff_strength * blue_channel;
+                                int red = paint_mode == 1 ? glm::max((int)foliage_mask[row + col], falloff_strength * red_channel) : foliage_mask[row + col] - falloff_strength * red_channel;
+                                int green = paint_mode == 1 ? glm::max((int)foliage_mask[row + col + 1], falloff_strength * green_channel) : foliage_mask[row + col + 1] - falloff_strength * green_channel;
+                                int blue = paint_mode == 1 ? glm::max((int)foliage_mask[row + col + 2], falloff_strength * blue_channel) : foliage_mask[row + col + 2] - falloff_strength * blue_channel;
                                 foliage_mask[row + col] = glm::clamp(red, 0, 255);
                                 foliage_mask[row + col + 1] = glm::clamp(green, 0, 255);
                                 foliage_mask[row + col + 2] = glm::clamp(blue, 0, 255);
@@ -835,6 +834,14 @@ namespace GrEngine
                     transform_target->SetRotation(90.f - glm::degrees(z), glm::degrees(y), glm::degrees(x) - 90.f);
                 }
             }
+        }
+
+        void App_CreateEmptyImage(const char* filepath, int width, int height)
+        {
+            void* pixels = malloc(width * height * 4);
+            memset(pixels, 0, width * height * 4);
+            stbi_write_png(filepath, width, height, 4, pixels, width * 4);
+            free(pixels);
         }
 
     private:

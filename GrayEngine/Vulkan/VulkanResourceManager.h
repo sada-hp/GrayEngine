@@ -135,6 +135,7 @@ namespace GrEngine_Vulkan
 		VkSampler textureSampler;
 		ImageInfo srcInfo;
 		TextureInfo texInfo;
+		std::string resource_name;
 	};
 
 
@@ -155,9 +156,8 @@ namespace GrEngine_Vulkan
 		};
 
 		void Clean(VkDevice device, VmaAllocator allocator);
-		void RemoveMesh(const char* name, VkDevice device, VmaAllocator allocator);
-		void RemoveTexture(const char* name, VkDevice device, VmaAllocator allocator);
-		void RemoveTexture(std::vector<std::string> names, VkDevice device, VmaAllocator allocator);
+		void RemoveMesh(Mesh* resource, VkDevice device, VmaAllocator allocator);
+		void RemoveTexture(Texture* resource, VkDevice device, VmaAllocator allocator);
 		void UpdateTexture(std::vector<std::string> names, VkDevice device, VmaAllocator allocator, Texture* newValue);
 
 		Resource<Mesh*>* AddMeshResource(const char* name, Mesh* pointer);
@@ -171,6 +171,10 @@ namespace GrEngine_Vulkan
 		Resource<Texture*>* GetTextureResource(const char* name);
 
 		Resource<Texture*>* GetTextureResource(std::vector<std::string> names);
+
+		static void CalculateNormals(GrEngine_Vulkan::Mesh* target, bool clockwise = false);
+		static void CalculateTangents(GrEngine_Vulkan::Mesh* target, float u_scale = 1.f, float v_scale = 1.f, bool clockwise = false);
+		inline size_t CountTextures() { return texResources.size(); };
 
 	private:
 		std::vector<Resource<Mesh*>*> meshResources;

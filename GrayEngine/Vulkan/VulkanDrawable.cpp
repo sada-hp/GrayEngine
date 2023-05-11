@@ -16,7 +16,7 @@ namespace GrEngine_Vulkan
 
 		if (object_mesh != nullptr)
 		{
-			resources->RemoveMesh(object_mesh->mesh_path.c_str(), logicalDevice, memAllocator);
+			resources->RemoveMesh(object_mesh, logicalDevice, memAllocator);
 			object_mesh = nullptr;
 		}
 
@@ -63,14 +63,20 @@ namespace GrEngine_Vulkan
 	{
 		if (object_mesh != nullptr)
 		{
-			resources->RemoveMesh(object_mesh->mesh_path.c_str(), logicalDevice, memAllocator);
+			resources->RemoveMesh(object_mesh, logicalDevice, memAllocator);
 			object_mesh = nullptr;
 		}
 
 		if (object_texture != nullptr)
 		{
-			resources->RemoveTexture(object_texture->texture_collection, logicalDevice, memAllocator);
+			resources->RemoveTexture(object_texture, logicalDevice, memAllocator);
 			object_texture = nullptr;
+		}
+
+		if (object_normal != nullptr)
+		{
+			resources->RemoveTexture(object_normal, logicalDevice, memAllocator);
+			object_normal = nullptr;
 		}
 
 		VulkanAPI::DestroyPipeline(graphicsPipeline);
@@ -105,8 +111,10 @@ namespace GrEngine_Vulkan
 	{
 		if (object_texture != nullptr)
 		{
-			resources->RemoveTexture(object_texture->texture_collection, logicalDevice, memAllocator);
+			resources->RemoveTexture(object_texture, logicalDevice, memAllocator);
+			resources->RemoveTexture(object_normal, logicalDevice, memAllocator);
 			object_texture = nullptr;
+			object_normal = nullptr;
 		}
 	}
 

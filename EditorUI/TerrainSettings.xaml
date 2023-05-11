@@ -83,8 +83,9 @@
             <TabItem Name="TabMaps" Header="Blend mask" Foreground="WhiteSmoke" Background="{x:Null}">
                 <Grid Background="#FF353538">
                     <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="45*"/>
                         <ColumnDefinition Width="65*"/>
+                        <ColumnDefinition Width="15*" Name="EmptyButton"/>
+                        <ColumnDefinition Width="30*" Name="EmptySettings"/>
                     </Grid.ColumnDefinitions>
                     <Button Name="MaskBtn" Grid.Column="0" Foreground="White" FontFamily="Lucida Sans Unicode" FontSize="25" FontWeight="DemiBold"  Background="#FF242427" Margin="10" Padding="40" Cursor="Hand" Click="MaskBtn_Click">
                         <Label Content="Blend mask" Foreground="White" FontFamily="Lucida Sans Unicode" FontSize="25" FontWeight="DemiBold" IsEnabled="False">
@@ -94,42 +95,156 @@
                         </Label>
                     </Button>
                     <GridSplitter Name="GridSplitter2" Width="1" Background="#FFC8C8C8" Margin="0,0,0,0" Foreground="{x:Null}"/>
-                    <Grid Background="#FF353538" Grid.Column="1">
+                    <Button Name="CreateMask" Content="Create empty"  Grid.Column="1" Foreground="White" FontFamily="Lucida Sans Unicode" FontSize="15" FontWeight="DemiBold"  Background="#FF242427" Margin="10" Padding="20" Cursor="Hand" VerticalAlignment="Center" HorizontalAlignment="Center" Click="CreateMask_Click">
+                        
+                    </Button>
+                    <Grid Grid.Column="2">
+                        <Grid.RowDefinitions>
+                            <RowDefinition/>
+                            <RowDefinition/>
+                            <RowDefinition/>
+                        </Grid.RowDefinitions>
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition/>
                             <ColumnDefinition/>
-                            <ColumnDefinition/>
-                            <ColumnDefinition/>
                         </Grid.ColumnDefinitions>
+                        <Label Content="Mask width:" Foreground="WhiteSmoke" FontFamily="Lucida Sans Unicode" VerticalContentAlignment="Center" Margin="5"/>
+                        <TextBox Name="MaskWidth" Grid.Column="1" Width="80" Background="#FF24242C"  HorizontalContentAlignment="Center" VerticalContentAlignment="Center" Foreground="WhiteSmoke" MaxLines="1" MaxLength="4" PreviewTextInput="TextBox_PreviewTextInput" MaxHeight="30"/>
+                        <Label Grid.Row="1" Content="Mask height:" Foreground="WhiteSmoke" FontFamily="Lucida Sans Unicode" VerticalContentAlignment="Center" Margin="5"/>
+                        <TextBox Name="MaskHeight" Grid.Row="1" Grid.Column="1" Width="80" Background="#FF24242C"  HorizontalContentAlignment="Center" VerticalContentAlignment="Center" Foreground="WhiteSmoke" MaxLines="1" MaxLength="4" PreviewTextInput="TextBox_PreviewTextInput" MaxHeight="30"/>
+                        <Label Grid.Row="2" Content="File path:" Foreground="WhiteSmoke" FontFamily="Lucida Sans Unicode" VerticalContentAlignment="Center" Margin="5"/>
+                        <Button Name="MaskSave" Grid.Row="2"  Content="Select"  Grid.Column="1" Foreground="White" FontFamily="Lucida Sans Unicode" FontSize="15" FontWeight="DemiBold"  Background="#FF242427" Margin="10" Padding="20,5" Cursor="Hand" VerticalAlignment="Center" HorizontalAlignment="Center" Click="MaskSave_Click"/>
+                    </Grid>
+                </Grid>
+            </TabItem>
+            <TabItem  Name="TabLayers" Header="Layers" Foreground="WhiteSmoke" Background="{x:Null}">
+                <Grid Background="#FF353538" Grid.Column="1">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition/>
+                        <ColumnDefinition/>
+                        <ColumnDefinition/>
+                        <ColumnDefinition/>
+                    </Grid.ColumnDefinitions>
 
-                        <Button Name="BaseBtn" Grid.Column="0" Background="#FF242427" Margin="10" Cursor="Hand" Click="BaseBtn_Click">
-                            <Label Content="Base layer" Foreground="White" FontFamily="Lucida Sans Unicode" FontSize="25" FontWeight="DemiBold" IsEnabled="False">
+                    <Grid Grid.Column="0">
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition/>
+                            <RowDefinition/>
+                            <RowDefinition/>
+                        </Grid.RowDefinitions>
+                        <Label Content="Base" Foreground="White" FontFamily="Lucida Sans Unicode" FontSize="25" FontWeight="DemiBold" HorizontalAlignment="Center"/>
+                        <Button Name="BaseBtn" Grid.Row="1" Background="#FF242427" Margin="10,10,10,0" Cursor="Hand" Click="BaseBtn_Click" BorderThickness="1">
+                            <Label Content="Color" Foreground="White" FontFamily="Lucida Sans Unicode" FontSize="15" FontWeight="DemiBold" IsEnabled="False">
                                 <Label.LayoutTransform>
-                                    <RotateTransform Angle="90" />
+                                    <RotateTransform Angle="0" />
                                 </Label.LayoutTransform>
                             </Label>
                         </Button>
-
-                        <Button Name="RedBtn" Grid.Column="1" Background="#FF242427" Margin="10" Cursor="Hand" Click="RedBtn_Click">
-                            <Label Content="Red channel" Foreground="White" FontFamily="Lucida Sans Unicode" FontSize="25" FontWeight="DemiBold" IsEnabled="False">
+                        <Button Name="BaseNrm" Grid.Row="2"  Background="#FF242427" Margin="10,0" Cursor="Hand" BorderThickness="1,0,1,1" Click="BaseNrm_Click">
+                            <Label Content="Normal" Foreground="White" FontFamily="Lucida Sans Unicode" FontSize="15" FontWeight="DemiBold" IsEnabled="False">
                                 <Label.LayoutTransform>
-                                    <RotateTransform Angle="90" />
+                                    <RotateTransform Angle="0" />
                                 </Label.LayoutTransform>
                             </Label>
                         </Button>
-
-                        <Button Name="GreenBtn" Grid.Column="2" Background="#FF242427" Margin="10" Cursor="Hand" Click="GreenBtn_Click">
-                            <Label Content="Green channel" Foreground="White" FontFamily="Lucida Sans Unicode" FontSize="25" FontWeight="DemiBold" IsEnabled="False">
+                        <Button Name="BaseDis" Grid.Row="3"  Background="#FF242427" Margin="10,0,10,10" Cursor="Hand" BorderThickness="1,0,1,1" Click="BaseDis_Click">
+                            <Label Content="Height" Foreground="White" FontFamily="Lucida Sans Unicode" FontSize="15" FontWeight="DemiBold" IsEnabled="False">
                                 <Label.LayoutTransform>
-                                    <RotateTransform Angle="90" />
+                                    <RotateTransform Angle="0" />
                                 </Label.LayoutTransform>
                             </Label>
                         </Button>
+                    </Grid>
 
-                        <Button Name="BlueBtn" Grid.Column="3" Background="#FF242427" Margin="10" Cursor="Hand" Click="BlueBtn_Click">
-                            <Label Content="Blue channel" Foreground="White" FontFamily="Lucida Sans Unicode" FontSize="25" FontWeight="DemiBold" IsEnabled="False">
+                    <Grid Grid.Column="1">
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition/>
+                            <RowDefinition/>
+                            <RowDefinition/>
+                        </Grid.RowDefinitions>
+                        <Label Content="Red" Foreground="White" FontFamily="Lucida Sans Unicode" FontSize="25" FontWeight="DemiBold" HorizontalAlignment="Center"/>
+                        <Button Name="RedBtn" Grid.Row="1" Background="#FF242427" Margin="10,10,10,0" Cursor="Hand" Click="RedBtn_Click" BorderThickness="1">
+                            <Label Content="Color" Foreground="White" FontFamily="Lucida Sans Unicode" FontSize="15" FontWeight="DemiBold" IsEnabled="False">
                                 <Label.LayoutTransform>
-                                    <RotateTransform Angle="90" />
+                                    <RotateTransform Angle="0" />
+                                </Label.LayoutTransform>
+                            </Label>
+                        </Button>
+                        <Button Name="RedNrm" Grid.Row="2"  Background="#FF242427" Margin="10,0" Cursor="Hand" BorderThickness="1,0,1,1" Click="RedNrm_Click">
+                            <Label Content="Normal" Foreground="White" FontFamily="Lucida Sans Unicode" FontSize="15" FontWeight="DemiBold" IsEnabled="False">
+                                <Label.LayoutTransform>
+                                    <RotateTransform Angle="0" />
+                                </Label.LayoutTransform>
+                            </Label>
+                        </Button>
+                        <Button Name="RedDis" Grid.Row="3"  Background="#FF242427" Margin="10,0,10,10" Cursor="Hand" BorderThickness="1,0,1,1" Click="RedDis_Click">
+                            <Label Content="Height" Foreground="White" FontFamily="Lucida Sans Unicode" FontSize="15" FontWeight="DemiBold" IsEnabled="False">
+                                <Label.LayoutTransform>
+                                    <RotateTransform Angle="0" />
+                                </Label.LayoutTransform>
+                            </Label>
+                        </Button>
+                    </Grid>
+
+                    <Grid Grid.Column="2">
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition/>
+                            <RowDefinition/>
+                            <RowDefinition/>
+                        </Grid.RowDefinitions>
+                        <Label Content="Green" Foreground="White" FontFamily="Lucida Sans Unicode" FontSize="25" FontWeight="DemiBold" HorizontalAlignment="Center"/>
+                        <Button Name="GreenBtn" Grid.Row="1" Background="#FF242427" Margin="10,10,10,0" Cursor="Hand" Click="GreenBtn_Click" BorderThickness="1">
+                            <Label Content="Color" Foreground="White" FontFamily="Lucida Sans Unicode" FontSize="15" FontWeight="DemiBold" IsEnabled="False">
+                                <Label.LayoutTransform>
+                                    <RotateTransform Angle="0" />
+                                </Label.LayoutTransform>
+                            </Label>
+                        </Button>
+                        <Button Name="GreenNrm" Grid.Row="2"  Background="#FF242427" Margin="10,0" Cursor="Hand" BorderThickness="1,0,1,1" Click="GreenNrm_Click">
+                            <Label Content="Normal" Foreground="White" FontFamily="Lucida Sans Unicode" FontSize="15" FontWeight="DemiBold" IsEnabled="False">
+                                <Label.LayoutTransform>
+                                    <RotateTransform Angle="0" />
+                                </Label.LayoutTransform>
+                            </Label>
+                        </Button>
+                        <Button Name="GreenDis" Grid.Row="3"  Background="#FF242427" Margin="10,0,10,10" Cursor="Hand" BorderThickness="1,0,1,1" Click="GreenDis_Click">
+                            <Label Content="Normal" Foreground="White" FontFamily="Lucida Sans Unicode" FontSize="15" FontWeight="DemiBold" IsEnabled="False">
+                                <Label.LayoutTransform>
+                                    <RotateTransform Angle="0" />
+                                </Label.LayoutTransform>
+                            </Label>
+                        </Button>
+                    </Grid>
+
+                    <Grid Grid.Column="3">
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition/>
+                            <RowDefinition/>
+                            <RowDefinition/>
+                        </Grid.RowDefinitions>
+                        <Label Content="Blue" Foreground="White" FontFamily="Lucida Sans Unicode" FontSize="25" FontWeight="DemiBold" HorizontalAlignment="Center"/>
+                        <Button Name="BlueBtn" Grid.Row="1" Background="#FF242427" Margin="10,10,10,0" Cursor="Hand" Click="BlueBtn_Click" BorderThickness="1">
+                            <Label Content="Color" Foreground="White" FontFamily="Lucida Sans Unicode" FontSize="15" FontWeight="DemiBold" IsEnabled="False">
+                                <Label.LayoutTransform>
+                                    <RotateTransform Angle="0" />
+                                </Label.LayoutTransform>
+                            </Label>
+                        </Button>
+                        <Button Name="BlueNrm" Grid.Row="2"  Background="#FF242427" Margin="10,0" Cursor="Hand" BorderThickness="1,0,1,1" Click="BlueNrm_Click">
+                            <Label Content="Normal" Foreground="White" FontFamily="Lucida Sans Unicode" FontSize="15" FontWeight="DemiBold" IsEnabled="False">
+                                <Label.LayoutTransform>
+                                    <RotateTransform Angle="0" />
+                                </Label.LayoutTransform>
+                            </Label>
+                        </Button>
+                        <Button Name="BlueDis" Grid.Row="3"  Background="#FF242427" Margin="10,0,10,10" Cursor="Hand" BorderThickness="1,0,1,1" Click="BlueDis_Click">
+                            <Label Content="Normal" Foreground="White" FontFamily="Lucida Sans Unicode" FontSize="15" FontWeight="DemiBold" IsEnabled="False">
+                                <Label.LayoutTransform>
+                                    <RotateTransform Angle="0" />
                                 </Label.LayoutTransform>
                             </Label>
                         </Button>

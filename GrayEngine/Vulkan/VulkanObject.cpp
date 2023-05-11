@@ -749,55 +749,6 @@ namespace GrEngine_Vulkan
 		createDescriptorSet();
 	}
 
-	void VulkanObject::CalculateNormals(GrEngine_Vulkan::Mesh* target)
-	{
-		if (target != nullptr)
-		{
-			for (int i = 0; i < target->indices.size(); i += 3)
-			{
-				auto A = target->vertices[target->indices[i]];
-				auto B = target->vertices[target->indices[i + 1]];
-				auto C = target->vertices[target->indices[i + 2]];
-				//glm::vec3 faceNormal = glm::normalize(glm::cross(glm::vec3(B.pos) - glm::vec3(A.pos), glm::vec3(C.pos) - glm::vec3(A.pos)));
-				//target->vertices[target->indices[i]].norm = faceNormal;
-				//target->vertices[target->indices[i + 1]].norm = faceNormal;
-				//target->vertices[target->indices[i + 2]].norm = faceNormal;
-
-				glm::vec3 diff1 = B.pos - A.pos;
-				glm::vec3 diff2 = C.pos - A.pos;
-
-				glm::vec2 delta1 = glm::vec2(B.uv.x, 1.f - B.uv.y) - glm::vec2(A.uv.x, 1.f - A.uv.y);
-				glm::vec2 delta2 = glm::vec2(C.uv.x, 1.f - C.uv.y) - glm::vec2(A.uv.x, 1.f - A.uv.y);
-
-				float f = 1.0f / (delta1.x * delta2.y - delta1.y * delta2.x);
-				glm::vec3 tangent;
-				glm::vec3 bitangent;
-
-				tangent.x = f * (delta2.y * diff1.x - delta1.y * diff2.x);
-				tangent.y = f * (delta2.y * diff1.y - delta1.y * diff2.y);
-				tangent.z = f * (delta2.y * diff1.z - delta1.y * diff2.z);
-
-				//bitangent.x = f * (-delta2.x * diff1.x + delta1.x * diff2.x);
-				//bitangent.y = f * (-delta2.x * diff1.y + delta1.x * diff2.y);
-				//bitangent.z = f * (-delta2.x * diff1.z + delta1.x * diff2.z);
-
-				target->vertices[target->indices[i]].tang = tangent;
-				//target->vertices[target->indices[i]].bitang = bitangent;
-				target->vertices[target->indices[i + 1]].tang = tangent;
-				//target->vertices[target->indices[i + 1]].bitang = bitangent;
-				target->vertices[target->indices[i + 2]].tang = tangent;
-				//target->vertices[target->indices[i + 2]].bitang = bitangent;
-			}
-
-			//for (std::vector<Vertex>::iterator itt = target->vertices.begin(); itt != target->vertices.end(); ++itt)
-			//{
-			//	(*itt).norm = glm::normalize((*itt).norm);
-			//	(*itt).tang = glm::normalize((*itt).tang - (*itt).norm * glm::dot((*itt).norm, glm::normalize((*itt).tang)));
-			//	(*itt).bitang = glm::cross(glm::vec3((*itt).tang), glm::vec3((*itt).norm));
-			//}
-		}
-	}
-
 	bool VulkanObject::LoadModel(const char* gmf_path, const char* mesh_path, std::vector<std::string> textures_vector, std::vector<std::string> normals_vector)
 	{
 		static_cast<VulkanRenderer*>(p_Owner)->waitForRenderer();
@@ -844,7 +795,7 @@ namespace GrEngine_Vulkan
 		{
 			if (object_mesh != nullptr)
 			{
-				resources->RemoveMesh(object_mesh->mesh_path.c_str(), logicalDevice, memAllocator);
+				resources->RemoveMesh(object_mesh, logicalDevice, memAllocator);
 				object_mesh = nullptr;
 			}
 
@@ -856,11 +807,11 @@ namespace GrEngine_Vulkan
 
 			if (model_path.size() >= solution.size() && model_path.substr(0, solution.size()) == solution)
 			{
-				model = importer.ReadFile(mesh_path, 0);
+				model = importer.ReadFile(mesh_path, aiProcess_Triangulate | aiProcess_CalcTangentSpace | aiProcess_FlipUVs);
 			}
 			else
 			{
-				model = importer.ReadFile(solution + mesh_path, 0);
+				model = importer.ReadFile(solution + mesh_path, aiProcess_Triangulate | aiProcess_CalcTangentSpace | aiProcess_FlipUVs);
 			}
 
 			if (model == NULL)
@@ -888,7 +839,7 @@ namespace GrEngine_Vulkan
 
 					GrEngine_Vulkan::Vertex vertex{};
 					vertex.pos = { cur_mesh->mVertices[vert_ind].x, cur_mesh->mVertices[vert_ind].y, cur_mesh->mVertices[vert_ind].z, 1.0f };
-					vertex.uv = { coord[vert_ind].x, 1.0f - coord[vert_ind].y };
+					vertex.uv = { coord[vert_ind].x, coord[vert_ind].y };
 					vertex.uv_index = uv_ind;
 					if (cur_mesh->HasNormals())
 						vertex.norm = { cur_mesh->mNormals[vert_ind].x, cur_mesh->mNormals[vert_ind].y, cur_mesh->mNormals[vert_ind].z };
@@ -917,7 +868,9 @@ namespace GrEngine_Vulkan
 				}
 			}
 
-			CalculateNormals(target_mesh);
+			//CalculateNormals(target_mesh);
+			//VulkanResourceManager::CalculateNormals(target_mesh);
+			//VulkanResourceManager::CalculateTangents(target_mesh);
 			VulkanAPI::m_createVkBuffer(logicalDevice, memAllocator, target_mesh->vertices.data(), sizeof(target_mesh->vertices[0]) * target_mesh->vertices.size(), VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, &target_mesh->vertexBuffer);
 			VulkanAPI::m_createVkBuffer(logicalDevice, memAllocator, target_mesh->indices.data(), sizeof(target_mesh->indices[0]) * target_mesh->indices.size(), VK_BUFFER_USAGE_INDEX_BUFFER_BIT, &target_mesh->indexBuffer);
 			//target_mesh->collisions = btConvexHullShape((const btScalar*)hullVert.data(), hullVert.size(), sizeof(btVector3));
@@ -932,7 +885,7 @@ namespace GrEngine_Vulkan
 		{
 			if (object_mesh != nullptr)
 			{
-				resources->RemoveMesh(object_mesh->mesh_path.c_str(), logicalDevice, memAllocator);
+				resources->RemoveMesh(object_mesh, logicalDevice, memAllocator);
 				object_mesh = nullptr;
 			}
 
@@ -951,7 +904,7 @@ namespace GrEngine_Vulkan
 
 		if (object_mesh != nullptr)
 		{
-			resources->RemoveMesh(object_mesh->mesh_path.c_str(), logicalDevice, memAllocator);
+			resources->RemoveMesh(object_mesh, logicalDevice, memAllocator);
 			object_mesh = nullptr;
 		}
 
@@ -1021,7 +974,7 @@ namespace GrEngine_Vulkan
 
 		if (object_mesh != nullptr)
 		{
-			resources->RemoveMesh(object_mesh->mesh_path.c_str(), logicalDevice, memAllocator);
+			resources->RemoveMesh(object_mesh, logicalDevice, memAllocator);
 			object_mesh = nullptr;
 		}
 

@@ -63,9 +63,11 @@ namespace EditorUI
         public static extern void LoadScene(IntPtr path);
 
         [DllImport("SceneEditor.dll", CallingConvention = CallingConvention.Cdecl)]
-        public static extern void GenerateTerrain(int resolution, int x, int y, int z, IntPtr height, IntPtr blend, IntPtr baselayer, IntPtr red, IntPtr green, IntPtr blue);
+        public static extern void GenerateTerrain(int resolution, int x, int y, int z, IntPtr height, IntPtr blend, IntPtr baselayer, IntPtr red, IntPtr green, IntPtr blue,
+            IntPtr baselayer_nrm, IntPtr red_nrm, IntPtr green_nrm, IntPtr blue_nrm, IntPtr baselayer_dis, IntPtr red_dis, IntPtr green_dis, IntPtr blue_dis);
         [DllImport("SceneEditor.dll", CallingConvention = CallingConvention.Cdecl)]
-        public static extern void UpdateTerrain(IntPtr blend, IntPtr baselayer, IntPtr red, IntPtr green, IntPtr blue);
+        public static extern void UpdateTerrain(IntPtr blend, IntPtr baselayer, IntPtr red, IntPtr green, IntPtr blue,
+            IntPtr baselayer_nrm, IntPtr red_nrm, IntPtr green_nrm, IntPtr blue_nrm, IntPtr baselayer_dis, IntPtr red_dis, IntPtr green_dis, IntPtr blue_dis);
 
         [DllImport("SceneEditor.dll", CallingConvention = CallingConvention.Cdecl)]
         public static extern void ToggleBrush(int mode);
@@ -107,6 +109,8 @@ namespace EditorUI
         public static extern void AddCascade();
         [DllImport("SceneEditor.dll", CallingConvention = CallingConvention.Cdecl)]
         public static extern IntPtr GetCascadeColor();
+        [DllImport("SceneEditor.dll", CallingConvention = CallingConvention.Cdecl)]
+        public static extern void WriteImage(IntPtr filepath, int width, int height);
 
         public static Wrapper[] wrappers = new Wrapper[2];
         public static Thread uThread;
