@@ -47,7 +47,10 @@ namespace GrEngine
 		virtual void SaveTerrain(const char* filepath) = 0;
 		virtual bool LoadTerrain(const char* filepath) = 0;
 		virtual glm::vec4& GetVertexPosition(UINT pos) = 0;
-		virtual const std::string& GetBlendMask() = 0;
+		virtual const std::string GetBlendMask() = 0;
+		virtual const std::array<std::string, 4> GetColorTextures() = 0;
+		virtual const std::array<std::string, 4> GetNormalTextures() = 0;
+		virtual const std::array<std::string, 4> GetDisplacementTextures() = 0;
 		TerrainSize& GetTerrainSize() { return size; }
 
 		PhysicsObject* physComponent;

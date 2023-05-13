@@ -55,5 +55,9 @@ namespace SceneEditor
 		ExportDll void __stdcall AddCascade();
 		ExportDll const char* __stdcall GetCascadeColor();
 		ExportDll void __stdcall WriteImage(const char* filepath, int width, int height);
+		ExportDll const char* __stdcall GetTerrainMask();
+		ExportDll const char* __stdcall GetTerrainColor();
+		ExportDll const char* __stdcall GetTerrainNormal();
+		ExportDll const char* __stdcall GetTerrainDisplacement();
 	}
 }

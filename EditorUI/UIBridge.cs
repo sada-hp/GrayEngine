@@ -111,6 +111,14 @@ namespace EditorUI
         public static extern IntPtr GetCascadeColor();
         [DllImport("SceneEditor.dll", CallingConvention = CallingConvention.Cdecl)]
         public static extern void WriteImage(IntPtr filepath, int width, int height);
+        [DllImport("SceneEditor.dll", CallingConvention = CallingConvention.Cdecl)]
+        public static extern IntPtr GetTerrainMask();
+        [DllImport("SceneEditor.dll", CallingConvention = CallingConvention.Cdecl)]
+        public static extern IntPtr GetTerrainColor();
+        [DllImport("SceneEditor.dll", CallingConvention = CallingConvention.Cdecl)]
+        public static extern IntPtr GetTerrainNormal();
+        [DllImport("SceneEditor.dll", CallingConvention = CallingConvention.Cdecl)]
+        public static extern IntPtr GetTerrainDisplacement();
 
         public static Wrapper[] wrappers = new Wrapper[2];
         public static Thread uThread;

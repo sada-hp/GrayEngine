@@ -36,6 +36,8 @@ namespace GrEngine
         Camera* camera;
         Entity* mdl_dummy = nullptr;
 
+        std::string returning_string = "";
+
     public:
         UINT copy_buf = 0;
         std::string loaded_scene_path = "";
@@ -193,8 +195,9 @@ namespace GrEngine
         const char* App_GetCascadeProperty(PropertyType prop)
         {
             GrEngine::Entity* casent = GetRenderer()->GetEntitiesOfType(EntityType::CascadeLightEntity)[0];
+            returning_string = casent->GetProperty(prop)->ValueString();
 
-            return casent->GetProperty(prop)->ValueString();
+            return returning_string.c_str();
         }
 
         void App_UpdateSelection(UINT id)
@@ -525,6 +528,66 @@ namespace GrEngine
                 }
             }
         }
+
+        const char* App_GetTerrainMask()
+        {
+            if (GetRenderer()->GetEntitiesList().count(100) > 0)
+            {
+                Terrain* ter = static_cast<Terrain*>(GetRenderer()->GetEntitiesList().at(100));
+                returning_string = ter->GetBlendMask();
+                return returning_string.c_str();
+            }
+            else
+            {
+                return "";
+            }
+        }
+
+        const char* App_GetTerrainColor()
+        {
+            if (GetRenderer()->GetEntitiesList().count(100) > 0)
+            {
+                Terrain* ter = static_cast<Terrain*>(GetRenderer()->GetEntitiesList().at(100));
+                auto arr = ter->GetColorTextures();
+                returning_string = arr[0] + '|' + arr[1] + '|' + arr[2] + '|' + arr[3];
+                return returning_string.c_str();
+            }
+            else
+            {
+                return "";
+            }
+        }
+
+        const char* App_GetTerrainNormal()
+        {
+            if (GetRenderer()->GetEntitiesList().count(100) > 0)
+            {
+                Terrain* ter = static_cast<Terrain*>(GetRenderer()->GetEntitiesList().at(100));
+                auto arr = ter->GetNormalTextures();
+                returning_string = arr[0] + '|' + arr[1] + '|' + arr[2] + '|' + arr[3];
+                return returning_string.c_str();
+            }
+            else
+            {
+                return "";
+            }
+        }
+
+        const char* App_GetTerrainDispacement()
+        {
+            if (GetRenderer()->GetEntitiesList().count(100) > 0)
+            {
+                Terrain* ter = static_cast<Terrain*>(GetRenderer()->GetEntitiesList().at(100));
+                auto arr = ter->GetDisplacementTextures();
+                returning_string = arr[0] + '|' + arr[1] + '|' + arr[2] + '|' + arr[3];
+                return returning_string.c_str();
+            }
+            else
+            {
+                return "";
+            }
+        }
+
         void App_PaintMask()
         {
             if (mouse_down)

@@ -70,12 +70,21 @@ namespace GrEngine
 
 			std::string stream = "";
 			std::string distro = getExecutablePath();
-			std::ifstream file(distro + filepath, std::ios::ate | std::ios::binary);
+			std::ifstream file;
+			if (!filepath.starts_with(distro))
+			{
+				file.open(distro + filepath, std::ios::ate | std::ios::binary);
+			}
+			else
+			{
+				file.open(filepath, std::ios::ate | std::ios::binary);
+			}
 
 			if (!file.is_open())
 			{
-				file.close();
-				file.open(filepath, std::ios::ate | std::ios::binary);
+				//file.close();
+				//file.open(filepath, std::ios::ate | std::ios::binary);
+				return false;
 			}
 
 			int value = 0;
@@ -147,7 +156,15 @@ namespace GrEngine
 		static bool writeGMF(const char* filepath, const char* mesh_path, const char* colliision_path, std::vector<std::string>& textures_vector)
 		{
 			std::fstream new_file;
-			new_file.open(filepath, std::fstream::out | std::ios::trunc);
+			std::string distro = getExecutablePath();
+			if (!std::string(filepath).starts_with(distro))
+			{
+				new_file.open(distro + filepath, std::ios::out | std::ios::trunc);
+			}
+			else
+			{
+				new_file.open(filepath, std::ios::out | std::ios::trunc);
+			}
 
 			if (!new_file)
 				return false;
@@ -159,11 +176,15 @@ namespace GrEngine
 			{
 				if ((*itt).starts_with(":Color:"))
 				{
-					new_file << "   " << (*itt).substr(7, (*itt).size() - 7) << '\n';
+					std::string name = (*itt).substr(7, (*itt).size() - 7);
+					name = name == "" ? "empty_texture" : name;
+					new_file << "   " << name << '\n';
 				}
 				else if (!(*itt).starts_with(":Normal:"))
 				{
-					new_file << "   " << (*itt) << '\n';
+					std::string name = (*itt);
+					name = name == "" ? "empty_texture" : name;
+					new_file << "   " << name << '\n';
 				}
 			}
 			new_file << "}\n\0";
@@ -172,7 +193,9 @@ namespace GrEngine
 			{
 				if ((*itt).starts_with(":Normal:"))
 				{
-					new_file << "   " << (*itt).substr(8, (*itt).size() - 8) << '\n';
+					std::string name = (*itt).substr(8, (*itt).size() - 8);
+					name = name == "" ? "empty_texture" : name;
+					new_file << "   " << name << '\n';
 				}
 			}
 			new_file << "}\n\0";

@@ -43,6 +43,7 @@ namespace GrEngine_Vulkan
 		GrEngine::LightObject* InitOmniLightObject(GrEngine::Entity* ownerEntity) override;
 		void SetUseDynamicLighting(bool state) override;
 
+		void SaveScreenshot(const char* filepath);
 		void addEntity(GrEngine::Entity* entity) override;
 		bool assignTextures(std::vector<std::string> textures, GrEngine::Entity* target, bool update_object = true) override;
 		bool assignNormals(std::vector<std::string> normals, GrEngine::Entity* target, bool update_object = true);
@@ -114,7 +115,6 @@ namespace GrEngine_Vulkan
 			return glm::max((int)lights.size() + cascade_count * (SHADOW_MAP_CASCADE_COUNT - 1) + omni_count * 5, 1);
 		}
 	protected:
-		void SaveScreenshot(const char* filepath);
 		bool updateDrawables(uint32_t index, DrawMode mode, VkExtent2D extent);
 	private:
 		VulkanResourceManager resources;

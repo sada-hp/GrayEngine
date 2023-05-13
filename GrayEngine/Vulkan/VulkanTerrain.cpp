@@ -55,9 +55,58 @@ namespace GrEngine_Vulkan
 		updateObject();
 	}
 
-	const std::string& VulkanTerrain::GetBlendMask()
+	const std::string VulkanTerrain::GetBlendMask()
 	{
-		return foliageMask->texture_collection[0];
+		if (foliageMask != nullptr)
+		{
+			return foliageMask->texture_collection[0];
+		}
+		else
+		{
+			return "";
+		}
+	}
+
+	const std::array<std::string, 4> VulkanTerrain::GetColorTextures()
+	{
+		std::array<std::string, 4> res;
+		if (object_texture != nullptr)
+		{
+			for (int i = 0; i < glm::min(4, (int)object_texture->texture_collection.size()); i++)
+			{
+				res[i] = object_texture->texture_collection[i];
+			}
+		}
+
+		return res;
+	}
+
+	const std::array<std::string, 4> VulkanTerrain::GetNormalTextures()
+	{
+		std::array<std::string, 4> res;
+		if (object_normal != nullptr)
+		{
+			for (int i = 0; i < glm::min(4, (int)object_normal->texture_collection.size()); i++)
+			{
+				res[i] = object_normal->texture_collection[i];
+			}
+		}
+
+		return res;
+	}
+
+	const std::array<std::string, 4> VulkanTerrain::GetDisplacementTextures()
+	{
+		std::array<std::string, 4> res;
+		if (object_displacement != nullptr)
+		{
+			for (int i = 0; i < glm::min(4, (int)object_displacement->texture_collection.size()); i++)
+			{
+				res[i] = object_displacement->texture_collection[i];
+			}
+		}
+
+		return res;
 	}
 
 	void VulkanTerrain::GenerateTerrain(int resolution, int width, int height, int depth, std::array<std::string, 6> images, std::array<std::string, 4> normals, std::array<std::string, 4> displacements)

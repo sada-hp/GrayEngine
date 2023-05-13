@@ -137,28 +137,16 @@ void SceneEditor::LoadObject(const char* mesh_path, const char* textures_path)
 
 void SceneEditor::AssignTextures(const char* textures_path)
 {
-    std::string temp_str = "";
-    std::vector<std::string> mat_vector;
+    std::vector<std::string> mat_vector = GrEngine::Globals::SeparateString(textures_path, '|');
     std::string solution = GrEngine::Globals::getExecutablePath();
     std::string mats = textures_path;
 
-    for (char chr : mats)
+    for (std::string str : mat_vector)
     {
-        if (chr != '|')
+        if (str != "" && str.substr(0, solution.size()) != solution)
         {
-            temp_str += chr;
-        }
-        else
-        {
-            if (temp_str != "" && temp_str.substr(0, solution.size()) != solution)
-            {
-                Logger::Out("Resource outside the solution is being used! %s", OutputColor::Red, OutputType::Error, temp_str.c_str());
-                return;
-            }
-
-            mat_vector.push_back(temp_str);
-            temp_str = "";
-            continue;
+            Logger::Out("Resource outside the solution is being used! %s", OutputColor::Red, OutputType::Error, str.c_str());
+            return;
         }
     }
     GrEngine::Engine::GetContext()->AssignTextures(mat_vector, GrEngine::Engine::GetContext()->GetRenderer()->GetSelectedEntity());
@@ -416,4 +404,24 @@ const char* SceneEditor::GetCascadeColor()
 void SceneEditor::WriteImage(const char* filepath, int width, int height)
 {
     SceneEditor::GetApplication()->App_CreateEmptyImage(filepath, width, height);
+}
+
+const char* SceneEditor::GetTerrainMask()
+{
+    return SceneEditor::GetApplication()->App_GetTerrainMask();
+}
+
+const char* SceneEditor::GetTerrainColor()
+{
+    return SceneEditor::GetApplication()->App_GetTerrainColor();
+}
+
+const char* SceneEditor::GetTerrainNormal()
+{
+    return SceneEditor::GetApplication()->App_GetTerrainNormal();
+}
+
+const char* SceneEditor::GetTerrainDisplacement()
+{
+    return SceneEditor::GetApplication()->App_GetTerrainDispacement();
 }

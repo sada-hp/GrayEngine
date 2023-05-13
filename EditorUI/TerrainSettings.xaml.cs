@@ -20,6 +20,7 @@ namespace EditorUI
     /// </summary>
     public partial class TerrainSettings : Window
     {
+        public static string distr_location = System.IO.Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location);
         private bool create_mask = false;
         private string save_location = "";
         private int settings_mode;
@@ -46,6 +47,129 @@ namespace EditorUI
             if (settings_mode == 1)
             {
                 Tab.Items.RemoveAt(0);
+
+                string mask = Marshal.PtrToStringAnsi(UIBridge.GetTerrainMask());
+                if (mask != "")
+                {
+                    ImageBrush brush = new ImageBrush(BitmapFromUri(new Uri(distr_location + '\\' + mask), Rotation.Rotate0));
+                    brush.Stretch = Stretch.Uniform;
+                    MaskBtn.Background = brush;
+                    MaskBtn.ToolTip = distr_location + '\\' + mask;
+                }
+
+                string color = Marshal.PtrToStringAnsi(UIBridge.GetTerrainColor());
+                if (color != "")
+                {
+                    var arr = color.Split('|');
+
+                    if (arr[0] != "" && arr[0] != "empty_texture")
+                    {
+                        ImageBrush brush = new ImageBrush(BitmapFromUri(new Uri(distr_location + '\\' + arr[0]), Rotation.Rotate0));
+                        brush.Stretch = Stretch.UniformToFill;
+                        BaseBtn.Background = brush;
+                        BaseBtn.ToolTip = distr_location + '\\' + arr[0];
+                    }
+
+                    if (arr[1] != "" && arr[1] != "empty_texture")
+                    {
+                        ImageBrush brush = new ImageBrush(BitmapFromUri(new Uri(distr_location + '\\' + arr[1]), Rotation.Rotate0));
+                        brush.Stretch = Stretch.UniformToFill;
+                        RedBtn.Background = brush;
+                        RedBtn.ToolTip = distr_location + '\\' + arr[1];
+                    }
+
+                    if (arr[2] != "" && arr[2] != "empty_texture")
+                    {
+                        ImageBrush brush = new ImageBrush(BitmapFromUri(new Uri(distr_location + '\\' + arr[2]), Rotation.Rotate0));
+                        brush.Stretch = Stretch.UniformToFill;
+                        GreenBtn.Background = brush;
+                        GreenBtn.ToolTip = distr_location + '\\' + arr[2];
+                    }
+
+                    if (arr[3] != "" && arr[3] != "empty_texture")
+                    {
+                        ImageBrush brush = new ImageBrush(BitmapFromUri(new Uri(distr_location + '\\' + arr[3]), Rotation.Rotate0));
+                        brush.Stretch = Stretch.UniformToFill;
+                        BlueBtn.Background = brush;
+                        BlueBtn.ToolTip = distr_location + '\\' + arr[3];
+                    }
+                }
+
+                string normal = Marshal.PtrToStringAnsi(UIBridge.GetTerrainNormal());
+                if (normal != "")
+                {
+                    var arr = normal.Split('|');
+
+                    if (arr[0] != "" && arr[0] != "empty_texture")
+                    {
+                        ImageBrush brush = new ImageBrush(BitmapFromUri(new Uri(distr_location + '\\' + arr[0]), Rotation.Rotate0));
+                        brush.Stretch = Stretch.UniformToFill;
+                        BaseNrm.Background = brush;
+                        BaseNrm.ToolTip = distr_location + '\\' + arr[0];
+                    }
+
+                    if (arr[1] != "" && arr[1] != "empty_texture")
+                    {
+                        ImageBrush brush = new ImageBrush(BitmapFromUri(new Uri(distr_location + '\\' + arr[1]), Rotation.Rotate0));
+                        brush.Stretch = Stretch.UniformToFill;
+                        RedNrm.Background = brush;
+                        RedNrm.ToolTip = distr_location + '\\' + arr[1];
+                    }
+
+                    if (arr[2] != "" && arr[2] != "empty_texture")
+                    {
+                        ImageBrush brush = new ImageBrush(BitmapFromUri(new Uri(distr_location + '\\' + arr[2]), Rotation.Rotate0));
+                        brush.Stretch = Stretch.UniformToFill;
+                        GreenNrm.Background = brush;
+                        GreenNrm.ToolTip = distr_location + '\\' + arr[2];
+                    }
+
+                    if (arr[3] != "" && arr[3] != "empty_texture")
+                    {
+                        ImageBrush brush = new ImageBrush(BitmapFromUri(new Uri(distr_location + '\\' + arr[3]), Rotation.Rotate0));
+                        brush.Stretch = Stretch.UniformToFill;
+                        BlueNrm.Background = brush;
+                        BlueNrm.ToolTip = distr_location + '\\' + arr[3];
+                    }
+                }
+
+                string displacement = Marshal.PtrToStringAnsi(UIBridge.GetTerrainDisplacement());
+                if (displacement != "")
+                {
+                    var arr = displacement.Split('|');
+
+                    if (arr[0] != "" && arr[0] != "empty_texture")
+                    {
+                        ImageBrush brush = new ImageBrush(BitmapFromUri(new Uri(distr_location + '\\' + arr[0]), Rotation.Rotate0));
+                        brush.Stretch = Stretch.UniformToFill;
+                        BaseDis.Background = brush;
+                        BaseDis.ToolTip = distr_location + '\\' + arr[0];
+                    }
+
+                    if (arr[1] != "" && arr[1] != "empty_texture")
+                    {
+                        ImageBrush brush = new ImageBrush(BitmapFromUri(new Uri(distr_location + '\\' + arr[1]), Rotation.Rotate0));
+                        brush.Stretch = Stretch.UniformToFill;
+                        RedDis.Background = brush;
+                        RedDis.ToolTip = distr_location + '\\' + arr[1];
+                    }
+
+                    if (arr[2] != "" && arr[2] != "empty_texture")
+                    {
+                        ImageBrush brush = new ImageBrush(BitmapFromUri(new Uri(distr_location + '\\' + arr[2]), Rotation.Rotate0));
+                        brush.Stretch = Stretch.UniformToFill;
+                        GreenDis.Background = brush;
+                        GreenDis.ToolTip = distr_location + '\\' + arr[2];
+                    }
+
+                    if (arr[3] != "" && arr[3] != "empty_texture")
+                    {
+                        ImageBrush brush = new ImageBrush(BitmapFromUri(new Uri(distr_location + '\\' + arr[3]), Rotation.Rotate0));
+                        brush.Stretch = Stretch.UniformToFill;
+                        BlueDis.Background = brush;
+                        BlueDis.ToolTip = distr_location + '\\' + arr[3];
+                    }
+                }
             }
 
             EmptySettings.Width = new GridLength(0);

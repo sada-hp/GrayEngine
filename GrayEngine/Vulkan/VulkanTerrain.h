@@ -30,7 +30,10 @@ namespace GrEngine_Vulkan
 		glm::vec4& GetVertexPosition(UINT at) override;
 		void SaveTerrain(const char* filepath) override;
 		bool LoadTerrain(const char* filepath) override;
-		const std::string& GetBlendMask() override;
+		const std::string GetBlendMask() override;
+		const std::array<std::string, 4> GetColorTextures();
+		const std::array<std::string, 4> GetNormalTextures();
+		const std::array<std::string, 4> GetDisplacementTextures();
 
 	protected:
 		void populateDescriptorSets();

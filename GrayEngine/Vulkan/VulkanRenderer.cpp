@@ -2225,10 +2225,16 @@ namespace GrEngine_Vulkan
 					{
 						fullpath.push_back(solution + (*itt));
 					}
-					stbi_info(fullpath.back().c_str(), &width, &height, &channels);
 
-					maxW = width > maxW ? width : maxW;
-					maxH = height > maxH ? height : maxH;
+					if (stbi_info(fullpath.back().c_str(), &width, &height, &channels))
+					{
+						maxW = width > maxW ? width : maxW;
+						maxH = height > maxH ? height : maxH;
+					}
+					else
+					{
+						fullpath.back() = "empty_texture";
+					}
 				}
 				else
 				{

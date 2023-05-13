@@ -155,69 +155,44 @@ namespace EditorUI
             {
                 Normals.Clear();
                 Materials.Clear();
-                System.IO.FileStream file = new System.IO.FileStream(filepath, System.IO.FileMode.Open);
-                byte[] byte_array = new byte[file.Length];
-                file.Read(byte_array, 0, byte_array.Length);
-                string oper = "";
-                string mode = "";
-                string mesh_path = "";
-                string collision_path = "";
-                bool writing = false;
+                System.IO.StreamReader file = new System.IO.StreamReader(filepath);
+                int mode = -1;
 
-                foreach (char chr in byte_array)
+                while (!file.EndOfStream)
                 {
-                    if (chr == ' ' || chr == '\n')
+                    string stream = file.ReadLine();
+                    if (stream.Contains("mesh"))
                     {
-                        continue;
+                        mode = 0;
                     }
-                    else if (chr == '{')
+                    else if (stream.Contains("collision"))
                     {
-                        writing = true;
-                        oper = "";
+                        mode = 1;
                     }
-                    else if (chr == '}')
+                    else if (stream.Contains("textures"))
                     {
-                        if (mode.Contains("mesh"))
-                        {
-                            loaded_mesh = oper.Trim();
-                        }
-                        else if (mode.Contains("collision"))
-                        {
-                            loaded_collision = oper.Trim();
-                        }
-                        else if (mode.Contains("textures"))
-                        {
-                            int offset = 0;
-                            for (int i = 0; i < oper.Count(x => x == '.'); i++)
-                            {
-                                string map = oper.Substring(offset, oper.Substring(offset, oper.Length - offset - 1).IndexOf('.') + 4);
-                                Materials[Materials.Count] = map.Trim();
-                                offset += map.Length;
-                            }
-                        }
-                        else if (mode.Contains("normals"))
-                        {
-                            int offset = 0;
-                            for (int i = 0; i < oper.Count(x => x == '.'); i++)
-                            {
-                                string map = oper.Substring(offset, oper.Substring(offset, oper.Length - offset - 1).IndexOf('.') + 4);
-                                Normals[Normals.Count] = map.Trim();
-                                offset += map.Length;
-                            }
-                        }
-                        writing = false;
-                        oper = "";
-                        mode = "";
+                        mode = 2;
                     }
-                    else
+                    else if (stream.Contains("normals"))
                     {
-                        if (writing)
+                        mode = 3;
+                    }
+                    else if (stream != "{" && stream != "}")
+                    {
+                        switch (mode)
                         {
-                            oper += chr;
-                        }
-                        else
-                        {
-                            mode += chr;
+                            case 0:
+                                loaded_mesh = stream.Trim();
+                                break;
+                            case 1:
+                                loaded_collision = stream.Trim();
+                                break;
+                            case 2:
+                                Materials[Materials.Count] = stream.Trim();
+                                break;
+                            case 3:
+                                Normals[Normals.Count] = stream.Trim();
+                                break;
                         }
                     }
                 }
@@ -366,6 +341,13 @@ namespace EditorUI
                     }
                     if (mat_index < Normals.Count)
                     {
+                        Normals[mat_index] = Normals[mat_index];
+                        material_panel.NormalPath.Text = Normals[mat_index];
+                        material_panel.NormalPath.ToolTip = Normals[mat_index];
+                    }
+                    else
+                    {
+                        Normals[mat_index] = "";
                         material_panel.NormalPath.Text = Normals[mat_index];
                         material_panel.NormalPath.ToolTip = Normals[mat_index];
                     }
@@ -392,6 +374,11 @@ namespace EditorUI
                 {
                     itt = missing_texture;
                 }
+                else if (itt.Length < distr_location.Length)
+                {
+                    itt = distr_location + '\\' + itt;
+                }
+
                 res += itt + '|';
             }
 
@@ -403,16 +390,18 @@ namespace EditorUI
             string material_string = "";
             foreach (var texture in Materials.Values)
             {
-                material_string += ":Color:" + texture.Remove(0, distr_location.Length + 1) + "|";
+                string texture_val = texture.StartsWith(distr_location) ? texture.Remove(0, distr_location.Length + 1) : texture;
+                material_string += ":Color:" + texture_val + "|";
             }
             foreach (var normal in Normals.Values)
             {
-                material_string += ":Normal:" + normal.Remove(0, distr_location.Length + 1) + "|";
+                string normal_val = normal.StartsWith(distr_location) ? normal.Remove(0, distr_location.Length + 1) : normal;
+                material_string += ":Normal:" + normal + "|";
             }
 
             string file = loaded_mesh.Substring(0, loaded_mesh.LastIndexOf('\\')) + '\\' + IdBox.Text + ".gmf";
-            string mesh = loaded_mesh.Remove(0, distr_location.Length + 1);
-            string collision = loaded_collision.Remove(0, distr_location.Length + 1);
+            string mesh = loaded_mesh.StartsWith(distr_location) ? loaded_mesh.Remove(0, distr_location.Length + 1) : loaded_mesh;
+            string collision = loaded_collision.StartsWith(distr_location) ? loaded_collision.Remove(0, distr_location.Length + 1) : loaded_collision;
             UIBridge.CreateModelFile(Marshal.StringToHGlobalAnsi(file), Marshal.StringToHGlobalAnsi(mesh), Marshal.StringToHGlobalAnsi(collision), Marshal.StringToHGlobalAnsi(material_string));
             LoadData();
         }
