@@ -2,7 +2,7 @@
 #include "VulkanResourceManager.h"
 #include "Entities/Properties/Light.h"
 
-#define SHADOW_MAP_CASCADE_COUNT 4
+#define SHADOW_MAP_CASCADE_COUNT 6
 
 namespace GrEngine_Vulkan
 {

@@ -75,7 +75,7 @@ namespace GrEngine_Vulkan
 	{
 		std::vector<VkShaderStageFlags> stage;
 		std::vector<VkDescriptorType> type;
-		std::vector<VkDescriptorImageInfo> imageInfos;
+		std::vector<std::vector<VkDescriptorImageInfo>> imageInfos;
 		std::vector<VkDescriptorBufferInfo> bufferInfos;
 		std::vector<uint16_t> bindings;
 		VkDescriptorSet set;
@@ -109,13 +109,6 @@ namespace GrEngine_Vulkan
 		glm::vec4 colors{ 1.f };
 	};
 
-	struct ImageInfo
-	{
-		uint32_t width;
-		uint32_t height;
-		uint32_t channels;
-	};
-
 	struct TextureInfo
 	{
 		uint32_t mipLevels = 0;
@@ -133,9 +126,8 @@ namespace GrEngine_Vulkan
 		AllocatedImage newImage;
 		VkImageView textureImageView;
 		VkSampler textureSampler;
-		ImageInfo srcInfo;
 		TextureInfo texInfo;
-		std::string resource_name;
+		std::vector<std::string> texture_collection;
 	};
 
 

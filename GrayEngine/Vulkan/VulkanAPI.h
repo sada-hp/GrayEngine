@@ -49,6 +49,7 @@ namespace GrEngine_Vulkan
 		static bool CreateFrameBuffer(VkDevice device, VkFramebufferCreateInfo* info, VkFramebuffer* outFrameBuffer);
 		static bool CreateCommandPool(VkDevice device, uint32_t familyIndex, VkCommandPool* outPool);
 		static bool CreateVkSemaphore(VkDevice device, VkSemaphore* outSemaphore);
+		static bool CreateTimelineSemaphore(VkDevice device, VkSemaphore* outSemaphore);
 		static bool CreateVkFence(VkDevice device, VkFence* outFence);
 		static bool CreateImage(VmaAllocator allocator, VkImageCreateInfo* createInfo, VkImage* outImage, VmaAllocation* outAllocation, VmaMemoryUsage memUsage = VMA_MEMORY_USAGE_AUTO_PREFER_DEVICE, VkMemoryPropertyFlags memFlags = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
 		static bool CreateImageView(VkDevice device, VkFormat format, VkImage image, VkImageSubresourceRange subRange, VkImageView* target, VkImageViewType type = VK_IMAGE_VIEW_TYPE_2D);
@@ -94,7 +95,8 @@ namespace GrEngine_Vulkan
 		static VkSurfaceFormatKHR ChooseSwapSurfaceFormat(const std::vector<VkSurfaceFormatKHR>& availableFormats);
 		static VkExtent2D ChooseSwapExtent(GLFWwindow* window, const VkSurfaceCapabilitiesKHR& capabilities);
 		static SwapChainSupportDetails QuerySwapChainSupport(VkSurfaceKHR surface, VkPhysicalDevice physicalDevice);
-		static bool CopyBufferToImage(VkDevice device, VkCommandPool pool, VkBuffer buffer, VkImage image, VkQueue graphicsQueue, VkFence graphicsFence, ImageInfo imgInfo, uint32_t length);
+		static bool CopyBufferToImage(VkDevice device, VkCommandPool pool, VkBuffer buffer, VkImage image, VkQueue graphicsQueue, VkFence graphicsFence, GrEngine::ImageInfo imgInfo, uint32_t length);
+		static bool CopyBufferToImage(VkDevice device, VkCommandBuffer cmd, VkBuffer buffer, VkImage image, GrEngine::ImageInfo imgInfo, uint32_t length);
 
 		static VkDeviceCreateInfo StructDeviceCreateInfo(VkPhysicalDevice physicalDevice, VkPhysicalDeviceFeatures* deviceFeatures, VkDeviceQueueCreateInfo* deviceQueues, uint32_t queuesCount, const char* const* deviceExtensions, uint32_t extensionsCount);
 		static std::vector<VkDeviceQueueCreateInfo> StructQueueCreateInfo(VkPhysicalDevice physicalDevice, VkSurfaceKHR surface, std::vector<VkQueueFlagBits> families, float* priority);

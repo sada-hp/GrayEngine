@@ -12,6 +12,11 @@ namespace GrEngine
 		{
 			Type |= EntityType::CameraEntity;
 			//static_cast<EntityIDProperty*>(properties[1])->SetPropertyValue(std::rand() % 10000 + 1000);
+			static_cast<EntityOrientationProperty*>(properties[3])->SetCallback([](Entity* owner, EntityProperty* self)
+				{
+					std::vector<std::string> vals = Globals::SeparateString(self->ValueString(), ':');
+					owner->SetRotation(std::stof(vals[0]), std::stof(vals[1]), std::stof(vals[2]));
+				});
 		};
 		virtual ~Camera() {};
 
@@ -110,6 +115,20 @@ namespace GrEngine
 		 {
 			 return *obj_orientation;
 		 };
+
+		 void ClampAxes()
+		 {
+			 if (axes_lock)
+			 {
+				 pitch_yaw_roll.x = pitch_yaw_roll.x > bounds_up.x && bounds_up.x != 0 ? bounds_up.x : pitch_yaw_roll.x;
+				 pitch_yaw_roll.x = pitch_yaw_roll.x < bounds_low.x&& bounds_low.x != 0 ? bounds_low.x : pitch_yaw_roll.x;
+				 pitch_yaw_roll.y = pitch_yaw_roll.y > bounds_up.y && bounds_up.y != 0 ? bounds_up.y : pitch_yaw_roll.y;
+				 pitch_yaw_roll.y = pitch_yaw_roll.y < bounds_low.y&& bounds_low.y != 0 ? bounds_low.y : pitch_yaw_roll.y;
+				 pitch_yaw_roll.z = pitch_yaw_roll.z > bounds_up.z && bounds_up.z != 0 ? bounds_up.z : pitch_yaw_roll.z;
+				 pitch_yaw_roll.z = pitch_yaw_roll.z < bounds_low.z&& bounds_low.z != 0 ? bounds_low.z : pitch_yaw_roll.z;
+				 static_cast<EntityOrientationProperty*>(properties[3])->SetPropertyValue(pitch_yaw_roll);
+			 }
+		 }
 
 		void LockAxes(float pitch_up, float pitch_low, float yaw_up, float yaw_low, float roll_up, float roll_low)
 		{

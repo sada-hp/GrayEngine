@@ -7,8 +7,8 @@ namespace GrEngine_Vulkan
 	class VulkanDrawable
 	{
 	public:
-		Texture* object_texture;
-		Texture* object_normal;
+		std::vector<Texture*> object_texture;
+		std::vector<Texture*> object_normal;
 		std::string shader_path = "Shaders//default";
 		float near_plane = 0.1;
 		float far_plane = 1000;
@@ -24,6 +24,7 @@ namespace GrEngine_Vulkan
 
 	protected:
 		void subscribeDescriptor(VkShaderStageFlags shaderStage, uint8_t binding, VkDescriptorType descType, VkDescriptorImageInfo imageInfo, int targetLayout = 0);
+		void subscribeDescriptor(VkShaderStageFlags shaderStage, uint8_t binding, VkDescriptorType descType, std::vector<VkDescriptorImageInfo> imageInfo, int targetLayout = 0);
 		void subscribeDescriptor(VkShaderStageFlags shaderStage, uint8_t binding, VkDescriptorType descType, VkDescriptorBufferInfo bufferInfo, int targetLayout = 0);
 		virtual void populateDescriptorSets() = 0;
 

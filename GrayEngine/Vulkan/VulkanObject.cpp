@@ -12,11 +12,7 @@ namespace GrEngine_Vulkan
 	void VulkanObject::initObject(VkDevice device, VmaAllocator allocator, GrEngine::Renderer* owner)
 	{
 		UINT id = ownerEntity->GetEntityID();
-		//ownerEntity->AddNewProperty("Transparency");
-		//ownerEntity->AddNewProperty("DoubleSided");
 		ownerEntity->AddNewProperty("Shader");
-
-		//ownerEntity->AddNewProperty("PhysComponent");
 
 		p_Owner = owner;
 		resources = &static_cast<VulkanRenderer*>(owner)->GetResourceManager();
@@ -25,7 +21,7 @@ namespace GrEngine_Vulkan
 
 		GenerateBoxMesh(0.5, 0.5, 0.5);
 
-		static_cast<VulkanRenderer*>(p_Owner)->assignTextures({""}, ownerEntity);
+		static_cast<VulkanRenderer*>(p_Owner)->assignTextures({""}, ownerEntity, false);
 		static_cast<VulkanRenderer*>(p_Owner)->assignNormals({""}, ownerEntity);
 		updateSelectionPipeline();
 		updateShadowPipeline();
@@ -43,11 +39,9 @@ namespace GrEngine_Vulkan
 
 	void VulkanObject::Refresh()
 	{
-		static_cast<VulkanRenderer*>(p_Owner)->waitForRenderer();
-
-		updateObject();
-		updateSelectionPipeline();
-		updateShadowPipeline();
+		VulkanDrawable::updateObject();
+		//updateSelectionPipeline();
+		//updateShadowPipeline();
 	}
 
 	void VulkanObject::recordSelection(VkCommandBuffer cmd, VkExtent2D extent, UINT32 mode)
@@ -60,8 +54,6 @@ namespace GrEngine_Vulkan
 			vkCmdBindVertexBuffers(cmd, 0, 1, &object_mesh->vertexBuffer.Buffer, offsets);
 			vkCmdBindIndexBuffer(cmd, object_mesh->indexBuffer.Buffer, 0, VK_INDEX_TYPE_UINT32);
 
-			//UpdateObjectPosition();
-			//UpdateObjectOrientation();
 			vkCmdBindDescriptorSets(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, selectionLayout, 0, 1, &descriptorSets[2].set, 0, NULL);
 			pushConstants(cmd);
 
@@ -388,16 +380,24 @@ namespace GrEngine_Vulkan
 
 		shaderStages[0].pSpecializationInfo = &specializationInfo;
 
-		std::array<VkSpecializationMapEntry, 1> entriesFrag;
+		struct Specs {
+			float thresh;
+			uint32_t arr_size;
+		} spec_frag;
+		spec_frag = { alpha_threshold, (uint32_t)object_texture.size() };
+		std::array<VkSpecializationMapEntry, 2> entriesFrag;
 		entriesFrag[0].constantID = 0;
 		entriesFrag[0].offset = 0;
 		entriesFrag[0].size = sizeof(float);
+		entriesFrag[1].constantID = 1;
+		entriesFrag[1].offset = sizeof(float);
+		entriesFrag[1].size = sizeof(uint32_t);
 
 		VkSpecializationInfo specializationInfoFrag;
 		specializationInfoFrag.mapEntryCount = entriesFrag.size();
 		specializationInfoFrag.pMapEntries = entriesFrag.data();
-		specializationInfoFrag.dataSize = sizeof(float);
-		specializationInfoFrag.pData = &alpha_threshold;
+		specializationInfoFrag.dataSize = sizeof(Specs);
+		specializationInfoFrag.pData = &spec_frag;
 
 		shaderStages[2].pSpecializationInfo = &specializationInfoFrag;
 
@@ -541,30 +541,29 @@ namespace GrEngine_Vulkan
 		{
 			struct Specs
 			{
-				float far_pl;
+				uint32_t arr_size;
 				float near_pl;
+				float far_pl;
 				uint32_t use_normal;
 				float threshold;
 			} specs;
-			bool use_normal = false;
-			if (object_normal != nullptr && object_normal->texture_collection.size() > 0)
-			{
-				use_normal = !(object_normal->texture_collection.size() == 1 && object_normal->texture_collection[0] == "empty_texture");
-			}
-			specs = { VulkanRenderer::NearPlane, VulkanRenderer::FarPlane, (uint32_t)use_normal, alpha_threshold };
-			std::array<VkSpecializationMapEntry,4> entries;
+			specs = { (uint32_t)object_texture.size(), VulkanRenderer::NearPlane, VulkanRenderer::FarPlane, (uint32_t)object_normal.size(), alpha_threshold};
+			std::array<VkSpecializationMapEntry, 5> entries;
 			entries[0].constantID = 0;
 			entries[0].offset = 0;
-			entries[0].size = sizeof(float);
+			entries[0].size = sizeof(uint32_t);
 			entries[1].constantID = 1;
-			entries[1].offset = sizeof(float);
+			entries[1].offset = offsetof(Specs, near_pl);
 			entries[1].size = sizeof(float);
 			entries[2].constantID = 2;
-			entries[2].offset = sizeof(float) * 2;
-			entries[2].size = sizeof(uint32_t);
+			entries[2].offset = offsetof(Specs, far_pl);
+			entries[2].size = sizeof(float);
 			entries[3].constantID = 3;
-			entries[3].offset = sizeof(float) * 2 + sizeof(uint32_t);
-			entries[3].size = sizeof(float);
+			entries[3].offset = offsetof(Specs, use_normal);
+			entries[3].size = sizeof(uint32_t);
+			entries[4].constantID = 4;
+			entries[4].offset = offsetof(Specs, threshold);
+			entries[4].size = sizeof(float);
 
 			VkSpecializationInfo specializationInfo;
 			specializationInfo.mapEntryCount = entries.size();
@@ -633,19 +632,28 @@ namespace GrEngine_Vulkan
 		}
 		else
 		{
-			std::array<float, 2> specs = { VulkanRenderer::NearPlane, VulkanRenderer::FarPlane };
-			std::array<VkSpecializationMapEntry, 2> entries;
+			struct Specs
+			{
+				uint32_t arr_size;
+				float near_pl;
+				float far_pl;
+			} specs;
+			specs = { (uint32_t)object_texture.size(), VulkanRenderer::NearPlane, VulkanRenderer::FarPlane };
+			std::array<VkSpecializationMapEntry, 3> entries;
 			entries[0].constantID = 0;
 			entries[0].offset = 0;
-			entries[0].size = sizeof(float);
+			entries[0].size = sizeof(uint32_t);
 			entries[1].constantID = 1;
-			entries[1].offset = sizeof(float);
+			entries[1].offset = offsetof(Specs, near_pl);
 			entries[1].size = sizeof(float);
+			entries[2].constantID = 2;
+			entries[2].offset = offsetof(Specs, far_pl);
+			entries[2].size = sizeof(float);
 
 			VkSpecializationInfo specializationInfo;
 			specializationInfo.mapEntryCount = entries.size();
 			specializationInfo.pMapEntries = entries.data();
-			specializationInfo.dataSize = sizeof(float) * 2;
+			specializationInfo.dataSize = sizeof(Specs);
 			specializationInfo.pData = &specs;
 
 			vertShaderCode = GrEngine::Globals::readFile(solution_path + shader_path + "_vert_transparent.spv");
@@ -722,13 +730,29 @@ namespace GrEngine_Vulkan
 		descriptorSets[2].bindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
 
 		subscribeDescriptor(VK_SHADER_STAGE_VERTEX_BIT, 0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, static_cast<VulkanRenderer*>(p_Owner)->viewProjUBO.BufferInfo);
-		subscribeDescriptor(VK_SHADER_STAGE_FRAGMENT_BIT, 1, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, object_texture->texInfo.descriptor);
-		if (object_normal != NULL)
+
+		std::vector<VkDescriptorImageInfo> imageInfo;
+		std::vector<VkDescriptorImageInfo> normalsInfo;
+		if (object_texture.size() > 0)
 		{
-			subscribeDescriptor(VK_SHADER_STAGE_FRAGMENT_BIT, 2, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, object_normal->texInfo.descriptor);
+			for (int i = 0; i < object_texture.size(); i++)
+			{
+				imageInfo.push_back(object_texture[i]->texInfo.descriptor);
+			}
+			subscribeDescriptor(VK_SHADER_STAGE_FRAGMENT_BIT, 1, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, imageInfo);
+			subscribeDescriptor(VK_SHADER_STAGE_FRAGMENT_BIT, 1, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, imageInfo, 1);
 		}
+
+		if (object_normal.size() > 0)
+		{
+			for (int i = 0; i < object_normal.size(); i++)
+			{
+				normalsInfo.push_back(object_normal[i]->texInfo.descriptor);
+			}
+			subscribeDescriptor(VK_SHADER_STAGE_FRAGMENT_BIT, 2, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, normalsInfo);
+		}
+
 		subscribeDescriptor(VK_SHADER_STAGE_VERTEX_BIT, 0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, static_cast<VulkanRenderer*>(p_Owner)->shadowBuffer.BufferInfo, 1);
-		subscribeDescriptor(VK_SHADER_STAGE_FRAGMENT_BIT, 1, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, object_texture->texInfo.descriptor, 1);
 		subscribeDescriptor(VK_SHADER_STAGE_VERTEX_BIT, 0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, static_cast<VulkanRenderer*>(p_Owner)->viewProjUBO.BufferInfo, 2);
 
 		int index = 3;
@@ -853,7 +877,6 @@ namespace GrEngine_Vulkan
 					{
 						uniqueVertices[vertex] = static_cast<uint32_t>(target_mesh->vertices.size());
 						target_mesh->vertices.push_back(vertex);
-						//target_mesh->collisions.addPoint(btVector3(vertex.pos.x, vertex.pos.y, vertex.pos.z));
 					}
 
 					if (highest_pointx < cur_mesh->mVertices[vert_ind].x)
@@ -868,13 +891,10 @@ namespace GrEngine_Vulkan
 				}
 			}
 
-			//CalculateNormals(target_mesh);
 			//VulkanResourceManager::CalculateNormals(target_mesh);
 			//VulkanResourceManager::CalculateTangents(target_mesh);
 			VulkanAPI::m_createVkBuffer(logicalDevice, memAllocator, target_mesh->vertices.data(), sizeof(target_mesh->vertices[0]) * target_mesh->vertices.size(), VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, &target_mesh->vertexBuffer);
 			VulkanAPI::m_createVkBuffer(logicalDevice, memAllocator, target_mesh->indices.data(), sizeof(target_mesh->indices[0]) * target_mesh->indices.size(), VK_BUFFER_USAGE_INDEX_BUFFER_BIT, &target_mesh->indexBuffer);
-			//target_mesh->collisions = btConvexHullShape((const btScalar*)hullVert.data(), hullVert.size(), sizeof(btVector3));
-			//target_mesh->collisions.setMargin(0);
 			target_mesh->bounds = glm::vec3(highest_pointx, highest_pointy, highest_pointz);
 			bound = target_mesh->bounds;
 
@@ -939,22 +959,13 @@ namespace GrEngine_Vulkan
 				}
 			}
 
-			//CalculateNormals(target_mesh);
+			//VulkanResourceManager::CalculateNormals(target_mesh);
+			//VulkanResourceManager::CalculateTangents(target_mesh);
 			VulkanAPI::m_createVkBuffer(logicalDevice, memAllocator, target_mesh->vertices.data(), sizeof(target_mesh->vertices[0]) * target_mesh->vertices.size(), VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, &target_mesh->vertexBuffer);
 			VulkanAPI::m_createVkBuffer(logicalDevice, memAllocator, target_mesh->indices.data(), sizeof(target_mesh->indices[0]) * target_mesh->indices.size(), VK_BUFFER_USAGE_INDEX_BUFFER_BIT, &target_mesh->indexBuffer);
-			//target_mesh->collisions.setMargin(0.001f);
 
 			auto resource = resources->AddMeshResource(res_name.c_str(), target_mesh);
 			object_mesh = resource->AddLink();
-			//GrEngine::PhysicsObject* physComponent = ownerEntity->GetPropertyValue(PropertyType::PhysComponent, static_cast<GrEngine::PhysicsObject*>(nullptr));
-			//if (physComponent != nullptr)
-			//{
-			//	btShapeHull* hull = new btShapeHull(&target_mesh->collisions);
-			//	hull->buildHull(0);
-			//	target_mesh->collisions = btConvexHullShape((const btScalar*)hull->getVertexPointer(), hull->numVertices(), sizeof(btVector3));
-			//	physComponent->UpdateCollisionShape(&target_mesh->collisions);
-			//	delete hull;
-			//}
 		}
 		else
 		{

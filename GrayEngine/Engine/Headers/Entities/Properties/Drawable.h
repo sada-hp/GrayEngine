@@ -6,9 +6,17 @@
 
 namespace GrEngine
 {
+	struct ImageInfo
+	{
+		uint32_t width;
+		uint32_t height;
+		uint32_t channels;
+	};
+
 	struct Texture
 	{
-		std::vector<std::string> texture_collection;
+		ImageInfo srcInfo;
+		std::string resource_name;
 		bool initialized = false;
 	};
 

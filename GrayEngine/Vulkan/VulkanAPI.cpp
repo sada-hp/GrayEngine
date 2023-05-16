@@ -120,7 +120,7 @@ namespace GrEngine_Vulkan
 			VulkanAPI::DestroyImageView(texture->textureImageView);
 			VulkanAPI::DestroyImage(texture->newImage.allocatedImage);
 			texture->initialized = false;
-			texture->texture_collection.clear();
+			//texture->texture_collection.clear();
 		}
 
 		is_in_use = false;
@@ -471,6 +471,29 @@ namespace GrEngine_Vulkan
 		type.sType = VK_STRUCTURE_TYPE_SEMAPHORE_TYPE_CREATE_INFO;
 		type.initialValue = 0;
 		type.semaphoreType = VK_SEMAPHORE_TYPE_BINARY;
+		VkSemaphoreCreateInfo semaphoreInfo{};
+		semaphoreInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
+		semaphoreInfo.pNext = &type;
+		VkResult res = vkCreateSemaphore(device, &semaphoreInfo, nullptr, outSemaphore);
+
+		if (res != VK_SUCCESS)
+		{
+			Logger::Out("[VK] Failed to create semaphore with code %d", OutputColor::Red, OutputType::Error, res);
+			return false;
+		}
+
+		destructors.insert_or_assign(destructors.begin(), *outSemaphore, (Destructor*)DestroySemaphore);
+		devices[*outSemaphore] = device;
+
+		return res == VK_SUCCESS;
+	}
+
+	bool VulkanAPI::CreateTimelineSemaphore(VkDevice device, VkSemaphore* outSemaphore)
+	{
+		VkSemaphoreTypeCreateInfo  type{};
+		type.sType = VK_STRUCTURE_TYPE_SEMAPHORE_TYPE_CREATE_INFO;
+		type.initialValue = 0;
+		type.semaphoreType = VK_SEMAPHORE_TYPE_TIMELINE;
 		VkSemaphoreCreateInfo semaphoreInfo{};
 		semaphoreInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
 		semaphoreInfo.pNext = &type;
@@ -1075,7 +1098,7 @@ namespace GrEngine_Vulkan
 		return requiredExtensions.empty();
 	}
 
-	bool VulkanAPI::CopyBufferToImage(VkDevice device, VkCommandPool pool, VkBuffer buffer, VkImage image, VkQueue graphicsQueue, VkFence graphicsFence, ImageInfo imgInfo, uint32_t length)
+	bool VulkanAPI::CopyBufferToImage(VkDevice device, VkCommandPool pool, VkBuffer buffer, VkImage image, VkQueue graphicsQueue, VkFence graphicsFence, GrEngine::ImageInfo imgInfo, uint32_t length)
 	{
 		VkCommandBuffer commandBuffer;
 		VulkanAPI::AllocateCommandBuffers(device, pool, &commandBuffer, 1);
@@ -1108,6 +1131,38 @@ namespace GrEngine_Vulkan
 		vkCmdCopyBufferToImage(commandBuffer, buffer, image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, regions.size(), regions.data());
 
 		return VulkanAPI::EndAndSubmitCommandBuffer(device, pool, commandBuffer, graphicsQueue, graphicsFence);
+	}
+
+	bool VulkanAPI::CopyBufferToImage(VkDevice device, VkCommandBuffer cmd, VkBuffer buffer, VkImage image, GrEngine::ImageInfo imgInfo, uint32_t length)
+	{
+		std::vector<VkBufferImageCopy> regions;
+		uint32_t offset = 0;
+
+		for (int i = 0; i < length; i++)
+		{
+			VkBufferImageCopy region{};
+			region.bufferOffset = offset;
+
+			region.imageSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+			region.imageSubresource.mipLevel = 0;
+			region.imageSubresource.baseArrayLayer = i;
+			region.imageSubresource.layerCount = 1;
+
+			region.imageOffset = { 0, 0, 0 };
+			region.imageExtent = {
+				imgInfo.width,
+				imgInfo.height,
+				1
+			};
+
+			regions.push_back(region);
+			offset += imgInfo.width * imgInfo.height * imgInfo.channels;
+		}
+
+
+		vkCmdCopyBufferToImage(cmd, buffer, image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, regions.size(), regions.data());
+
+		return true;
 	}
 
 	bool VulkanAPI::TransitionImageLayout(VkImage image, VkImageLayout oldLayout, VkImageLayout newLayout, VkImageSubresourceRange subRange, VkCommandBuffer cmd)

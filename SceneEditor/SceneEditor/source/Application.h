@@ -78,12 +78,6 @@ namespace GrEngine
             getEditorUI()->InitUI(VIEWPORT_EDITOR);
             getEditorUI()->SetViewportHWND(getViewportHWND(), VIEWPORT_EDITOR);
             Logger::JoinEventListener(GetEventListener());
-
-            //casent = GetRenderer()->addEntity();
-            //casent->PositionObjectAt(1, 1, 1);
-            //casent->AddNewProperty(PropertyType::Color);
-            //casent->AddNewProperty(PropertyType::CascadeLight);
-            //casent->MakeStatic();
         }
 
         ~Application()
@@ -102,6 +96,8 @@ namespace GrEngine
         {
             GetRenderer()->getActiveViewport()->LockAxes(89, -89, 0, 0, 0, 0);
             camera = GetRenderer()->getActiveViewport();
+            camera->PositionObjectAt(0, 3, 4);
+            camera->SetRotation(30, 0, 0);
 
             getEditorUI()->ShowScene();
             LoadTools();
@@ -339,7 +335,6 @@ namespace GrEngine
                 manipulation = 0;
                 return;
             }
-            //FocusViewport();
         }
 
         EditorUI* getEditorUI()

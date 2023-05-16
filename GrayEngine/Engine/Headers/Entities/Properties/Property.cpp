@@ -484,6 +484,11 @@ void EntityOrientationProperty::ParsePropertyValue(const char* degress)
 	if (cols.size() < 3) return;
 
 	SetPropertyValue({ stof(cols[0]), stof(cols[1]), stof(cols[2]) });
+
+	if (callback.has_value())
+	{
+		callback.value()((GrEngine::Entity*)owner, this);
+	}
 	//static_cast<GrEngine::Entity*>(owner)->SetRotation(stof(cols[0]), stof(cols[1]), stof(cols[2]));
 }
 

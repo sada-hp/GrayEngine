@@ -67,17 +67,17 @@ namespace GrEngine_Vulkan
 			object_mesh = nullptr;
 		}
 
-		if (object_texture != nullptr)
+		for (int i = 0; i < object_texture.size(); i++)
 		{
-			resources->RemoveTexture(object_texture, logicalDevice, memAllocator);
-			object_texture = nullptr;
+			resources->RemoveTexture(object_texture[i], logicalDevice, memAllocator);
 		}
+		object_texture.clear();
 
-		if (object_normal != nullptr)
+		for (int i = 0; i < object_normal.size(); i++)
 		{
-			resources->RemoveTexture(object_normal, logicalDevice, memAllocator);
-			object_normal = nullptr;
+			resources->RemoveTexture(object_normal[i], logicalDevice, memAllocator);
 		}
+		object_normal.clear();
 
 		VulkanAPI::DestroyPipeline(graphicsPipeline);
 		VulkanAPI::DestroyPipelineLayout(pipelineLayout);
@@ -109,13 +109,19 @@ namespace GrEngine_Vulkan
 
 	void VulkanDrawable::invalidateTexture()
 	{
-		if (object_texture != nullptr)
+		for (int i = 0; i < object_texture.size(); i++)
 		{
-			resources->RemoveTexture(object_texture, logicalDevice, memAllocator);
-			resources->RemoveTexture(object_normal, logicalDevice, memAllocator);
-			object_texture = nullptr;
-			object_normal = nullptr;
+			resources->RemoveTexture(object_texture[i], logicalDevice, memAllocator);
 		}
+		object_texture.clear();
+
+		for (int i = 0; i < object_normal.size(); i++)
+		{
+			resources->RemoveTexture(object_normal[i], logicalDevice, memAllocator);
+		}
+		object_normal.clear();
+
+		updateObject();
 	}
 
 	bool VulkanDrawable::createPipelineLayout()
@@ -400,6 +406,14 @@ namespace GrEngine_Vulkan
 	{
 		descriptorSets[targetLayout].bindings.push_back(binding);
 		descriptorSets[targetLayout].stage.push_back(shaderStage);
+		descriptorSets[targetLayout].imageInfos.push_back({ imageInfo });
+		descriptorSets[targetLayout].type.push_back(descType);
+	}
+
+	void VulkanDrawable::subscribeDescriptor(VkShaderStageFlags shaderStage, uint8_t binding, VkDescriptorType descType, std::vector<VkDescriptorImageInfo> imageInfo, int targetLayout)
+	{
+		descriptorSets[targetLayout].bindings.push_back(binding);
+		descriptorSets[targetLayout].stage.push_back(shaderStage);
 		descriptorSets[targetLayout].imageInfos.push_back(imageInfo);
 		descriptorSets[targetLayout].type.push_back(descType);
 	}
@@ -417,6 +431,7 @@ namespace GrEngine_Vulkan
 		bool res = true;
 		for (int i = 0; i < descriptorSets.size(); i++)
 		{
+			int imgOff = 0;
 			std::vector<VkDescriptorSetLayoutBinding> descriptorBindings;
 
 			for (int j = 0; j < descriptorSets[i].bindings.size(); j++)
@@ -424,7 +439,14 @@ namespace GrEngine_Vulkan
 				VkDescriptorSetLayoutBinding descriptorBinding{};
 				descriptorBinding.binding = descriptorSets[i].bindings[j]; // DESCRIPTOR_SET_BINDING_INDEX
 				descriptorBinding.descriptorType = descriptorSets[i].type[j];
-				descriptorBinding.descriptorCount = 1;
+				if (descriptorSets[i].type[j] == VK_DESCRIPTOR_TYPE_STORAGE_BUFFER || descriptorSets[i].type[j] == VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER)
+				{
+					descriptorBinding.descriptorCount = 1;
+				}
+				else
+				{
+					descriptorBinding.descriptorCount = descriptorSets[i].imageInfos[imgOff++].size();
+				}
 				descriptorBinding.stageFlags = descriptorSets[i].stage[j];
 				descriptorBinding.pImmutableSamplers = NULL;
 				descriptorBindings.push_back(descriptorBinding);
@@ -441,14 +463,33 @@ namespace GrEngine_Vulkan
 		bool res = true;
 		for (int i = 0; i < descriptorSets.size(); i++)
 		{
+			int imgOff = 0;
 			std::vector<VkDescriptorPoolSize> descriptorTypePools;
+			std::map<VkDescriptorType, VkDescriptorPoolSize> typeMap;
 
 			for (int j = 0; j < descriptorSets[i].bindings.size(); j++)
 			{
-				VkDescriptorPoolSize descriptorTypePool;
-				descriptorTypePool.type = descriptorSets[i].type[j];
-				descriptorTypePool.descriptorCount = 1;
-				descriptorTypePools.push_back(descriptorTypePool);
+				if (typeMap.count(descriptorSets[i].type[j]) == 0)
+				{
+					VkDescriptorPoolSize descriptorTypePool{};
+					descriptorTypePool.type = descriptorSets[i].type[j];
+
+					typeMap[descriptorSets[i].type[j]] = descriptorTypePool;
+				}
+
+				if (descriptorSets[i].type[j] == VK_DESCRIPTOR_TYPE_STORAGE_BUFFER || descriptorSets[i].type[j] == VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER)
+				{
+					typeMap[descriptorSets[i].type[j]].descriptorCount += 1;
+				}
+				else
+				{
+					typeMap[descriptorSets[i].type[j]].descriptorCount += descriptorSets[i].imageInfos[imgOff++].size();
+				}
+			}
+
+			for (std::map<VkDescriptorType, VkDescriptorPoolSize>::iterator itt = typeMap.begin(); itt != typeMap.end(); ++itt)
+			{
+				descriptorTypePools.push_back((*itt).second);
 			}
 
 			res = VulkanAPI::CreateDescriptorPool(logicalDevice, descriptorTypePools, &descriptorSets[i].descriptorPool) & res;
@@ -475,18 +516,20 @@ namespace GrEngine_Vulkan
 				write.dstBinding = descriptorSets[i].bindings[j];
 				write.dstArrayElement = 0;
 				write.descriptorType = descriptorSets[i].type[j];
-				write.descriptorCount = 1;
 
 				if (descriptorSets[i].type[j] == VK_DESCRIPTOR_TYPE_STORAGE_BUFFER || descriptorSets[i].type[j] == VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER)
 				{
 					write.pBufferInfo = &descriptorSets[i].bufferInfos[buffOff++];
+					write.descriptorCount = 1;
 				}
 				else
 				{
-					auto a = &descriptorSets[i].imageInfos[imgOff];
-					write.pImageInfo = &descriptorSets[i].imageInfos[imgOff++];
+					write.pImageInfo = descriptorSets[i].imageInfos[imgOff].data();
+					write.descriptorCount = descriptorSets[i].imageInfos[imgOff++].size();
 				}
-				writes.push_back(write);
+
+				if (write.descriptorCount > 0)
+					writes.push_back(write);
 			}
 		}
 

@@ -67,7 +67,6 @@ namespace GrEngine_Vulkan
 		inline VulkanResourceManager& GetResourceManager() { return resources; }
 		Resource<Texture*>* loadTexture(std::vector<std::string> texture_path, VkImageViewType type_view = VK_IMAGE_VIEW_TYPE_2D, VkImageType type_img = VK_IMAGE_TYPE_2D, VkFormat format_img = VK_FORMAT_R8G8B8A8_SRGB, bool default_to_black = false);
 		bool updateTexture(GrEngine::Entity* target, int textureIndex);
-		bool updateTexture(GrEngine::Entity* target, void* pixels, int textureIndex);
 		bool updateResource(Texture* target, int textureIndex);
 		bool updateResource(Texture* target, byte* pixels);
 		bool updateResource(Texture* target, byte* pixels, uint32_t width, uint32_t height, uint32_t offset_x, uint32_t offset_y);
@@ -79,10 +78,12 @@ namespace GrEngine_Vulkan
 		Texture normal;
 		Texture albedo;
 		Texture identity;
+		Texture headIndex;
+		Texture shadowMap;
+		Texture colorImage;
 
 		ShaderBuffer transBuffer;
 		ShaderBuffer nodeBfffer;
-		Texture headIndex;
 
 		VkQueue graphicsQueue;
 		VkCommandPool commandPool;
@@ -95,7 +96,6 @@ namespace GrEngine_Vulkan
 		} vpUBO;
 		ShaderBuffer viewProjUBO;
 
-		Texture shadowMap;
 
 		struct Cascade
 		{
@@ -155,20 +155,21 @@ namespace GrEngine_Vulkan
 		bool createVKInstance();
 		bool isDeviceSuitable(VkPhysicalDevice device);
 
-
+		void initSkyEntity();
+		void initDefaultViewport();
 		bool createSwapChainImages();
 		void recreateSwapChain();
 		void updateShadowResources();
 		void cleanupSwapChain();
-		void generateMipmaps(VkImage image, int32_t texWidth, int32_t texHeight, uint32_t mipLevels, uint32_t arrayLevels);
+		void generateMipmaps(VkImage image, VkFormat imageFormat, int32_t texWidth, int32_t texHeight, uint32_t mipLevels, uint32_t arrayLevels);
 
 		VkImageView depthImageView;
 		AllocatedImage depthImage;
 		VkFormat depthFormat;
+		VkFence loadFence;
 
 		VkSampleCountFlagBits msaaSamples = VK_SAMPLE_COUNT_1_BIT;
 
-		Texture colorImage;
 		bool highlight_selection = true;
 
 		struct Node {

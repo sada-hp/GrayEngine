@@ -183,10 +183,10 @@ namespace GrEngine_Vulkan
 				{
 					faceNormal = glm::normalize(glm::cross(glm::vec3(B.pos) - glm::vec3(A.pos), glm::vec3(C.pos) - glm::vec3(A.pos)));
 				}
-				
+
 				normals[target->indices[i]] += glm::vec4(faceNormal, normals[target->indices[i]].w++);
-				normals[target->indices[i+1]] += glm::vec4(faceNormal, normals[target->indices[i+1]].w++);
-				normals[target->indices[i+2]] += glm::vec4(faceNormal, normals[target->indices[i+2]].w++);
+				normals[target->indices[i + 1]] += glm::vec4(faceNormal, normals[target->indices[i + 1]].w++);
+				normals[target->indices[i + 2]] += glm::vec4(faceNormal, normals[target->indices[i + 2]].w++);
 			}
 
 			for (std::map<UINT, glm::vec4>::iterator itt = normals.begin(); itt != normals.end(); ++itt)
@@ -230,10 +230,6 @@ namespace GrEngine_Vulkan
 					delta2 = glm::vec2(uv2.x, 1.f - uv2.y) - glm::vec2(uv0.x, 1.f - uv0.y);
 				}
 
-
-
-				
-
 				float f = 1.0f / (delta1.x * delta2.y - delta1.y * delta2.x);
 				glm::vec3 tangent;
 				glm::vec3 bitangent;
@@ -246,13 +242,6 @@ namespace GrEngine_Vulkan
 				target->vertices[target->indices[i + 1]].tang = tangent;
 				target->vertices[target->indices[i + 2]].tang = tangent;
 			}
-
-			//for (std::vector<Vertex>::iterator itt = target->vertices.begin(); itt != target->vertices.end(); ++itt)
-			//{
-			//	(*itt).norm = glm::normalize((*itt).norm);
-			//	(*itt).tang = glm::normalize((*itt).tang - (*itt).norm * glm::dot((*itt).norm, glm::normalize((*itt).tang)));
-			//	(*itt).bitang = glm::cross(glm::vec3((*itt).tang), glm::vec3((*itt).norm));
-			//}
 		}
 	}
 }

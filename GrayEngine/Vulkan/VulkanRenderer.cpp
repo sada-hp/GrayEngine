@@ -79,7 +79,11 @@ namespace GrEngine_Vulkan
 		pParentWindow = static_cast<GLFWwindow*>(window);
 
 		if (!createVKInstance())
+#ifdef _DEBUG
 			throw std::runtime_error("Failed to create vulkan instance!");
+#else
+			return false;
+#endif
 
 		uint32_t deviceCount = 0;
 
@@ -88,7 +92,11 @@ namespace GrEngine_Vulkan
 		vkEnumeratePhysicalDevices(_vulkan, &deviceCount, devices.data());
 
 		if (deviceCount == 0)
+#ifdef _DEBUG
 			throw std::runtime_error("Failed to find GPUs with Vulkan support!");
+#else
+			return false;
+#endif
 
 		if (!glfwCreateWindowSurface(_vulkan, pParentWindow, nullptr, &surface) == VK_SUCCESS)
 			Logger::Out("[Vk] Failed to create presentation surface", OutputColor::Red, OutputType::Error);
@@ -106,7 +114,11 @@ namespace GrEngine_Vulkan
 		}
 
 		if (physicalDevice == VK_NULL_HANDLE)
+#ifdef _DEBUG
 			throw std::exception("Failed to find suitable Vulkan device");
+#else
+			return false;
+#endif
 		else
 			Logger::Out("Presentation device: %s", OutputColor::Green, OutputType::Log, deviceProps.deviceName);
 
@@ -167,15 +179,13 @@ namespace GrEngine_Vulkan
 		}
 
 		VulkanAPI::CreateVkFence(logicalDevice, &transitionFence);
-
+		VulkanAPI::CreateVkFence(logicalDevice, &loadFence);
 		
 		createAttachment(VK_FORMAT_R32G32B32A32_SFLOAT, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT, &position);
 		createAttachment(VK_FORMAT_R16G16B16A16_SFLOAT, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT, &normal);
 		createAttachment(swapChainImageFormat, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT, &albedo);
 
-		viewport_camera = new GrEngine::Camera();
-		getActiveViewport()->PositionObjectAt(0, 3, 4);
-		getActiveViewport()->SetRotation(30, 0, 0);
+		VulkanAPI::m_createVkBuffer(logicalDevice, memAllocator, nullptr, sizeof(vpUBO), VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT, &viewProjUBO, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
 
 		prepareShadowPass();
 		prepareCompositionPass();
@@ -197,19 +207,28 @@ namespace GrEngine_Vulkan
 				Logger::Out("[Vk] Failed to create framebuffer", OutputColor::Red, OutputType::Error);
 		}
 
-		VulkanAPI::m_createVkBuffer(logicalDevice, memAllocator, nullptr, sizeof(vpUBO), VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT, &viewProjUBO, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
-		//vmaMapMemory(memAllocator, viewProjUBO.Allocation, (void**)&viewProjUBO.data);
+		initDefaultViewport();
+		initSkyEntity();
+			
+		vkDeviceWaitIdle(logicalDevice);
+		Logger::Out("Initialized device %p", OutputColor::Blue, OutputType::Log, logicalDevice);
 
+		return Initialized = res;
+	}
+
+	void VulkanRenderer::initSkyEntity()
+	{
 		sky = new VulkanSkybox(1000000000);
 		sky->initObject(logicalDevice, memAllocator, this);
 		sky->UpdateNameTag("Sky");
 		sky->MakeStatic();
 		entities[sky->GetEntityID()] = sky;
+	}
 
-		vkDeviceWaitIdle(logicalDevice);
-		Logger::Out("Initialized device %p", OutputColor::Blue, OutputType::Log, logicalDevice);
 
-		return Initialized = res;
+	void VulkanRenderer::initDefaultViewport()
+	{
+		viewport_camera = new GrEngine::Camera();
 	}
 
 	void VulkanRenderer::createAttachment(VkFormat format, VkImageUsageFlags usage, Texture* attachment)
@@ -219,7 +238,6 @@ namespace GrEngine_Vulkan
 
 		VulkanAPI::DestroyImage(attachment->newImage.allocatedImage);
 		VulkanAPI::DestroyImageView(attachment->textureImageView);
-		attachment->initialized = false;
 
 		if (usage & VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT)
 		{
@@ -281,7 +299,12 @@ namespace GrEngine_Vulkan
 		if (!updateDrawables(frame, DrawMode::NORMAL, extent))
 		{
 			Logger::Out("Logical device was lost!", OutputColor::Red, OutputType::Error);
+#ifdef _DEBUG
 			throw std::runtime_error("Logical device was lost!");
+#else
+			glfwSetWindowShouldClose(pParentWindow, true);
+			return;
+#endif
 		}
 
 		VkSubmitInfo submitInfo{};
@@ -304,7 +327,12 @@ namespace GrEngine_Vulkan
 		if (res == VK_ERROR_DEVICE_LOST)
 		{
 			Logger::Out("Logical device was lost!", OutputColor::Red, OutputType::Error);
+#ifdef _DEBUG
 			throw std::runtime_error("Logical device was lost!");
+#else
+			glfwSetWindowShouldClose(pParentWindow, true);
+			return;
+#endif
 		}
 
 		VkPresentInfoKHR presentInfo{};
@@ -415,6 +443,8 @@ namespace GrEngine_Vulkan
 
 	void VulkanRenderer::SelectEntityAtCursor()
 	{
+		if (!Initialized) return;
+
 		waitForRenderer();
 
 		uint32_t index = 0;
@@ -484,7 +514,13 @@ namespace GrEngine_Vulkan
 		if (res == VK_ERROR_DEVICE_LOST)
 		{
 			Logger::Out("Logical device was lost!", OutputColor::Red, OutputType::Error);
+#ifdef _DEBUG
 			throw std::runtime_error("Logical device was lost!");
+#else
+			glfwSetWindowShouldClose(pParentWindow, true);
+			return;
+#endif
+
 		}
 
 		vkWaitForFences(logicalDevice, 1, &renderFence[frame], TRUE, UINT64_MAX);
@@ -1940,9 +1976,10 @@ namespace GrEngine_Vulkan
 		VulkanAPI::DestroyDescriptorPool(samplingSetPool);
 		VulkanAPI::DestroyPipeline(samplingPipeline);
 		VulkanAPI::DestroyPipelineLayout(samplingPipelineLayout);
-
 		VulkanAPI::DestroyImageView(headIndex.textureImageView);
 		VulkanAPI::DestroyImage(headIndex.newImage.allocatedImage);
+		VulkanAPI::DestroyImageView(colorImage.textureImageView);
+		VulkanAPI::DestroyImage(colorImage.newImage.allocatedImage);
 
 		if (frameInfo.initialized == true)
 		{
@@ -1974,12 +2011,6 @@ namespace GrEngine_Vulkan
 			VulkanAPI::DestroyImageView(swapChainImageViews[i]);
 		}
 		swapChainImageViews.resize(0);
-
-		if (colorImage.initialized == true)
-		{
-			VulkanAPI::DestroyImageView(colorImage.textureImageView);
-			VulkanAPI::DestroyImage(colorImage.newImage.allocatedImage);
-		}
 
 		if (depthImageView != nullptr)
 		{
@@ -2100,40 +2131,72 @@ namespace GrEngine_Vulkan
 
 	bool VulkanRenderer::assignTextures(std::vector<std::string> textures, GrEngine::Entity* target, bool update_object)
 	{
+		VulkanRenderer* rend = this;
+		VulkanDrawable* object = nullptr;
+		VkImageViewType type = VK_IMAGE_VIEW_TYPE_2D;
+
 		if (target->GetEntityType() == GrEngine::EntityType::SkyboxEntity)
 		{
-			VulkanSkybox* object = static_cast<VulkanSkybox*>(target);
-			if (object->object_texture != nullptr)
-			{
-				resources.RemoveTexture(object->object_texture, logicalDevice, memAllocator);
-				object->object_texture = nullptr;
-			}
-
-			object->object_texture = loadTexture(textures, VK_IMAGE_VIEW_TYPE_CUBE, VK_IMAGE_TYPE_2D)->AddLink();
-			if (update_object) object->updateObject();
+			object = static_cast<VulkanSkybox*>(target);
+			type = VK_IMAGE_VIEW_TYPE_CUBE;
 		}
 		else if (target->GetEntityType() == GrEngine::EntityType::TerrainEntity)
 		{
-			VulkanTerrain* object = static_cast<VulkanTerrain*>(target);
-			if (object->object_texture != nullptr)
-			{
-				resources.RemoveTexture(object->object_texture, logicalDevice, memAllocator);
-				object->object_texture = nullptr;
-			}
-
-			object->object_texture = loadTexture(textures, VK_IMAGE_VIEW_TYPE_2D_ARRAY, VK_IMAGE_TYPE_2D)->AddLink();
-			if (update_object) object->updateObject();
+			object = static_cast<VulkanTerrain*>(target);
 		}
 		else if (drawables.count(target->GetEntityID()) > 0)
 		{
-			VulkanObject* object = static_cast<VulkanObject*>(drawables[target->GetEntityID()]);
-			if (object->object_texture != nullptr)
+			object = static_cast<VulkanObject*>(drawables[target->GetEntityID()]);
+		}
+
+		if (object != nullptr)
+		{
+			int procNum = 0;
+			std::map<int, std::future<void>> processes_map;
+			std::unordered_map<std::string, int> active_tex;
+
+			for (int i = 0; i < object->object_texture.size(); i++)
 			{
-				resources.RemoveTexture(object->object_texture, logicalDevice, memAllocator);
-				object->object_texture = nullptr;
+				resources.RemoveTexture(object->object_texture[i], logicalDevice, memAllocator);
+			}
+			object->object_texture.clear();
+
+			if (type == VK_IMAGE_VIEW_TYPE_CUBE)
+			{
+				object->object_texture.push_back(loadTexture({ textures }, type, VK_IMAGE_TYPE_2D)->AddLink());
+			}
+			else
+			{
+				//Precache
+				object->object_texture.resize(textures.size());
+				for (auto texture : textures)
+				{
+					if (active_tex.count(texture) == 0)
+					{
+						processes_map[procNum] = std::async(std::launch::async, [rend, texture, object, type]()
+							{
+								rend->loadTexture({ texture }, type, VK_IMAGE_TYPE_2D);
+							});
+
+						active_tex[texture] = procNum;
+						procNum++;
+					}
+				}
+
+				for (int ind = 0; ind < processes_map.size(); ind++)
+				{
+					if (processes_map[ind].valid())
+					{
+						processes_map[ind].wait();
+					}
+				}
+
+				for (int i = 0; i < textures.size(); i++)
+				{
+					object->object_texture[i] = loadTexture({ textures[i] }, type, VK_IMAGE_TYPE_2D)->AddLink();
+				}
 			}
 
-			object->object_texture = loadTexture(textures, VK_IMAGE_VIEW_TYPE_2D_ARRAY, VK_IMAGE_TYPE_2D)->AddLink();
 			if (update_object) object->updateObject();
 		}
 
@@ -2142,28 +2205,68 @@ namespace GrEngine_Vulkan
 
 	bool VulkanRenderer::assignNormals(std::vector<std::string> normals, GrEngine::Entity* target, bool update_object)
 	{
+		VulkanRenderer* rend = this;
+		VulkanDrawable* object = nullptr;
+
 		if (target->GetEntityType() == GrEngine::EntityType::TerrainEntity)
 		{
-			VulkanTerrain* object = static_cast<VulkanTerrain*>(target);
-			if (object->object_normal != nullptr)
-			{
-				resources.RemoveTexture(object->object_normal, logicalDevice, memAllocator);
-				object->object_normal = nullptr;
-			}
-
-			object->object_normal = loadTexture(normals, VK_IMAGE_VIEW_TYPE_2D_ARRAY, VK_IMAGE_TYPE_2D, VK_FORMAT_R8G8B8A8_UNORM)->AddLink();
-			if (update_object) object->updateObject();
+			object = static_cast<VulkanTerrain*>(target);
 		}
 		else if (drawables.count(target->GetEntityID()) > 0)
 		{
-			VulkanObject* object = static_cast<VulkanObject*>(drawables[target->GetEntityID()]);
-			if (object->object_normal != nullptr)
+			object = static_cast<VulkanObject*>(drawables[target->GetEntityID()]);
+		}
+
+		if (object != nullptr)
+		{
+			int texInd = 0;
+			int procNum = 0;
+			std::map<int, std::future<void>> processes_map;
+			std::unordered_map<std::string, int> active_tex;
+
+			for (int i = 0; i < object->object_normal.size(); i++)
 			{
-				resources.RemoveTexture(object->object_normal, logicalDevice, memAllocator);
-				object->object_normal = nullptr;
+				resources.RemoveTexture(object->object_normal[i], logicalDevice, memAllocator);
+			}
+			object->object_normal.clear();
+
+			//Precache
+			if (normals.size() > 0)
+			{
+				object->object_normal.resize(normals.size());
+			}
+			else
+			{
+				object->object_normal.resize(object->object_texture.size());
+				normals.resize(object->object_texture.size());
+			}
+			for (auto texture : normals)
+			{
+				if (active_tex.count(texture) == 0)
+				{
+					processes_map[procNum] = std::async(std::launch::async, [rend, texture, object]()
+						{
+							rend->loadTexture({ texture }, VK_IMAGE_VIEW_TYPE_2D, VK_IMAGE_TYPE_2D, VK_FORMAT_R8G8B8A8_UNORM);
+						});
+
+					active_tex[texture] = procNum;
+					procNum++;
+				}
 			}
 
-			object->object_normal = loadTexture(normals, VK_IMAGE_VIEW_TYPE_2D_ARRAY, VK_IMAGE_TYPE_2D, VK_FORMAT_R8G8B8A8_UNORM)->AddLink();
+			for (int ind = 0; ind < processes_map.size(); ind++)
+			{
+				if (processes_map[ind].valid())
+				{
+					processes_map[ind].wait();
+				}
+			}
+
+			for (int i = 0; i < normals.size(); i++)
+			{
+				object->object_normal[i] = loadTexture({ normals[i] }, VK_IMAGE_VIEW_TYPE_2D, VK_IMAGE_TYPE_2D, VK_FORMAT_R8G8B8A8_UNORM)->AddLink();
+			}
+
 			if (update_object) object->updateObject();
 		}
 
@@ -2225,15 +2328,14 @@ namespace GrEngine_Vulkan
 					{
 						fullpath.push_back(solution + (*itt));
 					}
-
-					if (stbi_info(fullpath.back().c_str(), &width, &height, &channels))
+					if (!stbi_info(fullpath.back().c_str(), &width, &height, &channels))
 					{
-						maxW = width > maxW ? width : maxW;
-						maxH = height > maxH ? height : maxH;
+						fullpath.back() = "empty_texture";
 					}
 					else
 					{
-						fullpath.back() = "empty_texture";
+						maxW = width > maxW ? width : maxW;
+						maxH = height > maxH ? height : maxH;
 					}
 				}
 				else
@@ -2242,7 +2344,6 @@ namespace GrEngine_Vulkan
 				}
 			}
 
-			std::map<int, std::future<void>> processes_map;
 			data = (unsigned char*)malloc(maxW * maxH * channels * fullpath.size());
 			//TBD: fix loading same image file on different surfaces
 			int procNum = 0;
@@ -2252,34 +2353,24 @@ namespace GrEngine_Vulkan
 				const char* texture = (*itt).c_str();
 				if ((*itt) != solution && (*itt) != "empty_texture")
 				{
-					processes_map[procNum] = std::async(std::launch::async, [texture, data, maxW, maxH, image_size, procNum]()
-						{
-							int width;
-							int height;
-							int channels;
-							stbi_uc* pixels = stbi_load(texture, &width, &height, &channels, STBI_rgb_alpha);
+					int width;
+					int height;
+					int channels;
+					stbi_uc* pixels = stbi_load(texture, &width, &height, &channels, STBI_rgb_alpha);
 
-							if (!pixels)
-							{
-								Logger::Out("An error occurred while loading the texture: %s", OutputColor::Green, OutputType::Error, texture);
-								free(data);
-								return;
-							}
-
-							if (width < maxW || height < maxH)
-							{
-								unsigned char* output = (unsigned char*)malloc(image_size);
-								stbir_resize_uint8(pixels, width, height, 0, output, maxW, maxH, 0, channels);
-								memcpy_s(data + image_size * procNum, image_size, output, image_size);
-								stbi_image_free(pixels);
-								free(output);
-							}
-							else
-							{
-								memcpy_s(data + image_size * procNum, image_size, pixels, image_size);
-								stbi_image_free(pixels);
-							}
-						});
+					if (width < maxW || height < maxH)
+					{
+						unsigned char* output = (unsigned char*)malloc(image_size);
+						stbir_resize_uint8(pixels, width, height, 0, output, maxW, maxH, 0, channels);
+						memcpy_s(data + image_size * procNum, image_size, output, image_size);
+						stbi_image_free(pixels);
+						free(output);
+					}
+					else
+					{
+						memcpy_s(data + image_size * procNum, image_size, pixels, image_size);
+						stbi_image_free(pixels);
+					}
 				}
 				else
 				{
@@ -2287,20 +2378,14 @@ namespace GrEngine_Vulkan
 					memset(pixels, (byte)(255 * (1 - default_to_black)), image_size);
 					memcpy_s(data + image_size * procNum, image_size, pixels, image_size);
 					free(pixels);
-					//texture_path[procNum] = "empty_texture";
+					texture_path[procNum] = "empty_texture";
 				}
 
 				procNum++;
 			}
 
-			for (int ind = 0; ind < processes_map.size(); ind++)
-			{
-				if (processes_map[ind].valid())
-				{
-					processes_map[ind].wait();
-				}
-			}
-
+			vkWaitForFences(logicalDevice, 1, &loadFence, 1, UINT64_MAX);
+			vkResetFences(logicalDevice, 1, &loadFence);
 
 			VulkanAPI::m_createVkBuffer(logicalDevice, memAllocator, data, maxW * maxH * channels * texture_path.size(), VK_BUFFER_USAGE_TRANSFER_SRC_BIT, &stagingBuffer);
 			free(data);
@@ -2331,21 +2416,18 @@ namespace GrEngine_Vulkan
 			vkWaitForFences(logicalDevice, 1, &transitionFence, VK_TRUE, UINT64_MAX);
 			VulkanAPI::CopyBufferToImage(logicalDevice, commandPool, stagingBuffer.Buffer, new_texture->newImage.allocatedImage, graphicsQueue, transitionFence, { (uint32_t)maxW, (uint32_t)maxH, (uint32_t)channels }, texture_path.size());
 
+			generateMipmaps(new_texture->newImage.allocatedImage, format_img, maxW, maxH, mipLevels, texture_path.size());
+
 			vkWaitForFences(logicalDevice, 1, &transitionFence, VK_TRUE, UINT64_MAX);
 			VulkanAPI::AllocateCommandBuffers(logicalDevice, commandPool, &commandBuffer, 1);
 			VulkanAPI::BeginCommandBuffer(commandBuffer, VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT);
 			VulkanAPI::TransitionImageLayout(new_texture->newImage.allocatedImage, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, subresourceRange, commandBuffer);
-			VulkanAPI::EndAndSubmitCommandBuffer(logicalDevice, commandPool, commandBuffer, graphicsQueue, transitionFence);
-
-
-			generateMipmaps(new_texture->newImage.allocatedImage, maxW, maxH, mipLevels, texture_path.size());
-
+			VulkanAPI::EndAndSubmitCommandBuffer(logicalDevice, commandPool, commandBuffer, graphicsQueue, loadFence);
 
 			VulkanAPI::CreateImageView(logicalDevice, format_img, new_texture->newImage.allocatedImage, subresourceRange, &new_texture->textureImageView, type_view);
 			VulkanAPI::m_destroyShaderBuffer(logicalDevice, memAllocator, &stagingBuffer);
 			VulkanAPI::CreateSampler(physicalDevice, logicalDevice, &new_texture->textureSampler, (float)mipLevels);
 
-			new_texture->texture_collection = texture_path;
 			new_texture->srcInfo.width = maxW;
 			new_texture->srcInfo.height = maxH;
 			new_texture->srcInfo.channels = channels;
@@ -2355,22 +2437,15 @@ namespace GrEngine_Vulkan
 			new_texture->texInfo.descriptor.sampler = new_texture->textureSampler;
 			new_texture->texInfo.descriptor.imageView = new_texture->textureImageView;
 			new_texture->initialized = true;
+			new_texture->texture_collection = texture_path;
 
-			if (resource != nullptr)
+			if (new_empty)
 			{
-				resources.UpdateTexture(texture_path, logicalDevice, memAllocator, new_texture);
+				resource = resources.AddTextureResource((std::string("empty_texture") + std::to_string(resources.CountTextures())).c_str(), new_texture);
 			}
 			else
 			{
-				if (new_empty)
-				{
-					resource = resources.AddTextureResource((std::string("empty_texture") + std::to_string(resources.CountTextures())).c_str(), new_texture);
-				}
-				else
-				{
-					resource = resources.AddTextureResource(new_texture->texture_collection, new_texture);
-				}
-
+				resource = resources.AddTextureResource(texture_path, new_texture);
 			}
 		}
 
@@ -2398,144 +2473,13 @@ namespace GrEngine_Vulkan
 			return false;
 		}
 
-		bool res = updateResource(object->object_texture, textureIndex);
+		bool res = updateResource(object->object_texture[textureIndex], 0);
 		if (res)
 		{
 			object->updateObject();
 		}
-	}
 
-	bool VulkanRenderer::updateTexture(GrEngine::Entity* target, void* pixels, int textureIndex)
-	{
-		VulkanDrawable* object = nullptr;
-
-		if (target->GetEntityType() == GrEngine::EntityType::SkyboxEntity)
-		{
-			object = static_cast<VulkanSkybox*>(target);
-		}
-		else if (target->GetEntityType() == GrEngine::EntityType::TerrainEntity)
-		{
-			object = static_cast<VulkanTerrain*>(target);
-		}
-		else if (drawables.count(target->GetEntityID()) > 0)
-		{
-			object = static_cast<VulkanObject*>(drawables[target->GetEntityID()]);
-		}
-		else
-		{
-			return false;
-		}
-
-		Resource<Texture*>* resource = resources.GetTextureResource(object->object_texture->texture_collection);
-
-		if (resource != nullptr)
-		{
-			int maxW = object->object_texture->srcInfo.width;
-			int maxH = object->object_texture->srcInfo.height;
-			int channels = object->object_texture->srcInfo.channels;
-			uint32_t mipLevels = object->object_texture->texInfo.mipLevels;
-
-			VkCommandBuffer commandBuffer;
-			std::vector<VkBufferImageCopy> regions;
-			uint32_t offset = 0;
-
-			for (int i = 0; i < object->object_texture->texture_collection.size(); i++)
-			{
-				VkBufferImageCopy region{};
-				region.bufferOffset = offset;
-
-				region.imageSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-				region.imageSubresource.mipLevel = 0;
-				region.imageSubresource.baseArrayLayer = i;
-				region.imageSubresource.layerCount = 1;
-
-				region.imageOffset = { 0, 0, 0 };
-				region.imageExtent = {
-					(uint32_t)maxW,
-					(uint32_t)maxH,
-					1
-				};
-
-				regions.push_back(region);
-				offset += maxW * maxH * channels;
-			}
-
-			ShaderBuffer stagingBuffer;
-			VulkanAPI::m_createVkBuffer(logicalDevice, memAllocator, nullptr, sizeof(byte) * maxW * maxH * channels * object->object_texture->texture_collection.size(), VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_TRANSFER_SRC_BIT, &stagingBuffer);
-			VkImageSubresourceRange subresourceRange = VulkanAPI::StructSubresourceRange(VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, object->object_texture->texture_collection.size());
-
-			VulkanAPI::AllocateCommandBuffers(logicalDevice, commandPool, &commandBuffer, 1);
-			VulkanAPI::BeginCommandBuffer(commandBuffer, VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT);
-			VulkanAPI::TransitionImageLayout(object->object_texture->newImage.allocatedImage, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, subresourceRange, commandBuffer);
-			vkCmdCopyImageToBuffer(commandBuffer, object->object_texture->newImage.allocatedImage, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, stagingBuffer.Buffer, regions.size(), regions.data());
-			VulkanAPI::EndAndSubmitCommandBuffer(logicalDevice, commandPool, commandBuffer, graphicsQueue, transitionFence);
-
-			unsigned char* data;
-			vmaMapMemory(memAllocator, stagingBuffer.Allocation, (void**)&data);
-
-			uint32_t buf_offset = sizeof(byte) * maxW * maxH * channels * textureIndex;
-			memcpy_s(data + buf_offset, maxW * maxH * channels, pixels, maxW * maxH * channels); //sizeof(byte)
-			vmaUnmapMemory(memAllocator, stagingBuffer.Allocation);
-
-			VulkanAPI::DestroyImageView(object->object_texture->textureImageView);
-			VulkanAPI::DestroySampler(object->object_texture->textureSampler);
-			VulkanAPI::DestroyImage(object->object_texture->newImage.allocatedImage);
-			object->object_texture->initialized = false;
-
-			VkExtent3D imageExtent;
-			imageExtent.width = static_cast<uint32_t>(maxW);
-			imageExtent.height = static_cast<uint32_t>(maxH);
-			imageExtent.depth = 1;
-
-			VkImageCreateInfo dimg_info = VulkanAPI::StructImageCreateInfo(imageExtent, VK_FORMAT_R8G8B8A8_SRGB, VK_SAMPLE_COUNT_1_BIT, VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT);
-			dimg_info.arrayLayers = object->object_texture->texture_collection.size();
-			dimg_info.mipLevels = mipLevels;
-			dimg_info.flags = 0;
-
-			VulkanAPI::CreateImage(memAllocator, &dimg_info, &object->object_texture->newImage.allocatedImage, &object->object_texture->newImage.allocation);
-
-			vkWaitForFences(logicalDevice, 1, &transitionFence, VK_TRUE, UINT64_MAX);
-			VulkanAPI::AllocateCommandBuffers(logicalDevice, commandPool, &commandBuffer, 1);
-			VulkanAPI::BeginCommandBuffer(commandBuffer, VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT);
-			VulkanAPI::TransitionImageLayout(object->object_texture->newImage.allocatedImage, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, subresourceRange, commandBuffer);
-			VulkanAPI::EndAndSubmitCommandBuffer(logicalDevice, commandPool, commandBuffer, graphicsQueue, transitionFence);
-
-			vkWaitForFences(logicalDevice, 1, &transitionFence, VK_TRUE, UINT64_MAX);
-			VulkanAPI::CopyBufferToImage(logicalDevice, commandPool, stagingBuffer.Buffer, object->object_texture->newImage.allocatedImage, graphicsQueue, transitionFence, { (uint32_t)maxW, (uint32_t)maxH, (uint32_t)channels }, object->object_texture->texture_collection.size());
-
-
-			generateMipmaps(object->object_texture->newImage.allocatedImage, maxW, maxH, mipLevels, object->object_texture->texture_collection.size());
-
-
-			subresourceRange.levelCount = mipLevels;
-			vkWaitForFences(logicalDevice, 1, &transitionFence, VK_TRUE, UINT64_MAX);
-			VulkanAPI::AllocateCommandBuffers(logicalDevice, commandPool, &commandBuffer, 1);
-			VulkanAPI::BeginCommandBuffer(commandBuffer, VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT);
-			VulkanAPI::TransitionImageLayout(object->object_texture->newImage.allocatedImage, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, subresourceRange, commandBuffer);
-			VulkanAPI::EndAndSubmitCommandBuffer(logicalDevice, commandPool, commandBuffer, graphicsQueue, transitionFence);
-
-			VulkanAPI::CreateImageView(logicalDevice, VK_FORMAT_R8G8B8A8_SRGB, object->object_texture->newImage.allocatedImage, subresourceRange, &object->object_texture->textureImageView, VK_IMAGE_VIEW_TYPE_2D_ARRAY);
-			VulkanAPI::CreateSampler(physicalDevice, logicalDevice, &object->object_texture->textureSampler, (float)mipLevels);
-
-			object->object_texture->texture_collection = object->object_texture->texture_collection;
-			object->object_texture->srcInfo.width = maxW;
-			object->object_texture->srcInfo.height = maxH;
-			object->object_texture->srcInfo.channels = channels;
-			object->object_texture->texInfo.mipLevels = mipLevels;
-			object->object_texture->texInfo.format = VK_FORMAT_R8G8B8A8_SRGB;
-			object->object_texture->texInfo.descriptor.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-			object->object_texture->texInfo.descriptor.sampler = object->object_texture->textureSampler;
-			object->object_texture->texInfo.descriptor.imageView = object->object_texture->textureImageView;
-			object->object_texture->initialized = true;
-			object->updateObject();
-
-			VulkanAPI::m_destroyShaderBuffer(logicalDevice, memAllocator, &stagingBuffer);
-			return true;
-		}
-		else
-		{
-			return false;
-		}
+		return true;
 	}
 
 	bool VulkanRenderer::updateResource(Texture* target, int textureIndex)
@@ -2645,7 +2589,7 @@ namespace GrEngine_Vulkan
 			VulkanAPI::CopyBufferToImage(logicalDevice, commandPool, stagingBuffer.Buffer, target->newImage.allocatedImage, graphicsQueue, transitionFence, { (uint32_t)maxW, (uint32_t)maxH, (uint32_t)channels }, target->texture_collection.size());
 
 
-			generateMipmaps(target->newImage.allocatedImage, maxW, maxH, mipLevels, target->texture_collection.size());
+			generateMipmaps(target->newImage.allocatedImage, target->texInfo.format, maxW, maxH, mipLevels, target->texture_collection.size());
 
 
 			subresourceRange.levelCount = mipLevels;
@@ -2695,7 +2639,7 @@ namespace GrEngine_Vulkan
 		VulkanAPI::CopyBufferToImage(logicalDevice, commandPool, stagingBuffer.Buffer, target->newImage.allocatedImage, graphicsQueue, transitionFence, target->srcInfo, target->texture_collection.size());
 
 
-		generateMipmaps(target->newImage.allocatedImage, target->srcInfo.width, target->srcInfo.height, target->texInfo.mipLevels, target->texture_collection.size());
+		generateMipmaps(target->newImage.allocatedImage, target->texInfo.format, target->srcInfo.width, target->srcInfo.height, target->texInfo.mipLevels, target->texture_collection.size());
 
 
 		subresourceRange.levelCount = target->texInfo.mipLevels;
@@ -2764,7 +2708,7 @@ namespace GrEngine_Vulkan
 		VulkanAPI::EndAndSubmitCommandBuffer(logicalDevice, commandPool, commandBuffer, graphicsQueue, transitionFence);
 
 
-		generateMipmaps(target->newImage.allocatedImage, target->srcInfo.width, target->srcInfo.height, target->texInfo.mipLevels, target->texture_collection.size());
+		generateMipmaps(target->newImage.allocatedImage, target->texInfo.format, target->srcInfo.width, target->srcInfo.height, target->texInfo.mipLevels, target->texture_collection.size());
 
 		vkWaitForFences(logicalDevice, 1, &transitionFence, VK_TRUE, UINT64_MAX);
 		subresourceRange.levelCount = target->texInfo.mipLevels;
@@ -2777,15 +2721,17 @@ namespace GrEngine_Vulkan
 		return true;
 	}
 
-	void VulkanRenderer::generateMipmaps(VkImage image, int32_t texWidth, int32_t texHeight, uint32_t mipLevels, uint32_t arrayLevels)
+	void VulkanRenderer::generateMipmaps(VkImage image, VkFormat imageFormat, int32_t texWidth, int32_t texHeight, uint32_t mipLevels, uint32_t arrayLevels)
 	{
+#ifdef _DEBUG
 		VkFormatProperties formatProperties;
-		vkGetPhysicalDeviceFormatProperties(physicalDevice, VK_FORMAT_R8G8B8A8_SRGB, &formatProperties);
+		vkGetPhysicalDeviceFormatProperties(physicalDevice, imageFormat, &formatProperties);
 
 		if (!(formatProperties.optimalTilingFeatures & VK_FORMAT_FEATURE_SAMPLED_IMAGE_FILTER_LINEAR_BIT)) 
 		{
 			throw std::runtime_error("texture image format does not support linear blitting!");
 		}
+#endif
 
 		VkCommandBuffer commandBuffer;
 
@@ -2804,8 +2750,8 @@ namespace GrEngine_Vulkan
 			barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
 			barrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
 			barrier.subresourceRange.baseArrayLayer = k;
-			barrier.subresourceRange.layerCount = arrayLevels;
-			barrier.subresourceRange.levelCount = mipLevels;
+			barrier.subresourceRange.layerCount = VK_REMAINING_ARRAY_LAYERS;
+			barrier.subresourceRange.levelCount = VK_REMAINING_MIP_LEVELS;
 
 			int32_t mipWidth = texWidth;
 			int32_t mipHeight = texHeight;
@@ -2813,13 +2759,13 @@ namespace GrEngine_Vulkan
 			for (uint32_t i = 1; i < mipLevels; i++) 
 			{
 				barrier.subresourceRange.baseMipLevel = i - 1;
-				barrier.oldLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
+				barrier.oldLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
 				barrier.newLayout = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;
-				barrier.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
+				barrier.srcAccessMask = VK_ACCESS_SHADER_READ_BIT;
 				barrier.dstAccessMask = VK_ACCESS_TRANSFER_READ_BIT;
 
 				vkCmdPipelineBarrier(commandBuffer,
-					VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, 0,
+					VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, 0,
 					0, nullptr,
 					0, nullptr,
 					1, &barrier);
@@ -3139,6 +3085,7 @@ namespace GrEngine_Vulkan
 			return;
 		}
 
+		getActiveViewport()->ClampAxes();
 		new_file << "viewport\n{\n";
 		std::vector<EntityProperty*> cur_props = getActiveViewport()->GetProperties();
 		for (std::vector<EntityProperty*>::iterator itt = cur_props.begin(); itt != cur_props.end(); ++itt)
@@ -3172,7 +3119,11 @@ namespace GrEngine_Vulkan
 
 	void VulkanRenderer::LoadScene(const char* path)
 	{
+		int resizable = glfwGetWindowAttrib(pParentWindow, GLFW_RESIZABLE);
+		glfwSetWindowAttrib(pParentWindow, GLFW_RESIZABLE, 0);
 		clearDrawables();
+
+		Initialized = false;
 
 		std::ifstream file(path, std::ios::ate | std::ios::binary);
 
@@ -3240,8 +3191,10 @@ namespace GrEngine_Vulkan
 			}
 		}
 		
-		viewport_camera->SetRotation(viewport_camera->GetObjectOrientation());
+		//viewport_camera->SetRotation(viewport_camera->GetObjectOrientation());
 		viewport_camera->PositionObjectAt(viewport_camera->GetObjectPosition());
 		file.close();
+		glfwSetWindowAttrib(pParentWindow, GLFW_RESIZABLE, resizable);
+		Initialized = true;
 	}
 };

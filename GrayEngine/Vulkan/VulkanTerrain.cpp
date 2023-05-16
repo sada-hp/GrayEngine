@@ -29,7 +29,12 @@ namespace GrEngine_Vulkan
 			VulkanAPI::m_destroyShaderBuffer(logicalDevice, memAllocator, &object_mesh->indexBuffer);
 		}
 		resources->RemoveTexture(foliageMask, logicalDevice, memAllocator);
-		resources->RemoveTexture(object_displacement, logicalDevice, memAllocator);
+		for (int i = 0; i < 4; i++)
+		{
+			resources->RemoveTexture(object_displacement[i], logicalDevice, memAllocator);
+			resources->RemoveTexture(object_texture[i], logicalDevice, memAllocator);
+			resources->RemoveTexture(object_normal[i], logicalDevice, memAllocator);
+		}
 
 		ready = false;
 		VulkanDrawable::destroyObject();
@@ -70,11 +75,11 @@ namespace GrEngine_Vulkan
 	const std::array<std::string, 4> VulkanTerrain::GetColorTextures()
 	{
 		std::array<std::string, 4> res;
-		if (object_texture != nullptr)
+		for (int i = 0; i < 4; i++)
 		{
-			for (int i = 0; i < glm::min(4, (int)object_texture->texture_collection.size()); i++)
+			if (i < object_texture.size())
 			{
-				res[i] = object_texture->texture_collection[i];
+				res[i] = object_texture[i]->texture_collection[0];
 			}
 		}
 
@@ -84,11 +89,11 @@ namespace GrEngine_Vulkan
 	const std::array<std::string, 4> VulkanTerrain::GetNormalTextures()
 	{
 		std::array<std::string, 4> res;
-		if (object_normal != nullptr)
+		for (int i = 0; i < 4; i++)
 		{
-			for (int i = 0; i < glm::min(4, (int)object_normal->texture_collection.size()); i++)
+			if (i < object_normal.size())
 			{
-				res[i] = object_normal->texture_collection[i];
+				res[i] = object_normal[i]->texture_collection[0];
 			}
 		}
 
@@ -98,11 +103,11 @@ namespace GrEngine_Vulkan
 	const std::array<std::string, 4> VulkanTerrain::GetDisplacementTextures()
 	{
 		std::array<std::string, 4> res;
-		if (object_displacement != nullptr)
+		for (int i = 0; i < 4; i++)
 		{
-			for (int i = 0; i < glm::min(4, (int)object_displacement->texture_collection.size()); i++)
+			if (i < object_displacement.size())
 			{
-				res[i] = object_displacement->texture_collection[i];
+				res[i] = object_displacement[i]->texture_collection[0];
 			}
 		}
 
@@ -116,7 +121,12 @@ namespace GrEngine_Vulkan
 			VulkanAPI::m_destroyShaderBuffer(logicalDevice, memAllocator, &object_mesh->vertexBuffer);
 			VulkanAPI::m_destroyShaderBuffer(logicalDevice, memAllocator, &object_mesh->indexBuffer);
 			resources->RemoveTexture(foliageMask, logicalDevice, memAllocator);
-			resources->RemoveTexture(object_displacement, logicalDevice, memAllocator);
+			for (int i = 0; i < 4; i++)
+			{
+				resources->RemoveTexture(object_displacement[i], logicalDevice, memAllocator);
+				resources->RemoveTexture(object_texture[i], logicalDevice, memAllocator);
+				resources->RemoveTexture(object_normal[i], logicalDevice, memAllocator);
+			}
 			delete object_mesh;
 
 			ready = false;
@@ -129,11 +139,13 @@ namespace GrEngine_Vulkan
 		VulkanAPI::m_createVkBuffer(logicalDevice, memAllocator, nullptr, size.resolution * size.resolution * sizeof(ComputeVertex), VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, &terOut);
 
 		heightMap = static_cast<VulkanRenderer*>(p_Owner)->loadTexture({ images[0] }, VK_IMAGE_VIEW_TYPE_2D_ARRAY)->AddLink();
-		//object_normal = static_cast<VulkanRenderer*>(p_Owner)->loadTexture({ "Content\\Terrain\\Stone\\Stone_NM.png" }, VK_IMAGE_VIEW_TYPE_2D_ARRAY, VK_IMAGE_TYPE_2D, VK_FORMAT_R8G8B8A8_UNORM)->AddLink();
-		object_displacement = static_cast<VulkanRenderer*>(p_Owner)->loadTexture({ displacements[0], displacements[1], displacements[2], displacements[3] }, VK_IMAGE_VIEW_TYPE_2D_ARRAY, VK_IMAGE_TYPE_2D, VK_FORMAT_R8G8B8A8_UNORM, true)->AddLink();
-		foliageMask = static_cast<VulkanRenderer*>(p_Owner)->loadTexture({ images[1] }, VK_IMAGE_VIEW_TYPE_2D_ARRAY)->AddLink();
+		foliageMask = static_cast<VulkanRenderer*>(p_Owner)->loadTexture({ images[1] }, VK_IMAGE_VIEW_TYPE_2D)->AddLink();
 		bool res = static_cast<VulkanRenderer*>(p_Owner)->assignTextures({ images[2], images[3], images[4], images[5] }, this, false);
 		res = static_cast<VulkanRenderer*>(p_Owner)->assignNormals({ normals[0], normals[1], normals[2], normals[3] }, this, false);
+		for (int i = 0; i < 4; i++)
+		{
+			object_displacement.push_back(static_cast<VulkanRenderer*>(p_Owner)->loadTexture({ displacements[i] }, VK_IMAGE_VIEW_TYPE_2D, VK_IMAGE_TYPE_2D, VK_FORMAT_R8G8B8A8_UNORM, true)->AddLink());
+		}
 		updateObject();
 
 		createComputeLayout();
@@ -217,16 +229,6 @@ namespace GrEngine_Vulkan
 
 	void VulkanTerrain::UpdateTextures(std::array<std::string, 5> images, std::array<std::string, 4> normals, std::array<std::string, 4> displacement)
 	{
-		std::vector<std::string> textures_v;
-		std::vector<std::string> normals_v;
-		std::vector<std::string> heights_v;
-		textures_v.resize(object_texture->texture_collection.size());
-		normals_v.resize(object_normal->texture_collection.size());
-		heights_v.resize(object_displacement->texture_collection.size());
-		std::copy(object_texture->texture_collection.begin(), object_texture->texture_collection.end(), textures_v.begin());
-		std::copy(object_normal->texture_collection.begin(), object_normal->texture_collection.end(), normals_v.begin());
-		std::copy(object_displacement->texture_collection.begin(), object_displacement->texture_collection.end(), heights_v.begin());
-
 		if (images[0] != "")
 		{
 			if (foliageMask != nullptr && images[0] == foliageMask->texture_collection[0])
@@ -236,52 +238,35 @@ namespace GrEngine_Vulkan
 			else
 			{
 				resources->RemoveTexture(foliageMask, logicalDevice, memAllocator);
-				foliageMask = static_cast<VulkanRenderer*>(p_Owner)->loadTexture({ images[0] }, VK_IMAGE_VIEW_TYPE_2D_ARRAY)->AddLink();
+				foliageMask = static_cast<VulkanRenderer*>(p_Owner)->loadTexture({ images[0] }, VK_IMAGE_VIEW_TYPE_2D)->AddLink();
 			}
 		}
 
-		bool update_col = false;
-		bool update_nor = false;
-		bool update_dis = false;
 		for (int i = 1; i < 5; i++)
 		{
-			if (images[i] != "")
+			if (images[i] != "" && images[i] != object_texture[i - 1]->texture_collection[0])
 			{
-				textures_v[i - 1] = images[i];
-				update_col = true;
+				resources->RemoveTexture(object_texture[i - 1], logicalDevice, memAllocator);
+				object_texture[i - 1] = static_cast<VulkanRenderer*>(p_Owner)->loadTexture({ images[i] }, VK_IMAGE_VIEW_TYPE_2D, VK_IMAGE_TYPE_2D, VK_FORMAT_R8G8B8A8_UNORM)->AddLink();
 			}
 		}
 
 		for (int i = 0; i < 4; i++)
 		{
-			if (normals[i] != "")
+			if (normals[i] != "" && normals[i] != object_normal[i]->texture_collection[0])
 			{
-				normals_v[i] = normals[i];
-				update_nor = true;
+				resources->RemoveTexture(object_normal[i], logicalDevice, memAllocator);
+				object_normal[i] = static_cast<VulkanRenderer*>(p_Owner)->loadTexture({ normals[i] }, VK_IMAGE_VIEW_TYPE_2D, VK_IMAGE_TYPE_2D, VK_FORMAT_R8G8B8A8_UNORM)->AddLink();
 			}
 		}
 
 		for (int i = 0; i < 4; i++)
 		{
-			if (displacement[i] != "")
+			if (displacement[i] != "" && displacement[i] != object_displacement[i]->texture_collection[0])
 			{
-				heights_v[i] = displacement[i];
-				update_dis = true;
+				resources->RemoveTexture(object_displacement[i], logicalDevice, memAllocator);
+				object_displacement[i] = static_cast<VulkanRenderer*>(p_Owner)->loadTexture({ displacement[i] }, VK_IMAGE_VIEW_TYPE_2D, VK_IMAGE_TYPE_2D, VK_FORMAT_R8G8B8A8_UNORM, true)->AddLink();
 			}
-		}
-
-		if (update_col)
-		{
-			static_cast<VulkanRenderer*>(p_Owner)->assignTextures(textures_v, this, false);
-		}
-		if (update_nor)
-		{
-			static_cast<VulkanRenderer*>(p_Owner)->assignNormals(normals_v, this, false);
-		}
-		if (update_dis)
-		{
-			resources->RemoveTexture(object_displacement, logicalDevice, memAllocator);
-			object_displacement = static_cast<VulkanRenderer*>(p_Owner)->loadTexture(heights_v, VK_IMAGE_VIEW_TYPE_2D_ARRAY, VK_IMAGE_TYPE_2D, VK_FORMAT_R8G8B8A8_UNORM, true)->AddLink();
 		}
 
 		updateObject();
@@ -384,19 +369,19 @@ namespace GrEngine_Vulkan
 		new_file << "r " << size.resolution << std::endl;
 		new_file << "m " << (foliageMask->texture_collection[0] == "" ? "empty_texture" : foliageMask->texture_collection[0]) << std::endl;
 
-		for (std::vector<std::string>::iterator itt = object_texture->texture_collection.begin(); itt != object_texture->texture_collection.end(); ++itt)
+		for (std::vector<Texture*>::iterator itt = object_texture.begin(); itt != object_texture.end(); ++itt)
 		{
-			new_file << "t " << (*itt == "" ? "empty_texture" : *itt) << std::endl;
+			new_file << "t " << ((*itt)->texture_collection[0] == "" ? "empty_texture" : (*itt)->texture_collection[0]) << std::endl;
 		}
 
-		for (std::vector<std::string>::iterator itt = object_normal->texture_collection.begin(); itt != object_normal->texture_collection.end(); ++itt)
+		for (std::vector<Texture*>::iterator itt = object_normal.begin(); itt != object_normal.end(); ++itt)
 		{
-			new_file << "nt " << (*itt == "" ? "empty_texture" : *itt) << std::endl;
+			new_file << "nt " << ((*itt)->texture_collection[0] == "" ? "empty_texture" : (*itt)->texture_collection[0]) << std::endl;
 		}
 
-		for (std::vector<std::string>::iterator itt = object_displacement->texture_collection.begin(); itt != object_displacement->texture_collection.end(); ++itt)
+		for (std::vector<Texture*>::iterator itt = object_displacement.begin(); itt != object_displacement.end(); ++itt)
 		{
-			new_file << "dt " << (*itt == "" ? "empty_texture" : *itt) << std::endl;
+			new_file << "dt " << ((*itt)->texture_collection[0] == "" ? "empty_texture" : (*itt)->texture_collection[0]) << std::endl;
 		}
 
 		for (std::vector<GrEngine_Vulkan::Vertex>::iterator itt = object_mesh->vertices.begin(); itt != object_mesh->vertices.end(); ++itt)
@@ -418,9 +403,12 @@ namespace GrEngine_Vulkan
 			VulkanAPI::m_destroyShaderBuffer(logicalDevice, memAllocator, &object_mesh->vertexBuffer);
 			VulkanAPI::m_destroyShaderBuffer(logicalDevice, memAllocator, &object_mesh->indexBuffer);
 			resources->RemoveTexture(foliageMask, logicalDevice, memAllocator);
-			resources->RemoveTexture(object_displacement, logicalDevice, memAllocator);
-			VulkanAPI::DestroyImage(heightMap->newImage.allocatedImage);
-			VulkanAPI::DestroyImage(foliageMask->newImage.allocatedImage);
+			for (int i = 0; i < 4; i++)
+			{
+				resources->RemoveTexture(object_displacement[i], logicalDevice, memAllocator);
+				resources->RemoveTexture(object_texture[i], logicalDevice, memAllocator);
+				resources->RemoveTexture(object_normal[i], logicalDevice, memAllocator);
+			}
 			delete object_mesh;
 
 			ready = false;
@@ -505,7 +493,7 @@ namespace GrEngine_Vulkan
 			else if (stream == "m")
 			{
 				file >> stream;
-				foliageMask = static_cast<VulkanRenderer*>(p_Owner)->loadTexture({ stream }, VK_IMAGE_VIEW_TYPE_2D_ARRAY)->AddLink();
+				foliageMask = static_cast<VulkanRenderer*>(p_Owner)->loadTexture({ stream }, VK_IMAGE_VIEW_TYPE_2D)->AddLink();
 			}
 			else if (stream == "t" && map_index < 4)
 			{
@@ -542,7 +530,11 @@ namespace GrEngine_Vulkan
 
 		static_cast<VulkanRenderer*>(p_Owner)->assignTextures({ textures[0], textures[1], textures[2], textures[3] }, this, false);
 		static_cast<VulkanRenderer*>(p_Owner)->assignNormals({ normals[0], normals[1], normals[2], normals[3] }, this, false);
-		object_displacement = static_cast<VulkanRenderer*>(p_Owner)->loadTexture({ displacements[0], displacements[1], displacements[2], displacements[3] }, VK_IMAGE_VIEW_TYPE_2D_ARRAY, VK_IMAGE_TYPE_2D, VK_FORMAT_R8G8B8A8_UNORM, true)->AddLink();
+		for (int i = 0; i < 4; i++)
+		{
+			object_displacement.push_back(static_cast<VulkanRenderer*>(p_Owner)->loadTexture({ displacements[i] }, VK_IMAGE_VIEW_TYPE_2D, VK_IMAGE_TYPE_2D, VK_FORMAT_R8G8B8A8_UNORM, true)->AddLink());
+		}
+
 		VulkanResourceManager::CalculateNormals(object_mesh);
 		VulkanResourceManager::CalculateTangents(object_mesh, 200, 200);
 		VulkanAPI::m_createVkBuffer(logicalDevice, memAllocator, object_mesh->vertices.data(), sizeof(object_mesh->vertices[0]) * object_mesh->vertices.size(), VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, &object_mesh->vertexBuffer);
@@ -809,10 +801,10 @@ namespace GrEngine_Vulkan
 		descriptorSets.resize(1 + use_compute);
 		descriptorSets[0].bindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
 
-		VkDescriptorImageInfo texInfo{};
-		texInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-		texInfo.imageView = object_texture->textureImageView;
-		texInfo.sampler = object_texture->textureSampler;
+		//VkDescriptorImageInfo texInfo{};
+		//texInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+		//texInfo.imageView = object_texture->textureImageView;
+		//texInfo.sampler = object_texture->textureSampler;
 		VkDescriptorImageInfo maskInfo{};
 		maskInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
 		maskInfo.imageView = foliageMask->textureImageView;
@@ -820,9 +812,36 @@ namespace GrEngine_Vulkan
 
 		subscribeDescriptor(VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_GEOMETRY_BIT | VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT | VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT, 0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, static_cast<VulkanRenderer*>(p_Owner)->viewProjUBO.BufferInfo);
 		subscribeDescriptor(VK_SHADER_STAGE_FRAGMENT_BIT | VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT, 1, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, maskInfo);
-		subscribeDescriptor(VK_SHADER_STAGE_FRAGMENT_BIT, 2, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, texInfo);
-		subscribeDescriptor(VK_SHADER_STAGE_FRAGMENT_BIT, 3, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, object_normal->texInfo.descriptor);
-		subscribeDescriptor(VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT, 4, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, object_displacement->texInfo.descriptor);
+
+		std::vector<VkDescriptorImageInfo> imageInfo;
+		std::vector<VkDescriptorImageInfo> normalsInfo;
+		std::vector<VkDescriptorImageInfo> disInfo;
+		if (object_texture.size() > 0)
+		{
+			for (int i = 0; i < object_texture.size(); i++)
+			{
+				imageInfo.push_back(object_texture[i]->texInfo.descriptor);
+			}
+			subscribeDescriptor(VK_SHADER_STAGE_FRAGMENT_BIT, 2, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, imageInfo);
+		}
+
+		if (object_normal.size() > 0)
+		{
+			for (int i = 0; i < object_normal.size(); i++)
+			{
+				normalsInfo.push_back(object_normal[i]->texInfo.descriptor);
+			}
+			subscribeDescriptor(VK_SHADER_STAGE_FRAGMENT_BIT, 3, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, normalsInfo);
+		}
+		
+		if (object_displacement.size() > 0)
+		{
+			for (int i = 0; i < object_displacement.size(); i++)
+			{
+				disInfo.push_back(object_displacement[i]->texInfo.descriptor);
+			}
+			subscribeDescriptor(VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT, 4, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, disInfo);
+		}
 
 		int binding = 3;
 

@@ -56,7 +56,7 @@ namespace GrEngine_Vulkan
 		VkFence computeFence;
 		Texture* heightMap;
 		Texture* foliageMask;
-		Texture* object_displacement;
+		std::vector<Texture*> object_displacement;
 
 		btBvhTriangleMeshShape* colShape;
 	private:

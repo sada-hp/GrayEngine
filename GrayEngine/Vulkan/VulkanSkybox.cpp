@@ -62,7 +62,7 @@ namespace GrEngine_Vulkan
 			object_mesh = resource->AddLink();
 		}
 
-		static_cast<VulkanRenderer*>(p_Owner)->assignTextures({ }, this);
+		static_cast<VulkanRenderer*>(p_Owner)->assignTextures({ "", "" , "" , "" , "" , "" }, this);
 	}
 
 	bool VulkanSkybox::recordCommandBuffer(VkCommandBuffer commandBuffer, UINT32 mode)
@@ -101,8 +101,8 @@ namespace GrEngine_Vulkan
 
 		VkDescriptorImageInfo info;
 		info.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-		info.imageView = object_texture->textureImageView;
-		info.sampler = object_texture->textureSampler;
+		info.imageView = object_texture[0]->textureImageView;
+		info.sampler = object_texture[0]->textureSampler;
 		subscribeDescriptor(VK_SHADER_STAGE_VERTEX_BIT, 0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, static_cast<VulkanRenderer*>(p_Owner)->viewProjUBO.BufferInfo);
 		subscribeDescriptor(VK_SHADER_STAGE_FRAGMENT_BIT, 1, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, info);
 
