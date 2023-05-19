@@ -90,28 +90,47 @@ namespace GrEngine_Vulkan
 
 	Resource<Mesh*>* VulkanResourceManager::AddMeshResource(const char* name, Mesh* pointer)
 	{
+		Resource<Mesh*>* res;
 		std::string string_name = NormalizeName(name);
-		meshResources.push_back(new Resource<Mesh*>(string_name.c_str(), pointer));
-		return meshResources.back();
+		res = GetMeshResource(string_name.c_str());
+		if (res == nullptr)
+		{
+			meshResources.push_back(new Resource<Mesh*>(string_name.c_str(), pointer));
+			res = meshResources.back();
+		}
+
+		return res;
 	}
 
 	Resource<Texture*>* VulkanResourceManager::AddTextureResource(const char* name, Texture* pointer)
 	{
+		Resource<Texture*>* res;
 		std::string string_name = NormalizeName(name);
-		texResources.push_back(new Resource<Texture*>(string_name.c_str(), pointer));
-		return texResources.back();
+		res = GetTextureResource(string_name.c_str());
+		if (res == nullptr)
+		{
+			texResources.push_back(new Resource<Texture*>(string_name.c_str(), pointer));
+			res = texResources.back();
+		}
+		return res;
 	}
 
 	Resource<Texture*>* VulkanResourceManager::AddTextureResource(std::vector<std::string> names, Texture* pointer)
 	{
+		Resource<Texture*>* res;
 		std::string output = "";
 		for (std::vector<std::string>::iterator itt = names.begin(); itt != names.end(); ++itt)
 		{
 			output += NormalizeName((*itt));
 		}
 
-		texResources.push_back(new Resource<Texture*>(output.c_str(), pointer));
-		return texResources.back();
+		res = GetTextureResource(output.c_str());
+		if (res == nullptr)
+		{
+			texResources.push_back(new Resource<Texture*>(output.c_str(), pointer));
+			res = texResources.back();
+		}
+		return res;
 	}
 
 	Resource<Mesh*>* VulkanResourceManager::GetMeshResource(const char* name)

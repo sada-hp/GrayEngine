@@ -742,6 +742,7 @@ namespace GrEngine_Vulkan
 	{
 		if (fence != nullptr && destructors.erase(fence) > 0)
 		{
+			vkWaitForFences(devices[fence], 1, &fence, 1, UINT64_MAX);
 			vkDestroyFence(devices[fence], fence, nullptr);
 			devices.erase(fence);
 		}

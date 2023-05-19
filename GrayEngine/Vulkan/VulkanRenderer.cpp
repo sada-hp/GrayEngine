@@ -59,10 +59,16 @@ namespace GrEngine_Vulkan
 		VulkanAPI::DestroyImageView(shadowMap.textureImageView);
 		VulkanAPI::DestroyImage(shadowMap.newImage.allocatedImage);
 
+		VulkanAPI::DestroyFence(transitionFence);
+		VulkanAPI::DestroyFence(loadFence);
+
 		cleanupSwapChain();
 		resources.Clean(logicalDevice, memAllocator);
 
 		VulkanAPI::FreeCommandBuffers(commandBuffers.data(), commandBuffers.size());
+
+		waitForRenderer();
+		vkDeviceWaitIdle(logicalDevice);
 		VulkanAPI::Destroy(logicalDevice, memAllocator);
 
 #ifdef VALIDATION
@@ -355,13 +361,15 @@ namespace GrEngine_Vulkan
 	void VulkanRenderer::SaveScreenshot(const char* filepath)
 	{
 		waitForRenderer();
+		vkDeviceWaitIdle(logicalDevice);
 
-		VkImage srcImage = swapChainImages[currentImageIndex];
+		VkImage srcImage = swapChainImages[currentFrame];
 		VkImage dstImage;
 		VkCommandBuffer cmd;
 		VkImageCreateInfo dstInf{};
+		dstInf.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
 		dstInf.imageType = VK_IMAGE_TYPE_2D;
-		dstInf.format = VK_FORMAT_B8G8R8A8_SRGB;
+		dstInf.format = swapChainImageFormat;
 		dstInf.extent.width = swapChainExtent.width;
 		dstInf.extent.height = swapChainExtent.height;
 		dstInf.extent.depth = 1;
@@ -377,6 +385,7 @@ namespace GrEngine_Vulkan
 		VkMemoryAllocateInfo memAllocInfo{};
 		VkDeviceMemory dstImageMemory;
 		vkGetImageMemoryRequirements(logicalDevice, dstImage, &memRequirements);
+		memAllocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
 		memAllocInfo.allocationSize = memRequirements.size;
 		VmaAllocationCreateInfo allocInfo = {};
 		allocInfo.usage = VMA_MEMORY_USAGE_CPU_ONLY;
@@ -386,7 +395,7 @@ namespace GrEngine_Vulkan
 		vkBindImageMemory(logicalDevice, dstImage, dstImageMemory, 0);
 
 		VulkanAPI::AllocateCommandBuffers(logicalDevice, commandPool, &cmd, 1);
-		VulkanAPI::BeginCommandBuffer(cmd, VK_COMMAND_BUFFER_USAGE_FLAG_BITS_MAX_ENUM);
+		VulkanAPI::BeginCommandBuffer(cmd, VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT);
 		VulkanAPI::TransitionImageLayout(dstImage, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VulkanAPI::StructSubresourceRange(VK_IMAGE_ASPECT_COLOR_BIT), cmd);
 		VulkanAPI::TransitionImageLayout(srcImage, VK_IMAGE_LAYOUT_PRESENT_SRC_KHR, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, VulkanAPI::StructSubresourceRange(VK_IMAGE_ASPECT_COLOR_BIT), cmd);
 
@@ -406,36 +415,32 @@ namespace GrEngine_Vulkan
 		VulkanAPI::TransitionImageLayout(srcImage, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, VK_IMAGE_LAYOUT_PRESENT_SRC_KHR, VulkanAPI::StructSubresourceRange(VK_IMAGE_ASPECT_COLOR_BIT), cmd);
 		VulkanAPI::EndAndSubmitCommandBuffer(logicalDevice, commandPool, cmd, graphicsQueue, transitionFence);
 
-		VkImageSubresource subResource{ VK_IMAGE_ASPECT_COLOR_BIT, 0, 0 };
-		VkSubresourceLayout subResourceLayout;
-		vkGetImageSubresourceLayout(logicalDevice, dstImage, &subResource, &subResourceLayout);
-
+		vkWaitForFences(logicalDevice, 1, &transitionFence, VK_TRUE, UINT64_MAX);
 		if (filepath != "")
 		{
-			unsigned char* data;
-			vkMapMemory(logicalDevice, dstImageMemory, 0, VK_WHOLE_SIZE, 0, (void**)&data);
-			unsigned char* pixels = (unsigned char*)malloc(swapChainExtent.width * swapChainExtent.height * 4);
+			VkImageSubresource subResource{ VK_IMAGE_ASPECT_COLOR_BIT, 0, 0 };
+			VkSubresourceLayout subResourceLayout;
+			vkGetImageSubresourceLayout(logicalDevice, dstImage, &subResource, &subResourceLayout);
 
-			int offset = 0;
+			unsigned char* data;
+			size_t arr_s = subResourceLayout.size;
+
+			vkMapMemory(logicalDevice, dstImageMemory, 0, arr_s, 0, (void**)&data);
+			unsigned char* pixels = new unsigned char[arr_s];
 
 			//BGRA to RGBA
-			for (int y = 0; y < swapChainExtent.height; y++) 
+			for (int offset = subResourceLayout.offset; offset < subResourceLayout.size; offset+=4)
 			{
-				for (int x = 0; x < swapChainExtent.width; x++) 
-				{
-					pixels[offset] = data[offset + 2];
-					pixels[offset + 1] = data[offset + 1];
-					pixels[offset + 2] = data[offset];
-					pixels[offset + 3] = 255;
-
-					offset += 4;
-				}
+				pixels[offset] = data[offset + 2];
+				pixels[offset + 1] = data[offset + 1];
+				pixels[offset + 2] = data[offset];
+				pixels[offset + 3] = 255;
 			}
-			int i = stbi_write_png(filepath, swapChainExtent.width, swapChainExtent.height, 4, pixels, swapChainExtent.width * 4);
-			free(pixels);
+			
+			int i = stbi_write_png(filepath, swapChainExtent.width, swapChainExtent.height, 4, pixels, subResourceLayout.rowPitch);
+			delete[] pixels;
 			vkUnmapMemory(logicalDevice, dstImageMemory);
 		}
-
 
 		vkFreeMemory(logicalDevice, dstImageMemory, nullptr);
 		vkDestroyImage(logicalDevice, dstImage, nullptr);
@@ -1493,7 +1498,8 @@ namespace GrEngine_Vulkan
 		if (vkBeginCommandBuffer(commandBuffers[index], &beginInfo) != VK_SUCCESS)
 			return false;
 
-		vpUBO.view = glm::translate(glm::mat4_cast(getActiveViewport()->UpdateCameraOrientation(0.2)), -getActiveViewport()->UpdateCameraPosition(0.65));
+		vpUBO.pos = getActiveViewport()->UpdateCameraPosition(0.65);
+		vpUBO.view = glm::translate(glm::mat4_cast(getActiveViewport()->UpdateCameraOrientation(0.2)), -vpUBO.pos);
 		vpUBO.proj = glm::perspective(glm::radians(60.0f), (float)extent.width / (float)extent.height, NearPlane, FarPlane);
 		vpUBO.proj[1][1] *= -1;
 		//memcpy_s(viewProjUBO.data, sizeof(ViewProjection), &vpUBO, sizeof(ViewProjection));
@@ -1594,7 +1600,11 @@ namespace GrEngine_Vulkan
 					&& static_cast<VulkanObject*>((*itt).second)->IsVisible()
 					&& !static_cast<VulkanObject*>((*itt).second)->GetOwnerEntity()->GetPropertyValue(PropertyType::Transparency, 0))
 				{
-					static_cast<VulkanObject*>((*itt).second)->recordShadowPass(commandBuffers[index], projections.size());
+					float dist = (*itt).second->GetOwnerEntity()->GetPropertyValue(PropertyType::MaximumDistance, FarPlane);
+					if ((dist == -1.f || glm::distance(viewport_camera->GetObjectPosition(), (*itt).second->GetObjectPosition()) < dist))
+					{
+						static_cast<VulkanObject*>((*itt).second)->recordShadowPass(commandBuffers[index], projections.size());
+					}
 				}
 			}
 		}
@@ -1649,9 +1659,14 @@ namespace GrEngine_Vulkan
 
 		for (std::map<UINT, GrEngine::Entity*>::iterator itt = entities.begin(); itt != entities.end(); ++itt)
 		{
-			if ((*itt).second->GetEntityType() == GrEngine::EntityType::ObjectEntity && static_cast<VulkanObject*>(drawables[(*itt).second->GetEntityID()])->IsVisible())
+			if ((*itt).second->GetEntityType() == GrEngine::EntityType::ObjectEntity)
 			{
-				static_cast<VulkanObject*>(drawables[(*itt).second->GetEntityID()])->recordCommandBuffer(commandBuffers[index], DrawMode::NORMAL);
+				GrEngine::Object* obj = drawables[(*itt).second->GetEntityID()];
+				float dist = (*itt).second->GetPropertyValue(PropertyType::MaximumDistance, FarPlane);
+				if (obj->IsVisible() && (dist == -1.f || glm::distance(viewport_camera->GetObjectPosition(), (*itt).second->GetObjectPosition()) < dist))
+				{
+					static_cast<VulkanObject*>(obj)->recordCommandBuffer(commandBuffers[index], DrawMode::NORMAL);
+				}
 			}
 			else if ((*itt).second->GetEntityType() == GrEngine::EntityType::SkyboxEntity)
 			{

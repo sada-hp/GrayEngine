@@ -942,7 +942,6 @@ namespace GrEngine_Vulkan
 					vertex.uv = glm::vec2(divisions * col, 1.0f - divisions * row);
 					vertex.pos = glm::vec4(width * (divisions * col - width / 2), 0, width * (divisions * row - width / 2), 1.0f);
 					target_mesh->vertices.push_back(vertex);
-					target_mesh->collisions.addPoint(btVector3(vertex.pos.x, vertex.pos.y, vertex.pos.z));
 
 					if (row + 1 < subdivisions && col + 1 < subdivisions)
 					{
@@ -970,11 +969,11 @@ namespace GrEngine_Vulkan
 		else
 		{
 			object_mesh = resource->AddLink();
-			GrEngine::PhysicsObject* physComponent = (GrEngine::PhysicsObject*)ownerEntity->GetPropertyValue(PropertyType::PhysComponent, (void*)nullptr);
-			if (physComponent != nullptr)
-			{
-				physComponent->UpdateCollisionShape(&object_mesh->collisions);
-			}
+			//GrEngine::PhysicsObject* physComponent = (GrEngine::PhysicsObject*)ownerEntity->GetPropertyValue(PropertyType::PhysComponent, (void*)nullptr);
+			//if (physComponent != nullptr)
+			//{
+			//	physComponent->UpdateCollisionShape(&object_mesh->collisions);
+			//}
 		}
 	}
 

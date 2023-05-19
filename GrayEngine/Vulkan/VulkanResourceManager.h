@@ -90,8 +90,6 @@ namespace GrEngine_Vulkan
 		std::vector<uint32_t> indices;
 		ShaderBuffer vertexBuffer;
 		ShaderBuffer indexBuffer;
-		btConvexHullShape collisions;
-
 		glm::vec3 bounds;
 	};
 

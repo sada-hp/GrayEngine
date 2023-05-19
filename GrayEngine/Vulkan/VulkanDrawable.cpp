@@ -105,6 +105,7 @@ namespace GrEngine_Vulkan
 		populateDescriptorSets();
 		createPipelineLayout();
 		createGraphicsPipeline();
+		vkDeviceWaitIdle(logicalDevice);
 	}
 
 	void VulkanDrawable::invalidateTexture()
