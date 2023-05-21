@@ -2172,6 +2172,7 @@ namespace GrEngine_Vulkan
 			for (int i = 0; i < target_collection->size(); i++)
 			{
 				resources.RemoveTexture(target_collection->at(i), logicalDevice, memAllocator);
+				(*target_collection)[i] = nullptr;
 			}
 			target_collection->clear();
 

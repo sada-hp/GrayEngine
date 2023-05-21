@@ -9,6 +9,16 @@
 
 namespace GrEngineBullet
 {
+
+	enum CollisionType
+	{
+		Box = 0,
+		Sphere = 1,
+		ConvexHullMesh,
+		Mesh,
+		Capsule
+	};
+
 	struct CollisionMesh
 	{
 		std::string path;
@@ -30,9 +40,9 @@ namespace GrEngineBullet
 
 		Resource<CollisionMesh*>* AddCollisionMeshResource(const char* name, CollisionMesh* pointer);
 
-		Resource<CollisionMesh*>* GetCollisionMeshResource(const char* name);
+		Resource<CollisionMesh*>* GetCollisionMeshResource(const char* name, CollisionType type);
 
-		void RemoveCollisionMeshResource(const char* name);
+		void RemoveCollisionMeshResource(CollisionMesh* resource);
 		void Clean();
 
 	private:

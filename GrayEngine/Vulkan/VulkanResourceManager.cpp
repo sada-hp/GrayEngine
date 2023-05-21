@@ -7,6 +7,8 @@ namespace GrEngine_Vulkan
 {
 	void VulkanResourceManager::RemoveMesh(Mesh* resource, VkDevice device, VmaAllocator allocator)
 	{
+		if (resource == nullptr) return;
+
 		for (std::vector<Resource<Mesh*>*>::iterator itt = meshResources.begin(); itt != meshResources.end(); ++itt)
 		{
 			if ((*itt)->Compare(resource))
@@ -30,6 +32,8 @@ namespace GrEngine_Vulkan
 
 	void VulkanResourceManager::RemoveTexture(Texture* resource, VkDevice device, VmaAllocator allocator)
 	{
+		if (resource == nullptr) return;
+
 		for (std::vector<Resource<Texture*>*>::iterator itt = texResources.begin(); itt != texResources.end(); ++itt)
 		{
 			if ((*itt)->Compare(resource))

@@ -1041,20 +1041,20 @@ namespace GrEngine_Vulkan
 			VulkanAPI::m_createVkBuffer(logicalDevice, memAllocator, target_mesh->indices.data(), sizeof(target_mesh->indices[0]) * target_mesh->indices.size(), VK_BUFFER_USAGE_INDEX_BUFFER_BIT, &target_mesh->indexBuffer);
 			resource = resources->AddMeshResource(res_name.c_str(), target_mesh);
 			object_mesh = resource->AddLink();
-			GrEngine::PhysicsObject* physComponent = (GrEngine::PhysicsObject*)ownerEntity->GetPropertyValue(PropertyType::PhysComponent, (void*)nullptr);
-			if (physComponent != nullptr && ownerEntity->GetPropertyValue(PropertyType::CollisionType, 0) == 0)
-			{
-				physComponent->UpdateCollisionShape(new btBoxShape(btVector3(xcoord, ycoord, zcoord)));
-			}
+			//GrEngine::PhysicsObject* physComponent = (GrEngine::PhysicsObject*)ownerEntity->GetPropertyValue(PropertyType::PhysComponent, (void*)nullptr);
+			//if (physComponent != nullptr && ownerEntity->GetPropertyValue(PropertyType::CollisionType, 0) == 0)
+			//{
+			//	physComponent->GenerateBoxCollision(xcoord, ycoord, zcoord);
+			//}
 		}
 		else
 		{
 			object_mesh = resource->AddLink();
-			GrEngine::PhysicsObject* physComponent = (GrEngine::PhysicsObject*)ownerEntity->GetPropertyValue(PropertyType::PhysComponent, (void*)nullptr);
-			if (physComponent != nullptr && ownerEntity->GetPropertyValue(PropertyType::CollisionType, 0) == 0)
-			{
-				physComponent->UpdateCollisionShape(new btBoxShape(btVector3(xcoord, ycoord, zcoord)));
-			}
+			//GrEngine::PhysicsObject* physComponent = (GrEngine::PhysicsObject*)ownerEntity->GetPropertyValue(PropertyType::PhysComponent, (void*)nullptr);
+			//if (physComponent != nullptr && ownerEntity->GetPropertyValue(PropertyType::CollisionType, 0) == 0)
+			//{
+			//	physComponent->GenerateBoxCollision(xcoord, ycoord, zcoord);
+			//}
 		}
 	}
 };

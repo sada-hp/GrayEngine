@@ -32,8 +32,11 @@ namespace GrEngine_Vulkan
 		for (int i = 0; i < 4; i++)
 		{
 			resources->RemoveTexture(object_displacement[i], logicalDevice, memAllocator);
+			object_displacement[i] = nullptr;
 			resources->RemoveTexture(object_texture[i], logicalDevice, memAllocator);
+			object_texture[i] = nullptr;
 			resources->RemoveTexture(object_normal[i], logicalDevice, memAllocator);
+			object_normal[i] = nullptr;
 		}
 		object_displacement.resize(0);
 		object_texture.resize(0);
@@ -127,8 +130,11 @@ namespace GrEngine_Vulkan
 			for (int i = 0; i < 4; i++)
 			{
 				resources->RemoveTexture(object_displacement[i], logicalDevice, memAllocator);
+				object_displacement[i] = nullptr;
 				resources->RemoveTexture(object_texture[i], logicalDevice, memAllocator);
+				object_texture[i] = nullptr;
 				resources->RemoveTexture(object_normal[i], logicalDevice, memAllocator);
+				object_normal[i] = nullptr;
 			}
 			delete object_mesh;
 
@@ -222,6 +228,7 @@ namespace GrEngine_Vulkan
 		VulkanAPI::m_destroyShaderBuffer(logicalDevice, memAllocator, &terIn);
 		VulkanAPI::m_destroyShaderBuffer(logicalDevice, memAllocator, &terOut);
 		resources->RemoveTexture(heightMap, logicalDevice, memAllocator);
+		heightMap = nullptr;
 		use_compute = false;
 		updateObject();
 		physComp->CalculatePhysics();
@@ -409,8 +416,11 @@ namespace GrEngine_Vulkan
 			for (int i = 0; i < 4; i++)
 			{
 				resources->RemoveTexture(object_displacement[i], logicalDevice, memAllocator);
+				object_displacement[i] = nullptr;
 				resources->RemoveTexture(object_texture[i], logicalDevice, memAllocator);
+				object_texture[i] = nullptr;
 				resources->RemoveTexture(object_normal[i], logicalDevice, memAllocator);
+				object_normal[i] = nullptr;
 			}
 			delete object_mesh;
 
@@ -577,7 +587,7 @@ namespace GrEngine_Vulkan
 		}
 
 		colShape = new btBvhTriangleMeshShape(colMesh, true);
-		physComp->UpdateCollisionShape(colShape);
+		physComp->AddCollisionResource("TerrainComonent", colShape);
 	}
 
 	void VulkanTerrain::UpdateCollision()

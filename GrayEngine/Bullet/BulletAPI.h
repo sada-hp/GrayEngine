@@ -33,7 +33,7 @@ namespace GrEngineBullet
 		{
 			resources = manager;
 			dynamicWorld = world;
-			UpdateCollisionType((CollisionTypeEnum)pOwner->GetPropertyValue(PropertyType::CollisionType, 0));
+			flags = btCollisionObject::CF_DYNAMIC_OBJECT;
 			time = std::chrono::steady_clock::now();
 		}
 
@@ -41,15 +41,13 @@ namespace GrEngineBullet
 		{
 			Dispose();
 
-			if (colShape != nullptr)
+			if (objCollision != nullptr)
 			{
-				resources->RemoveCollisionMeshResource(shape_name.c_str());
+				resources->RemoveCollisionMeshResource(objCollision);
+				objCollision = nullptr;
 			}
-
-			colShape = nullptr;
 		}
 
-		btCollisionShape* colShape;
 		btCollisionObject* body;
 		btDefaultMotionState* myMotionState;
 
@@ -155,49 +153,49 @@ namespace GrEngineBullet
 			return pOwner->IsStatic();
 		}
 
-		void UpdateCollisionShape(void* shape) override
-		{
-			if (colShape != nullptr && colShape != shape)
-			{
-				resources->RemoveCollisionMeshResource(shape_name.c_str());
-			}
-
-			colShape = static_cast<btCollisionShape*>(shape);
-			CalculatePhysics();
-		}
-
 		UINT GetID() override
 		{
 			return pOwner->GetEntityID();
 		}
 
+		void AddCollisionResource(const char* name, void* data) override
+		{
+			auto resource = resources->GetCollisionMeshResource(name, colType);
+
+			if (resource == nullptr)
+			{
+				CollisionMesh* cmesh = new CollisionMesh();
+				cmesh->shape = (btCollisionShape*)data;
+				cmesh->path = name;
+				objCollision = resources->AddCollisionMeshResource(name, cmesh)->AddLink();
+			}
+		}
+
 		void GenerateBoxCollision(float width, float height, float length) override
 		{
-			auto resource = resources->GetCollisionMeshResource(("box" + GrEngine::Globals::FloatToString(width, 5) + GrEngine::Globals::FloatToString(height, 5) + GrEngine::Globals::FloatToString(length, 5)).c_str());
+			glm::vec3 scale = pOwner->GetPropertyValue(PropertyType::Scale, glm::vec3(1.0f));
+			auto resource = resources->GetCollisionMeshResource(("box" + GrEngine::Globals::FloatToString(width * scale.x, 5) + GrEngine::Globals::FloatToString(height * scale.y, 5) + GrEngine::Globals::FloatToString(length * scale.z, 5)).c_str(), colType);
 			if (resource != nullptr)
 			{
-				CollisionMesh* cmesh = resource->AddLink();
-				UpdateCollisionShape(cmesh->shape);
-				shape_name = "box" + GrEngine::Globals::FloatToString(width, 5) + GrEngine::Globals::FloatToString(height, 5) + GrEngine::Globals::FloatToString(length, 5);
+				objCollision = resource->AddLink();
+				shape_name = "box" + GrEngine::Globals::FloatToString(width * scale.x, 5) + GrEngine::Globals::FloatToString(height * scale.y, 5) + GrEngine::Globals::FloatToString(length * scale.z, 5);
 			}
 			else
 			{
 				CollisionMesh* cmesh = new CollisionMesh();
 				cmesh->shape = new btBoxShape(btVector3(width, height, length));
-				auto collision_mesh = resources->AddCollisionMeshResource(("box" + GrEngine::Globals::FloatToString(width, 5) + GrEngine::Globals::FloatToString(height, 5) + GrEngine::Globals::FloatToString(length, 5)).c_str(), cmesh);
-				collision_mesh->AddLink();
-				UpdateCollisionShape(cmesh->shape);
-				shape_name = "box" + GrEngine::Globals::FloatToString(width, 5) + GrEngine::Globals::FloatToString(height, 5) + GrEngine::Globals::FloatToString(length, 5);
+				auto collision_mesh = resources->AddCollisionMeshResource(("box" + GrEngine::Globals::FloatToString(width * scale.x, 5) + GrEngine::Globals::FloatToString(height * scale.y, 5) + GrEngine::Globals::FloatToString(length * scale.z, 5)).c_str(), cmesh);
+				objCollision = collision_mesh->AddLink();
+				shape_name = collision_mesh->name;
 			}
 		}
 
 		void GenerateCapsuleCollision(float radius, float height)
 		{
-			auto resource = resources->GetCollisionMeshResource(("capsule" + GrEngine::Globals::FloatToString(radius, 5) + GrEngine::Globals::FloatToString(height, 5)).c_str());
+			auto resource = resources->GetCollisionMeshResource(("capsule" + GrEngine::Globals::FloatToString(radius, 5) + GrEngine::Globals::FloatToString(height, 5)).c_str(), colType);
 			if (resource != nullptr)
 			{
-				CollisionMesh* cmesh = resource->AddLink();
-				UpdateCollisionShape(cmesh->shape);
+				objCollision = resource->AddLink();
 				shape_name = "capsule" + GrEngine::Globals::FloatToString(radius, 5) + GrEngine::Globals::FloatToString(height, 5);
 			}
 			else
@@ -205,8 +203,7 @@ namespace GrEngineBullet
 				CollisionMesh* cmesh = new CollisionMesh();
 				cmesh->shape = new btCapsuleShape(radius, height);
 				auto collision_mesh = resources->AddCollisionMeshResource(("capsule" + GrEngine::Globals::FloatToString(radius, 5) + GrEngine::Globals::FloatToString(height, 5)).c_str(), cmesh);
-				collision_mesh->AddLink();
-				UpdateCollisionShape(cmesh->shape);
+				objCollision = collision_mesh->AddLink();
 				shape_name = "capsule" + GrEngine::Globals::FloatToString(radius, 5) + GrEngine::Globals::FloatToString(height, 5);
 			}
 		}
@@ -219,7 +216,8 @@ namespace GrEngineBullet
 				return false;
 			}
 
-			auto resource = resources->GetCollisionMeshResource(mesh_path);
+			glm::vec3 scale = pOwner->GetPropertyValue(PropertyType::Scale, glm::vec3(1.0f));
+			auto resource = resources->GetCollisionMeshResource((std::string(mesh_path) + GrEngine::Globals::FloatToString(scale.x, 5) + GrEngine::Globals::FloatToString(scale.y, 5) + GrEngine::Globals::FloatToString(scale.z, 5)).c_str(), colType);
 			std::string solution = GrEngine::Globals::getExecutablePath();
 			std::string collision_path = mesh_path;
 
@@ -281,6 +279,12 @@ namespace GrEngineBullet
 					}
 				}
 
+				std::string postfix = "";
+				if (scale != glm::vec3(1.f))
+				{
+					postfix = GrEngine::Globals::FloatToString(scale.x, 5) + GrEngine::Globals::FloatToString(scale.y, 5) + GrEngine::Globals::FloatToString(scale.z, 5);
+				}
+
 				CollisionMesh* cmesh = new CollisionMesh();
 				if (use_hull)
 				{
@@ -290,7 +294,7 @@ namespace GrEngineBullet
 					hull->buildHull(0);
 					cmesh->path = mesh_path;
 					cmesh->shape = new btConvexHullShape((const btScalar*)hull->getVertexPointer(), hull->numVertices(), sizeof(btVector3));
-					auto collision_mesh = resources->AddCollisionMeshResource(("Hull_" + std::string(mesh_path)).c_str(), cmesh);
+					auto collision_mesh = resources->AddCollisionMeshResource(("Hull_" + std::string(mesh_path) + postfix).c_str(), cmesh);
 					objCollision = collision_mesh->AddLink();
 					delete hull;
 					delete tmpshape;
@@ -300,52 +304,56 @@ namespace GrEngineBullet
 				{
 					cmesh->path = mesh_path;
 					cmesh->shape = new btBvhTriangleMeshShape(colMesh, true);
-					auto collision_mesh = resources->AddCollisionMeshResource(("Mesh_" + std::string(mesh_path)).c_str(), cmesh);
+					auto collision_mesh = resources->AddCollisionMeshResource(("Mesh_" + std::string(mesh_path) + postfix).c_str(), cmesh);
 					objCollision = collision_mesh->AddLink();
 				}
-
-				UpdateCollisionShape(objCollision->shape);
-			}
-			else if (!resource->Compare(objCollision))
-			{
-				objCollision = resource->AddLink();
-				UpdateCollisionShape(objCollision->shape);
 			}
 			else
 			{
-				UpdateCollisionShape(objCollision->shape);
+				objCollision = resource->AddLink();
 			}
 
 			shape_name = use_hull ? "Hull_" + std::string(mesh_path) : "Mesh_" + std::string(mesh_path);
 			return true;
 		}
 
-		void UpdateCollisionType(CollisionTypeEnum value) override
+		void UpdateCollisionType(int value) override
 		{
 			std::string coll_path = "";
 			std::string model_path = "";
 
+			if (objCollision != nullptr)
+			{
+				resources->RemoveCollisionMeshResource(objCollision);
+				objCollision = nullptr;
+			}
+
+			colType = (CollisionType)value;
+
 			switch (value)
 			{
-			case CollisionTypeEnum::Box:
+			case CollisionType::Box:
 				GenerateBoxCollision(0.25f, 0.25f, 0.25f);
 				break;
-			case CollisionTypeEnum::Sphere:
+			case CollisionType::Sphere:
 				break;
-			case CollisionTypeEnum::ConvexHullMesh:
+			case CollisionType::ConvexHullMesh:
 				model_path = pOwner->GetPropertyValue(PropertyType::ModelPath, coll_path);
 				GrEngine::Globals::readGMF(model_path, nullptr, &coll_path, nullptr, nullptr);
 				LoadCollisionMesh(coll_path.c_str(), true);
 				break;
-			case CollisionTypeEnum::Mesh:
+			case CollisionType::Mesh:
 				model_path = pOwner->GetPropertyValue(PropertyType::ModelPath, coll_path);
 				GrEngine::Globals::readGMF(model_path, nullptr, &coll_path, nullptr, nullptr);
 				LoadCollisionMesh(coll_path.c_str(), false);
 				break;
-			case CollisionTypeEnum::Capsule:
+			case CollisionType::Capsule:
 				GenerateCapsuleCollision(1, 2);
 				break;
 			}
+
+			Dispose();
+			CalculatePhysics();
 		}
 
 		void SetKinematic(int value)
@@ -367,20 +375,8 @@ namespace GrEngineBullet
 				flags = btCollisionObject::CF_NO_CONTACT_RESPONSE;
 			}
 
-			if (body != nullptr)
-			{
-				CalculatePhysics();
-
-				if ((flags & btCollisionObject::CF_CHARACTER_OBJECT) != 0)
-				{
-					body->setActivationState(DISABLE_DEACTIVATION);
-				}
-				else
-				{
-					body->setActivationState(ACTIVE_TAG);
-					body->setDeactivationTime(1.f);
-				}
-			}
+			Dispose();
+			CalculatePhysics();
 		}
 
 		const int getFlags()
@@ -390,15 +386,15 @@ namespace GrEngineBullet
 
 		void ResetMotion()
 		{
-			if (flags == 0)
-			{
-				static_cast<btRigidBody*>(body)->setLinearVelocity(btVector3(0, 0, 0));
-				static_cast<btRigidBody*>(body)->setAngularVelocity(btVector3(0, 0, 0));
-			}
-			else if (flags == btCollisionObject::CF_KINEMATIC_OBJECT || flags == btCollisionObject::CF_CHARACTER_OBJECT)
+			if (flags == btCollisionObject::CF_KINEMATIC_OBJECT || flags == btCollisionObject::CF_CHARACTER_OBJECT)
 			{
 				controls->setLinearVelocity(btVector3(0, 0, 0));
 				controls->setAngularVelocity(btVector3(0, 0, 0));
+			}
+			else
+			{
+				static_cast<btRigidBody*>(body)->setLinearVelocity(btVector3(0, 0, 0));
+				static_cast<btRigidBody*>(body)->setAngularVelocity(btVector3(0, 0, 0));
 			}
 
 			body->activate();
@@ -415,11 +411,6 @@ namespace GrEngineBullet
 				myMotionState = nullptr;
 			}
 
-			if (body != nullptr && body->getCollisionFlags() != flags)
-			{
-				Dispose();
-			}
-
 			initialized = false;
 
 			float obj_mass = pOwner->GetPropertyValue(PropertyType::Mass, 0.f);
@@ -429,33 +420,31 @@ namespace GrEngineBullet
 			startTransform.setFromOpenGLMatrix(pSource);
 			btVector3 localInertia{ 0,0,0 };
 
-			if (colShape != nullptr)
+			if (objCollision != nullptr)
 			{
-				if (colShape->getShapeType() == 21 && was_updated)
-				{
-					static_cast<btBvhTriangleMeshShape*>(colShape)->buildOptimizedBvh();
-					was_updated = false;
-				}
+				glm::vec3 scale = pOwner->GetPropertyValue(PropertyType::Scale, glm::vec3(1.0f));
+				objCollision->shape->setLocalScaling(btVector3(scale.x, scale.y, scale.z));
 
 				if (obj_mass != 0.f && (flags & btCollisionObject::CF_STATIC_OBJECT) == 0)
-					colShape->calculateLocalInertia(obj_mass, localInertia);
+					objCollision->shape->calculateLocalInertia(obj_mass, localInertia);
 				else
 					obj_mass = 0.f;
-
-				glm::vec3 scale = pOwner->GetPropertyValue(PropertyType::Scale, glm::vec3(1.0f));
-				colShape->setLocalScaling(btVector3(scale.x + 0.00001f, scale.y + 0.00001f, scale.z + 0.00001f));
 			}
-
+			else
+			{
+				UpdateCollisionType(colType);
+			}
 
 			if (body == nullptr)
 			{
 				if (flags == btCollisionObject::CF_DYNAMIC_OBJECT)
 				{
 					myMotionState = new btDefaultMotionState(startTransform);
-					btRigidBody::btRigidBodyConstructionInfo rbInfo(obj_mass, myMotionState, colShape, localInertia);
+					btRigidBody::btRigidBodyConstructionInfo rbInfo(obj_mass, myMotionState, objCollision->shape, localInertia);
 					body = new btRigidBody(rbInfo);
 					body->setActivationState(ACTIVE_TAG);
 					body->setDeactivationTime(1.f);
+					static_cast<btRigidBody*>(body)->setMassProps(obj_mass, localInertia);
 					dynamicWorld->addRigidBody((btRigidBody*)body);
 				}
 				else if (flags == btCollisionObject::CF_NO_CONTACT_RESPONSE)
@@ -465,11 +454,11 @@ namespace GrEngineBullet
 				}
 				else if (flags == btCollisionObject::CF_KINEMATIC_OBJECT)
 				{
-					static_cast<btCapsuleShape*>(colShape)->setMargin(0.1f);
-					static_cast<btCapsuleShape*>(colShape)->setSafeMargin(0.5f);
+					static_cast<btCapsuleShape*>(objCollision->shape)->setMargin(0.1f);
+					static_cast<btCapsuleShape*>(objCollision->shape)->setSafeMargin(0.5f);
 					body = new btPairCachingGhostObject();
-					static_cast<btPairCachingGhostObject*>(body)->setCollisionShape(colShape);
-					controls = new btKinematicCharacterController(static_cast<btPairCachingGhostObject*>(body), static_cast<btConvexShape*>(colShape), 0.35f, btVector3(0, 1, 0));
+					static_cast<btPairCachingGhostObject*>(body)->setCollisionShape(objCollision->shape);
+					controls = new btKinematicCharacterController(static_cast<btPairCachingGhostObject*>(body), static_cast<btConvexShape*>(objCollision->shape), 0.35f, btVector3(0, 1, 0));
 					controls->setUseGhostSweepTest(false);
 					controls->setAngularDamping(100.f);
 					controls->setMaxSlope(glm::radians(89.f));
@@ -481,7 +470,7 @@ namespace GrEngineBullet
 				else
 				{
 					myMotionState = new btDefaultMotionState(startTransform);
-					btRigidBody::btRigidBodyConstructionInfo rbInfo(obj_mass, myMotionState, colShape, localInertia);
+					btRigidBody::btRigidBodyConstructionInfo rbInfo(obj_mass, myMotionState, objCollision->shape, localInertia);
 					body = new btRigidBody(rbInfo);
 					dynamicWorld->addCollisionObject(body, flags);
 				}
@@ -489,30 +478,27 @@ namespace GrEngineBullet
 			}
 			else
 			{
-				body->setCollisionShape(colShape);
+				body->setCollisionShape(objCollision->shape);
 				if (flags == 0)
 				{
 					myMotionState = new btDefaultMotionState(startTransform);
-					static_cast<btRigidBody*>(body)->setCollisionShape(colShape);
 					static_cast<btRigidBody*>(body)->setMassProps(obj_mass, localInertia);
 					static_cast<btRigidBody*>(body)->setMotionState(myMotionState);
+					body->setActivationState(ACTIVE_TAG);
+					body->setDeactivationTime(1.f);
 				}
 				else if (flags == btCollisionObject::CF_KINEMATIC_OBJECT)
 				{
-					//static_cast<btPairCachingGhostObject*>(body)->setActivationState(DISABLE_DEACTIVATION);
-					static_cast<btPairCachingGhostObject*>(body)->setCollisionShape(colShape);
+					static_cast<btPairCachingGhostObject*>(body)->setActivationState(DISABLE_DEACTIVATION);
 					static_cast<btPairCachingGhostObject*>(body)->setWorldTransform(startTransform);
 				}
-				else if (flags == btCollisionObject::CF_NO_CONTACT_RESPONSE)
-				{
-					static_cast<btGhostObject*>(body)->setCollisionShape(colShape);
-				}
-				else
+				else if (flags != btCollisionObject::CF_NO_CONTACT_RESPONSE)
 				{
 					myMotionState = new btDefaultMotionState(startTransform);
-					static_cast<btRigidBody*>(body)->setCollisionShape(colShape);
 					static_cast<btRigidBody*>(body)->setMotionState(myMotionState);
 				}
+
+				body->setCollisionFlags(flags);
 			}
 
 			body->setUserPointer((void*)pOwner->GetEntityID());
@@ -528,6 +514,7 @@ namespace GrEngineBullet
 		btDiscreteDynamicsWorld* dynamicWorld;
 		std::string shape_name;
 		std::string mesh_name;
+		CollisionType colType = (CollisionType)0;
 	};
 
 	class BulletAPI : public GrEngine::Physics

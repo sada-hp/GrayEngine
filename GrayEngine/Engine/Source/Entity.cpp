@@ -18,11 +18,34 @@ namespace GrEngine
 				break;
 			case PropertyType::Mass:
 				properties.push_back(new FloatProperty(PropertyType::Mass, 0.f, this));
+				properties.back()->SetCallback([](Entity* owner, EntityProperty* self)
+					{
+						if (owner != nullptr)
+						{
+							PhysicsObject* comp = (PhysicsObject*)owner->GetPropertyValue(PropertyType::PhysComponent, (void*)nullptr);
+							if (comp != nullptr)
+							{
+								comp->Dispose();
+								comp->CalculatePhysics();
+							}
+						}
+					});
 				return properties.back();
 			case PropertyType::EntityName:
 				break;
 			case PropertyType::Scale:
 				properties.push_back(new Vector3fProperty(PropertyType::Scale, 1.f, 1.f, 1.f, this));
+				properties.back()->SetCallback([](Entity* owner, EntityProperty* self)
+					{
+						if (owner != nullptr)
+						{
+							PhysicsObject* comp = (PhysicsObject*)owner->GetPropertyValue(PropertyType::PhysComponent, (void*)nullptr);
+							if (comp != nullptr)
+							{
+								comp->UpdateCollisionType(owner->GetPropertyValue(PropertyType::CollisionType, 0));
+							}
+						}
+					});
 				return properties.back();
 			case PropertyType::EntityPosition:
 				break;
@@ -137,7 +160,7 @@ namespace GrEngine
 							PhysicsObject* comp = (PhysicsObject*)owner->GetPropertyValue(PropertyType::PhysComponent, (void*)nullptr);
 							if (comp != nullptr)
 							{
-								comp->UpdateCollisionType((CollisionTypeEnum)*static_cast<int*>(self->GetValueAdress()));
+								comp->UpdateCollisionType((int)*static_cast<int*>(self->GetValueAdress()));
 							}
 						}
 					});

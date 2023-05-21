@@ -11,13 +11,26 @@ namespace GrEngineBullet
 		return colResources.back();
 	}
 
-	Resource<CollisionMesh*>* BulletResourceManager::GetCollisionMeshResource(const char* name)
+	Resource<CollisionMesh*>* BulletResourceManager::GetCollisionMeshResource(const char* name, CollisionType type)
 	{
 		std::string string_name = NormalizeName(name);
+		std::string prefix = "";
+
+		switch (type)
+		{
+		case ConvexHullMesh:
+			prefix = "Hull_";
+			break;
+		case Mesh:
+			prefix = "Mesh_";
+			break;
+		default:
+			break;
+		}
 
 		for (std::vector<Resource<CollisionMesh*>*>::iterator itt = colResources.begin(); itt != colResources.end(); ++itt)
 		{
-			if ((*itt)->name == string_name)
+			if ((*itt)->name == prefix + string_name)
 			{
 				return (*itt);
 			}
@@ -26,15 +39,17 @@ namespace GrEngineBullet
 		return nullptr;
 	}
 
-	void BulletResourceManager::RemoveCollisionMeshResource(const char* name)
+	void BulletResourceManager::RemoveCollisionMeshResource(CollisionMesh* resource)
 	{
-		std::string string_name = NormalizeName(name);
+		//std::string string_name = NormalizeName(name);
+		if (resource == nullptr) return;
 
 		for (std::vector<Resource<CollisionMesh*>*>::iterator itt = colResources.begin(); itt != colResources.end(); ++itt)
 		{
-			if ((*itt)->name == string_name)
+			if ((*itt)->Compare(resource))
 			{
 				Resource<CollisionMesh*>* resource = (*itt);
+				std::string string_name = resource->name;
 				resource->RemoveLink();
 				if (resource->getNumOfLinks() == 0)
 				{
@@ -53,7 +68,13 @@ namespace GrEngineBullet
 		for (std::vector<Resource<CollisionMesh*>*>::iterator itt = colResources.begin(); itt != colResources.end(); ++itt)
 		{
 			(*itt)->RemoveLink();
-			delete (*itt);
+			if ((*itt)->getNumOfLinks() == 0)
+			{
+				delete (*itt);
+				(*itt) = nullptr;
+				colResources.erase(itt);
+				break;
+			}
 		}
 
 		colResources.clear();
