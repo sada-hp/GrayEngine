@@ -6,7 +6,7 @@
              xmlns:local="clr-namespace:EditorUI"
              xmlns:comp="clr-namespace:EditorUI.Components"
              mc:Ignorable="d" 
-             d:DesignHeight="450" d:DesignWidth="800" WindowStartupLocation="CenterScreen" Background="#FF15161F" Title="Gray Engine: World Editor" Closed="Window_Closed" KeyDown="Window_KeyDown" KeyUp="Window_KeyUp">
+             d:DesignHeight="450" d:DesignWidth="800" WindowStartupLocation="CenterScreen" Background="#FF15161F" Title="GRay Engine: World Editor" Closed="Window_Closed" KeyDown="Window_KeyDown" KeyUp="Window_KeyUp">
     <Window.Resources>
         <SolidColorBrush x:Key="ListBox.Static.Background" Color="#FF242427"/>
         <SolidColorBrush x:Key="ListBox.Static.Border" Color="#FFABADB3"/>

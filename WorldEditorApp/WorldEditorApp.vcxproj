@@ -167,6 +167,15 @@
       <Project>{d9ed61a8-c9f0-4357-bb30-9042089714db}</Project>
     </ProjectReference>
   </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="resource.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="WorldEditorApp.rc" />
+  </ItemGroup>
+  <ItemGroup>
+    <Image Include="GRIcon.ico" />
+  </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>

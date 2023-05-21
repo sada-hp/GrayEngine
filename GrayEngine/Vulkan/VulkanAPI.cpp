@@ -23,7 +23,7 @@ namespace GrEngine_Vulkan
 			std::unordered_map<void*, Destructor*>::iterator itt = destructors.begin();
 			std::advance(itt, offset);
 			
-			if (devices[(*itt).first] == logicalDevice || allocators[allocations[(*itt).first]] == allocator)
+			if (offset < destructors.size() && devices.count((*itt).first) > 0 && devices[(*itt).first] == logicalDevice || allocations.count((*itt).first) > 0 && allocators.count(allocations[(*itt).first]) > 0 && allocators[allocations[(*itt).first]] == allocator)
 			{
 				(*itt).second((*itt).first);
 			}
