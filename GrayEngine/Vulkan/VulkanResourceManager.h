@@ -156,11 +156,15 @@ namespace GrEngine_Vulkan
 
 		Resource<Texture*>* AddTextureResource(std::vector<std::string> names, Texture* pointer);
 
+		Resource<Texture*>* AddTextureResource(std::vector<std::string> names, Texture* pointer, GrEngine::TextureType type);
+
 		Resource<Mesh*>* GetMeshResource(const char* name);
 
 		Resource<Texture*>* GetTextureResource(const char* name);
 
 		Resource<Texture*>* GetTextureResource(std::vector<std::string> names);
+
+		Resource<Texture*>* GetTextureResource(std::vector<std::string> names, GrEngine::TextureType type);
 
 		static void CalculateNormals(GrEngine_Vulkan::Mesh* target, bool clockwise = false);
 		static void CalculateTangents(GrEngine_Vulkan::Mesh* target, float u_scale = 1.f, float v_scale = 1.f, bool clockwise = false);

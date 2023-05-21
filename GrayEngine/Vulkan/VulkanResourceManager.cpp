@@ -20,6 +20,7 @@ namespace GrEngine_Vulkan
 					VulkanAPI::m_destroyShaderBuffer(device, allocator, &cur_resource->PopResource()->indexBuffer);
 					VulkanAPI::m_destroyShaderBuffer(device, allocator, &cur_resource->PopResource()->vertexBuffer);
 					delete cur_resource;
+					cur_resource = nullptr;
 					meshResources.erase(itt);
 					break;
 				}
@@ -36,11 +37,12 @@ namespace GrEngine_Vulkan
 				Resource<Texture*>* cur_resource = (*itt);
 				std::string string_name = (*itt)->name;
 				cur_resource->RemoveLink();
-				if (cur_resource->getNumOfLinks() == 0)
+				if (cur_resource->getNumOfLinks() == 0 && !(string_name.find("empty_texture") != std::string::npos && string_name.size() < 25))
 				{
 					Logger::Out("Texture resource %s was removed", OutputColor::Blue, OutputType::Log, string_name.c_str());
 					VulkanAPI::m_destroyTexture(device, allocator, cur_resource->PopResource());
 					delete cur_resource;
+					cur_resource = nullptr;
 					texResources.erase(itt);
 					break;
 				}
@@ -75,6 +77,7 @@ namespace GrEngine_Vulkan
 			VulkanAPI::m_destroyShaderBuffer(device, allocator, &(*itt)->PopResource()->indexBuffer);
 			VulkanAPI::m_destroyShaderBuffer(device, allocator, &(*itt)->PopResource()->vertexBuffer);
 			delete (*itt);
+			(*itt) = nullptr;
 		}
 
 		for (std::vector<Resource<Texture*>*>::iterator itt = texResources.begin(); itt != texResources.end(); ++itt)
@@ -82,6 +85,7 @@ namespace GrEngine_Vulkan
 			(*itt)->RemoveLink();
 			VulkanAPI::m_destroyTexture(device, allocator, (*itt)->PopResource());
 			delete (*itt);
+			(*itt) = nullptr;
 		}
 
 		meshResources.clear();
@@ -133,6 +137,40 @@ namespace GrEngine_Vulkan
 		return res;
 	}
 
+	Resource<Texture*>* VulkanResourceManager::AddTextureResource(std::vector<std::string> names, Texture* pointer, GrEngine::TextureType type)
+	{
+		Resource<Texture*>* res;
+		std::string output = "";
+		for (std::vector<std::string>::iterator itt = names.begin(); itt != names.end(); ++itt)
+		{
+			output += NormalizeName((*itt));
+		}
+
+
+		switch (type)
+		{
+		case GrEngine::Color:
+			output = "Color_" + output;
+			break;
+		case GrEngine::Normal:
+			output = "Normal_" + output;
+			break;
+		case GrEngine::Height:
+			output = "Height_" + output;
+			break;
+		default:
+			break;
+		}
+
+		res = GetTextureResource(output.c_str());
+		if (res == nullptr)
+		{
+			texResources.push_back(new Resource<Texture*>(output.c_str(), pointer));
+			res = texResources.back();
+		}
+		return res;
+	}
+
 	Resource<Mesh*>* VulkanResourceManager::GetMeshResource(const char* name)
 	{
 		std::string string_name = NormalizeName(name);
@@ -169,6 +207,40 @@ namespace GrEngine_Vulkan
 		for (std::vector<std::string>::iterator itt = names.begin(); itt != names.end(); ++itt)
 		{
 			output += NormalizeName((*itt));
+		}
+
+		for (std::vector<Resource<Texture*>*>::iterator itt = texResources.begin(); itt != texResources.end(); ++itt)
+		{
+			if ((*itt)->name == output)
+			{
+				return (*itt);
+			}
+		}
+
+		return nullptr;
+	}
+
+	Resource<Texture*>* VulkanResourceManager::GetTextureResource(std::vector<std::string> names, GrEngine::TextureType type)
+	{
+		std::string output = "";
+		for (std::vector<std::string>::iterator itt = names.begin(); itt != names.end(); ++itt)
+		{
+			output += NormalizeName((*itt));
+		}
+
+		switch (type)
+		{
+		case GrEngine::Color:
+			output = "Color_" + output;
+			break;
+		case GrEngine::Normal:
+			output = "Normal_" + output;
+			break;
+		case GrEngine::Height:
+			output = "Height_" + output;
+			break;
+		default:
+			break;
 		}
 
 		for (std::vector<Resource<Texture*>*>::iterator itt = texResources.begin(); itt != texResources.end(); ++itt)

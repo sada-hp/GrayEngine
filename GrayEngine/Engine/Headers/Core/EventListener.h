@@ -148,7 +148,15 @@ public:
 
 	void clearEventQueue()
 	{
-		EventQueue.empty();
+		while (EventQueue.size() > 0)
+		{
+			EventQueue.pop();
+		}
+
+		while (CustomEventQueue.size() > 0)
+		{
+			CustomEventQueue.pop();
+		}
 	}
 private:
 	std::map<EventType, std::vector<EventCallback>> observers_engine;

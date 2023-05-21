@@ -24,12 +24,19 @@ struct Resource
 
 	void RemoveLink()
 	{
-		links--;
+		if (links - 1 >= 0)
+		{
+			links--;
+		}
+		else
+		{
+			links = 0;
+		}
 	}
 
 	T PopResource()
 	{
-		links--;
+		RemoveLink();
 		return pointer;
 	}
 

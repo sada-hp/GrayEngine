@@ -149,7 +149,7 @@ void SceneEditor::AssignTextures(const char* textures_path)
             return;
         }
     }
-    GrEngine::Engine::GetContext()->AssignTextures(mat_vector, GrEngine::Engine::GetContext()->GetRenderer()->GetSelectedEntity());
+    GrEngine::Engine::GetContext()->AssignTextures(mat_vector, GrEngine::Engine::GetContext()->GetRenderer()->GetSelectedEntity(), GrEngine::TextureType::Color);
 }
 
 void SceneEditor::CloseContext()

@@ -174,51 +174,54 @@ namespace SceneEditor
 
     void Transformation()
     {
-        POINT vSize = app->GetWindowSize();
-        GrEngine::Renderer* render = app->GetRenderer();
-        GrEngine::Camera* camera = render->getActiveViewport();
-
-        glm::vec3 tPos = app->transform_target->GetObjectPosition();
-        glm::quat tOri = app->transform_target->GetObjectOrientation();
-        glm::mat4 trans = app->transform_target->GetObjectTransformation();
-        POINTFLOAT cursor = app->GetCursorPosition();
-        float dist = (float)glm::length(camera->GetObjectPosition() - tPos);
-        std::string gizmo_scale = std::to_string(dist * 0.25f);
-
-        if (app->manipulation > 0 && app->manipulation < 4 && app->mouse_down)
+        if (app->transform_target != nullptr)
         {
-            int mInd = app->manipulation - 1;
-            glm::vec3 dir = glm::vec3(trans[mInd][0], trans[mInd][1], trans[mInd][2]);
-            float len = dist * (float)glm::dot(glm::vec2(app->manip_start.x - cursor.x, app->manip_start.y - cursor.y), app->direct) * 0.0012f * ((vSize.x) / (float)(vSize.y));
+            POINT vSize = app->GetWindowSize();
+            GrEngine::Renderer* render = app->GetRenderer();
+            GrEngine::Camera* camera = render->getActiveViewport();
 
-            tPos = app->transform_target->GetObjectPosition() + glm::normalize(dir) * glm::vec3(len);
-            app->transform_target->PositionObjectAt(tPos);
-            app->manip_start = cursor;
-            app->App_UpdateUIProperty("EntityPosition");
-        }
-        else if (app->manipulation >= 4 && app->manipulation < 7 && app->mouse_down)
-        {
-            int mInd = app->manipulation - 4;
-            auto vec = glm::normalize(glm::vec2(app->obj_center.x - cursor.x, app->obj_center.y - cursor.y));
-            float angle = glm::acos(glm::dot(glm::normalize(vec), glm::normalize(app->direct)));
+            glm::vec3 tPos = app->transform_target->GetObjectPosition();
+            glm::quat tOri = app->transform_target->GetObjectOrientation();
+            glm::mat4 trans = app->transform_target->GetObjectTransformation();
+            POINTFLOAT cursor = app->GetCursorPosition();
+            float dist = (float)glm::length(camera->GetObjectPosition() - tPos);
+            std::string gizmo_scale = std::to_string(dist * 0.25f);
 
-            if (!glm::isnan(angle) && !glm::isinf(angle))
+            if (app->manipulation > 0 && app->manipulation < 4 && app->mouse_down)
             {
-                double len1 = glm::length(vec);
-                double len2 = glm::length(app->direct);
-                short delta = glm::sign(glm::asin(((vec.x * app->direct.y) / (len1 * len2)) - ((vec.y * app->direct.x) / (len2 * len1)))) * glm::sign(glm::dot(camera->GetObjectPosition() - tPos, glm::vec3(trans[mInd][0], trans[mInd][1], trans[mInd][2])));
-                std::array<glm::vec3, 3> directions = { glm::vec3(1, 0, 0), glm::vec3(0, 1, 0), glm::vec3(0, 0, 1) };
+                int mInd = app->manipulation - 1;
+                glm::vec3 dir = glm::vec3(trans[mInd][0], trans[mInd][1], trans[mInd][2]);
+                float len = dist * (float)glm::dot(glm::vec2(app->manip_start.x - cursor.x, app->manip_start.y - cursor.y), app->direct) * 0.0012f * ((vSize.x) / (float)(vSize.y));
 
-                tOri = tOri * glm::angleAxis(angle * delta, directions[mInd]);
-                app->transform_target->SetRotation(tOri);
-                app->direct = vec;
-                app->App_UpdateUIProperty("EntityOrientation");
+                tPos = app->transform_target->GetObjectPosition() + glm::normalize(dir) * glm::vec3(len);
+                app->transform_target->PositionObjectAt(tPos);
+                app->manip_start = cursor;
+                app->App_UpdateUIProperty("EntityPosition");
             }
-        }
+            else if (app->manipulation >= 4 && app->manipulation < 7 && app->mouse_down)
+            {
+                int mInd = app->manipulation - 4;
+                auto vec = glm::normalize(glm::vec2(app->obj_center.x - cursor.x, app->obj_center.y - cursor.y));
+                float angle = glm::acos(glm::dot(glm::normalize(vec), glm::normalize(app->direct)));
 
-        app->gizmo->ParsePropertyValue("Scale", (gizmo_scale + ":" + gizmo_scale + ":" + gizmo_scale).c_str());
-        app->gizmo->PositionObjectAt(tPos);
-        app->gizmo->SetRotation(tOri);
+                if (!glm::isnan(angle) && !glm::isinf(angle))
+                {
+                    double len1 = glm::length(vec);
+                    double len2 = glm::length(app->direct);
+                    short delta = glm::sign(glm::asin(((vec.x * app->direct.y) / (len1 * len2)) - ((vec.y * app->direct.x) / (len2 * len1)))) * glm::sign(glm::dot(camera->GetObjectPosition() - tPos, glm::vec3(trans[mInd][0], trans[mInd][1], trans[mInd][2])));
+                    std::array<glm::vec3, 3> directions = { glm::vec3(1, 0, 0), glm::vec3(0, 1, 0), glm::vec3(0, 0, 1) };
+
+                    tOri = tOri * glm::angleAxis(angle * delta, directions[mInd]);
+                    app->transform_target->SetRotation(tOri);
+                    app->direct = vec;
+                    app->App_UpdateUIProperty("EntityOrientation");
+                }
+            }
+
+            app->gizmo->ParsePropertyValue("Scale", (gizmo_scale + ":" + gizmo_scale + ":" + gizmo_scale).c_str());
+            app->gizmo->PositionObjectAt(tPos);
+            app->gizmo->SetRotation(tOri);
+        }
     }
 
     void FreeCamera()

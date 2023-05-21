@@ -6,6 +6,13 @@
 
 namespace GrEngine
 {
+	enum TextureType
+	{
+		Color,
+		Normal,
+		Height
+	};
+
 	struct ImageInfo
 	{
 		uint32_t width;

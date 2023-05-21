@@ -62,7 +62,7 @@ namespace GrEngine_Vulkan
 			object_mesh = resource->AddLink();
 		}
 
-		static_cast<VulkanRenderer*>(p_Owner)->assignTextures({ "", "" , "" , "" , "" , "" }, this);
+		static_cast<VulkanRenderer*>(p_Owner)->assignTextures({ "", "" , "" , "" , "" , "" }, this, GrEngine::TextureType::Color);
 	}
 
 	bool VulkanSkybox::recordCommandBuffer(VkCommandBuffer commandBuffer, UINT32 mode)
@@ -80,7 +80,7 @@ namespace GrEngine_Vulkan
 	{
 		filled = false;
 		//invalidateTexture();
-		static_cast<VulkanRenderer*>(p_Owner)->assignTextures(std::vector<std::string>(sky.begin(), sky.end()), this);
+		static_cast<VulkanRenderer*>(p_Owner)->assignTextures(std::vector<std::string>(sky.begin(), sky.end()), this, GrEngine::TextureType::Color);
 		filled = true;
 	}
 

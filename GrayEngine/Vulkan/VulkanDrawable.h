@@ -7,6 +7,7 @@ namespace GrEngine_Vulkan
 	class VulkanDrawable
 	{
 	public:
+		static bool skip_update;
 		std::vector<Texture*> object_texture;
 		std::vector<Texture*> object_normal;
 		std::string shader_path = "Shaders//default";

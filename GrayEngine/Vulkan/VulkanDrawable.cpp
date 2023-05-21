@@ -7,6 +7,8 @@
 
 namespace GrEngine_Vulkan
 {
+	bool VulkanDrawable::skip_update = false;
+
 	void VulkanDrawable::initObject(VkDevice device, VmaAllocator allocator, GrEngine::Renderer* owner)
 	{
 		p_Owner = owner;
@@ -71,13 +73,13 @@ namespace GrEngine_Vulkan
 		{
 			resources->RemoveTexture(object_texture[i], logicalDevice, memAllocator);
 		}
-		object_texture.clear();
+		object_texture.resize(0);
 
 		for (int i = 0; i < object_normal.size(); i++)
 		{
 			resources->RemoveTexture(object_normal[i], logicalDevice, memAllocator);
 		}
-		object_normal.clear();
+		object_normal.resize(0);
 
 		VulkanAPI::DestroyPipeline(graphicsPipeline);
 		VulkanAPI::DestroyPipelineLayout(pipelineLayout);
@@ -92,6 +94,8 @@ namespace GrEngine_Vulkan
 
 	void VulkanDrawable::updateObject()
 	{
+		if (skip_update) return;
+
 		VulkanAPI::DestroyPipeline(graphicsPipeline);
 		VulkanAPI::DestroyPipelineLayout(pipelineLayout);
 
@@ -105,7 +109,6 @@ namespace GrEngine_Vulkan
 		populateDescriptorSets();
 		createPipelineLayout();
 		createGraphicsPipeline();
-		vkDeviceWaitIdle(logicalDevice);
 	}
 
 	void VulkanDrawable::invalidateTexture()
@@ -533,7 +536,7 @@ namespace GrEngine_Vulkan
 					writes.push_back(write);
 			}
 		}
-
+		
 		vkUpdateDescriptorSets(logicalDevice, writes.size(), writes.data(), 0, NULL);
 		return true;
 	}

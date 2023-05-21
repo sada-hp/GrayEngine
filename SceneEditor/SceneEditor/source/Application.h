@@ -107,9 +107,7 @@ namespace GrEngine
 
         void LoadScene(const char* path) override
         {
-            
             static_cast<Object*>(Object::FindObject(gizmo))->SetVisisibility(false);
-            transform_target = nullptr;
             if (foliage_mask != nullptr)
             {
                 free(foliage_mask);
@@ -118,7 +116,7 @@ namespace GrEngine
             }
             Engine::LoadScene(path);
             loaded_scene_path = path;
-            auto ent = GetRenderer()->selectEntity(100);
+            auto ent = GetRenderer()->GetEntitiesList().at(100);
             if (ent != nullptr)
             {
                 fm = Globals::getExecutablePath() + static_cast<Terrain*>(ent)->GetBlendMask();
@@ -127,6 +125,8 @@ namespace GrEngine
                 mask_aspect_y = mask_height / 1024;
             }
 
+            transform_target = nullptr;
+            manipulation = 0;
             GetRenderer()->selectEntity(0);
         }
 

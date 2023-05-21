@@ -21,10 +21,10 @@ namespace GrEngine_Vulkan
 
 		GenerateBoxMesh(0.5, 0.5, 0.5);
 
-		static_cast<VulkanRenderer*>(p_Owner)->assignTextures({""}, ownerEntity, false);
-		static_cast<VulkanRenderer*>(p_Owner)->assignNormals({""}, ownerEntity);
-		updateSelectionPipeline();
-		updateShadowPipeline();
+		static_cast<VulkanRenderer*>(p_Owner)->assignTextures({""}, ownerEntity, GrEngine::TextureType::Color,false);
+		static_cast<VulkanRenderer*>(p_Owner)->assignTextures({""}, ownerEntity, GrEngine::TextureType::Normal);
+		//updateSelectionPipeline();
+		//updateShadowPipeline();
 	}
 
 	void VulkanObject::destroyObject()
@@ -39,9 +39,16 @@ namespace GrEngine_Vulkan
 
 	void VulkanObject::Refresh()
 	{
+		updateObject();
+	}
+
+	void VulkanObject::updateObject()
+	{
+		if (skip_update) return;
+
 		VulkanDrawable::updateObject();
-		//updateSelectionPipeline();
-		//updateShadowPipeline();
+		updateSelectionPipeline();
+		updateShadowPipeline();
 	}
 
 	void VulkanObject::recordSelection(VkCommandBuffer cmd, VkExtent2D extent, UINT32 mode)
@@ -737,7 +744,10 @@ namespace GrEngine_Vulkan
 		{
 			for (int i = 0; i < object_texture.size(); i++)
 			{
-				imageInfo.push_back(object_texture[i]->texInfo.descriptor);
+				if (object_texture[i] != nullptr && object_texture[i]->texInfo.descriptor.imageView != VK_NULL_HANDLE)
+				{
+					imageInfo.push_back(object_texture[i]->texInfo.descriptor);
+				}
 			}
 			subscribeDescriptor(VK_SHADER_STAGE_FRAGMENT_BIT, 1, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, imageInfo);
 			subscribeDescriptor(VK_SHADER_STAGE_FRAGMENT_BIT, 1, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, imageInfo, 1);
@@ -747,7 +757,10 @@ namespace GrEngine_Vulkan
 		{
 			for (int i = 0; i < object_normal.size(); i++)
 			{
-				normalsInfo.push_back(object_normal[i]->texInfo.descriptor);
+				if (object_normal[i] != nullptr && object_normal[i]->texInfo.descriptor.imageView != VK_NULL_HANDLE)
+				{
+					normalsInfo.push_back(object_normal[i]->texInfo.descriptor);
+				}
 			}
 			subscribeDescriptor(VK_SHADER_STAGE_FRAGMENT_BIT, 2, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, normalsInfo);
 		}
@@ -790,8 +803,8 @@ namespace GrEngine_Vulkan
 				ref_obj->LoadMesh(mesh_path);
 			});
 
-		inst->assignTextures(textures_vector, ref_own);
-		inst->assignNormals(normals_vector, ref_own);
+		inst->assignTextures(textures_vector, ref_own, GrEngine::TextureType::Color);
+		inst->assignTextures(normals_vector, ref_own, GrEngine::TextureType::Normal);
 
 		for (int ind = 0; ind < processes_map.size(); ind++)
 		{

@@ -35,6 +35,9 @@ namespace GrEngine_Vulkan
 			resources->RemoveTexture(object_texture[i], logicalDevice, memAllocator);
 			resources->RemoveTexture(object_normal[i], logicalDevice, memAllocator);
 		}
+		object_displacement.resize(0);
+		object_texture.resize(0);
+		object_normal.resize(0);
 
 		ready = false;
 		VulkanDrawable::destroyObject();
@@ -138,13 +141,13 @@ namespace GrEngine_Vulkan
 		VulkanAPI::m_createVkBuffer(logicalDevice, memAllocator, &size, sizeof(TerrainSize), VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, &terIn);
 		VulkanAPI::m_createVkBuffer(logicalDevice, memAllocator, nullptr, size.resolution * size.resolution * sizeof(ComputeVertex), VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, &terOut);
 
-		heightMap = static_cast<VulkanRenderer*>(p_Owner)->loadTexture({ images[0] }, VK_IMAGE_VIEW_TYPE_2D_ARRAY)->AddLink();
-		foliageMask = static_cast<VulkanRenderer*>(p_Owner)->loadTexture({ images[1] }, VK_IMAGE_VIEW_TYPE_2D)->AddLink();
-		bool res = static_cast<VulkanRenderer*>(p_Owner)->assignTextures({ images[2], images[3], images[4], images[5] }, this, false);
-		res = static_cast<VulkanRenderer*>(p_Owner)->assignNormals({ normals[0], normals[1], normals[2], normals[3] }, this, false);
+		heightMap = static_cast<VulkanRenderer*>(p_Owner)->loadTexture({ images[0] }, GrEngine::TextureType::Height, VK_IMAGE_VIEW_TYPE_2D_ARRAY)->AddLink();
+		foliageMask = static_cast<VulkanRenderer*>(p_Owner)->loadTexture({ images[1] }, GrEngine::TextureType::Color, VK_IMAGE_VIEW_TYPE_2D)->AddLink();
+		bool res = static_cast<VulkanRenderer*>(p_Owner)->assignTextures({ images[2], images[3], images[4], images[5] }, this, GrEngine::TextureType::Color, false);
+		res = static_cast<VulkanRenderer*>(p_Owner)->assignTextures({ normals[0], normals[1], normals[2], normals[3] }, this, GrEngine::TextureType::Normal, false);
 		for (int i = 0; i < 4; i++)
 		{
-			object_displacement.push_back(static_cast<VulkanRenderer*>(p_Owner)->loadTexture({ displacements[i] }, VK_IMAGE_VIEW_TYPE_2D, VK_IMAGE_TYPE_2D, VK_FORMAT_R8G8B8A8_UNORM, true)->AddLink());
+			object_displacement.push_back(static_cast<VulkanRenderer*>(p_Owner)->loadTexture({ displacements[i] }, GrEngine::TextureType::Height, VK_IMAGE_VIEW_TYPE_2D, VK_IMAGE_TYPE_2D, VK_FORMAT_R8G8B8A8_UNORM, true)->AddLink());
 		}
 		updateObject();
 
@@ -238,7 +241,7 @@ namespace GrEngine_Vulkan
 			else
 			{
 				resources->RemoveTexture(foliageMask, logicalDevice, memAllocator);
-				foliageMask = static_cast<VulkanRenderer*>(p_Owner)->loadTexture({ images[0] }, VK_IMAGE_VIEW_TYPE_2D)->AddLink();
+				foliageMask = static_cast<VulkanRenderer*>(p_Owner)->loadTexture({ images[0] }, GrEngine::TextureType::Color, VK_IMAGE_VIEW_TYPE_2D)->AddLink();
 			}
 		}
 
@@ -247,7 +250,7 @@ namespace GrEngine_Vulkan
 			if (images[i] != "" && images[i] != object_texture[i - 1]->texture_collection[0])
 			{
 				resources->RemoveTexture(object_texture[i - 1], logicalDevice, memAllocator);
-				object_texture[i - 1] = static_cast<VulkanRenderer*>(p_Owner)->loadTexture({ images[i] }, VK_IMAGE_VIEW_TYPE_2D, VK_IMAGE_TYPE_2D, VK_FORMAT_R8G8B8A8_UNORM)->AddLink();
+				object_texture[i - 1] = static_cast<VulkanRenderer*>(p_Owner)->loadTexture({ images[i] }, GrEngine::TextureType::Color, VK_IMAGE_VIEW_TYPE_2D, VK_IMAGE_TYPE_2D, VK_FORMAT_R8G8B8A8_UNORM)->AddLink();
 			}
 		}
 
@@ -256,7 +259,7 @@ namespace GrEngine_Vulkan
 			if (normals[i] != "" && normals[i] != object_normal[i]->texture_collection[0])
 			{
 				resources->RemoveTexture(object_normal[i], logicalDevice, memAllocator);
-				object_normal[i] = static_cast<VulkanRenderer*>(p_Owner)->loadTexture({ normals[i] }, VK_IMAGE_VIEW_TYPE_2D, VK_IMAGE_TYPE_2D, VK_FORMAT_R8G8B8A8_UNORM)->AddLink();
+				object_normal[i] = static_cast<VulkanRenderer*>(p_Owner)->loadTexture({ normals[i] }, GrEngine::TextureType::Normal, VK_IMAGE_VIEW_TYPE_2D, VK_IMAGE_TYPE_2D, VK_FORMAT_R8G8B8A8_UNORM)->AddLink();
 			}
 		}
 
@@ -265,7 +268,7 @@ namespace GrEngine_Vulkan
 			if (displacement[i] != "" && displacement[i] != object_displacement[i]->texture_collection[0])
 			{
 				resources->RemoveTexture(object_displacement[i], logicalDevice, memAllocator);
-				object_displacement[i] = static_cast<VulkanRenderer*>(p_Owner)->loadTexture({ displacement[i] }, VK_IMAGE_VIEW_TYPE_2D, VK_IMAGE_TYPE_2D, VK_FORMAT_R8G8B8A8_UNORM, true)->AddLink();
+				object_displacement[i] = static_cast<VulkanRenderer*>(p_Owner)->loadTexture({ displacement[i] }, GrEngine::TextureType::Height, VK_IMAGE_VIEW_TYPE_2D, VK_IMAGE_TYPE_2D, VK_FORMAT_R8G8B8A8_UNORM, true)->AddLink();
 			}
 		}
 
@@ -493,7 +496,7 @@ namespace GrEngine_Vulkan
 			else if (stream == "m")
 			{
 				file >> stream;
-				foliageMask = static_cast<VulkanRenderer*>(p_Owner)->loadTexture({ stream }, VK_IMAGE_VIEW_TYPE_2D)->AddLink();
+				foliageMask = static_cast<VulkanRenderer*>(p_Owner)->loadTexture({ stream }, GrEngine::TextureType::Color, VK_IMAGE_VIEW_TYPE_2D)->AddLink();
 			}
 			else if (stream == "t" && map_index < 4)
 			{
@@ -528,11 +531,11 @@ namespace GrEngine_Vulkan
 		}
 		file.close();
 
-		static_cast<VulkanRenderer*>(p_Owner)->assignTextures({ textures[0], textures[1], textures[2], textures[3] }, this, false);
-		static_cast<VulkanRenderer*>(p_Owner)->assignNormals({ normals[0], normals[1], normals[2], normals[3] }, this, false);
+		static_cast<VulkanRenderer*>(p_Owner)->assignTextures({ textures[0], textures[1], textures[2], textures[3] }, this, GrEngine::TextureType::Color, false);
+		static_cast<VulkanRenderer*>(p_Owner)->assignTextures({ normals[0], normals[1], normals[2], normals[3] }, this, GrEngine::TextureType::Normal, false);
 		for (int i = 0; i < 4; i++)
 		{
-			object_displacement.push_back(static_cast<VulkanRenderer*>(p_Owner)->loadTexture({ displacements[i] }, VK_IMAGE_VIEW_TYPE_2D, VK_IMAGE_TYPE_2D, VK_FORMAT_R8G8B8A8_UNORM, true)->AddLink());
+			object_displacement.push_back(static_cast<VulkanRenderer*>(p_Owner)->loadTexture({ displacements[i] }, GrEngine::TextureType::Height, VK_IMAGE_VIEW_TYPE_2D, VK_IMAGE_TYPE_2D, VK_FORMAT_R8G8B8A8_UNORM, true)->AddLink());
 		}
 
 		VulkanResourceManager::CalculateNormals(object_mesh);

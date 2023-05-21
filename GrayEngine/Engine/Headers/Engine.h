@@ -17,7 +17,7 @@ namespace GrEngine
 		virtual bool LoadObject(UINT id, const char* mesh_path, std::vector<std::string> textures_vector);
 		virtual bool LoadFromGMF(UINT id, const char* filepath);
 		virtual UINT GetSelectedEntityID();
-		bool AssignTextures(std::vector<std::string> textures, Entity* target);
+		bool AssignTextures(std::vector<std::string> textures, Entity* target, TextureType type);
 		virtual void Run();
 		virtual void Stop();
 		virtual void Pause();
@@ -29,6 +29,7 @@ namespace GrEngine
 		virtual void SetCursorState(bool show) { pWindow->AppShowCursor(show); };
 		virtual void AddInputCallback(UINT id, InputCallbackFun callback) { pWindow->AddInputProccess(id, callback); };
 		void RemoveInputCallback(UINT id) { pWindow->RemoveInput(id); };
+		void ClearInputCallbacks() { pWindow->ClearInputs(); };
 		bool IsKeyDown(int key) { return pWindow->IsKeyDown(key); }
 		void FocusWindow() { pWindow->Focus(); };
 		virtual void TogglePhysicsState(bool state);
@@ -52,6 +53,7 @@ namespace GrEngine
 		void clearScene();
 		void TerminateLiraries();
 		inline void* getNativeWindow() { return pWindow->getNativeWindow(); };
+		AppWindow* getApplicationWindow() { return pWindow; };
 
 	private:
 		AppWindow* pWindow;

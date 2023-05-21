@@ -67,6 +67,11 @@ namespace GrEngine
 			inputs_vector.erase(id);
 		}
 
+		void ClearInputs()
+		{
+			inputs_vector.clear();
+		}
+
 	protected:
 		std::unordered_map<UINT, InputCallbackFun> inputs_vector;
 		AppParameters props;

@@ -21,7 +21,7 @@ namespace GrEngine
 		virtual bool init(void* window) = 0;
 		virtual void destroy() = 0;
 		virtual void RenderFrame() = 0;
-		virtual bool assignTextures(std::vector<std::string> textures, Entity* target, bool update_object = true) = 0;
+		virtual bool assignTextures(std::vector<std::string> textures, Entity* target, TextureType type, bool update_object = true) = 0;
 		virtual bool updateTexture(Entity* target, int textureIndex) = 0;
 		virtual bool loadModel(UINT id, const char* mesh_path, std::vector<std::string> textures_vector) = 0;
 		virtual bool loadModel(UINT id, const char* model_path) = 0;

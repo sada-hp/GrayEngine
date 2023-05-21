@@ -104,11 +104,11 @@ namespace GrEngine
 		return GetRenderer()->GetMaterialNames(mesh_path);
 	}
 
-	bool Engine::AssignTextures(std::vector<std::string> textures, Entity* target)
+	bool Engine::AssignTextures(std::vector<std::string> textures, Entity* target, TextureType type)
 	{
 		Pause();
 
-		bool res = pWindow->getRenderer()->assignTextures(textures, target);
+		bool res = pWindow->getRenderer()->assignTextures(textures, target, type);
 
 		Unpause();
 		return res;
@@ -196,6 +196,7 @@ namespace GrEngine
 		physEngine->CleanUp();
 		GetContext()->GetRenderer()->LoadScene(path);
 		Unpause();
+		eventListener.clearEventQueue();
 
 		auto time = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - start).count();
 		Logger::Out("Level %s loaded in %d ms", OutputColor::Gray, OutputType::Log, path, (int)time);
