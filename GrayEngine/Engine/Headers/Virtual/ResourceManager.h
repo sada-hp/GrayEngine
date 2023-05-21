@@ -24,7 +24,7 @@ struct Resource
 
 	void RemoveLink()
 	{
-		if (links - 1 >= 0)
+		if (links - 1 != UINT64_MAX)
 		{
 			links--;
 		}
@@ -50,14 +50,14 @@ struct Resource
 		return pointer == other_pointer;
 	}
 
-	uint8_t getNumOfLinks()
+	uint64_t getNumOfLinks()
 	{
 		return links;
 	}
 
 	std::string name;
 private:
-	uint8_t links = 0;
+	uint64_t links = 0;
 	T pointer;
 };
 

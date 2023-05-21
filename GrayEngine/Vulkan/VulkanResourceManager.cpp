@@ -14,13 +14,12 @@ namespace GrEngine_Vulkan
 			if ((*itt)->Compare(resource))
 			{
 				Resource<Mesh*>* cur_resource = (*itt);
-				std::string string_name = cur_resource->name;
-				cur_resource->RemoveLink();
+				Mesh* mesh = cur_resource->PopResource();
 				if (cur_resource->getNumOfLinks() == 0)
 				{
-					Logger::Out("Mesh resource %s was removed", OutputColor::Blue, OutputType::Log, string_name.c_str());
-					VulkanAPI::m_destroyShaderBuffer(device, allocator, &cur_resource->PopResource()->indexBuffer);
-					VulkanAPI::m_destroyShaderBuffer(device, allocator, &cur_resource->PopResource()->vertexBuffer);
+					Logger::Out("Mesh resource %s was removed", OutputColor::Blue, OutputType::Log, cur_resource->name.c_str());
+					VulkanAPI::m_destroyShaderBuffer(device, allocator, &mesh->indexBuffer);
+					VulkanAPI::m_destroyShaderBuffer(device, allocator, &mesh->vertexBuffer);
 					delete cur_resource;
 					cur_resource = nullptr;
 					meshResources.erase(itt);
@@ -39,12 +38,11 @@ namespace GrEngine_Vulkan
 			if ((*itt)->Compare(resource))
 			{
 				Resource<Texture*>* cur_resource = (*itt);
-				std::string string_name = (*itt)->name;
-				cur_resource->RemoveLink();
-				if (cur_resource->getNumOfLinks() == 0 && !(string_name.find("empty_texture") != std::string::npos && string_name.size() < 25))
+				Texture* texture = cur_resource->PopResource();
+				if (cur_resource->getNumOfLinks() == 0) // && !(string_name.find("empty_texture") != std::string::npos && string_name.size() < 25)
 				{
-					Logger::Out("Texture resource %s was removed", OutputColor::Blue, OutputType::Log, string_name.c_str());
-					VulkanAPI::m_destroyTexture(device, allocator, cur_resource->PopResource());
+					Logger::Out("Texture resource %s was removed", OutputColor::Blue, OutputType::Log, (*itt)->name.c_str());
+					VulkanAPI::m_destroyTexture(device, allocator, texture);
 					delete cur_resource;
 					cur_resource = nullptr;
 					texResources.erase(itt);
@@ -68,6 +66,7 @@ namespace GrEngine_Vulkan
 			{
 				VulkanAPI::m_destroyTexture(device, allocator, (*itt)->PopResource());
 				(*itt)->Update(newValue);
+				(*itt)->AddLink();
 				break;
 			}
 		}
@@ -77,19 +76,27 @@ namespace GrEngine_Vulkan
 	{
 		for (std::vector<Resource<Mesh*>*>::iterator itt = meshResources.begin(); itt != meshResources.end(); ++itt)
 		{
-			(*itt)->RemoveLink();
-			VulkanAPI::m_destroyShaderBuffer(device, allocator, &(*itt)->PopResource()->indexBuffer);
-			VulkanAPI::m_destroyShaderBuffer(device, allocator, &(*itt)->PopResource()->vertexBuffer);
-			delete (*itt);
-			(*itt) = nullptr;
+			Mesh* mesh = (*itt)->PopResource();
+
+			if ((*itt)->getNumOfLinks() == 0)
+			{
+				VulkanAPI::m_destroyShaderBuffer(device, allocator, &mesh->indexBuffer);
+				VulkanAPI::m_destroyShaderBuffer(device, allocator, &mesh->vertexBuffer);
+				delete (*itt);
+				(*itt) = nullptr;
+			}
 		}
 
 		for (std::vector<Resource<Texture*>*>::iterator itt = texResources.begin(); itt != texResources.end(); ++itt)
 		{
-			(*itt)->RemoveLink();
-			VulkanAPI::m_destroyTexture(device, allocator, (*itt)->PopResource());
-			delete (*itt);
-			(*itt) = nullptr;
+			Texture* texture = (*itt)->PopResource();
+
+			if ((*itt)->getNumOfLinks() == 0)
+			{
+				VulkanAPI::m_destroyTexture(device, allocator, texture);
+				delete (*itt);
+				(*itt) = nullptr;
+			}
 		}
 
 		meshResources.clear();

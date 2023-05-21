@@ -2174,7 +2174,7 @@ namespace GrEngine_Vulkan
 				resources.RemoveTexture(target_collection->at(i), logicalDevice, memAllocator);
 				(*target_collection)[i] = nullptr;
 			}
-			target_collection->clear();
+			target_collection->resize(0);
 
 			if (viewtype == VK_IMAGE_VIEW_TYPE_CUBE)
 			{
@@ -2218,76 +2218,6 @@ namespace GrEngine_Vulkan
 		return true;
 	}
 
-	//bool VulkanRenderer::assignNormals(std::vector<std::string> normals, GrEngine::Entity* target, bool update_object)
-	//{
-	//	VulkanRenderer* rend = this;
-	//	VulkanDrawable* object = nullptr;
-
-	//	if (target->GetEntityType() == GrEngine::EntityType::TerrainEntity)
-	//	{
-	//		object = static_cast<VulkanTerrain*>(target);
-	//	}
-	//	else if (drawables.count(target->GetEntityID()) > 0)
-	//	{
-	//		object = static_cast<VulkanObject*>(drawables[target->GetEntityID()]);
-	//	}
-
-	//	if (object != nullptr)
-	//	{
-	//		int texInd = 0;
-	//		int procNum = 0;
-	//		std::map<int, std::future<void>> processes_map;
-	//		std::unordered_map<std::string, int> active_tex;
-
-	//		for (int i = 0; i < object->object_normal.size(); i++)
-	//		{
-	//			resources.RemoveTexture(object->object_normal[i], logicalDevice, memAllocator);
-	//		}
-	//		object->object_normal.clear();
-
-	//		//Precache
-	//		if (normals.size() > 0)
-	//		{
-	//			object->object_normal.resize(normals.size());
-	//		}
-	//		else
-	//		{
-	//			object->object_normal.resize(object->object_texture.size());
-	//			normals.resize(object->object_texture.size());
-	//		}
-	//		for (auto texture : normals)
-	//		{
-	//			if (active_tex.count(texture) == 0)
-	//			{
-	//				processes_map[procNum] = std::async(std::launch::async, [rend, texture, object]()
-	//					{
-	//						rend->loadTexture({ texture }, VK_IMAGE_VIEW_TYPE_2D, VK_IMAGE_TYPE_2D, VK_FORMAT_R8G8B8A8_UNORM);
-	//					});
-
-	//				active_tex[texture] = procNum;
-	//				procNum++;
-	//			}
-	//		}
-
-	//		for (int ind = 0; ind < processes_map.size(); ind++)
-	//		{
-	//			if (processes_map[ind].valid())
-	//			{
-	//				processes_map[ind].wait();
-	//			}
-	//		}
-
-	//		for (int i = 0; i < normals.size(); i++)
-	//		{
-	//			object->object_normal[i] = loadTexture({ normals[i] }, VK_IMAGE_VIEW_TYPE_2D, VK_IMAGE_TYPE_2D, VK_FORMAT_R8G8B8A8_UNORM)->AddLink();
-	//		}
-
-	//		if (update_object) object->updateObject();
-	//	}
-
-	//	return true;
-	//}
-
 	Resource<Texture*>* VulkanRenderer::loadTexture(std::vector<std::string> texture_path, GrEngine::TextureType type, VkImageViewType type_view, VkImageType type_img, VkFormat format_img, bool default_to_black)
 	{
 		bool new_empty = false;
@@ -2306,7 +2236,7 @@ namespace GrEngine_Vulkan
 			int empties = 0;
 			for (int i = 0; i < texture_path.size(); i++)
 			{
-				if (texture_path[i] == "")
+				if (texture_path[i] == "" || texture_path[i] == "empty_texture")
 				{
 					texture_path[i] = "empty_texture";
 					empties++;
@@ -2457,7 +2387,9 @@ namespace GrEngine_Vulkan
 
 			//if (new_empty)
 			//{
-			//	resource = resources.AddTextureResource((std::string("empty_texture") + std::to_string(resources.CountTextures())).c_str(), new_texture);
+			//	std::ostringstream oss;
+			//	oss << (void*)new_texture;
+			//	resource = resources.AddTextureResource((std::string("empty_texture") + oss.str()).c_str(), new_texture);
 			//}
 			//else
 			//{

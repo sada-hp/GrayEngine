@@ -803,8 +803,8 @@ namespace GrEngine_Vulkan
 				ref_obj->LoadMesh(mesh_path);
 			});
 
-		inst->assignTextures(textures_vector, ref_own, GrEngine::TextureType::Color);
-		inst->assignTextures(normals_vector, ref_own, GrEngine::TextureType::Normal);
+		inst->assignTextures(textures_vector, ownerEntity, GrEngine::TextureType::Color);
+		inst->assignTextures(normals_vector, ownerEntity, GrEngine::TextureType::Normal);
 
 		for (int ind = 0; ind < processes_map.size(); ind++)
 		{

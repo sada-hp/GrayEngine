@@ -119,6 +119,8 @@ namespace GrEngine_Vulkan
 			VulkanAPI::DestroySampler(texture->textureSampler);
 			VulkanAPI::DestroyImageView(texture->textureImageView);
 			VulkanAPI::DestroyImage(texture->newImage.allocatedImage);
+			texture->textureSampler = nullptr;
+			texture->textureImageView = nullptr;
 			texture->initialized = false;
 			//texture->texture_collection.clear();
 		}

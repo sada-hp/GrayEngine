@@ -46,7 +46,6 @@ namespace GrEngine_Vulkan
 		void SaveScreenshot(const char* filepath);
 		void addEntity(GrEngine::Entity* entity) override;
 		bool assignTextures(std::vector<std::string> textures, GrEngine::Entity* target, GrEngine::TextureType type, bool update_object = true) override;
-		//bool assignNormals(std::vector<std::string> normals, GrEngine::Entity* target, bool update_object = true);
 		void clearDrawables() override;
 		void createSkybox(const char* East, const char* West, const char* Top, const char* Bottom, const char* North, const char* South) override;
 

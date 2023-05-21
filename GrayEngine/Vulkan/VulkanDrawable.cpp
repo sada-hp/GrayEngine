@@ -120,14 +120,14 @@ namespace GrEngine_Vulkan
 			resources->RemoveTexture(object_texture[i], logicalDevice, memAllocator);
 			object_texture[i] = nullptr;
 		}
-		object_texture.clear();
+		object_texture.resize(0);
 
 		for (int i = 0; i < object_normal.size(); i++)
 		{
 			resources->RemoveTexture(object_normal[i], logicalDevice, memAllocator);
 			object_normal[i] = nullptr;
 		}
-		object_normal.clear();
+		object_normal.resize(0);
 
 		updateObject();
 	}
