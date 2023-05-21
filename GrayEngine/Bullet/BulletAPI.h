@@ -217,7 +217,12 @@ namespace GrEngineBullet
 			}
 
 			glm::vec3 scale = pOwner->GetPropertyValue(PropertyType::Scale, glm::vec3(1.0f));
-			auto resource = resources->GetCollisionMeshResource((std::string(mesh_path) + GrEngine::Globals::FloatToString(scale.x, 5) + GrEngine::Globals::FloatToString(scale.y, 5) + GrEngine::Globals::FloatToString(scale.z, 5)).c_str(), colType);
+			std::string res_postfix = "";
+			if (scale != glm::vec3(1.f))
+			{
+				res_postfix = GrEngine::Globals::FloatToString(scale.x, 5) + GrEngine::Globals::FloatToString(scale.y, 5) + GrEngine::Globals::FloatToString(scale.z, 5);
+			}
+			auto resource = resources->GetCollisionMeshResource((std::string(mesh_path) + res_postfix).c_str(), colType);
 			std::string solution = GrEngine::Globals::getExecutablePath();
 			std::string collision_path = mesh_path;
 
@@ -279,12 +284,6 @@ namespace GrEngineBullet
 					}
 				}
 
-				std::string postfix = "";
-				if (scale != glm::vec3(1.f))
-				{
-					postfix = GrEngine::Globals::FloatToString(scale.x, 5) + GrEngine::Globals::FloatToString(scale.y, 5) + GrEngine::Globals::FloatToString(scale.z, 5);
-				}
-
 				CollisionMesh* cmesh = new CollisionMesh();
 				if (use_hull)
 				{
@@ -294,7 +293,7 @@ namespace GrEngineBullet
 					hull->buildHull(0);
 					cmesh->path = mesh_path;
 					cmesh->shape = new btConvexHullShape((const btScalar*)hull->getVertexPointer(), hull->numVertices(), sizeof(btVector3));
-					auto collision_mesh = resources->AddCollisionMeshResource(("Hull_" + std::string(mesh_path) + postfix).c_str(), cmesh);
+					auto collision_mesh = resources->AddCollisionMeshResource(("Hull_" + std::string(mesh_path) + res_postfix).c_str(), cmesh);
 					objCollision = collision_mesh->AddLink();
 					delete hull;
 					delete tmpshape;
@@ -304,7 +303,7 @@ namespace GrEngineBullet
 				{
 					cmesh->path = mesh_path;
 					cmesh->shape = new btBvhTriangleMeshShape(colMesh, true);
-					auto collision_mesh = resources->AddCollisionMeshResource(("Mesh_" + std::string(mesh_path) + postfix).c_str(), cmesh);
+					auto collision_mesh = resources->AddCollisionMeshResource(("Mesh_" + std::string(mesh_path) + res_postfix).c_str(), cmesh);
 					objCollision = collision_mesh->AddLink();
 				}
 			}
