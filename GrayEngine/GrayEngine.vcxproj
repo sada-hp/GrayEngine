@@ -11,9 +11,12 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="Bullet\BulletMovementComponent.h" />
+    <ClInclude Include="Bullet\BulletPhysicsObject.h" />
     <ClInclude Include="Bullet\BulletResourceManager.h" />
     <ClInclude Include="Bullet\BulletAPI.h" />
     <ClInclude Include="Engine\Headers\Entities\Properties\Drawable.h" />
+    <ClInclude Include="Engine\Headers\Virtual\MovementComponent.h" />
     <ClInclude Include="Engine\Headers\Entities\Properties\Property.h" />
     <ClInclude Include="Engine\Headers\Entities\Properties\Light.h" />
     <ClInclude Include="Engine\Headers\Entities\Skybox.h" />

@@ -104,6 +104,7 @@
     <ClCompile Include="source\UIBridge.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="source\Character.h" />
     <ClInclude Include="source\EditorCore.h" />
     <ClInclude Include="source\ProgramMain.h" />
     <ClInclude Include="source\Application.h" />

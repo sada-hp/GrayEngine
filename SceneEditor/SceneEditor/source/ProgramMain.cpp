@@ -54,122 +54,11 @@ namespace SceneEditor
         }
         if (app->IsKeyDown(GLFW_KEY_LEFT_SHIFT))
         {
-            sprint = 1.35f;
+            sprint = 1.45f;
         }
-        glm::vec3 cap_pos = app->shrek_coll->GetObjectPosition();
 
-        GrEngine::PhysicsObject* phys_comp = static_cast<GrEngine::PhysicsObject*>(app->shrek_coll->GetProperty(PropertyType::PhysComponent)->GetValueAdress());
-
-        if (direction != glm::vec3(0.f))
-        {
-            GrEngine::RayCastResult ray = app->GetPhysics()->CastRayGetHit(cap_pos, glm::vec3(cap_pos.x, cap_pos.y - 3.f, cap_pos.z));
-            std::vector<GrEngine::RayCastResult> res;
-            if (!ray.hasHit)
-            {
-                res = app->GetPhysics()->GetObjectContactPoints(phys_comp, 15.f);
-            }
-            else
-            {
-                res.push_back(ray);
-            }
-
-            if (res.size() > 0)
-            {
-                glm::vec3 normal = glm::vec3(0.f);
-                //int count = 0;
-
-                //for (int i = 0; i < res.size(); i++)
-                //{
-                //    normal += res[i].hitNorm;
-                //    count++;
-                //}
-
-                //normal = normal / (float)count;
-                //normal = glm::normalize(normal);
-                normal = glm::normalize(res[0].hitNorm);
-
-                float max_ang = glm::radians(45.f);
-                float ang = glm::acos(glm::dot(glm::vec3(0, 1, 0), normal));
-                //Logger::Out("Angle of the slope %f", OutputColor::Gray, OutputType::Log, ang);
-                if (ang < max_ang)
-                {
-                    phys_comp->MoveObject(glm::vec3(0.15f * sprint, 0.f, 0.15f * sprint) * glm::normalize(direction));
-                }
-                else
-                {
-                    float sign = glm::sign(glm::dot(direction, normal));
-                    //float bias = glm::abs(glm::radians(45.f) - ang) * 10;
-                    float limit = glm::radians(20.f) / 100.f;
-                    float bias = 0.15f * ((ang - max_ang) / limit) / 100.f;
-                    //Logger::Out("Bias of the slope %f", OutputColor::Gray, OutputType::Log, ((ang - max_ang) / limit));
-                    float speed = 0.15f + bias * sign;
-                    if (speed > 0)
-                    {
-                        speed = glm::min(speed, 2.75f);
-                        phys_comp->MoveObject(glm::vec3(speed, 0.f, speed) * glm::normalize(direction));
-                    }
-                    else
-                    {
-                        speed = glm::abs(speed) + 1.65f;
-                        phys_comp->SlideObjectForDuration(glm::vec3(speed, 0.f, speed) * glm::normalize((normal)), 0.1f);
-                    }
-                }
-            }
-            else
-            {
-                phys_comp->MoveObject(glm::vec3(0.1f, 0.f, 0.1f) * glm::normalize(direction));
-            }
-        }
-        else
-        {
-            //GrEngine::RayCastResult res = app->GetPhysics()->CastRayGetHit(cap_pos, glm::vec3(cap_pos.x, cap_pos.y - 4.5f, cap_pos.z));
-
-            GrEngine::RayCastResult ray = app->GetPhysics()->CastRayGetHit(cap_pos, glm::vec3(cap_pos.x, cap_pos.y - 3.f, cap_pos.z));
-            std::vector<GrEngine::RayCastResult> res;
-            if (!ray.hasHit)
-            {
-                res = app->GetPhysics()->GetObjectContactPoints(phys_comp, 15.f);
-            }
-            else
-            {
-                res.push_back(ray);
-            }
-            if (res.size() > 0)
-            {
-                glm::vec3 normal = glm::vec3(0.f);
-                int count = 0;
-
-                for (int i = 0; i < res.size(); i++)
-                {
-                    normal += res[i].hitNorm;
-                    count++;
-                }
-
-                normal = normal / (float)count;
-                normal = glm::normalize(normal);
-
-                constexpr float max_ang = glm::radians(45.f);
-                float ang = glm::acos(glm::dot(glm::vec3(0, 1, 0), normal));
-                bool sliding = ang <= max_ang;
-                float sign = glm::sign(glm::dot(direction, normal));
-                if (!sliding)
-                {
-                    constexpr float limit = glm::radians(20.f) / 100.f;
-                    float bias = 0.05f * ((ang - max_ang) / limit) / 100.f;
-                    float speed = 0.1f + bias * sign;
-                    speed = glm::abs(speed) + 1.65f;
-                    phys_comp->SlideObjectForDuration(glm::vec3(speed, 0.f, speed) * glm::normalize((normal)), 0.1f);
-                }
-                else
-                {
-                    phys_comp->MoveObject(glm::vec3(0.f, 0.f, 0.f));
-                }
-            }
-            else
-            {
-                phys_comp->MoveObject(glm::vec3(0.f, 0.f, 0.f));
-            }
-        }
+        app->player->SetWalkingSpeed(10 * sprint);
+        app->player->WalkInDirection(direction);
     }
 
     void Transformation()
@@ -416,6 +305,10 @@ namespace SceneEditor
                 else if (static_cast<int>(para[0]) == GLFW_KEY_V && app->ctr_down && static_cast<int>(para[2]) == GLFW_PRESS && !app->free_mode && !app->char_mode)
                 {
                     app->App_CloneEntity();
+                }
+                else if (static_cast<int>(para[0]) == GLFW_KEY_SPACE && static_cast<int>(para[2]) == GLFW_PRESS && app->char_mode)
+                {
+                    app->player->Jump();
                 }
             });
 

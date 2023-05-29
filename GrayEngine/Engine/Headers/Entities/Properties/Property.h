@@ -18,6 +18,7 @@ enum class PropertyType
 	EntityOrientation,
 	Color,
 	PhysComponent,
+	PlayerController,
 	BodyType,
 	Drawable,
 	Spotlight,
@@ -70,6 +71,8 @@ public:
 		{"Color", PropertyType::Color},
 		{"Physics", PropertyType::PhysComponent},
 		{"PhysComponent", PropertyType::PhysComponent},
+		{"PlayerController", PropertyType::PlayerController},
+		{"MovementComponent", PropertyType::PlayerController},
 		{"BodyType", PropertyType::BodyType},
 		{"Drawable", PropertyType::Drawable},
 		{"Mesh", PropertyType::Drawable},
@@ -122,6 +125,8 @@ public:
 			return "Color";
 		case PropertyType::PhysComponent:
 			return "PhysComponent";
+		case PropertyType::PlayerController:
+			return "PlayerController";
 		case PropertyType::Drawable:
 			return "Drawable";
 		case PropertyType::Spotlight:

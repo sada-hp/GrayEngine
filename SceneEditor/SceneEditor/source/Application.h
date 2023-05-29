@@ -6,6 +6,7 @@
 #include <GrayEngine.h>
 #include "EditorUI.h"
 #include "ModelBrowser.h"
+#include "Character.h"
 
 namespace GrEngine
 {
@@ -69,7 +70,7 @@ namespace GrEngine
         float subdivisions = 1.f;
 
         bool brush_snap = false;
-        Entity* shrek_coll;
+        Character* player;
 
         Application(const AppParameters& Properties = AppParameters()) : Engine(Properties)
         {
@@ -826,16 +827,16 @@ namespace GrEngine
 
         void App_SetUpCharacter()
         {
-            shrek_coll->PositionObjectAt(GetRenderer()->getActiveViewport()->GetObjectPosition() - glm::vec3(0, 1.5f, 0));
-            GetRenderer()->getActiveViewport()->SetParentEntity(shrek_coll);
-            GetRenderer()->getActiveViewport()->PositionObjectAt({ 0, 1.5f, 0 });
+            player->PositionObjectAt(GetRenderer()->getActiveViewport()->GetObjectPosition() - glm::vec3(0, 2.5f, 0));
+            GetRenderer()->getActiveViewport()->SetParentEntity(player);
+            GetRenderer()->getActiveViewport()->PositionObjectAt({ 0, 2.5f, 0 });
             free_mode = false;
         }
 
         void App_ClearCharacter()
         {
             GetRenderer()->getActiveViewport()->SetParentEntity(nullptr);
-            GetRenderer()->getActiveViewport()->PositionObjectAt(glm::vec3{ 0, 1.5f, 0 } + shrek_coll->GetObjectPosition());
+            GetRenderer()->getActiveViewport()->PositionObjectAt(glm::vec3{ 0, 2.5f, 0 } + player->GetObjectPosition());
             free_mode = false;
         }
 
@@ -953,12 +954,8 @@ namespace GrEngine
             brush->ParsePropertyValue(PropertyType::CastShadow, "0");
             brush->MakeStatic();
 
-            shrek_coll = GetRenderer()->addEntity(900903);
-            PhysicsObject* phys_comp = static_cast<PhysicsObject*>(shrek_coll->AddNewProperty(PropertyType::PhysComponent)->GetValueAdress());
-            phys_comp->GenerateCapsuleCollision(1, 2);
-            shrek_coll->AddNewProperty(PropertyType::BodyType);
-            shrek_coll->ParsePropertyValue(PropertyType::BodyType, "1");
-            shrek_coll->MakeStatic();
+            player = new Character(900903);
+            player->MakeStatic();
         }
 
         void UnloadTools()

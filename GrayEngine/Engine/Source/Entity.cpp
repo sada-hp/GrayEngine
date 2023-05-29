@@ -226,6 +226,11 @@ namespace GrEngine
 						}
 					});
 				return properties.back();
+			case PropertyType::PlayerController:
+				properties.push_back(new PointerProperty(PropertyType::PlayerController, Engine::GetContext()->GetPhysics()->InitController(this), [](Entity* owner, EntityProperty* self) {
+					Engine::GetContext()->GetPhysics()->RemoveController(static_cast<MovementComponent*>(self->GetValueAdress()));
+					}, this));
+				return properties.back();
 			default:
 				break;
 			}

@@ -455,7 +455,7 @@ namespace GrEngine_Vulkan
 		uint32_t index = 0;
 		int frame = currentFrame;
 		//vkAcquireNextImageKHR(logicalDevice, swapChain, UINT64_MAX, imageAvailableSemaphore[frame], VK_NULL_HANDLE, &index);
-		vkWaitForFences(logicalDevice, 1, &renderFence[frame], TRUE, UINT64_MAX);
+		//vkWaitForFences(logicalDevice, 1, &renderFence[frame], TRUE, UINT64_MAX);
 
 		VkClearValue clearValues[2];
 		clearValues[0].color = { { 0.0f, 0.0f, 0.0f, 0.0f } };

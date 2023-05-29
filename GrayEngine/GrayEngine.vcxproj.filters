@@ -45,6 +45,9 @@
     <ClInclude Include="Bullet\BulletResourceManager.h" />
     <ClInclude Include="Vulkan\VulkanPointLight.h" />
     <ClInclude Include="Vulkan\VulkanOmniLight.h" />
+    <ClInclude Include="Engine\Headers\Virtual\MovementComponent.h" />
+    <ClInclude Include="Bullet\BulletPhysicsObject.h" />
+    <ClInclude Include="Bullet\BulletMovementComponent.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Engine\Source\GL_App.cpp" />

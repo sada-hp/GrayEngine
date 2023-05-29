@@ -18,7 +18,11 @@ struct Resource
 
 	T AddLink()
 	{
-		links++;
+		if (links + 1 != 0)
+		{
+			links++;
+		}
+
 		return pointer;
 	}
 

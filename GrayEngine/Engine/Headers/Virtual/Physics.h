@@ -2,6 +2,7 @@
 #include <glm/glm.hpp>
 #include <glm/gtc/quaternion.hpp>
 #include "PhysicsObject.h"
+#include "MovementComponent.h"
 
 namespace GrEngine
 {
@@ -11,6 +12,7 @@ namespace GrEngine
 		glm::vec3 hitPos;
 		glm::vec3 hitNorm;
 		float distance;
+		UINT id;
 	};
 
 	class Physics
@@ -26,8 +28,10 @@ namespace GrEngine
 
 		virtual void SimulateStep() = 0;
 		virtual PhysicsObject* InitSimulationObject(Entity* owner) = 0;
+		virtual MovementComponent* InitController(Entity* owner) = 0;
 		virtual void AddSimulationObject(PhysicsObject* object) = 0;
 		virtual void RemoveSimulationObject(PhysicsObject* object) = 0;
+		virtual void RemoveController(MovementComponent* object) = 0;
 		virtual void RemoveSimulationObject(UINT id) = 0;
 		virtual void RemovePhysicsObject(void* object) = 0;
 		virtual void CleanUp() = 0;
@@ -40,5 +44,6 @@ namespace GrEngine
 	protected:
 		bool simulate = false;
 		std::vector<PhysicsObject*> objects;
+		std::vector<MovementComponent*> controllers;
 	};
 };

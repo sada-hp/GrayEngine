@@ -4,6 +4,7 @@
 #include <glm/gtc/type_ptr.hpp>
 #include "Core/Globals.h"
 #include "Engine/Headers/Virtual/PhysicsObject.h"
+#include "Engine/Headers/Virtual/MovementComponent.h"
 #include "Properties/Property.h"
 
 namespace GrEngine

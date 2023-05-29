@@ -192,7 +192,6 @@ namespace GrEngine
 		auto start = std::chrono::steady_clock::now();
 
 		Pause();
-		TogglePhysicsState(false);
 		physEngine->CleanUp();
 		GetContext()->GetRenderer()->LoadScene(path);
 		Unpause();

@@ -5,14 +5,16 @@
 
 namespace GrEngine
 {
+	class Physics;
 	class Entity;
 
 	class PhysicsObject
 	{
 	public:
-		PhysicsObject(Entity* owner)
+		PhysicsObject(Entity* owner, Physics* context)
 		{
 			pOwner = owner;
+			pContext = context;
 		}
 
 		virtual ~PhysicsObject()
@@ -31,8 +33,6 @@ namespace GrEngine
 		virtual void GenerateCapsuleCollision(float radius, float height) = 0;
 		virtual bool LoadCollisionMesh(const char* mesh_path, bool use_hull = true) = 0;
 		virtual void ResetMotion() = 0;
-		virtual void MoveObject(glm::vec3 vector) = 0;
-		virtual void SlideObjectForDuration(glm::vec3 vector, float dur) = 0;
 		virtual void AddCollisionResource(const char* name, void* data) = 0;
 		virtual void SetActivationState(bool state)
 		{
@@ -41,7 +41,6 @@ namespace GrEngine
 
 		virtual void SetKinematic(int value) = 0;
 		virtual void UpdateCollisionType(int value) = 0;
-
 
 		bool HasValue()
 		{
@@ -59,11 +58,16 @@ namespace GrEngine
 		}
 
 		virtual UINT GetID() = 0;
+		Physics* GetSimulationContext()
+		{
+			return pContext;
+		}
 
 	protected:
 		bool was_updated = false;
 		bool initialized = false;
 		bool active = false;
 		Entity* pOwner;
+		Physics* pContext;
 	};
 };

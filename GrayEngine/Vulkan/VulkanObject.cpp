@@ -804,6 +804,8 @@ namespace GrEngine_Vulkan
 			});
 
 		inst->assignTextures(textures_vector, ownerEntity, GrEngine::TextureType::Color);
+		//Ideally normals should match the number of used surfaces
+		if (normals_vector.size() == 0) normals_vector.resize(textures_vector.size());
 		inst->assignTextures(normals_vector, ownerEntity, GrEngine::TextureType::Normal);
 
 		for (int ind = 0; ind < processes_map.size(); ind++)

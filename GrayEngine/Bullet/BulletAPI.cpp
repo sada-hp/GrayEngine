@@ -32,6 +32,13 @@ namespace GrEngineBullet
 			object->CalculatePhysics();
 			object->ResetMotion();
 		}
+
+		for (std::vector<GrEngine::MovementComponent*>::iterator itt = controllers.begin(); itt != controllers.end(); ++itt)
+		{
+			BulletMovementComponent* object = static_cast<BulletMovementComponent*>(*itt);
+			object->UpdateController();
+			object->ResetVelocity();
+		}
 		solver->reset();
 	}
 
@@ -43,13 +50,21 @@ namespace GrEngineBullet
 
 	GrEngine::PhysicsObject* BulletAPI::InitSimulationObject(GrEngine::Entity* owner)
 	{
-		auto phys = new BulletPhysObject(static_cast<GrEngine::Entity*>(owner), resourceManager, dynamicsWorld);
+		auto phys = new BulletPhysObject(static_cast<GrEngine::Entity*>(owner), this, resourceManager, dynamicsWorld);
 		if (phys->CalculatePhysics())
 		{
 			AddSimulationObject(phys);
 		}
 
 		return phys;
+	}
+
+	GrEngine::MovementComponent* BulletAPI::InitController(GrEngine::Entity* owner)
+	{
+		owner->AddNewProperty(PropertyType::PhysComponent);
+		owner->AddNewProperty(PropertyType::BodyType)->ParsePropertyValue("1");
+		controllers.push_back(new BulletMovementComponent(owner, dynamicsWorld));
+		return controllers.back();
 	}
 
 	void BulletAPI::AddSimulationObject(GrEngine::PhysicsObject* object)
@@ -68,6 +83,19 @@ namespace GrEngineBullet
 					object->Dispose();
 				}
 				objects.erase(objects.begin() + position);
+				return;
+			}
+		}
+	}
+
+	void BulletAPI::RemoveController(GrEngine::MovementComponent* object)
+	{
+		for (int position = 0; position < controllers.size(); position++)
+		{
+			if (controllers[position] == object)
+			{
+				object->Dispose();
+				controllers.erase(controllers.begin() + position);
 				return;
 			}
 		}
@@ -95,7 +123,28 @@ namespace GrEngineBullet
 
 	void BulletAPI::CleanUp()
 	{
+		TogglePhysicsState(false);
 		int offset = 0;
+		while (controllers.size() != offset)
+		{
+			std::vector<GrEngine::MovementComponent*>::iterator pos = controllers.begin();
+			std::advance(pos, offset);
+			BulletMovementComponent* controller = static_cast<BulletMovementComponent*>(*pos);
+
+			if (!controller->IsOwnerStatic())
+			{
+				controller->Dispose();
+				delete controller;
+				controllers.erase(pos);
+			}
+			else
+			{
+				controller->Dispose();
+				offset++;
+			}
+		}
+
+		offset = 0;
 		while (objects.size() != offset)
 		{
 			std::vector<GrEngine::PhysicsObject*>::iterator pos = objects.begin();
@@ -122,7 +171,6 @@ namespace GrEngineBullet
 	{
 		if (startPoint == endPoint) return GrEngine::RayCastResult{};
 
-		//updateObjects();
 		dynamicsWorld->updateAabbs();
 		dynamicsWorld->computeOverlappingPairs();
 
@@ -144,7 +192,7 @@ namespace GrEngineBullet
 			raycastResult.hasHit = true;
 			raycastResult.hitPos = glm::vec3{ p.x(), p.y(), p.z() };
 			raycastResult.hitNorm = glm::vec3{ n.x(), n.y(), n.z() };
-			//raycastResult.hitNorm = glm::normalize(raycastResult.hitNorm);
+			raycastResult.id = (UINT)res.m_collisionObjects[0]->getUserPointer();
 		}
 		return raycastResult;
 	}
@@ -153,7 +201,6 @@ namespace GrEngineBullet
 	{
 		if (startPoint == endPoint) return GrEngine::RayCastResult{};
 
-		//updateObjects();
 		dynamicsWorld->updateAabbs();
 		dynamicsWorld->computeOverlappingPairs();
 
@@ -179,7 +226,7 @@ namespace GrEngineBullet
 					raycastResult.hitPos = glm::vec3{ p.x(), p.y(), p.z() };
 					raycastResult.hasHit = true;
 					raycastResult.hitNorm = glm::vec3{ n.x(), n.y(), n.z() };
-					//raycastResult.hitNorm = glm::normalize(raycastResult.hitNorm);
+					raycastResult.id = (UINT)res.m_collisionObjects[i]->getUserPointer();
 					break;
 				}
 			}
