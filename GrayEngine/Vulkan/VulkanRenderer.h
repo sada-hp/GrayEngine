@@ -48,6 +48,7 @@ namespace GrEngine_Vulkan
 		bool assignTextures(std::vector<std::string> textures, GrEngine::Entity* target, GrEngine::TextureType type, bool update_object = true) override;
 		void clearDrawables() override;
 		void createSkybox(const char* East, const char* West, const char* Top, const char* Bottom, const char* North, const char* South) override;
+		void UpdateFogParameters(FogSettings para) override;
 
 		void SelectEntityAtCursor() override;
 		std::array<byte, 3> GetPixelColorAtCursor() override;
@@ -185,8 +186,11 @@ namespace GrEngine_Vulkan
 
 		void createAttachment(VkFormat format, VkImageUsageFlags usage, Texture* attachment);
 		void prepareCompositionPass();
+		void updateCompositionResources();
 		void prepareTransparencyPass();
+		void updateTransparencyResources();
 		void prepareSamplingPass();
+		void updateSamplingResources();
 		void prepareSelectionPass();
 		void prepareShadowPass();
 
@@ -216,6 +220,8 @@ namespace GrEngine_Vulkan
 
 		VkFramebuffer shadowFramebuffer;
 		ShaderBuffer cascadeBuffer;
+		ShaderBuffer fogBuffer;
+		FogSettings fogParams;
 
 		uint8_t max_async_frames = 1;
 		bool vsync = false;

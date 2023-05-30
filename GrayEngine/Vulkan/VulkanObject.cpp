@@ -44,8 +44,6 @@ namespace GrEngine_Vulkan
 
 	void VulkanObject::updateObject()
 	{
-		if (skip_update) return;
-
 		VulkanDrawable::updateObject();
 		updateSelectionPipeline();
 		updateShadowPipeline();
@@ -726,15 +724,25 @@ namespace GrEngine_Vulkan
 		return true;
 	}
 
-	void VulkanObject::populateDescriptorSets()
+	void VulkanObject::createDescriptors()
 	{
-		transparency = ownerEntity->GetPropertyValue(PropertyType::Transparency, 0);
-
 		descriptorSets.clear();
 		descriptorSets.resize(3);
 		descriptorSets[0].bindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
 		descriptorSets[1].bindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
 		descriptorSets[2].bindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
+
+		populateDescriptorSets();
+
+		createDescriptorLayout();
+		createDescriptorPool();
+		createDescriptorSet();
+	}
+
+
+	void VulkanObject::populateDescriptorSets()
+	{
+		transparency = ownerEntity->GetPropertyValue(PropertyType::Transparency, 0);
 
 		subscribeDescriptor(VK_SHADER_STAGE_VERTEX_BIT, 0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, static_cast<VulkanRenderer*>(p_Owner)->viewProjUBO.BufferInfo);
 
@@ -780,10 +788,6 @@ namespace GrEngine_Vulkan
 
 		//subscribeDescriptor(VK_SHADER_STAGE_VERTEX_BIT, index++, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, static_cast<VulkanRenderer*>(p_Owner)->shadowBuffer.BufferInfo);
 		//subscribeDescriptor(VK_SHADER_STAGE_FRAGMENT_BIT, index++, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, static_cast<VulkanRenderer*>(p_Owner)->shadowMap.texInfo.descriptor);
-
-		createDescriptorLayout();
-		createDescriptorPool();
-		createDescriptorSet();
 	}
 
 	bool VulkanObject::LoadModel(const char* gmf_path, const char* mesh_path, std::vector<std::string> textures_vector, std::vector<std::string> normals_vector)

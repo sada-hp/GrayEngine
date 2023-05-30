@@ -11,6 +11,12 @@ namespace GrEngine
 	class DllExport Renderer
 	{
 	public:
+		struct FogSettings {
+			glm::vec3 color;
+			float density;
+			float height;
+		};
+
 		double delta_time = 0;
 		bool Initialized = false;
 		Camera* viewport_camera;
@@ -43,6 +49,7 @@ namespace GrEngine
 		{
 			return entities;
 		}
+		virtual void UpdateFogParameters(FogSettings para) = 0;
 		virtual void Update() = 0;
 		virtual void LoadTerrain(int resolution, int width, int height, int depth, std::array<std::string, 6> maps, std::array<std::string, 4> normals, std::array<std::string, 4> displacement) = 0;
 		virtual void LoadTerrain(const char* filepath) = 0;

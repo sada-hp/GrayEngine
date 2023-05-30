@@ -147,7 +147,7 @@ namespace GrEngine_Vulkan
 		VulkanAPI::m_createVkBuffer(logicalDevice, memAllocator, &size, sizeof(TerrainSize), VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, &terIn);
 		VulkanAPI::m_createVkBuffer(logicalDevice, memAllocator, nullptr, size.resolution * size.resolution * sizeof(ComputeVertex), VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, &terOut);
 
-		heightMap = static_cast<VulkanRenderer*>(p_Owner)->loadTexture({ images[0] }, GrEngine::TextureType::Height, VK_IMAGE_VIEW_TYPE_2D_ARRAY)->AddLink();
+		heightMap = static_cast<VulkanRenderer*>(p_Owner)->loadTexture({ images[0] }, GrEngine::TextureType::Height, VK_IMAGE_VIEW_TYPE_2D)->AddLink();
 		foliageMask = static_cast<VulkanRenderer*>(p_Owner)->loadTexture({ images[1] }, GrEngine::TextureType::Color, VK_IMAGE_VIEW_TYPE_2D)->AddLink();
 		bool res = static_cast<VulkanRenderer*>(p_Owner)->assignTextures({ images[2], images[3], images[4], images[5] }, this, GrEngine::TextureType::Color, false);
 		res = static_cast<VulkanRenderer*>(p_Owner)->assignTextures({ normals[0], normals[1], normals[2], normals[3] }, this, GrEngine::TextureType::Normal, false);
@@ -764,7 +764,7 @@ namespace GrEngine_Vulkan
 		pipelineInfo.pDynamicState = &dynamicCreateInfo;
 		pipelineInfo.pTessellationState = &tesselationInfo;
 		pipelineInfo.layout = pipelineLayout;
-		pipelineInfo.renderPass = reinterpret_cast<VulkanRenderer*>(p_Owner)->getRenderPass();
+		pipelineInfo.renderPass = static_cast<VulkanRenderer*>(p_Owner)->getRenderPass();
 		pipelineInfo.subpass = 0;
 		pipelineInfo.pDepthStencilState = &_depthStencil;
 		pipelineInfo.basePipelineHandle = VK_NULL_HANDLE; // Optional
@@ -808,12 +808,22 @@ namespace GrEngine_Vulkan
 		return true;
 	}
 
-	void VulkanTerrain::populateDescriptorSets()
+	void VulkanTerrain::createDescriptors()
 	{
 		descriptorSets.clear();
 		descriptorSets.resize(1 + use_compute);
 		descriptorSets[0].bindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
 
+		populateDescriptorSets();
+
+		createDescriptorLayout();
+		createDescriptorPool();
+		createDescriptorSet();
+	}
+
+
+	void VulkanTerrain::populateDescriptorSets()
+	{
 		//VkDescriptorImageInfo texInfo{};
 		//texInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
 		//texInfo.imageView = object_texture->textureImageView;
@@ -877,9 +887,5 @@ namespace GrEngine_Vulkan
 			subscribeDescriptor(VK_SHADER_STAGE_COMPUTE_BIT, 1, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, outBuffer, 1);
 			subscribeDescriptor(VK_SHADER_STAGE_COMPUTE_BIT, 2, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, heightInfo, 1);
 		}
-
-		createDescriptorLayout();
-		createDescriptorPool();
-		createDescriptorSet();
 	}
 };

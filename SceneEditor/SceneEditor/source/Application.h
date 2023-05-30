@@ -103,6 +103,7 @@ namespace GrEngine
             getEditorUI()->ShowScene();
             LoadTools();
             App_GetAllEntities();
+            GetRenderer()->UpdateFogParameters({ {0.5f, 0.35f, 0.5f}, 0.05f, 0.01f });
             Run();
         }
 

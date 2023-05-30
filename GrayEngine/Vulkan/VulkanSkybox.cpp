@@ -93,21 +93,26 @@ namespace GrEngine_Vulkan
 		return true;
 	}
 
-	void VulkanSkybox::populateDescriptorSets()
+	void VulkanSkybox::createDescriptors()
 	{
 		descriptorSets.clear();
 		descriptorSets.resize(1);
 		descriptorSets[0].bindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
 
+		populateDescriptorSets();
+
+		createDescriptorLayout();
+		createDescriptorPool();
+		createDescriptorSet();
+	}
+
+	void VulkanSkybox::populateDescriptorSets()
+	{
 		VkDescriptorImageInfo info;
 		info.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
 		info.imageView = object_texture[0]->textureImageView;
 		info.sampler = object_texture[0]->textureSampler;
 		subscribeDescriptor(VK_SHADER_STAGE_VERTEX_BIT, 0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, static_cast<VulkanRenderer*>(p_Owner)->viewProjUBO.BufferInfo);
 		subscribeDescriptor(VK_SHADER_STAGE_FRAGMENT_BIT, 1, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, info);
-
-		createDescriptorLayout();
-		createDescriptorPool();
-		createDescriptorSet();
 	}
 }

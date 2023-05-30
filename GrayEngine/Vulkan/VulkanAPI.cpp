@@ -1375,6 +1375,8 @@ namespace GrEngine_Vulkan
 		deviceFeatures.independentBlend = VK_TRUE;
 		deviceFeatures.depthBiasClamp = VK_TRUE;
 		deviceFeatures.depthClamp = VK_TRUE;
+		deviceFeatures.fullDrawIndexUint32 = VK_TRUE;
+		deviceFeatures.shaderFloat64 = VK_TRUE;
 
 		return deviceFeatures;
 	}

@@ -32,6 +32,7 @@ namespace GrEngine_Vulkan
 
 	protected:
 		void populateDescriptorSets() override;
+		void createDescriptors() override;
 
 	private:
 		bool filled = false;

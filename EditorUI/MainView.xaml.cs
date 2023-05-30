@@ -8,6 +8,7 @@ using System.Runtime.InteropServices;
 using System.Windows.Interop;
 using System.Windows.Forms;
 using System.Threading;
+using System.Windows.Threading;
 using System.Collections.ObjectModel;
 
 namespace EditorUI
@@ -743,6 +744,11 @@ namespace EditorUI
         {
             DirectionalLightSettings settings = new DirectionalLightSettings();
             settings.Show();
+        }
+
+        private void Window_SizeChanged(object sender, SizeChangedEventArgs e)
+        {
+
         }
     };
 }

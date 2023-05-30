@@ -211,7 +211,7 @@
                             </Label>
                         </Button>
                         <Button Name="GreenDis" Grid.Row="3"  Background="#FF242427" Margin="10,0,10,10" Cursor="Hand" BorderThickness="1,0,1,1" Click="GreenDis_Click">
-                            <Label Content="Normal" Foreground="White" FontFamily="Lucida Sans Unicode" FontSize="15" FontWeight="DemiBold" IsEnabled="False">
+                            <Label Content="Height" Foreground="White" FontFamily="Lucida Sans Unicode" FontSize="15" FontWeight="DemiBold" IsEnabled="False">
                                 <Label.LayoutTransform>
                                     <RotateTransform Angle="0" />
                                 </Label.LayoutTransform>
@@ -242,7 +242,7 @@
                             </Label>
                         </Button>
                         <Button Name="BlueDis" Grid.Row="3"  Background="#FF242427" Margin="10,0,10,10" Cursor="Hand" BorderThickness="1,0,1,1" Click="BlueDis_Click">
-                            <Label Content="Normal" Foreground="White" FontFamily="Lucida Sans Unicode" FontSize="15" FontWeight="DemiBold" IsEnabled="False">
+                            <Label Content="Height" Foreground="White" FontFamily="Lucida Sans Unicode" FontSize="15" FontWeight="DemiBold" IsEnabled="False">
                                 <Label.LayoutTransform>
                                     <RotateTransform Angle="0" />
                                 </Label.LayoutTransform>

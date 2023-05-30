@@ -7,7 +7,6 @@ namespace GrEngine_Vulkan
 	class VulkanDrawable
 	{
 	public:
-		static bool skip_update;
 		std::vector<Texture*> object_texture;
 		std::vector<Texture*> object_normal;
 		std::string shader_path = "Shaders//default";
@@ -22,12 +21,14 @@ namespace GrEngine_Vulkan
 		virtual bool recordCommandBuffer(VkCommandBuffer commandBuffer, UINT32 mode);
 		virtual bool draw(VkCommandBuffer commandBuffer);
 		virtual bool draw(VkCommandBuffer commandBuffer, int instances);
+		virtual bool updateDescriptors();
 
 	protected:
 		void subscribeDescriptor(VkShaderStageFlags shaderStage, uint8_t binding, VkDescriptorType descType, VkDescriptorImageInfo imageInfo, int targetLayout = 0);
 		void subscribeDescriptor(VkShaderStageFlags shaderStage, uint8_t binding, VkDescriptorType descType, std::vector<VkDescriptorImageInfo> imageInfo, int targetLayout = 0);
 		void subscribeDescriptor(VkShaderStageFlags shaderStage, uint8_t binding, VkDescriptorType descType, VkDescriptorBufferInfo bufferInfo, int targetLayout = 0);
 		virtual void populateDescriptorSets() = 0;
+		virtual void createDescriptors();
 
 		GrEngine::Renderer* p_Owner;
 		std::vector<DescriptorSet> descriptorSets;

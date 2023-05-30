@@ -77,6 +77,8 @@ namespace GrEngine
 		{
 			glfwDestroyWindow(window);
 		}
+
+		props.eventListener->pollEngineEvents();
 	}
 
 	void GL_APP::MaximizeWindow(bool state)
@@ -113,10 +115,9 @@ namespace GrEngine
 		props.eventListener->pollEngineEvents();
 		ProccessInputs();
 		Engine::GetContext()->GetPhysics()->SimulateStep();
+		glfwSwapBuffers(window);
 		pAppRenderer->RenderFrame();
-		//glfwSwapBuffers(window);
 		double currentTime = glfwGetTime();
-
 		Globals::delta_time = (currentTime - time);
 		std::vector<double> para{ 1 / Globals::delta_time, time };
 		props.eventListener->registerEvent(EventType::Step, para);

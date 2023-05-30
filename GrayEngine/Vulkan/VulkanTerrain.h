@@ -37,6 +37,7 @@ namespace GrEngine_Vulkan
 
 	protected:
 		void populateDescriptorSets();
+		void createDescriptors() override;
 
 		bool createPipelineLayout() override;
 		bool createGraphicsPipeline() override;

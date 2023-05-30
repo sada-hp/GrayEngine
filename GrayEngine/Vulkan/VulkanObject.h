@@ -26,6 +26,7 @@ namespace GrEngine_Vulkan
 	protected:
 		void populateDescriptorSets() override;
 		bool createGraphicsPipeline() override;
+		void createDescriptors() override;
 
 		PickingBufferObject opo;
 

@@ -7,8 +7,6 @@
 
 namespace GrEngine_Vulkan
 {
-	bool VulkanDrawable::skip_update = false;
-
 	void VulkanDrawable::initObject(VkDevice device, VmaAllocator allocator, GrEngine::Renderer* owner)
 	{
 		p_Owner = owner;
@@ -58,7 +56,10 @@ namespace GrEngine_Vulkan
 			object_mesh = resource->AddLink();
 		}
 
-		populateDescriptorSets();
+		createDescriptors();
+		createDescriptorLayout();
+		createDescriptorPool();
+		createDescriptorSet();
 	}
 
 	void VulkanDrawable::destroyObject()
@@ -96,8 +97,6 @@ namespace GrEngine_Vulkan
 
 	void VulkanDrawable::updateObject()
 	{
-		if (skip_update) return;
-
 		VulkanAPI::DestroyPipeline(graphicsPipeline);
 		VulkanAPI::DestroyPipelineLayout(pipelineLayout);
 
@@ -108,9 +107,17 @@ namespace GrEngine_Vulkan
 			VulkanAPI::DestroyDescriptorLayout((*itt).descriptorSetLayout);
 		}
 
-		populateDescriptorSets();
+		createDescriptors();
 		createPipelineLayout();
 		createGraphicsPipeline();
+	}
+
+	void VulkanDrawable::createDescriptors()
+	{
+		populateDescriptorSets();
+		createDescriptorLayout();
+		createDescriptorPool();
+		createDescriptorSet();
 	}
 
 	void VulkanDrawable::invalidateTexture()
@@ -541,6 +548,55 @@ namespace GrEngine_Vulkan
 			}
 		}
 		
+		vkUpdateDescriptorSets(logicalDevice, writes.size(), writes.data(), 0, NULL);
+		return true;
+	}
+
+	bool VulkanDrawable::updateDescriptors()
+	{
+		for (int i = 0; i < descriptorSets.size(); i++)
+		{
+			descriptorSets[i].bindings.clear();
+			descriptorSets[i].bufferInfos.clear();
+			descriptorSets[i].imageInfos.clear();
+			descriptorSets[i].stage.clear();
+			descriptorSets[i].type.clear();
+		}
+
+		populateDescriptorSets();
+
+		std::vector<VkWriteDescriptorSet> writes;
+		int buffOff, imgOff;
+		for (int i = 0; i < descriptorSets.size(); i++)
+		{
+			buffOff = 0;
+			imgOff = 0;
+
+			for (int j = 0; j < descriptorSets[i].bindings.size(); j++)
+			{
+				VkWriteDescriptorSet write{};
+				write.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+				write.dstSet = descriptorSets[i].set;
+				write.dstBinding = descriptorSets[i].bindings[j];
+				write.dstArrayElement = 0;
+				write.descriptorType = descriptorSets[i].type[j];
+
+				if (descriptorSets[i].type[j] == VK_DESCRIPTOR_TYPE_STORAGE_BUFFER || descriptorSets[i].type[j] == VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER)
+				{
+					write.pBufferInfo = &descriptorSets[i].bufferInfos[buffOff++];
+					write.descriptorCount = 1;
+				}
+				else
+				{
+					write.pImageInfo = descriptorSets[i].imageInfos[imgOff].data();
+					write.descriptorCount = descriptorSets[i].imageInfos[imgOff++].size();
+				}
+
+				if (write.descriptorCount > 0)
+					writes.push_back(write);
+			}
+		}
+
 		vkUpdateDescriptorSets(logicalDevice, writes.size(), writes.data(), 0, NULL);
 		return true;
 	}

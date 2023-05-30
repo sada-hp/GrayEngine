@@ -54,13 +54,14 @@ namespace GrEngine
             {
                 std::vector<GrEngine::RayCastResult> res = phys_comp->GetSimulationContext()->GetObjectContactPoints(phys_comp, 15.f);
 
-                actual_speed = actual_speed * 0.85f;
+                actual_speed = actual_speed * 0.8f;
                 if (actual_speed < 0.01f)
                 {
                     last_dir = glm::vec3(0.f, 0.f, 0.f);
                     actual_speed = 0.f;
                 }
                 last_speed = actual_speed;
+                float speed = actual_speed * Globals::delta_time;
 
                 if (res.size() > 0)
                 {
@@ -81,7 +82,6 @@ namespace GrEngine
                     normal = glm::normalize(normal);
                     ang = glm::acos(glm::abs(glm::dot(glm::vec3(0, 1, 0), normal)));
                     bool sliding = ang > max_ang;
-                    float speed = actual_speed * Globals::delta_time;
                     if (sliding && normal != glm::vec3(0.f))
                     {
                         constexpr float limit = glm::radians(20.f);
@@ -96,6 +96,10 @@ namespace GrEngine
                     {
                         controller->MoveObject(glm::vec3(speed, 0.f, speed) * last_dir);
                     }
+                }
+                else if (!controller->IsGrounded())
+                {
+                    controller->MoveObject(glm::vec3(walk_speed * Globals::delta_time, 0.f, walk_speed * Globals::delta_time) * last_dir);
                 }
                 else
                 {
