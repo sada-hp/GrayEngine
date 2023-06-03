@@ -36,6 +36,7 @@ namespace GrEngine_Vulkan
 
 	private:
 		bool filled = false;
+		FragmentBuffer opo;
 	};
 };
 

@@ -17,7 +17,7 @@ namespace GrEngine
 		{
             controller = static_cast<MovementComponent*>(AddNewProperty(PropertyType::PlayerController)->GetValueAdress());
             phys_comp = static_cast<PhysicsObject*>(GetProperty(PropertyType::PhysComponent)->GetValueAdress());
-            phys_comp->GenerateCapsuleCollision(1, 2.8f);
+            phys_comp->GenerateCapsuleCollision(1, char_height);
 		}
 
 		~Character()
@@ -90,7 +90,7 @@ namespace GrEngine
                         speed = glm::abs(speed);
                         glm::vec3 slide_dir = glm::cross(-glm::cross(normal, glm::vec3(0, 1, 0)), normal);
                         last_dir = slide_dir;
-                        controller->SlideObjectForDuration(glm::vec3(speed, 0.f, speed) * slide_dir, Globals::delta_time);
+                        controller->MoveObject(glm::vec3(speed, 0.f, speed) * slide_dir);
                     }
                     else
                     {
@@ -99,10 +99,11 @@ namespace GrEngine
                 }
                 else if (!controller->IsGrounded())
                 {
-                    controller->MoveObject(glm::vec3(walk_speed * Globals::delta_time, 0.f, walk_speed * Globals::delta_time) * last_dir);
+                    controller->MoveObject(glm::vec3(last_speed * Globals::delta_time, 0.f, last_speed * Globals::delta_time) * last_dir);
                 }
                 else
                 {
+                    last_speed = 0.f;
                     last_dir = glm::vec3(0.f, 0.f, 0.f);
                     controller->MoveObject(glm::vec3(0.f, 0.f, 0.f));
                 }
@@ -127,5 +128,7 @@ namespace GrEngine
         MovementComponent* controller;
         glm::vec3 last_dir;
         bool landed = true;
+        float step_height = 0.25f;
+        float char_height = 2.8f;
 	};
 }

@@ -17,7 +17,7 @@ namespace GrEngine_Vulkan
 				Mesh* mesh = cur_resource->PopResource();
 				if (cur_resource->getNumOfLinks() == 0)
 				{
-					Logger::Out("Mesh resource %s was removed", OutputColor::Blue, OutputType::Log, cur_resource->name.c_str());
+					Logger::Out("Mesh resource %s was removed", OutputType::Log, cur_resource->name.c_str());
 					VulkanAPI::m_destroyShaderBuffer(device, allocator, &mesh->indexBuffer);
 					VulkanAPI::m_destroyShaderBuffer(device, allocator, &mesh->vertexBuffer);
 					delete cur_resource;
@@ -41,7 +41,7 @@ namespace GrEngine_Vulkan
 				Texture* texture = cur_resource->PopResource();
 				if (cur_resource->getNumOfLinks() == 0) // && !(string_name.find("empty_texture") != std::string::npos && string_name.size() < 25)
 				{
-					Logger::Out("Texture resource %s was removed", OutputColor::Blue, OutputType::Log, (*itt)->name.c_str());
+					Logger::Out("Texture resource %s was removed", OutputType::Log, (*itt)->name.c_str());
 					VulkanAPI::m_destroyTexture(device, allocator, texture);
 					delete cur_resource;
 					cur_resource = nullptr;

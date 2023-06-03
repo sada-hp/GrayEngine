@@ -166,7 +166,7 @@ namespace SceneEditor
         Logger::ShowConsole(false);
         app->SetVSync(1);
 
-        app->GetEventListener()->pushEvent(EventType::Step, [](std::vector<double> para)
+        app->GetEventListener()->subscribe(EventType::Step, [](std::vector<double> para)
             {
                 if (para.size() > 0)
                 {
@@ -174,7 +174,7 @@ namespace SceneEditor
                 }
             });
 
-        app->GetEventListener()->pushEvent(EventType::Scroll, [](std::vector<double> para)
+        app->GetEventListener()->subscribe(EventType::Scroll, [](std::vector<double> para)
             {
                 if (app->free_mode)
                 {
@@ -192,12 +192,12 @@ namespace SceneEditor
                 }
             });
 
-        app->GetEventListener()->pushEvent(EventType::MouseMove, [](std::vector<double> para)
+        app->GetEventListener()->subscribe(EventType::MouseMove, [](std::vector<double> para)
             {
                 app->App_UpdateSphere();
             });
 
-        app->GetEventListener()->pushEvent("LoadModel", [](std::vector<std::any> para)
+        app->GetEventListener()->subscribe("LoadModel", [](std::vector<std::any> para)
             {
                 if (app->transform_target != nullptr)
                 {
@@ -216,7 +216,7 @@ namespace SceneEditor
                 }
             });
 
-        app->GetEventListener()->pushEvent("TerrainBlendMask", [](std::vector<std::any> para)
+        app->GetEventListener()->subscribe("TerrainBlendMask", [](std::vector<std::any> para)
             {
                 if (std::any_cast<bool>(para[0]))
                 {
@@ -228,7 +228,7 @@ namespace SceneEditor
                 }
             });
 
-        app->GetEventListener()->pushEvent("TerrainSculptMask", [](std::vector<std::any> para)
+        app->GetEventListener()->subscribe("TerrainSculptMask", [](std::vector<std::any> para)
             {
                 if (std::any_cast<bool>(para[0]))
                 {
@@ -240,7 +240,7 @@ namespace SceneEditor
                 }
             });
 
-        app->GetEventListener()->pushEvent(EventType::KeyPress, [](std::vector<double> para)
+        app->GetEventListener()->subscribe(EventType::KeyPress, [](std::vector<double> para)
             {
                 if (static_cast<int>(para[0]) == GLFW_KEY_ESCAPE && static_cast<int>(para[2]) == GLFW_PRESS)
                 {
@@ -312,7 +312,7 @@ namespace SceneEditor
                 }
             });
 
-        app->GetEventListener()->pushEvent(EventType::MouseClick, [](std::vector<double> para)
+        app->GetEventListener()->subscribe(EventType::MouseClick, [](std::vector<double> para)
             {
                 if (static_cast<int>(para[3]) == GLFW_PRESS && static_cast<int>(para[2]) == GLFW_MOUSE_BUTTON_LEFT)
                 {
@@ -340,7 +340,7 @@ namespace SceneEditor
                 }
             });
 
-        app->GetEventListener()->pushEvent(EventType::Log, [](std::vector<double> para)
+        app->GetEventListener()->subscribe(EventType::Log, [](std::vector<double> para)
             {
                 char* msg = new char[para.size() + 2];
                 int i = 0;
@@ -354,7 +354,7 @@ namespace SceneEditor
                 delete[] msg;
             });
 
-        app->GetEventListener()->pushEvent(EventType::SelectionChanged, [](std::vector<double> para)
+        app->GetEventListener()->subscribe(EventType::SelectionChanged, [](std::vector<double> para)
             {
                 int id = static_cast<int>(para[0]);
                 app->App_UpdateSelection(id);
@@ -369,7 +369,7 @@ namespace SceneEditor
                 }
             });
 
-        app->GetEventListener()->pushEvent(EventType::FocusChanged, [](std::vector<double> para)
+        app->GetEventListener()->subscribe(EventType::FocusChanged, [](std::vector<double> para)
             {
                 app->focused = static_cast<int>(para[0]);
             });
@@ -384,7 +384,7 @@ namespace SceneEditor
         }
         catch (const char* msg)
         {
-            Logger::Out(msg, OutputColor::Red, OutputType::Error);
+            Logger::Out(msg, OutputType::Error);
             delete app;
 
             return 1;

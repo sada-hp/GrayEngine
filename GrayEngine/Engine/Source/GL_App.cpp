@@ -41,7 +41,7 @@ namespace GrEngine
 
 		if (!window)
 		{
-			Logger::Out("Could not set up a window. Terminating the program", OutputColor::Red, OutputType::Error);
+			Logger::Out("Could not set up a window. Terminating the program", OutputType::Error);
 			ShutDown();
 		}
 		else
@@ -57,7 +57,7 @@ namespace GrEngine
 
 			if (!pAppRenderer->init(window))
 			{
-				Logger::Out("Failed to initialize Vulkan!", OutputColor::Red, OutputType::Error);
+				Logger::Out("Failed to initialize Vulkan!", OutputType::Error);
 				ShutDown();
 			}
 		}
@@ -67,7 +67,7 @@ namespace GrEngine
 
 	void GL_APP::ShutDown()
 	{
-		Logger::Out("Shutting down the engine", OutputColor::Gray, OutputType::Log);
+		Logger::Out("Shutting down the engine", OutputType::Log);
 		if (pAppRenderer)
 		{
 			pAppRenderer->destroy();
@@ -129,7 +129,7 @@ namespace GrEngine
 	{
 		glfwSwapInterval((int)state);
 		pAppRenderer->VSyncState(state);
-		Logger::Out("VSync is now set to %d", OutputColor::Green, OutputType::Log, state);
+		Logger::Out("VSync is now set to %d", OutputType::Log, state);
 	}
 
 	void GL_APP::ProccessInputs()
@@ -188,7 +188,7 @@ namespace GrEngine
 			}
 			else
 			{
-				Logger::Out("Renderer is not specified!", OutputColor::Red, OutputType::Error);
+				Logger::Out("Renderer is not specified!", OutputType::Error);
 			}
 		});
 		glfwSetMouseButtonCallback(target, [](GLFWwindow* win, int button, int action, int mods)

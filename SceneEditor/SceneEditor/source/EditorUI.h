@@ -51,7 +51,7 @@ public:
 		dotNetGUILibrary = LoadLibraryA("EditorUI.dll");
 		if (dotNetGUILibrary == nullptr)
 		{
-			Logger::Out("Failed to load UI", OutputColor::Red, OutputType::Error);
+			Logger::Out("Failed to load UI", OutputType::Error);
 		}
 		CreateUserInterface = (CreateUserInterfaceFunc)GetProcAddress(dotNetGUILibrary, "CreateUserInterface");
 		DisplayUserInterface = (DisplayUserInterfaceFunc)GetProcAddress(dotNetGUILibrary, "DisplayUserInterface");

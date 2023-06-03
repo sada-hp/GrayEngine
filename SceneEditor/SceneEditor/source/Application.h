@@ -103,7 +103,7 @@ namespace GrEngine
             getEditorUI()->ShowScene();
             LoadTools();
             App_GetAllEntities();
-            GetRenderer()->UpdateFogParameters({ {0.5f, 0.35f, 0.5f}, 0.05f, 0.01f });
+            //GetRenderer()->UpdateFogParameters({ {0.15f, 0.125f, 0.15f}, 0.05f, 0.075f });
             Run();
         }
 
@@ -118,13 +118,12 @@ namespace GrEngine
             }
             Engine::LoadScene(path);
             loaded_scene_path = path;
-            auto ent = GetRenderer()->GetEntitiesList().at(100);
-            if (ent != nullptr)
+            if (GetRenderer()->GetEntitiesList().count(100) > 0)
             {
-                fm = Globals::getExecutablePath() + static_cast<Terrain*>(ent)->GetBlendMask();
+                fm = Globals::getExecutablePath() + static_cast<Terrain*>(GetRenderer()->GetEntitiesList().at(100))->GetBlendMask();
                 foliage_mask = stbi_load(fm.c_str(), &mask_width, &mask_height, &mask_channels, STBI_rgb_alpha);
-                mask_aspect_x = mask_width / 1024;
-                mask_aspect_y = mask_height / 1024;
+                mask_aspect_x = mask_width / 1024.f;
+                mask_aspect_y = mask_height / 1024.f;
             }
 
             transform_target = nullptr;
@@ -329,7 +328,7 @@ namespace GrEngine
             }
             else
             {
-                Logger::Out("No valid terrain found in the world!", OutputColor::Red, OutputType::Error);
+                Logger::Out("No valid terrain found in the world!", OutputType::Error);
                 GetEventListener()->registerEvent("TerrainSculptMask", { false });
                 GetEventListener()->registerEvent("TerrainBlendMask", { false });
                 static_cast<Object*>(Object::FindObject(brush))->SetVisisibility(false);
@@ -904,6 +903,18 @@ namespace GrEngine
             free(pixels);
         }
 
+        void App_SetSkyColor(float r, float g, float b)
+        {
+            std::vector<Entity*> ent = GetRenderer()->GetEntitiesOfType(EntityType::SkyboxEntity);
+
+            if (ent.size() > 0)
+            {
+                std::string color = std::to_string(r) + ":" + std::to_string(g) + ":" + std::to_string(b) + ":1";
+                Skybox* sky = static_cast<Skybox*>(ent[0]);
+                sky->ParsePropertyValue(PropertyType::Color, color.c_str());
+            }
+        }
+
     private:
         std::unordered_map<int, InfoChunk> info_chunks;
         std::unordered_map<int, InfoChunk> prev_chunk;
@@ -946,7 +957,7 @@ namespace GrEngine
             brush->ParsePropertyValue(PropertyType::Shader, "Shaders\\brush");
             brush_object->DisableCollisions();
             brush_object->SetVisisibility(false);
-            brush_object->LoadMesh("Content\\Editor\\PaintingSphere.obj");
+            brush_object->GenerateSphereMesh(1, 32, 32);
             brush->AddNewProperty(PropertyType::Color);
             brush->ParsePropertyValue(PropertyType::Color, "1:1:1:0.5");
             brush->AddNewProperty(PropertyType::Scale);

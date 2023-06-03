@@ -113,7 +113,7 @@ namespace GrEngine_Vulkan
 
 		const uint32_t lightsCount()
 		{
-			return glm::max((int)lights.size() + cascade_count * (SHADOW_MAP_CASCADE_COUNT - 1) + omni_count * 5, 1);
+			return lights.size() + cascade_count * (SHADOW_MAP_CASCADE_COUNT - 1) + omni_count * 5;
 		}
 	protected:
 		bool updateDrawables(uint32_t index, DrawMode mode, VkExtent2D extent);

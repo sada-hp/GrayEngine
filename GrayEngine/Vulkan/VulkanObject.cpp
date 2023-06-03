@@ -94,7 +94,7 @@ namespace GrEngine_Vulkan
 			opo.colors *= glm::vec4(0.5, 0.75, 2, opo.colors.w);
 		}
 
-		vkCmdPushConstants(cmd, pipelineLayout, VK_SHADER_STAGE_FRAGMENT_BIT, sizeof(VertexConstants), sizeof(PickingBufferObject), &opo);
+		vkCmdPushConstants(cmd, pipelineLayout, VK_SHADER_STAGE_FRAGMENT_BIT, sizeof(VertexConstants), sizeof(FragmentBuffer), &opo);
 		return true;
 	}
 
@@ -859,7 +859,7 @@ namespace GrEngine_Vulkan
 
 			if (model == NULL)
 			{
-				Logger::Out("Could not load the mesh %c%s%c!", OutputColor::Red, OutputType::Error, '"', mesh_path, '"');
+				Logger::Out("Could not load the mesh %c%s%c!", OutputType::Error, '"', mesh_path, '"');
 				return false;
 			}
 
@@ -988,11 +988,6 @@ namespace GrEngine_Vulkan
 		else
 		{
 			object_mesh = resource->AddLink();
-			//GrEngine::PhysicsObject* physComponent = (GrEngine::PhysicsObject*)ownerEntity->GetPropertyValue(PropertyType::PhysComponent, (void*)nullptr);
-			//if (physComponent != nullptr)
-			//{
-			//	physComponent->UpdateCollisionShape(&object_mesh->collisions);
-			//}
 		}
 	}
 
@@ -1047,20 +1042,100 @@ namespace GrEngine_Vulkan
 			VulkanAPI::m_createVkBuffer(logicalDevice, memAllocator, target_mesh->indices.data(), sizeof(target_mesh->indices[0]) * target_mesh->indices.size(), VK_BUFFER_USAGE_INDEX_BUFFER_BIT, &target_mesh->indexBuffer);
 			resource = resources->AddMeshResource(res_name.c_str(), target_mesh);
 			object_mesh = resource->AddLink();
-			//GrEngine::PhysicsObject* physComponent = (GrEngine::PhysicsObject*)ownerEntity->GetPropertyValue(PropertyType::PhysComponent, (void*)nullptr);
-			//if (physComponent != nullptr && ownerEntity->GetPropertyValue(PropertyType::CollisionType, 0) == 0)
-			//{
-			//	physComponent->GenerateBoxCollision(xcoord, ycoord, zcoord);
-			//}
 		}
 		else
 		{
 			object_mesh = resource->AddLink();
-			//GrEngine::PhysicsObject* physComponent = (GrEngine::PhysicsObject*)ownerEntity->GetPropertyValue(PropertyType::PhysComponent, (void*)nullptr);
-			//if (physComponent != nullptr && ownerEntity->GetPropertyValue(PropertyType::CollisionType, 0) == 0)
-			//{
-			//	physComponent->GenerateBoxCollision(xcoord, ycoord, zcoord);
-			//}
+		}
+	}
+
+	void VulkanObject::GenerateSphereMesh(double radius, int rings, int slices)
+	{
+		std::string res_name = std::string("sphere") + std::to_string(radius) + std::to_string(rings) + std::to_string(slices);
+		auto resource = resources->GetMeshResource(res_name.c_str());
+
+		if (object_mesh != nullptr)
+		{
+			resources->RemoveMesh(object_mesh, logicalDevice, memAllocator);
+			object_mesh = nullptr;
+		}
+
+		if (resource == nullptr)
+		{
+			double slice_sub = 360. / (double)slices;
+			double ring_sub = 2 * radius / (float)rings;
+			Mesh* target_mesh = new Mesh();
+			target_mesh->vertices.push_back({ {{0, radius, 0, 1.f},{1, 1, 1},{ .5, .5 }} });
+
+			double h = radius - ring_sub;
+			double actual_radius = glm::sqrt(glm::pow(radius, 2)-glm::pow(h, 2));
+			double frac = actual_radius / (double)radius;
+			for (int s = 0; s < slices; s++)
+			{
+				double sin = (double)glm::sin(glm::radians((float)(slice_sub * s)));
+				double cos = (double)glm::cos(glm::radians((float)(slice_sub * s)));
+				target_mesh->vertices.push_back({ {{actual_radius *sin, h, actual_radius * cos, 1.},{1., 1., 1.},{ .5 * .5 * frac * sin, .5 + .5 * frac * cos }} });
+			}
+			target_mesh->vertices.push_back({ {{actual_radius * (double)glm::sin(0), h, actual_radius * (double)glm::cos(0), 1.},{1., 1., 1.}, { .5 + .5 * frac * (double)glm::sin(0), .5 + .5 * frac * (double)glm::cos(0) }} });
+
+			for (int i = 1; i < target_mesh->vertices.size() - 1; i++)
+			{
+				target_mesh->indices.push_back(0);
+				target_mesh->indices.push_back(i);
+				target_mesh->indices.push_back(i + 1);
+			}
+
+			target_mesh->indices.push_back(0);
+			target_mesh->indices.push_back(target_mesh->vertices.size() - 1);
+			target_mesh->indices.push_back(1);
+
+			for (int r = 1; r < rings - 1; r++)
+			{
+				h = radius - ring_sub * (r + 1);
+				actual_radius = glm::sqrt(glm::pow(radius, 2) - glm::pow(h, 2));
+				frac = actual_radius / radius;
+				for (int s = 0; s < slices; s++)
+				{
+					double sin = (double)glm::sin(glm::radians((float)(slice_sub * s)));
+					double cos = (double)glm::cos(glm::radians((float)(slice_sub * s)));
+					target_mesh->vertices.push_back({ {{actual_radius * sin, h, actual_radius * cos, 1.},{1., 1., 1.}, { .5 + .5 * frac * sin, .5 + .5 * frac * cos }} });
+				}
+				target_mesh->vertices.push_back({ {{actual_radius * (double)glm::sin(0), h, actual_radius * (double)glm::cos(0), 1.},{1., 1., 1.}, { .5 + .5 * frac * (double)glm::sin(0), .5 + .5 * frac * (double)glm::cos(0) }} });
+			}
+
+			for (int i = slices + 1; i < target_mesh->vertices.size() - 1; i++)
+			{
+				target_mesh->indices.push_back(i - slices);
+				target_mesh->indices.push_back(i);
+				target_mesh->indices.push_back(i + 1);
+
+				target_mesh->indices.push_back(i + 1);
+				target_mesh->indices.push_back(i - slices + 1);
+				target_mesh->indices.push_back(i - slices);
+			}
+
+			target_mesh->vertices.push_back({ {{0, -radius, 0, 1.},{1., 1., 1.},{ .5, .5 }} });
+
+			for (int i = target_mesh->vertices.size() - slices - 1; i < target_mesh->vertices.size() - 2; i++)
+			{
+				target_mesh->indices.push_back(target_mesh->vertices.size() - 1);
+				target_mesh->indices.push_back(i + 1);
+				target_mesh->indices.push_back(i);
+			}
+
+			target_mesh->indices.push_back(target_mesh->vertices.size() - 1);
+			target_mesh->indices.push_back(target_mesh->vertices.size() - slices - 1);
+			target_mesh->indices.push_back(target_mesh->vertices.size() - 2);
+
+			VulkanResourceManager::CalculateNormals(target_mesh);
+			VulkanAPI::m_createVkBuffer(logicalDevice, memAllocator, target_mesh->vertices.data(), sizeof(target_mesh->vertices[0]) * target_mesh->vertices.size(), VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, &target_mesh->vertexBuffer);
+			VulkanAPI::m_createVkBuffer(logicalDevice, memAllocator, target_mesh->indices.data(), sizeof(target_mesh->indices[0]) * target_mesh->indices.size(), VK_BUFFER_USAGE_INDEX_BUFFER_BIT, &target_mesh->indexBuffer);
+			resource = resources->AddMeshResource(res_name.c_str(), target_mesh);
+			object_mesh = resource->AddLink();
+		}
+		else
+		{
+			object_mesh = resource->AddLink();
 		}
 	}
 };

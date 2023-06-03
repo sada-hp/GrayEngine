@@ -104,6 +104,8 @@ namespace EditorUI
         [DllImport("SceneEditor.dll", CallingConvention = CallingConvention.Cdecl)]
         public static extern void SetAmbientModulator(float value);
         [DllImport("SceneEditor.dll", CallingConvention = CallingConvention.Cdecl)]
+        public static extern void SetSkyColor(float r, float g, float b);
+        [DllImport("SceneEditor.dll", CallingConvention = CallingConvention.Cdecl)]
         public static extern bool CheckCascade();
         [DllImport("SceneEditor.dll", CallingConvention = CallingConvention.Cdecl)]
         public static extern void AddCascade();

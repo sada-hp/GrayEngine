@@ -51,6 +51,7 @@ namespace SceneEditor
 		ExportDll void __stdcall RotateSun(float pitch, float yaw);
 		ExportDll void __stdcall SetSunColor(const char* color);
 		ExportDll void __stdcall SetAmbientModulator(float value);
+		ExportDll void __stdcall SetSkyColor(float r, float g, float b);
 		ExportDll bool __stdcall CheckCascade();
 		ExportDll void __stdcall AddCascade();
 		ExportDll const char* __stdcall GetCascadeColor();

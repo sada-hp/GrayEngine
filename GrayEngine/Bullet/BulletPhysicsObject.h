@@ -204,7 +204,7 @@ namespace GrEngineBullet
 
 				if (collision == NULL)
 				{
-					Logger::Out("Could not load the mesh %c%s%c!", OutputColor::Red, OutputType::Error, '"', mesh_path, '"');
+					Logger::Out("Could not load the mesh %c%s%c!",OutputType::Error, '"', mesh_path, '"');
 					return false;
 				}
 

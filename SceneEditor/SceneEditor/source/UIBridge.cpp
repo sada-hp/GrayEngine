@@ -2,7 +2,7 @@
 
 void SceneEditor::LogMessage(const char* msg)
 {
-	Logger::Out(msg, OutputColor::Blue, OutputType::Log);
+	Logger::Out(msg, OutputType::Log);
 }
 
 void SceneEditor::InitModelBrowser()
@@ -32,7 +32,7 @@ void SceneEditor::UpdateSkybox(const char* East, const char* West, const char* T
         || (std::string(Top) != "" && std::string(Top).substr(0, solution.size()) != solution) || (std::string(Bottom) != "" && std::string(Bottom).substr(0, solution.size()) != solution)
         || (std::string(North) != "" && std::string(North).substr(0, solution.size()) != solution) || (std::string(South) != "" && std::string(South).substr(0, solution.size()) != solution))
     {
-        Logger::Out("Resource outside the solution is being used!", OutputColor::Red, OutputType::Error);
+        Logger::Out("Resource outside the solution is being used!", OutputType::Error);
         return;
     }
 
@@ -56,7 +56,7 @@ void SceneEditor::LoadModelFile(const char* model_path)
     std::string solution = GrEngine::Globals::getExecutablePath();
     if (std::string(model_path).substr(0, solution.size()) != solution)
     {
-        Logger::Out("Resource outside the solution is being used! %s", OutputColor::Red, OutputType::Error, model_path);
+        Logger::Out("Resource outside the solution is being used! %s", OutputType::Error, model_path);
         return;
     }
 
@@ -86,7 +86,7 @@ void SceneEditor::LoadModelFile(const char* model_path)
 
     auto end = std::chrono::steady_clock::now();
     auto time = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
-    Logger::Out("Model %s loaded in %d ms", OutputColor::Gray, OutputType::Log, model_path, (int)time);
+    Logger::Out("Model %s loaded in %d ms", OutputType::Log, model_path, (int)time);
 
     std::vector<std::string> materials = GrEngine::Engine::GetContext()->GetMaterialNames(mesh_path.c_str());
     std::string out_materials;
@@ -108,7 +108,7 @@ void SceneEditor::LoadObject(const char* mesh_path, const char* textures_path)
 
     if (std::string(mesh_path).substr(0, solution.size()) != solution)
     {
-        Logger::Out("Resource outside the solution is being used! %s", OutputColor::Red, OutputType::Error, mesh_path);
+        Logger::Out("Resource outside the solution is being used! %s", OutputType::Error, mesh_path);
         return;
     }
 
@@ -116,7 +116,7 @@ void SceneEditor::LoadObject(const char* mesh_path, const char* textures_path)
     {
         if ((*itt) != "" && (*itt).substr(0, solution.size()) != solution)
         {
-            Logger::Out("Resource outside the solution is being used! %s", OutputColor::Red, OutputType::Error, (*itt).c_str());
+            Logger::Out("Resource outside the solution is being used! %s",OutputType::Error, (*itt).c_str());
             return;
         }
     }
@@ -145,7 +145,7 @@ void SceneEditor::AssignTextures(const char* textures_path)
     {
         if (str != "" && str.substr(0, solution.size()) != solution)
         {
-            Logger::Out("Resource outside the solution is being used! %s", OutputColor::Red, OutputType::Error, str.c_str());
+            Logger::Out("Resource outside the solution is being used! %s", OutputType::Error, str.c_str());
             return;
         }
     }
@@ -202,7 +202,7 @@ void SceneEditor::CreateModelFile(const char* filename, const char* mesh_path, c
 void  SceneEditor::SaveScreenshot(const char* filepath)
 {
     GrEngine::Engine::GetContext()->GetRenderer()->SaveScreenshot(filepath);
-    Logger::Out("Screenshot saved at %s", OutputColor::Green, OutputType::Log, filepath);
+    Logger::Out("Screenshot saved at %s", OutputType::Log, filepath);
 }
 
 void SceneEditor::TogglePhysics()
@@ -240,7 +240,7 @@ void SceneEditor::GenerateTerrain(int resolution, int x, int y, int z, const cha
         || (std::string(red_dis) != "" && std::string(red_dis).substr(0, solution.size()) != solution) || (std::string(green_dis) != "" && std::string(green_dis).substr(0, solution.size()) != solution)
         || (std::string(blue_dis) != "" && std::string(blue_dis).substr(0, solution.size()) != solution))
     {
-        Logger::Out("Resource outside the solution is being used!", OutputColor::Red, OutputType::Error);
+        Logger::Out("Resource outside the solution is being used!", OutputType::Error);
         return;
     }
 
@@ -269,7 +269,7 @@ void SceneEditor::UpdateTerrain(const char* blend, const char* base, const char*
         || (std::string(red_dis) != "" && std::string(red_dis).substr(0, solution.size()) != solution) || (std::string(green_dis) != "" && std::string(green_dis).substr(0, solution.size()) != solution)
         || (std::string(blue_dis) != "" && std::string(blue_dis).substr(0, solution.size()) != solution))
     {
-        Logger::Out("Resource outside the solution is being used!", OutputColor::Red, OutputType::Error);
+        Logger::Out("Resource outside the solution is being used!", OutputType::Error);
         return;
     }
 
@@ -384,6 +384,11 @@ void SceneEditor::SetSunColor(const char* color)
 void SceneEditor::SetAmbientModulator(float value)
 {
     SceneEditor::GetApplication()->GetRenderer()->SetAmbientValue(value);
+}
+
+void SceneEditor::SetSkyColor(float r, float g, float b)
+{
+    SceneEditor::GetApplication()->App_SetSkyColor(r, g, b);
 }
 
 bool SceneEditor::CheckCascade()

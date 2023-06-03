@@ -3,15 +3,6 @@
 #include "Core/Core.h"
 #include "EventListener.h"
 
-static enum class OutputColor
-{
-	Gray = 7,
-	Blue = 3,
-	Green = 2,
-	Red = 4,
-	Yellow = 6
-};
-
 static enum class OutputType
 {
 	Log,
@@ -31,13 +22,11 @@ class DllExport Logger
 public:
 
 	template<typename ... Args>
-	static void Out(const char* message, OutputColor color, OutputType type, const Args&... values)
+	static void Out(const char* message, OutputType type, const Args&... values)
 	{
 		if (!AllowMessages(MessageMode::GetValue)) return;
 
 		auto time_local = GetTime();
-		SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), static_cast<WORD>(color));
-
 		char time_buf[256];
 		char _buf[1024];
 		const char* log_type = GetTypeBasedString(type);

@@ -73,12 +73,12 @@ public:
 	{
 	}
 
-	void pushEvent(const EventType& event, EventCallback event_function)
+	void subscribe(const EventType& event, EventCallback event_function)
 	{
 		if (bAllowEvents)
 			observers_engine[event].push_back(std::forward<EventCallback>(event_function));
 	}
-	void pushEvent(const char* event_name, EventCallbackCustom event_function)
+	void subscribe(const char* event_name, EventCallbackCustom event_function)
 	{
 		if (bAllowCustomEvents)
 			observers_custom[event_name].push_back(std::forward<EventCallbackCustom>(event_function));

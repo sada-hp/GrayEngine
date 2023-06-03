@@ -90,6 +90,9 @@ namespace GrEngine_Vulkan
 		ubo.model = glm::translate(glm::mat4(1.f), GetObjectPosition()) * glm::mat4_cast(GetObjectOrientation());
 		/*Math for Game Programmers: Understanding Homogeneous Coordinates GDC 2015*/
 		vkCmdPushConstants(cmd, pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(VertexConstants), &ubo);
+
+		opo.colors = GetPropertyValue(PropertyType::Color, glm::vec4(1));
+		vkCmdPushConstants(cmd, pipelineLayout, VK_SHADER_STAGE_FRAGMENT_BIT, sizeof(VertexConstants), sizeof(FragmentBuffer), &opo);
 		return true;
 	}
 

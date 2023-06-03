@@ -5,7 +5,7 @@
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
              xmlns:local="clr-namespace:EditorUI"
              mc:Ignorable="d" 
-             d:DesignHeight="450" d:DesignWidth="800" Width="650" Height="450" ResizeMode="NoResize" WindowStartupLocation="CenterScreen" Title="Terrain editor">
+             d:DesignHeight="450" d:DesignWidth="800" Width="650" Height="450" ResizeMode="NoResize" WindowStartupLocation="CenterScreen" Title="Terrain editor" Topmost="True">
     <Window.Resources>
         <Style TargetType="{x:Type TabItem}">
             <Setter Property="Template">
@@ -259,7 +259,7 @@
                     <ColumnDefinition Width="20*"/>
                     <ColumnDefinition Width="20*"/>
                 </Grid.ColumnDefinitions>
-                <Button Content="Apply" Grid.Row="1" Click="Button_Click" Grid.Column="1" Background="#FF323134" BorderBrush="#FFC8C8C8" BorderThickness="2" Foreground="White" FontFamily="Lucida Sans Unicode" Width="100" Height="35" Cursor="Hand" HorizontalAlignment="Center"/>
+                <Button Content="Confirm" Grid.Row="1" Click="Button_Click" Grid.Column="1" Background="#FF323134" BorderBrush="#FFC8C8C8" BorderThickness="2" Foreground="White" FontFamily="Lucida Sans Unicode" Width="100" Height="35" Cursor="Hand" HorizontalAlignment="Center"/>
                 <Button Name="Cancel" Content="Cancel" Grid.Row="1" Grid.Column="2" Background="#FF323134" BorderBrush="#FFC8C8C8" BorderThickness="2" Foreground="White" FontFamily="Lucida Sans Unicode" Width="100" Height="35" Cursor="Hand" HorizontalAlignment="Center" Click="Cancel_Click"/>
             </Grid>
         </Border>

@@ -21,9 +21,11 @@ namespace GrEngine_Vulkan
 		while (offset >= 0)
 		{
 			std::unordered_map<void*, Destructor*>::iterator itt = destructors.begin();
-			std::advance(itt, offset);
+
+			if (offset < destructors.size())
+				std::advance(itt, offset);
 			
-			if (offset < destructors.size() && devices.count((*itt).first) > 0 && devices[(*itt).first] == logicalDevice || allocations.count((*itt).first) > 0 && allocators.count(allocations[(*itt).first]) > 0 && allocators[allocations[(*itt).first]] == allocator)
+			if (devices.count((*itt).first) > 0 && devices[(*itt).first] == logicalDevice || allocations.count((*itt).first) > 0 && allocators.count(allocations[(*itt).first]) > 0 && allocators[allocations[(*itt).first]] == allocator)
 			{
 				(*itt).second((*itt).first);
 			}
@@ -31,7 +33,7 @@ namespace GrEngine_Vulkan
 			offset--;
 		}
 
-		Logger::Out("Removerd device %p", OutputColor::Blue, OutputType::Log, logicalDevice);
+		Logger::Out("Removed device %p", OutputType::Log, logicalDevice);
 		VulkanAPI::DestroyMemoryAllocator(allocator);
 		VulkanAPI::DestroyLogicalDevice(logicalDevice);
 	}
@@ -379,7 +381,7 @@ namespace GrEngine_Vulkan
 
 		if (res != VK_SUCCESS)
 		{
-			Logger::Out("[VK] Failed to create render pass with code %d", OutputColor::Red, OutputType::Error, res);
+			Logger::Out("[VK] Failed to create render pass with code %d", OutputType::Error, res);
 			return false;
 		}
 
@@ -395,7 +397,7 @@ namespace GrEngine_Vulkan
 
 		if (res != VK_SUCCESS)
 		{
-			Logger::Out("[VK] Failed to create render pass with code %d", OutputColor::Red, OutputType::Error, res);
+			Logger::Out("[VK] Failed to create render pass with code %d", OutputType::Error, res);
 			return false;
 		}
 
@@ -420,7 +422,7 @@ namespace GrEngine_Vulkan
 
 		if (res != VK_SUCCESS)
 		{
-			Logger::Out("[VK] Failed to create framebuffer with code %d", OutputColor::Red, OutputType::Error, res);
+			Logger::Out("[VK] Failed to create framebuffer with code %d", OutputType::Error, res);
 			return false;
 		}
 
@@ -436,7 +438,7 @@ namespace GrEngine_Vulkan
 
 		if (res != VK_SUCCESS)
 		{
-			Logger::Out("[VK] Failed to create framebuffer with code %d", OutputColor::Red, OutputType::Error, res);
+			Logger::Out("[VK] Failed to create framebuffer with code %d", OutputType::Error, res);
 			return false;
 		}
 
@@ -457,7 +459,7 @@ namespace GrEngine_Vulkan
 
 		if (res != VK_SUCCESS)
 		{
-			Logger::Out("[VK] Failed to create command pool with code %d", OutputColor::Red, OutputType::Error, res);
+			Logger::Out("[VK] Failed to create command pool with code %d", OutputType::Error, res);
 			return false;
 		}
 
@@ -480,7 +482,7 @@ namespace GrEngine_Vulkan
 
 		if (res != VK_SUCCESS)
 		{
-			Logger::Out("[VK] Failed to create semaphore with code %d", OutputColor::Red, OutputType::Error, res);
+			Logger::Out("[VK] Failed to create semaphore with code %d", OutputType::Error, res);
 			return false;
 		}
 
@@ -503,7 +505,7 @@ namespace GrEngine_Vulkan
 
 		if (res != VK_SUCCESS)
 		{
-			Logger::Out("[VK] Failed to create semaphore with code %d", OutputColor::Red, OutputType::Error, res);
+			Logger::Out("[VK] Failed to create semaphore with code %d", OutputType::Error, res);
 			return false;
 		}
 
@@ -523,7 +525,7 @@ namespace GrEngine_Vulkan
 
 		if (res != VK_SUCCESS)
 		{
-			Logger::Out("[VK] Failed to create fence with code %d", OutputColor::Red, OutputType::Error, res);
+			Logger::Out("[VK] Failed to create fence with code %d", OutputType::Error, res);
 			return false;
 		}
 
@@ -544,7 +546,7 @@ namespace GrEngine_Vulkan
 
 		if (res != VK_SUCCESS)
 		{
-			Logger::Out("[VK] Failed to create image with code %d", OutputColor::Red, OutputType::Error, res);
+			Logger::Out("[VK] Failed to create image with code %d", OutputType::Error, res);
 			return false;
 		}
 
@@ -571,7 +573,7 @@ namespace GrEngine_Vulkan
 		VkResult res = vkCreateImageView(device, &createInfo, nullptr, target);
 		if (res != VK_SUCCESS)
 		{
-			Logger::Out("[VK] Failed to create image with code %d", OutputColor::Red, OutputType::Error, res);
+			Logger::Out("[VK] Failed to create image with code %d", OutputType::Error, res);
 			return false;
 		}
 
@@ -594,7 +596,7 @@ namespace GrEngine_Vulkan
 
 		if (res != VK_SUCCESS)
 		{
-			Logger::Out("[VK] Failed to create pipeline layout with code %d", OutputColor::Red, OutputType::Error, res);
+			Logger::Out("[VK] Failed to create pipeline layout with code %d", OutputType::Error, res);
 			return false;
 		}
 
@@ -610,7 +612,7 @@ namespace GrEngine_Vulkan
 
 		if (res != VK_SUCCESS)
 		{
-			Logger::Out("[VK] Failed to create pipeline with code %d", OutputColor::Red, OutputType::Error, res);
+			Logger::Out("[VK] Failed to create pipeline with code %d", OutputType::Error, res);
 			return false;
 		}
 
@@ -626,7 +628,7 @@ namespace GrEngine_Vulkan
 
 		if (res != VK_SUCCESS)
 		{
-			Logger::Out("[VK] Failed to create pipeline with code %d", OutputColor::Red, OutputType::Error, res);
+			Logger::Out("[VK] Failed to create pipeline with code %d", OutputType::Error, res);
 			return false;
 		}
 
@@ -695,7 +697,7 @@ namespace GrEngine_Vulkan
 
 		if (res != VK_SUCCESS)
 		{
-			Logger::Out("[VK] Failed to create sampler with code %d", OutputColor::Red, OutputType::Error, res);
+			Logger::Out("[VK] Failed to create sampler with code %d", OutputType::Error, res);
 			return false;
 		}
 
@@ -711,7 +713,7 @@ namespace GrEngine_Vulkan
 
 		if (res != VK_SUCCESS)
 		{
-			Logger::Out("[VK] Failed to create sampler with code %d", OutputColor::Red, OutputType::Error, res);
+			Logger::Out("[VK] Failed to create sampler with code %d", OutputType::Error, res);
 			return false;
 		}
 
@@ -1345,7 +1347,7 @@ namespace GrEngine_Vulkan
 
 		if (familyIndices.size() == 0)
 		{
-			Logger::Out("Couldn't find suitable family indices!", OutputColor::Red, OutputType::Error);
+			Logger::Out("Couldn't find suitable family indices!", OutputType::Error);
 			return queueCreateInfos;
 		}
 

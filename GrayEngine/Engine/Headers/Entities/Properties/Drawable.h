@@ -95,6 +95,8 @@ namespace GrEngine
 
 		virtual void GenerateBoxMesh(float width, float height, float depth) = 0;
 
+		virtual void GenerateSphereMesh(double radius, int rings, int slices) = 0;
+
 		virtual void Refresh() = 0;
 
 		//virtual void CalculateNormals() = 0;

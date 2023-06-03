@@ -53,7 +53,7 @@ namespace GrEngineBullet
 				resource->RemoveLink();
 				if (resource->getNumOfLinks() == 0)
 				{
-					Logger::Out("Collision resource %s was removed", OutputColor::Blue, OutputType::Log, string_name.c_str());
+					Logger::Out("Collision resource %s was removed", OutputType::Log, string_name.c_str());
 					delete resource;
 					resource = nullptr;
 					colResources.erase(itt);

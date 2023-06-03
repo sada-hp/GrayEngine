@@ -103,7 +103,7 @@ namespace GrEngine_Vulkan
 		glm::vec4 scale = { 1.f, 1.f, 1.f, 1.f };
 	};
 
-	struct PickingBufferObject {
+	struct FragmentBuffer {
 		glm::vec4 colors{ 1.f };
 	};
 

@@ -81,12 +81,9 @@ namespace GrEngine_Vulkan
 	const std::array<std::string, 4> VulkanTerrain::GetColorTextures()
 	{
 		std::array<std::string, 4> res;
-		for (int i = 0; i < 4; i++)
+		for (int i = 0; i < glm::min((int)object_texture.size(), 4); i++)
 		{
-			if (i < object_texture.size())
-			{
-				res[i] = object_texture[i]->texture_collection[0];
-			}
+			res[i] = object_texture[i]->texture_collection[0];
 		}
 
 		return res;
@@ -95,12 +92,9 @@ namespace GrEngine_Vulkan
 	const std::array<std::string, 4> VulkanTerrain::GetNormalTextures()
 	{
 		std::array<std::string, 4> res;
-		for (int i = 0; i < 4; i++)
+		for (int i = 0; i < glm::min((int)object_normal.size(), 4); i++)
 		{
-			if (i < object_normal.size())
-			{
-				res[i] = object_normal[i]->texture_collection[0];
-			}
+			res[i] = object_normal[i]->texture_collection[0];
 		}
 
 		return res;
@@ -109,12 +103,9 @@ namespace GrEngine_Vulkan
 	const std::array<std::string, 4> VulkanTerrain::GetDisplacementTextures()
 	{
 		std::array<std::string, 4> res;
-		for (int i = 0; i < 4; i++)
+		for (int i = 0; i < glm::min((int)object_displacement.size(), 4); i++)
 		{
-			if (i < object_displacement.size())
-			{
-				res[i] = object_displacement[i]->texture_collection[0];
-			}
+			res[i] = object_displacement[i]->texture_collection[0];
 		}
 
 		return res;
@@ -129,13 +120,25 @@ namespace GrEngine_Vulkan
 			resources->RemoveTexture(foliageMask, logicalDevice, memAllocator);
 			for (int i = 0; i < 4; i++)
 			{
-				resources->RemoveTexture(object_displacement[i], logicalDevice, memAllocator);
-				object_displacement[i] = nullptr;
-				resources->RemoveTexture(object_texture[i], logicalDevice, memAllocator);
-				object_texture[i] = nullptr;
-				resources->RemoveTexture(object_normal[i], logicalDevice, memAllocator);
-				object_normal[i] = nullptr;
+				if (i < object_displacement.size())
+				{
+					resources->RemoveTexture(object_displacement[i], logicalDevice, memAllocator);
+					object_displacement[i] = nullptr;
+				}
+				if (i < object_texture.size())
+				{
+					resources->RemoveTexture(object_texture[i], logicalDevice, memAllocator);
+					object_texture[i] = nullptr;
+				}
+				if (i < object_normal.size())
+				{
+					resources->RemoveTexture(object_normal[i], logicalDevice, memAllocator);
+					object_normal[i] = nullptr;
+				}
 			}
+			object_displacement.resize(0);
+			object_normal.resize(0);
+			object_texture.resize(0);
 			delete object_mesh;
 
 			ready = false;
@@ -369,7 +372,7 @@ namespace GrEngine_Vulkan
 
 		if (!new_file)
 		{
-			Logger::Out("Couldn't create file for saving!", OutputColor::Red, OutputType::Error);
+			Logger::Out("Couldn't create file for saving!", OutputType::Error);
 			return;
 		}
 
@@ -415,13 +418,25 @@ namespace GrEngine_Vulkan
 			resources->RemoveTexture(foliageMask, logicalDevice, memAllocator);
 			for (int i = 0; i < 4; i++)
 			{
-				resources->RemoveTexture(object_displacement[i], logicalDevice, memAllocator);
-				object_displacement[i] = nullptr;
-				resources->RemoveTexture(object_texture[i], logicalDevice, memAllocator);
-				object_texture[i] = nullptr;
-				resources->RemoveTexture(object_normal[i], logicalDevice, memAllocator);
-				object_normal[i] = nullptr;
+				if (i < object_displacement.size())
+				{
+					resources->RemoveTexture(object_displacement[i], logicalDevice, memAllocator);
+					object_displacement[i] = nullptr;
+				}
+				if (i < object_texture.size())
+				{
+					resources->RemoveTexture(object_texture[i], logicalDevice, memAllocator);
+					object_texture[i] = nullptr;
+				}
+				if (i < object_normal.size())
+				{
+					resources->RemoveTexture(object_normal[i], logicalDevice, memAllocator);
+					object_normal[i] = nullptr;
+				}
 			}
+			object_displacement.resize(0);
+			object_normal.resize(0);
+			object_texture.resize(0);
 			delete object_mesh;
 
 			ready = false;
@@ -432,7 +447,7 @@ namespace GrEngine_Vulkan
 
 		if (!file)
 		{
-			Logger::Out("Couldn't open terrain %s", OutputColor::Red, OutputType::Error, filepath);
+			Logger::Out("Couldn't open terrain %s", OutputType::Error, filepath);
 			return false;
 		}
 
@@ -588,6 +603,7 @@ namespace GrEngine_Vulkan
 
 		colShape = new btBvhTriangleMeshShape(colMesh, true);
 		physComp->AddCollisionResource("TerrainComonent", colShape);
+		physComp->CalculatePhysics();
 	}
 
 	void VulkanTerrain::UpdateCollision()

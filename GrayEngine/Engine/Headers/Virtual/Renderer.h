@@ -111,6 +111,6 @@ namespace GrEngine
 		std::map<UINT, Object*> drawables;
 		std::map<UINT, LightObject*> lights;
 		bool use_dynamic_lighting = false;
-		float ambient = 0.25f;
+		float ambient = 0.15f;
 	};
 }

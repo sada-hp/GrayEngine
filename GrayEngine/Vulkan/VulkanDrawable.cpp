@@ -148,7 +148,7 @@ namespace GrEngine_Vulkan
 
 		VkPushConstantRange pushConstant2;
 		pushConstant2.offset = sizeof(VertexConstants);
-		pushConstant2.size = sizeof(PickingBufferObject);
+		pushConstant2.size = sizeof(FragmentBuffer);
 		pushConstant2.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
 
 		std::vector<VkDescriptorSetLayout> layouts;

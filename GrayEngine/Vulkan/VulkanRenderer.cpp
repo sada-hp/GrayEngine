@@ -46,61 +46,21 @@ namespace GrEngine_Vulkan
 			entities.erase((*pos).first);
 		}
 
-		//vmaUnmapMemory(memAllocator, viewProjUBO.Allocation);
-		//vmaUnmapMemory(memAllocator, shadowBuffer.Allocation);
-		//vmaUnmapMemory(memAllocator, cascadeBuffer.Allocation);
-
 		VulkanAPI::m_destroyShaderBuffer(logicalDevice, memAllocator, &viewProjUBO);
 		VulkanAPI::m_destroyShaderBuffer(logicalDevice, memAllocator, &shadowBuffer);
 		VulkanAPI::m_destroyShaderBuffer(logicalDevice, memAllocator, &cascadeBuffer);
 		VulkanAPI::m_destroyShaderBuffer(logicalDevice, memAllocator, &fogBuffer);
-
-		VulkanAPI::DestroyFramebuffer(shadowFramebuffer);
-		VulkanAPI::DestroySampler(shadowMap.textureSampler);
-		VulkanAPI::DestroyImageView(shadowMap.textureImageView);
-		VulkanAPI::DestroyImage(shadowMap.newImage.allocatedImage);
+		VulkanAPI::m_destroyShaderBuffer(logicalDevice, memAllocator, &transBuffer);
+		VulkanAPI::m_destroyShaderBuffer(logicalDevice, memAllocator, &nodeBfffer);
+		VulkanAPI::m_destroyShaderBuffer(logicalDevice, memAllocator, &frameInfo);
 
 		VulkanAPI::FreeDescriptorSet(samplingSet);
-		VulkanAPI::DestroyDescriptorLayout(samplingSetLayout);
-		VulkanAPI::DestroyDescriptorPool(samplingSetPool);
-		VulkanAPI::DestroyImageView(colorImage.textureImageView);
-		VulkanAPI::DestroyImage(colorImage.newImage.allocatedImage);
-
-		if (frameInfo.initialized == true)
-		{
-			VulkanAPI::m_destroyShaderBuffer(logicalDevice, memAllocator, &frameInfo);
-		}
-
 		VulkanAPI::FreeDescriptorSet(compositionSet);
-		VulkanAPI::DestroyDescriptorLayout(compositionSetLayout);
-		VulkanAPI::DestroyDescriptorPool(compositionSetPool);
-
 		VulkanAPI::FreeDescriptorSet(transparencySet);
-		VulkanAPI::DestroyDescriptorLayout(transparencySetLayout);
-		VulkanAPI::DestroyDescriptorPool(transparencySetPool);
-
-		VulkanAPI::DestroyImageView(headIndex.textureImageView);
-		VulkanAPI::DestroyImage(headIndex.newImage.allocatedImage);
-
-		if (transBuffer.initialized == true)
-		{
-			VulkanAPI::m_destroyShaderBuffer(logicalDevice, memAllocator, &transBuffer);
-		}
-
-		if (nodeBfffer.initialized == true)
-		{
-			VulkanAPI::m_destroyShaderBuffer(logicalDevice, memAllocator, &nodeBfffer);
-		}
-
-		VulkanAPI::DestroyFence(transitionFence);
-		VulkanAPI::DestroyFence(loadFence);
-
 		VulkanAPI::FreeCommandBuffers(commandBuffers.data(), commandBuffers.size());
 
 		cleanupSwapChain();
 		resources.Clean(logicalDevice, memAllocator);
-
-		VulkanAPI::FreeCommandBuffers(commandBuffers.data(), commandBuffers.size());
 
 		waitForRenderer();
 		vkDeviceWaitIdle(logicalDevice);
@@ -140,7 +100,7 @@ namespace GrEngine_Vulkan
 #endif
 
 		if (!glfwCreateWindowSurface(_vulkan, pParentWindow, nullptr, &surface) == VK_SUCCESS)
-			Logger::Out("[Vk] Failed to create presentation surface", OutputColor::Red, OutputType::Error);
+			Logger::Out("[Vk] Failed to create presentation surface", OutputType::Error);
 
 		for (const auto& device : devices)
 		{
@@ -161,7 +121,7 @@ namespace GrEngine_Vulkan
 			return false;
 #endif
 		else
-			Logger::Out("Presentation device: %s", OutputColor::Green, OutputType::Log, deviceProps.deviceName);
+			Logger::Out("Presentation device: %s", OutputType::Log, deviceProps.deviceName);
 
 
 		float queuePriority = 1.f;
@@ -172,26 +132,26 @@ namespace GrEngine_Vulkan
 		VkDeviceCreateInfo deviceInfo = VulkanAPI::StructDeviceCreateInfo(physicalDevice, &deviceFeatures, deviceQueues.data(), deviceQueues.size(), deviceExtensions.data(), deviceExtensions.size());
 
 		if ((res = VulkanAPI::CreateLogicalDevice(physicalDevice, &deviceInfo, &logicalDevice) & res) == false)
-			Logger::Out("[Vk] Failed to create logical device", OutputColor::Red, OutputType::Error);
+			Logger::Out("[Vk] Failed to create logical device", OutputType::Error);
 
 		if ((res = VulkanAPI::GetDeviceQueue(logicalDevice, deviceQueues[0].queueFamilyIndex, &graphicsQueue) & res) == false)
-			Logger::Out("[Vk] Failed to get graphics queue!", OutputColor::Red, OutputType::Error);
+			Logger::Out("[Vk] Failed to get graphics queue!", OutputType::Error);
 
 		if ((res = VulkanAPI::GetDeviceQueue(logicalDevice, deviceQueues[0].queueFamilyIndex, &presentQueue) & res) == false)
-			Logger::Out("[Vk] Failed to get present queue!", OutputColor::Red, OutputType::Error);
+			Logger::Out("[Vk] Failed to get present queue!", OutputType::Error);
 
 		if ((res = VulkanAPI::CreateVulkanMemoryAllocator(_vulkan, physicalDevice, logicalDevice, &memAllocator) & res) == false)
-			Logger::Out("[Vk] Failed to create memory allocator", OutputColor::Red, OutputType::Error);
+			Logger::Out("[Vk] Failed to create memory allocator", OutputType::Error);
 
 
 		if ((res = VulkanAPI::CreateVkSwapchain(physicalDevice, logicalDevice, pParentWindow, surface, &swapChain) & createSwapChainImages() & res) == false)
-			Logger::Out("[Vk] Failed to create swap chain", OutputColor::Red, OutputType::Error);
+			Logger::Out("[Vk] Failed to create swap chain", OutputType::Error);
 
 		if ((res = VulkanAPI::CreateRenderPass(logicalDevice, swapChainImageFormat, depthFormat, msaaSamples, &renderPass) & res) == false)
-			Logger::Out("[Vk] Failed to create render pass", OutputColor::Red, OutputType::Error);
+			Logger::Out("[Vk] Failed to create render pass", OutputType::Error);
 
 		if ((res = VulkanAPI::CreateCommandPool(logicalDevice, deviceQueues[0].queueFamilyIndex, &commandPool) & res) == false)
-			Logger::Out("[Vk] Failed to create command pool", OutputColor::Red, OutputType::Error);
+			Logger::Out("[Vk] Failed to create command pool", OutputType::Error);
 
 		max_async_frames = swapChainImageViews.size();
 		imageAvailableSemaphore.resize(max_async_frames);
@@ -201,23 +161,23 @@ namespace GrEngine_Vulkan
 		for (std::vector<VkSemaphore>::iterator itt = imageAvailableSemaphore.begin(); itt != imageAvailableSemaphore.end(); ++itt)
 		{
 			if ((res = VulkanAPI::CreateVkSemaphore(logicalDevice, &(*itt)) & res) == false)
-				Logger::Out("[Vk] Failed to create semaphores", OutputColor::Red, OutputType::Error);
+				Logger::Out("[Vk] Failed to create semaphores", OutputType::Error);
 		}
 
 		for (std::vector<VkFence>::iterator itt = renderFence.begin(); itt != renderFence.end(); ++itt)
 		{
 			if ((res = VulkanAPI::CreateVkFence(logicalDevice, &(*itt)) & res) == false)
-				Logger::Out("[Vk] Failed to create fences", OutputColor::Red, OutputType::Error);
+				Logger::Out("[Vk] Failed to create fences", OutputType::Error);
 		}
 
 		commandBuffers.resize(swapChainImageViews.size());
 		if ((res = VulkanAPI::AllocateCommandBuffers(logicalDevice, commandPool, commandBuffers.data(), commandBuffers.size()) & res) == false)
-			Logger::Out("[Vk] Failed to create command buffer", OutputColor::Red, OutputType::Error);
+			Logger::Out("[Vk] Failed to create command buffer", OutputType::Error);
 
 		for (std::vector<VkSemaphore>::iterator itt = renderFinishedSemaphore.begin(); itt != renderFinishedSemaphore.end(); ++itt)
 		{
 			if ((res = VulkanAPI::CreateVkSemaphore(logicalDevice, &(*itt)) & res) == false)
-				Logger::Out("[Vk] Failed to create semaphores", OutputColor::Red, OutputType::Error);
+				Logger::Out("[Vk] Failed to create semaphores", OutputType::Error);
 		}
 
 		VulkanAPI::CreateVkFence(logicalDevice, &transitionFence);
@@ -243,7 +203,7 @@ namespace GrEngine_Vulkan
 		VkImageView clrattachments[] = { colorImage.textureImageView, position.textureImageView, normal.textureImageView, albedo.textureImageView, depthImageView };
 
 		if ((res = VulkanAPI::CreateFrameBuffer(logicalDevice, renderPass, clrattachments, 5, swapChainExtent, &defferFramebuffer) & res) == false)
-			Logger::Out("[Vk] Failed to create framebuffer", OutputColor::Red, OutputType::Error);
+			Logger::Out("[Vk] Failed to create framebuffer", OutputType::Error);
 
 		swapChainFramebuffers.resize(swapChainImageViews.size());
 		for (std::size_t i = 0; i < swapChainImageViews.size(); i++)
@@ -251,14 +211,14 @@ namespace GrEngine_Vulkan
 			VkImageView ppattachments[] = { swapChainImageViews[i], depthImageView, };
 
 			if ((res = VulkanAPI::CreateFrameBuffer(logicalDevice, samplingPass, ppattachments, 2, swapChainExtent, &swapChainFramebuffers[i]) & res) == false)
-				Logger::Out("[Vk] Failed to create framebuffer", OutputColor::Red, OutputType::Error);
+				Logger::Out("[Vk] Failed to create framebuffer", OutputType::Error);
 		}
 
 		initDefaultViewport();
 		initSkyEntity();
 			
 		vkDeviceWaitIdle(logicalDevice);
-		Logger::Out("Initialized device %p", OutputColor::Blue, OutputType::Log, logicalDevice);
+		Logger::Out("Initialized device %p", OutputType::Log, logicalDevice);
 
 		return Initialized = res;
 	}
@@ -269,6 +229,7 @@ namespace GrEngine_Vulkan
 		sky->initObject(logicalDevice, memAllocator, this);
 		sky->UpdateNameTag("Sky");
 		sky->MakeStatic();
+		sky->AddNewProperty(PropertyType::Color);
 		entities[sky->GetEntityID()] = sky;
 	}
 
@@ -351,7 +312,7 @@ namespace GrEngine_Vulkan
 
 		if (!updateDrawables(frame, DrawMode::NORMAL, extent))
 		{
-			Logger::Out("Logical device was lost!", OutputColor::Red, OutputType::Error);
+			Logger::Out("Logical device was lost!", OutputType::Error);
 #ifdef _DEBUG
 			throw std::runtime_error("Logical device was lost!");
 #else
@@ -379,7 +340,7 @@ namespace GrEngine_Vulkan
 
 		if (res == VK_ERROR_DEVICE_LOST)
 		{
-			Logger::Out("Logical device was lost!", OutputColor::Red, OutputType::Error);
+			Logger::Out("Logical device was lost!", OutputType::Error);
 #ifdef _DEBUG
 			throw std::runtime_error("Logical device was lost!");
 #else
@@ -565,7 +526,7 @@ namespace GrEngine_Vulkan
 
 		if (res == VK_ERROR_DEVICE_LOST)
 		{
-			Logger::Out("Logical device was lost!", OutputColor::Red, OutputType::Error);
+			Logger::Out("Logical device was lost!", OutputType::Error);
 #ifdef _DEBUG
 			throw std::runtime_error("Logical device was lost!");
 #else
@@ -1612,7 +1573,7 @@ namespace GrEngine_Vulkan
 
 		VkImageCreateInfo imageInfo = VulkanAPI::StructImageCreateInfo({ SHADOW_MAP_DIM, SHADOW_MAP_DIM, 1 }, depthFormat, msaaSamples, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT);
 		//imageInfo.arrayLayers = glm::max((int)lights.size(), 1);
-		imageInfo.arrayLayers = lightsCount();
+		imageInfo.arrayLayers = glm::max(lightsCount(), (uint32_t)1);
 		VulkanAPI::CreateImage(memAllocator, &imageInfo, &shadowMap.newImage.allocatedImage, &shadowMap.newImage.allocation);
 
 		VkImageSubresourceRange imageView{};
@@ -1621,7 +1582,7 @@ namespace GrEngine_Vulkan
 		imageView.levelCount = 1;
 		imageView.baseArrayLayer = 0;
 		//imageView.layerCount = glm::max((int)lights.size(), 1);
-		imageView.layerCount = lightsCount();
+		imageView.layerCount = glm::max(lightsCount(), (uint32_t)1);
 		VulkanAPI::CreateImageView(logicalDevice, depthFormat, shadowMap.newImage.allocatedImage, imageView, &shadowMap.textureImageView, VK_IMAGE_VIEW_TYPE_2D_ARRAY);
 
 		VkSamplerCreateInfo samplerInfo{};
@@ -1651,7 +1612,7 @@ namespace GrEngine_Vulkan
 		shadowMap.texInfo.descriptor.sampler = shadowMap.textureSampler;
 
 		////VulkanAPI::m_createVkBuffer(logicalDevice, memAllocator, nullptr, sizeof(VulkanSpotlight::ShadowProjection) * glm::max((int)lights.size(), 1), VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, &shadowBuffer, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
-		VulkanAPI::m_createVkBuffer(logicalDevice, memAllocator, nullptr, sizeof(VulkanSpotlight::ShadowProjection) * lightsCount(), VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT, &shadowBuffer, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
+		VulkanAPI::m_createVkBuffer(logicalDevice, memAllocator, nullptr, sizeof(VulkanSpotlight::ShadowProjection) * glm::max(lightsCount(), (uint32_t)1), VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT, &shadowBuffer, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
 		//vmaMapMemory(memAllocator, shadowBuffer.Allocation, (void**)&shadowBuffer.data);
 		VulkanAPI::m_createVkBuffer(logicalDevice, memAllocator, nullptr, 16 * SHADOW_MAP_CASCADE_COUNT, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT, &cascadeBuffer, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
 		//vmaMapMemory(memAllocator, cascadeBuffer.Allocation, (void**)&cascadeBuffer.data);
@@ -1715,7 +1676,7 @@ namespace GrEngine_Vulkan
 		framebufferInfo.pAttachments = attachments;
 		framebufferInfo.width = SHADOW_MAP_DIM;
 		framebufferInfo.height = SHADOW_MAP_DIM;
-		framebufferInfo.layers = lightsCount();
+		framebufferInfo.layers = glm::max(lightsCount(), (uint32_t)1);
 		VulkanAPI::CreateFrameBuffer(logicalDevice, &framebufferInfo, &shadowFramebuffer);
 	}
 
@@ -2089,7 +2050,7 @@ namespace GrEngine_Vulkan
 		for (std::size_t i = 0; i < swapChainImages.size(); i++) {
 			VkImageSubresourceRange subresourceRange = VulkanAPI::StructSubresourceRange(VK_IMAGE_ASPECT_COLOR_BIT);
 			if ((res = VulkanAPI::CreateImageView(logicalDevice, swapChainImageFormat, swapChainImages[i], subresourceRange, &swapChainImageViews[i]) & res) == false)
-				Logger::Out("[Vk] Failed to create image views", OutputColor::Red, OutputType::Error);
+				Logger::Out("[Vk] Failed to create image views", OutputType::Error);
 		}
 
 		return res;
@@ -2169,7 +2130,7 @@ namespace GrEngine_Vulkan
 				static_cast<VulkanTerrain*>((*itt).second)->updateDescriptors();
 			}
 		}
-		Logger::Out("[Vk] New swapchain extent is %dx%d", OutputColor::Gray, OutputType::Log, swapChainExtent.width, swapChainExtent.height);
+		Logger::Out("[Vk] New swapchain extent is %dx%d", OutputType::Log, swapChainExtent.width, swapChainExtent.height);
 		vkDeviceWaitIdle(logicalDevice);
 
 		currentFrame = 0;
@@ -2282,7 +2243,7 @@ namespace GrEngine_Vulkan
 	{
 		waitForRenderer();
 		vkDeviceWaitIdle(logicalDevice);
-		Logger::Out("[Vk] Clearing current scene", OutputColor::Gray, OutputType::Log);
+		Logger::Out("[Vk] Clearing current scene", OutputType::Log);
 
 		int offset = 0;
 		while (entities.size() != offset)
@@ -2732,7 +2693,7 @@ namespace GrEngine_Vulkan
 
 			if (!pixels)
 			{
-				Logger::Out("An error occurred while loading the texture: %s", OutputColor::Green, OutputType::Error, target->texture_collection[textureIndex].c_str());
+				Logger::Out("An error occurred while loading the texture: %s", OutputType::Error, target->texture_collection[textureIndex].c_str());
 				vmaUnmapMemory(memAllocator, stagingBuffer.Allocation);
 				return false;
 			}
@@ -3226,8 +3187,6 @@ namespace GrEngine_Vulkan
 	void VulkanRenderer::waitForRenderer()
 	{
 		vkWaitForFences(logicalDevice, renderFence.size(), renderFence.data(), TRUE, UINT64_MAX);
-		//vkDeviceWaitIdle(logicalDevice);
-		//vkQueueWaitIdle(graphicsQueue);
 	}
 
 	std::vector<std::string> VulkanRenderer::GetMaterialNames(const char* mesh_path)
@@ -3249,7 +3208,7 @@ namespace GrEngine_Vulkan
 
 		if (model == NULL)
 		{
-			Logger::Out("Could not load the mesh %c%s%c!", OutputColor::Red, OutputType::Error, '"', mesh_path, '"');
+			Logger::Out("Could not load the mesh %c%s%c!", OutputType::Error, '"', mesh_path, '"');
 			return output;
 		}
 
@@ -3272,7 +3231,7 @@ namespace GrEngine_Vulkan
 
 		if (!new_file)
 		{
-			Logger::Out("Couldn't create file for saving!", OutputColor::Red, OutputType::Error);
+			Logger::Out("Couldn't create file for saving!", OutputType::Error);
 			return;
 		}
 
@@ -3319,7 +3278,7 @@ namespace GrEngine_Vulkan
 
 		if (!file.is_open())
 		{
-			Logger::Out("Couldn't open level %s", OutputColor::Red, OutputType::Error, path);
+			Logger::Out("Couldn't open level %s", OutputType::Error, path);
 			return;
 		}
 

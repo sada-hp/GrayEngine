@@ -15,7 +15,7 @@ namespace GrEngine
 			Logger::JoinEventListener(&eventListener);
 		}
 
-		Logger::Out("--------------- Starting the engine ---------------", OutputColor::Gray, OutputType::Log);
+		Logger::Out("--------------- Starting the engine ---------------", OutputType::Log);
 		physEngine = new GrEngineBullet::BulletAPI();
 		AppParameters param = Properties;
 		param.eventListener = &eventListener;
@@ -94,7 +94,7 @@ namespace GrEngine
 
 		auto end = std::chrono::steady_clock::now();
 		auto time = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
-		Logger::Out("Model %s loaded in %d ms", OutputColor::Gray, OutputType::Log, filepath, (int)time);
+		Logger::Out("Model %s loaded in %d ms", OutputType::Log, filepath, (int)time);
 
 		return true;
 	}
@@ -133,7 +133,7 @@ namespace GrEngine
 
 	bool Engine::PokeIt()
 	{
-		Logger::Out("You've just poked an engine", OutputColor::Gray, OutputType::Log);
+		Logger::Out("You've just poked an engine", OutputType::Log);
 		return true;
 	}
 
@@ -198,7 +198,7 @@ namespace GrEngine
 		eventListener.clearEventQueue();
 
 		auto time = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - start).count();
-		Logger::Out("Level %s loaded in %d ms", OutputColor::Gray, OutputType::Log, path, (int)time);
+		Logger::Out("Level %s loaded in %d ms", OutputType::Log, path, (int)time);
 	}
 
 	void Engine::SaveScene(const char* path)
@@ -208,7 +208,7 @@ namespace GrEngine
 		GetRenderer()->SaveScene(path);
 
 		auto time = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - start).count();
-		Logger::Out("Level %s saved in %d ms", OutputColor::Gray, OutputType::Log, path, (int)time);
+		Logger::Out("Level %s saved in %d ms", OutputType::Log, path, (int)time);
 	}
 
 	POINTFLOAT Engine::GetCursorPosition()

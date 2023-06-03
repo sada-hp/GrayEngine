@@ -579,7 +579,7 @@ namespace EditorUI
         private void SkyboxSettings_Click(object sender, RoutedEventArgs e)
         {
             SkyboxSettings settings = new SkyboxSettings();
-            settings.ShowDialog();
+            settings.Show();
         }
 
         private void Window_Closed(object sender, EventArgs e)
