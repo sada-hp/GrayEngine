@@ -91,6 +91,7 @@ namespace GrEngine
                         glm::vec3 slide_dir = glm::cross(-glm::cross(normal, glm::vec3(0, 1, 0)), normal);
                         last_dir = slide_dir;
                         controller->MoveObject(glm::vec3(speed, 0.f, speed) * slide_dir);
+                        //Logger::Out("angle is %f", OutputType::Log, glm::degrees(ang));
                     }
                     else
                     {
@@ -100,6 +101,7 @@ namespace GrEngine
                 else if (!controller->IsGrounded())
                 {
                     controller->MoveObject(glm::vec3(last_speed * Globals::delta_time, 0.f, last_speed * Globals::delta_time) * last_dir);
+                    landed = false;
                 }
                 else
                 {

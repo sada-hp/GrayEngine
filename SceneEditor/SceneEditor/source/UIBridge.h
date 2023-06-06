@@ -51,6 +51,7 @@ namespace SceneEditor
 		ExportDll void __stdcall RotateSun(float pitch, float yaw);
 		ExportDll void __stdcall SetSunColor(const char* color);
 		ExportDll void __stdcall SetAmbientModulator(float value);
+		ExportDll float __stdcall GetAmbientModulator();
 		ExportDll void __stdcall SetSkyColor(float r, float g, float b);
 		ExportDll bool __stdcall CheckCascade();
 		ExportDll void __stdcall AddCascade();
@@ -60,5 +61,6 @@ namespace SceneEditor
 		ExportDll const char* __stdcall GetTerrainColor();
 		ExportDll const char* __stdcall GetTerrainNormal();
 		ExportDll const char* __stdcall GetTerrainDisplacement();
+		ExportDll const char* __stdcall GetSkyColor();
 	}
 }

@@ -23,10 +23,7 @@ namespace GrEngine
         ~ModelBrowser()
         {
             getEditorUI()->destroyUI(VIEWPORT_MODEL_BROWSER);
-            if (!keep)
-            {
-                pEngine->DeleteEntity(dummy_entity->GetEntityID());
-            }
+            pEngine->DeleteEntity(dummy_entity->GetEntityID());
             pEngine->RemoveInputCallback(100);
             delete camera;
         }

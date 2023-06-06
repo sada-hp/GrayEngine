@@ -14,13 +14,15 @@ namespace EditorUI
 {
     public partial class DirectionalLightSettings : Window
     {
+        bool ready = false;
         bool mouse_down = false;
         bool mouse_down2 = false;
-        double pitch = 0.0;
-        double yaw = 0.0;
+        double pitch = -45.0;
+        double yaw = 90.0;
         public DirectionalLightSettings()
         {
             InitializeComponent();
+            ready = true;
 
             if (UIBridge.CheckCascade() == false)
             {
@@ -72,6 +74,12 @@ namespace EditorUI
                         continue;
                 }
             }
+
+            SliderAmbient.Value = UIBridge.GetAmbientModulator() * 255;
+            RedBox.Text = ((int)SliderRed.Value).ToString();
+            GreenBox.Text = ((int)SliderGreen.Value).ToString();
+            BlueBox.Text = ((int)SliderBlue.Value).ToString();
+            AmbBox.Text = ((int)SliderAmbient.Value).ToString();
         }
 
         private void ButtoCreate(object sender, RoutedEventArgs e)
@@ -111,6 +119,8 @@ namespace EditorUI
             Canvas.SetBottom(Sun, 110 * bot);
             pitch = 45 - (180 * Math.Acos(cos) / Math.PI);
             UIBridge.RotateSun((float)pitch, (float)yaw);
+            TopBox.Text = Convert.ToInt32(yaw).ToString();
+            SideBox.Text = Convert.ToInt32(pitch).ToString();
             //Title = (180 * Math.Acos(cos) / Math.PI).ToString();
         }
 
@@ -138,6 +148,8 @@ namespace EditorUI
             Canvas.SetBottom(Sun2, 92.5 + 92.5 * bot * sign - offset);
             yaw = 180 * Math.Acos(cos) / Math.PI * sign;
             UIBridge.RotateSun((float)pitch, (float)yaw);
+            TopBox.Text = Convert.ToInt32(yaw).ToString();
+            SideBox.Text = Convert.ToInt32(pitch).ToString();
             //Title = (180 * Math.Acos(cos) / Math.PI).ToString();
         }
 
@@ -215,11 +227,16 @@ namespace EditorUI
         private void Slider_ValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
         {
             UpdateColor();
+
+            if ((sender as Slider).IsFocused)
+            {
+                UpdateText();
+            }
         }
 
         private void UpdateColor()
         {
-            if (SliderRed == null || SliderGreen == null || SliderBlue == null || SliderBrightness == null || SliderAmbient == null) return;
+            if (!ready) return;
 
             float r = (float)(SliderRed.Value / 255.0 * SliderBrightness.Value);
             float g = (float)(SliderGreen.Value / 255.0 * SliderBrightness.Value);
@@ -230,8 +247,19 @@ namespace EditorUI
             UIBridge.SetSunColor(Marshal.StringToHGlobalAnsi(r.ToString().Replace(',', '.') + ":" + g.ToString().Replace(',', '.') + ":" + b.ToString().Replace(',', '.') + ":" + a.ToString().Replace(',', '.')));
         }
 
+        private void UpdateText()
+        {
+            if (!ready) return;
+
+            RedBox.Text = ((int)SliderRed.Value).ToString();
+            GreenBox.Text = ((int)SliderGreen.Value).ToString();
+            BlueBox.Text = ((int)SliderBlue.Value).ToString();
+        }
+
         private void SliderAmbient_ValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
         {
+            if (!ready) return;
+
             float r = (float)(SliderRed.Value / 255.0 * SliderBrightness.Value);
             float g = (float)(SliderGreen.Value / 255.0 * SliderBrightness.Value);
             float b = (float)(SliderBlue.Value / 255.0 * SliderBrightness.Value);
@@ -239,6 +267,101 @@ namespace EditorUI
             var brush = new System.Windows.Media.LinearGradientBrush(System.Windows.Media.Color.FromRgb((byte)SliderAmbient.Value, (byte)SliderAmbient.Value, (byte)SliderAmbient.Value), System.Windows.Media.Color.FromRgb((byte)SliderRed.Value, (byte)SliderGreen.Value, (byte)SliderBlue.Value), new Point(0, 0.5), new Point(1, 0.5));
             ColorPreview.Background = brush;
             UIBridge.SetAmbientModulator((float)(SliderAmbient.Value / 255.0));
+            AmbBox.Text = ((int)SliderAmbient.Value).ToString();
+        }
+
+        private void TextBox_PreviewTextInput(object sender, TextCompositionEventArgs e)
+        {
+            System.Text.RegularExpressions.Regex reg = new System.Text.RegularExpressions.Regex("-*[0-9]*");
+            if (!reg.IsMatch(e.Text))
+            {
+                e.Handled = true;
+            }
+        }
+
+        private void RedBox_TextChanged(object sender, TextChangedEventArgs e)
+        {
+            if (!RedBox.IsKeyboardFocused) return;
+
+            int val;
+            if (int.TryParse(RedBox.Text, out val))
+            {
+                SliderRed.Value = val;
+            }
+        }
+
+        private void GreenBox_TextChanged(object sender, TextChangedEventArgs e)
+        {
+            if (!GreenBox.IsKeyboardFocused) return;
+
+            int val;
+            if (int.TryParse(GreenBox.Text, out val))
+            {
+                SliderGreen.Value = val;
+            }
+        }
+
+        private void BlueBox_TextChanged(object sender, TextChangedEventArgs e)
+        {
+            if (!BlueBox.IsKeyboardFocused) return;
+
+            int val;
+            if (int.TryParse(BlueBox.Text, out val))
+            {
+                SliderBlue.Value = val;
+            }
+        }
+
+        private void AmbBox_TextChanged(object sender, TextChangedEventArgs e)
+        {
+            if (!AmbBox.IsKeyboardFocused) return;
+
+            int val;
+            if (int.TryParse(AmbBox.Text, out val))
+            {
+                SliderAmbient.Value = val;
+            }
+        }
+
+        private void TopBox_TextChanged(object sender, TextChangedEventArgs e)
+        {
+            if (!TopBox.IsKeyboardFocused) return;
+
+            int val;
+            if (int.TryParse(TopBox.Text, out val))
+            {
+                yaw = val;
+                double left = Math.Cos((yaw / 180) * Math.PI);
+                double bot = Math.Sqrt(1 - Math.Pow(left, 2));
+                double offset = 0;
+                int sign = Math.Sign(yaw);
+                if (sign == -1)
+                {
+                    offset = Sun2.Height / 2;
+                }
+
+                Canvas.SetLeft(Sun2, 210 + 100 * left);
+                Canvas.SetBottom(Sun2, 92.5 + 92.5 * bot * sign - offset);
+
+                UIBridge.RotateSun((float)pitch, (float)yaw);
+            }
+        }
+
+        private void SideBox_TextChanged(object sender, TextChangedEventArgs e)
+        {
+            if (!SideBox.IsKeyboardFocused) return;
+
+            int val;
+            if (int.TryParse(SideBox.Text, out val))
+            {
+                pitch = val;
+                double left = Math.Cos(((45 - pitch) / 180) * Math.PI);
+                double bot = Math.Sqrt(1 - Math.Pow(left, 2));
+                Canvas.SetLeft(Sun, 210 + 125 * left);
+                Canvas.SetBottom(Sun, 110 * bot);
+
+                UIBridge.RotateSun((float)pitch, (float)yaw);
+            }
         }
     }
-}
+};

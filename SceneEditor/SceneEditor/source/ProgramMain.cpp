@@ -23,7 +23,7 @@ namespace SceneEditor
         GrEngine::Camera* camera = render->getActiveViewport();
         glm::vec2 old_cursor_pos{ vSize.x / 2, vSize.y / 2 };
         glm::vec3 orientation{ 0.f };
-        float senstivity = 0.6f;
+        float senstivity = 0.45f;
         POINTFLOAT cur = app->GetCursorPosition();
 
         orientation.y -= (glm::ceil(((old_cursor_pos.x - cur.x) * senstivity) * 10000) / 10000);
@@ -126,7 +126,7 @@ namespace SceneEditor
         glm::vec2 old_cursor_pos{ vSize.x / 2, vSize.y / 2 };
         glm::vec3 direction{ 0.f };
         glm::vec3 orientation{ 0.f };
-        float senstivity = 0.6f;
+        float senstivity = 0.45f;
 
         POINTFLOAT cur = app->GetCursorPosition();
 
@@ -212,7 +212,6 @@ namespace SceneEditor
                     model_path = model_path.starts_with(solution.c_str()) ? model_path.substr(solution.size(), model_path.size() - solution.size()) : model_path;
                     app->transform_target->AddNewProperty(PropertyType::ModelPath)->ParsePropertyValue(model_path.c_str());
                     app->App_UpdateUIProperty("ModelPath");
-                    app->ModelBrowser_ReleaseDummyResource();
                 }
             });
 

@@ -42,6 +42,7 @@ namespace GrEngine_Vulkan
 		GrEngine::LightObject* InitPointLightObject(GrEngine::Entity* ownerEntity) override;
 		GrEngine::LightObject* InitOmniLightObject(GrEngine::Entity* ownerEntity) override;
 		void SetUseDynamicLighting(bool state) override;
+		void ParseCVar(const char* cvar, const char* val) override;
 
 		void SaveScreenshot(const char* filepath);
 		void addEntity(GrEngine::Entity* entity) override;

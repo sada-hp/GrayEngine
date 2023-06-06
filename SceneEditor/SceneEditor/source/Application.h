@@ -35,7 +35,6 @@ namespace GrEngine
         int mask_width, mask_height, mask_channels;
         ModelBrowser* mdlBrowser;
         Camera* camera;
-        Entity* mdl_dummy = nullptr;
 
         std::string returning_string = "";
 
@@ -365,21 +364,6 @@ namespace GrEngine
             getEditorUI()->SetInputMode(VIEWPORT_EDITOR, 0);
         }
 
-        void ModelBrowser_KeepResource()
-        {
-            mdl_dummy = mdlBrowser->getDummy();
-            mdlBrowser->KeepDummy();
-        }
-
-        void ModelBrowser_ReleaseDummyResource()
-        {
-            if (mdl_dummy != nullptr)
-            {
-                DeleteEntity(mdl_dummy->GetEntityID());
-                mdl_dummy = nullptr;
-            }
-        }
-
         void closeModelBrowser()
         {
             getEditorUI()->SetInputMode(VIEWPORT_EDITOR, 1);
@@ -390,6 +374,7 @@ namespace GrEngine
             {
                 SelectEntity(transform_target->GetEntityID());
             }
+            GetEventListener()->pollEngineEvents();
             delete mdlBrowser;
             Logger::AllowMessages(MessageMode::Allow);
             GetRenderer()->SetHighlightingMode(true);
@@ -913,6 +898,20 @@ namespace GrEngine
                 Skybox* sky = static_cast<Skybox*>(ent[0]);
                 sky->ParsePropertyValue(PropertyType::Color, color.c_str());
             }
+        }
+
+        const char* App_GetSkyColor()
+        {
+            returning_string = "1:1:1:1";
+            std::vector<Entity*> ent = GetRenderer()->GetEntitiesOfType(EntityType::SkyboxEntity);
+
+            if (ent.size() > 0)
+            {
+                Skybox* sky = static_cast<Skybox*>(ent[0]);
+                returning_string = sky->GetProperty(PropertyType::Color)->ValueString();
+            }
+
+            return returning_string.c_str();
         }
 
     private:

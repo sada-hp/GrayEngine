@@ -1,21 +1,22 @@
 ﻿using System;
-using System.IO;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+using System.Windows.Controls;
 using System.Windows;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Runtime.InteropServices;
+using System.Windows.Input;
 
 namespace EditorUI
 {
     public partial class SkyboxSettings : Window
     {
+        bool ready = false;
         public SkyboxSettings()
         {
             InitializeComponent();
+            ready = true;
+
+            UpdateProps();
         }
 
         private void Button_Click(object sender, RoutedEventArgs e)
@@ -45,6 +46,37 @@ namespace EditorUI
                 Close();
             }
             GC.Collect(GC.MaxGeneration, GCCollectionMode.Forced, true);
+        }
+
+        private void UpdateProps()
+        {
+            string color = Marshal.PtrToStringAnsi(UIBridge.GetSkyColor());
+            string[] parse_info = color.Split(':');
+
+            for (int i = 0; i < parse_info.Length; i++)
+            {
+                double value = 1.0;
+                bool res = double.TryParse(parse_info[i], System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.InvariantCulture.NumberFormat, out value);
+
+                switch (i)
+                {
+                    case 0:
+                        SliderRed.Value = value * 255;
+                        break;
+                    case 1:
+                        SliderGreen.Value = value * 255;
+                        break;
+                    case 2:
+                        SliderBlue.Value = value * 255;
+                        break;
+                    default:
+                        continue;
+                }
+            }
+
+            RedBox.Text = ((int)SliderRed.Value).ToString();
+            GreenBox.Text = ((int)SliderGreen.Value).ToString();
+            BlueBox.Text = ((int)SliderBlue.Value).ToString();
         }
 
         private ImageSource BitmapFromUri(Uri src, Rotation rot)
@@ -110,11 +142,16 @@ namespace EditorUI
         private void Slider_ValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
         {
             UpdateColor();
+
+            if ((sender as Slider).IsFocused)
+            {
+                UpdateText();
+            }
         }
 
         private void UpdateColor()
         {
-            if (SliderRed == null || SliderGreen == null || SliderBlue == null || SliderBrightness == null) return;
+            if (!ready) return;
 
             float r = (float)(SliderRed.Value / 255.0 * SliderBrightness.Value);
             float g = (float)(SliderGreen.Value / 255.0 * SliderBrightness.Value);
@@ -123,6 +160,57 @@ namespace EditorUI
             var brush = new System.Windows.Media.LinearGradientBrush(System.Windows.Media.Color.FromRgb((byte)0, (byte)0, (byte)0), System.Windows.Media.Color.FromRgb((byte)SliderRed.Value, (byte)SliderGreen.Value, (byte)SliderBlue.Value), new Point(0, 0.5), new Point(1, 0.5));
             ColorPreview.Background = brush;
             UIBridge.SetSkyColor(r, g, b);
+        }
+
+        private void UpdateText()
+        {
+            if (!ready) return;
+
+            RedBox.Text = ((int)SliderRed.Value).ToString();
+            GreenBox.Text = ((int)SliderGreen.Value).ToString();
+            BlueBox.Text = ((int)SliderBlue.Value).ToString();
+        }
+
+        private void TextBox_PreviewTextInput(object sender, TextCompositionEventArgs e)
+        {
+            System.Text.RegularExpressions.Regex reg = new System.Text.RegularExpressions.Regex("[0-9]");
+            if (!reg.IsMatch(e.Text))
+            {
+                e.Handled = true;
+            }
+        }
+
+        private void RedBox_TextChanged(object sender, TextChangedEventArgs e)
+        {
+            if (!RedBox.IsKeyboardFocused) return;
+
+            int val;
+            if (int.TryParse(RedBox.Text, out val))
+            {
+                SliderRed.Value = val;
+            }
+        }
+
+        private void GreenBox_TextChanged(object sender, TextChangedEventArgs e)
+        {
+            if (!GreenBox.IsKeyboardFocused) return;
+
+            int val;
+            if (int.TryParse(GreenBox.Text, out val))
+            {
+                SliderGreen.Value = val;
+            }
+        }
+
+        private void BlueBox_TextChanged(object sender, TextChangedEventArgs e)
+        {
+            if (!BlueBox.IsKeyboardFocused) return;
+
+            int val;
+            if (int.TryParse(BlueBox.Text, out val))
+            {
+                SliderBlue.Value = val;
+            }
         }
     }
 }

@@ -76,7 +76,7 @@ namespace GrEngine_Vulkan
 		vkCmdBindDescriptorSets(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, shadowLayout, 0, 1, &descriptorSets[1].set, 0, NULL);
 		ubo.model = GetObjectTransformation();
 		ubo.scale = glm::vec4(ownerEntity->GetPropertyValue(PropertyType::Scale, glm::vec3(1.f)), 1.f);
-		vkCmdPushConstants(cmd, pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(VertexConstants), &ubo);
+		vkCmdPushConstants(cmd, shadowLayout, VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(VertexConstants), &ubo);
 		vkCmdDrawIndexed(cmd, static_cast<uint32_t>(object_mesh->indices.size()), instances, 0, 0, 0);
 	}
 

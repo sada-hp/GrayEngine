@@ -18,6 +18,7 @@ namespace GrEngine_Vulkan
 
 		virtual void initObject(VkDevice device, VmaAllocator allocator, GrEngine::Renderer* owner) override;
 		virtual bool pushConstants(VkCommandBuffer cmd) override;
+		void updateObject() override;
 		void destroyObject() override;
 		void calculateCollisions() override;
 		void GenerateTerrain(int resolution, int width, int height, int depth, std::array<std::string, 6> images, std::array<std::string, 4> normals, std::array<std::string, 4> displacements) override;
@@ -34,6 +35,8 @@ namespace GrEngine_Vulkan
 		const std::array<std::string, 4> GetColorTextures();
 		const std::array<std::string, 4> GetNormalTextures();
 		const std::array<std::string, 4> GetDisplacementTextures();
+
+		void recordShadowPass(VkCommandBuffer cmd, int instances);
 
 	protected:
 		void populateDescriptorSets();
@@ -61,6 +64,11 @@ namespace GrEngine_Vulkan
 
 		btBvhTriangleMeshShape* colShape;
 	private:
+		void updateShadowPipeline();
+
+		VkPipelineLayout shadowLayout;
+		VkPipeline shadowPipeline;
+
 		bool use_compute = false;
 		float maxAABB = 0.f;
 		float minAABB = 0.f;

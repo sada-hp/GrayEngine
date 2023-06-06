@@ -34,6 +34,9 @@ namespace GrEngineBullet
 			dynamicWorld = world;
 			flags = btCollisionObject::CF_DYNAMIC_OBJECT;
 			time = std::chrono::steady_clock::now();
+
+			UpdateCollisionType(owner->GetPropertyValue(PropertyType::CollisionType, 0));
+			SetKinematic(owner->GetPropertyValue(PropertyType::BodyType, 0));
 		}
 
 		~BulletPhysObject()

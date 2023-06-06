@@ -1801,6 +1801,11 @@ namespace GrEngine_Vulkan
 					}
 				}
 			}
+
+			if (terrain != nullptr && terrain->GetPropertyValue(PropertyType::CastShadow, 1) > 0)
+			{
+				terrain->recordShadowPass(commandBuffers[index], projections.size());
+			}
 		}
 
 		vkCmdEndRenderPass(commandBuffers[index]);
@@ -3222,6 +3227,37 @@ namespace GrEngine_Vulkan
 		return output;
 	}
 
+	void VulkanRenderer::ParseCVar(const char* cvar, const char* val)
+	{
+		std::string var = std::string(cvar);
+		if (var.starts_with("e_"))
+		{
+			var = var.substr(2, var.size() - 2);
+			if (var == "ambient")
+			{
+				SetAmbientValue(std::atof(val));
+			}
+			else if (var.starts_with("fog_"))
+			{
+				var = var.substr(4, var.size() - 4);
+				if (var == "density")
+				{
+					fogParams.density = std::atof(val);
+					UpdateFogParameters(fogParams);
+				}
+				else if (var == "height")
+				{
+					fogParams.height = std::atof(val);
+					UpdateFogParameters(fogParams);
+				}
+				else if (var == "color")
+				{
+
+				}
+			}
+		}
+	}
+
 	void VulkanRenderer::SaveScene(const char* path)
 	{
 		std::string directory = path;
@@ -3235,12 +3271,19 @@ namespace GrEngine_Vulkan
 			return;
 		}
 
+		new_file << "world\n{\n";
+		new_file << "   " << "e_ambient" << " " << GrEngine::Globals::FloatToString(ambient, 5) << "\n";
+		new_file << "   " << "e_fog_density" << " " << GrEngine::Globals::FloatToString(fogParams.density, 5) << "\n";
+		new_file << "   " << "e_fog_height" << " " << GrEngine::Globals::FloatToString(fogParams.height, 5) << "\n";
+		new_file << "   " << "e_fog_color" << " " << GrEngine::Globals::FloatToString(fogParams.color.x, 5) + ":" + GrEngine::Globals::FloatToString(fogParams.color.y, 5) + ":" + GrEngine::Globals::FloatToString(fogParams.color.z, 5) << "\n";
+		new_file << "}\n";
+
 		getActiveViewport()->ClampAxes();
 		new_file << "viewport\n{\n";
 		std::vector<EntityProperty*> cur_props = getActiveViewport()->GetProperties();
 		for (std::vector<EntityProperty*>::iterator itt = cur_props.begin(); itt != cur_props.end(); ++itt)
 		{
-			new_file << "    " << (*itt)->PropertyNameString() << " " << (*itt)->ValueString() << "\n";
+			new_file << "   " << (*itt)->PropertyNameString() << " " << (*itt)->ValueString() << "\n";
 		}
 		new_file << "}\n";
 
@@ -3287,6 +3330,7 @@ namespace GrEngine_Vulkan
 		std::string cur_property;
 		bool block_open = false;
 		GrEngine::Entity* cur_ent = nullptr;
+		GrEngine::Renderer* world = nullptr;
 
 		while (file >> stream && !file.eof())
 		{
@@ -3297,6 +3341,8 @@ namespace GrEngine_Vulkan
 			else if (stream == "}")
 			{
 				block_open = false;
+				cur_ent = nullptr;
+				world = nullptr;
 			}
 			else if (block_open && cur_ent != nullptr)
 			{
@@ -3325,6 +3371,16 @@ namespace GrEngine_Vulkan
 				std::string terrain_path = (directory.erase(directory.find_last_of('.', directory.size()), directory.size()) + ".terg");
 				LoadTerrain(terrain_path.c_str());
 				cur_ent = terrain;
+			}
+			else if (block_open && world != nullptr)
+			{
+				cur_property = stream;
+				file >> stream;
+				world->ParseCVar(cur_property.c_str(), stream.c_str());
+			}
+			else if (!block_open && stream == "world")
+			{
+				world = this;
 			}
 		}
 		file.close();

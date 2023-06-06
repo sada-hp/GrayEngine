@@ -321,16 +321,27 @@
                         </Slider>
                     </Border>
                     <Grid Grid.Row="1">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="80*"/>
+                            <ColumnDefinition Width="20*"/>
+                        </Grid.ColumnDefinitions>
                         <Grid.RowDefinitions>
                             <RowDefinition/>
                             <RowDefinition/>
                             <RowDefinition/>
                             <RowDefinition/>
                         </Grid.RowDefinitions>
-                        <Slider Name="SliderRed" Grid.Row="0" Maximum="255" Minimum="0" Value="255" SmallChange="1" LargeChange="10" ValueChanged="Slider_ValueChanged"/>
-                        <Slider Name="SliderGreen" Grid.Row="1" Maximum="255" Minimum="0" Value="255" SmallChange="1" LargeChange="10" ValueChanged="Slider_ValueChanged"/>
-                        <Slider Name="SliderBlue" Grid.Row="2" Maximum="255" Minimum="0" Value="255" SmallChange="1" LargeChange="10" ValueChanged="Slider_ValueChanged"/>
-                        <Slider Name="SliderAmbient" Grid.Row="3" Maximum="255" Minimum="0" SmallChange="1" LargeChange="10" Value="64" ValueChanged="SliderAmbient_ValueChanged"/>
+                        <Slider Name="SliderRed" Grid.Row="0" Maximum="255" Minimum="0" Value="255" SmallChange="1" LargeChange="10" ValueChanged="Slider_ValueChanged" VerticalAlignment="Center"/>
+                        <TextBox Name="RedBox" Grid.Row="0" Grid.Column="1" Background="{x:Null}" HorizontalContentAlignment="Center" VerticalContentAlignment="Center" Margin="10" Foreground="WhiteSmoke" FontFamily="Lucida Sans Unicode" FontSize="16" MaxLength="3" FontWeight="UltraBold" TextChanged="RedBox_TextChanged" PreviewTextInput="TextBox_PreviewTextInput"/>
+                        
+                        <Slider Name="SliderGreen" Grid.Row="1" Maximum="255" Minimum="0" Value="255" SmallChange="1" LargeChange="10" ValueChanged="Slider_ValueChanged" VerticalAlignment="Center"/>
+                        <TextBox Name="GreenBox" Grid.Row="1" Grid.Column="1" Background="{x:Null}" HorizontalContentAlignment="Center" VerticalContentAlignment="Center" Margin="10" Foreground="WhiteSmoke" FontFamily="Lucida Sans Unicode" FontSize="16" MaxLength="3" FontWeight="UltraBold" TextChanged="GreenBox_TextChanged" PreviewTextInput="TextBox_PreviewTextInput"/>
+                        
+                        <Slider Name="SliderBlue" Grid.Row="2" Maximum="255" Minimum="0" Value="255" SmallChange="1" LargeChange="10" ValueChanged="Slider_ValueChanged" VerticalAlignment="Center"/>
+                        <TextBox Name="BlueBox" Grid.Row="2" Grid.Column="1" Background="{x:Null}" HorizontalContentAlignment="Center" VerticalContentAlignment="Center" Margin="10" Foreground="WhiteSmoke" FontFamily="Lucida Sans Unicode" FontSize="16" MaxLength="3" FontWeight="UltraBold" TextChanged="BlueBox_TextChanged" PreviewTextInput="TextBox_PreviewTextInput"/>
+
+                        <Slider Name="SliderAmbient" Grid.Row="3" Maximum="255" Minimum="0" SmallChange="1" LargeChange="10" Value="64" ValueChanged="SliderAmbient_ValueChanged" VerticalAlignment="Center"/>
+                        <TextBox Name="AmbBox" Grid.Row="3" Grid.Column="1" Background="{x:Null}" HorizontalContentAlignment="Center" VerticalContentAlignment="Center" Margin="10" Foreground="WhiteSmoke" FontFamily="Lucida Sans Unicode" FontSize="16" MaxLength="3" FontWeight="UltraBold" TextChanged="AmbBox_TextChanged" PreviewTextInput="TextBox_PreviewTextInput"/>
                     </Grid>
                 </Grid>
             </TabItem>
@@ -340,6 +351,9 @@
                         <RowDefinition/>
                         <RowDefinition/>
                     </Grid.RowDefinitions>
+                    <TextBox Name="TopBox" Text="90" Width="65" Height="35" Grid.Row="0" Background="{x:Null}" HorizontalContentAlignment="Center" VerticalContentAlignment="Center" Foreground="WhiteSmoke" FontFamily="Lucida Sans Unicode" FontSize="16" MaxLength="4" FontWeight="UltraBold" PreviewTextInput="TextBox_PreviewTextInput" HorizontalAlignment="Right" VerticalAlignment="Center" Margin="0,0,17,0" TextChanged="TopBox_TextChanged"/>
+                    <TextBox Name="SideBox" Text="-45" Width="65" Height="35" Grid.Row="1" Background="{x:Null}" HorizontalContentAlignment="Center" VerticalContentAlignment="Center" Foreground="WhiteSmoke" FontFamily="Lucida Sans Unicode" FontSize="16" MaxLength="4" FontWeight="UltraBold" PreviewTextInput="TextBox_PreviewTextInput" HorizontalAlignment="Right" VerticalAlignment="Center" Margin="0,0,17,0" TextChanged="SideBox_TextChanged"/>
+                    
                     <Canvas Width="450" Height="200" Name="TopCanvas" Grid.Row="0">
                         <Label Content="Top view" Foreground="White" FontFamily="Lucida Sans Unicode" FontSize="16"/>
                         <Ellipse Width="200" Height="200" StrokeThickness="4" Stroke="White" Fill="#FF5CA04E" Canvas.Left="125" MouseMove="Ellipse_MouseMove"/>

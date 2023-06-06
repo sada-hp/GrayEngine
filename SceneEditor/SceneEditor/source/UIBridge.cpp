@@ -168,7 +168,7 @@ void SceneEditor::AddToTheScene(const char* model_path)
 
     GrEngine::Engine::GetContext()->GetEventListener()->clearEventQueue();
     //GrEngine::Engine::GetContext()->Pause();
-    SceneEditor::GetApplication()->ModelBrowser_KeepResource();
+    //SceneEditor::GetApplication()->ModelBrowser_KeepResource();
     SceneEditor::GetApplication()->GetEventListener()->registerEvent("LoadModel", para);
 }
 
@@ -386,6 +386,11 @@ void SceneEditor::SetAmbientModulator(float value)
     SceneEditor::GetApplication()->GetRenderer()->SetAmbientValue(value);
 }
 
+float SceneEditor::GetAmbientModulator()
+{
+    return SceneEditor::GetApplication()->GetRenderer()->GetAmbientValue();
+}
+
 void SceneEditor::SetSkyColor(float r, float g, float b)
 {
     SceneEditor::GetApplication()->App_SetSkyColor(r, g, b);
@@ -429,4 +434,9 @@ const char* SceneEditor::GetTerrainNormal()
 const char* SceneEditor::GetTerrainDisplacement()
 {
     return SceneEditor::GetApplication()->App_GetTerrainDispacement();
+}
+
+const char* SceneEditor::GetSkyColor()
+{
+    return SceneEditor::GetApplication()->App_GetSkyColor();
 }

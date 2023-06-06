@@ -104,6 +104,8 @@ namespace EditorUI
         [DllImport("SceneEditor.dll", CallingConvention = CallingConvention.Cdecl)]
         public static extern void SetAmbientModulator(float value);
         [DllImport("SceneEditor.dll", CallingConvention = CallingConvention.Cdecl)]
+        public static extern float GetAmbientModulator();
+        [DllImport("SceneEditor.dll", CallingConvention = CallingConvention.Cdecl)]
         public static extern void SetSkyColor(float r, float g, float b);
         [DllImport("SceneEditor.dll", CallingConvention = CallingConvention.Cdecl)]
         public static extern bool CheckCascade();
@@ -121,6 +123,8 @@ namespace EditorUI
         public static extern IntPtr GetTerrainNormal();
         [DllImport("SceneEditor.dll", CallingConvention = CallingConvention.Cdecl)]
         public static extern IntPtr GetTerrainDisplacement();
+        [DllImport("SceneEditor.dll", CallingConvention = CallingConvention.Cdecl)]
+        public static extern IntPtr GetSkyColor();
 
         public static Wrapper[] wrappers = new Wrapper[2];
         public static Thread uThread;

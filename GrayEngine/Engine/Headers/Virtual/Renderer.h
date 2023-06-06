@@ -55,6 +55,7 @@ namespace GrEngine
 		virtual void LoadTerrain(const char* filepath) = 0;
 		virtual void createSkybox(const char* East, const char* West, const char* Top, const char* Bottom, const char* North, const char* South) = 0;
 		virtual void DeleteEntity(UINT id) = 0;
+		virtual void ParseCVar(const char* cvar, const char* val) = 0;
 		virtual void SetAmbientValue(float new_value)
 		{
 			ambient = new_value;
