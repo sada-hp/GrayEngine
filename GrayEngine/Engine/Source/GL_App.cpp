@@ -34,8 +34,8 @@ namespace GrEngine
 		glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
 		glfwWindowHint(GLFW_DOUBLEBUFFER, 1);
 
-		glfwWindowHint(GLFW_RESIZABLE, false); //TBD
-		glfwWindowHint(GLFW_VISIBLE, false); //TBD
+		//glfwWindowHint(GLFW_RESIZABLE, false); //TBD
+		//glfwWindowHint(GLFW_VISIBLE, false); //TBD
 
 		window = glfwCreateWindow(props.Width, props.Height, props.Title, nullptr, nullptr);
 
@@ -95,6 +95,16 @@ namespace GrEngine
 			glfwIconifyWindow(window);
 		else
 			glfwRestoreWindow(window);
+	}
+
+	void GL_APP::AllowResize(bool allow)
+	{
+		glfwSetWindowAttrib(window, GLFW_RESIZABLE, allow);
+	}
+
+	void GL_APP::ShowBorder(bool show)
+	{
+		glfwSetWindowAttrib(window, GLFW_DECORATED, show);
 	}
 
 	void GL_APP::OnStep()
@@ -158,7 +168,6 @@ namespace GrEngine
 	{
 		glfwFocusWindow(window);
 	}
-
 
 	void GL_APP::SetUpEvents(GLFWwindow* target)
 	{

@@ -1692,10 +1692,10 @@ namespace GrEngine_Vulkan
 		if (vkBeginCommandBuffer(commandBuffers[index], &beginInfo) != VK_SUCCESS)
 			return false;
 
+		getActiveViewport()->UpdateCameraOrientation(0.2);
 		vpUBO.pos = getActiveViewport()->UpdateCameraPosition(0.65);
-		vpUBO.view = glm::translate(glm::mat4_cast(getActiveViewport()->UpdateCameraOrientation(0.2)), -vpUBO.pos);
-		vpUBO.proj = glm::perspective(glm::radians(60.0f), (float)extent.width / (float)extent.height, NearPlane, FarPlane);
-		vpUBO.proj[1][1] *= -1;
+		vpUBO.view = getActiveViewport()->GetViewMatrix();
+		vpUBO.proj = getActiveViewport()->GetProjectionMatrix((float)extent.width/ (float)extent.height, NearPlane, FarPlane);
 		//memcpy_s(viewProjUBO.data, sizeof(ViewProjection), &vpUBO, sizeof(ViewProjection));
 		vkCmdUpdateBuffer(commandBuffers[index], viewProjUBO.Buffer, 0, sizeof(ViewProjection), &vpUBO);
 
@@ -3314,7 +3314,7 @@ namespace GrEngine_Vulkan
 	{
 		clearDrawables();
 		int resizable = glfwGetWindowAttrib(pParentWindow, GLFW_RESIZABLE);
-		glfwSetWindowAttrib(pParentWindow, GLFW_RESIZABLE, 0);
+		//glfwSetWindowAttrib(pParentWindow, GLFW_RESIZABLE, 0);
 		//Initialized = false;
 
 		std::ifstream file(path, std::ios::ate | std::ios::binary);
@@ -3387,7 +3387,7 @@ namespace GrEngine_Vulkan
 
 		//viewport_camera->SetRotation(viewport_camera->GetObjectOrientation());
 		viewport_camera->PositionObjectAt(viewport_camera->GetObjectPosition());
-		glfwSetWindowAttrib(pParentWindow, GLFW_RESIZABLE, resizable);
+		//glfwSetWindowAttrib(pParentWindow, GLFW_RESIZABLE, resizable);
 		recreateSwapChain();
 		//Initialized = true;
 	}

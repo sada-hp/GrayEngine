@@ -99,6 +99,9 @@ namespace GrEngine
             camera->PositionObjectAt(0, 3, 4);
             camera->SetRotation(30, 0, 0);
 
+            GetWindowContext()->AllowResize(false);
+            GetWindowContext()->ShowBorder(false);
+            redrawDesiger();
             getEditorUI()->ShowScene();
             LoadTools();
             App_GetAllEntities();

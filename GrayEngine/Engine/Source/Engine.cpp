@@ -66,7 +66,7 @@ namespace GrEngine
 		return res;
 	}
 
-	bool Engine::LoadFromGMF(UINT id, const char* filepath)
+	bool Engine::LoadFromGMF(UINT id, const char* gmfpath)
 	{
 		auto start = std::chrono::steady_clock::now();
 
@@ -75,7 +75,7 @@ namespace GrEngine
 		std::vector<std::string> textures_vector;
 		std::vector<std::string> normals_vector;
 
-		if (!GrEngine::Globals::readGMF(filepath, &mesh_path, &coll_path, &textures_vector, &normals_vector))
+		if (!GrEngine::Globals::readGMF(gmfpath, &mesh_path, &coll_path, &textures_vector, &normals_vector))
 			return false;
 
 		Entity* target = pWindow->getRenderer()->GetEntitiesList()[id];
@@ -84,7 +84,7 @@ namespace GrEngine
 
 		if (drawComponent != nullptr)
 		{
-			drawComponent->LoadModel(filepath, mesh_path.c_str(), textures_vector, normals_vector);
+			drawComponent->LoadModel(gmfpath, mesh_path.c_str(), textures_vector, normals_vector);
 		}
 
 		if (physComponent != nullptr)
@@ -94,7 +94,39 @@ namespace GrEngine
 
 		auto end = std::chrono::steady_clock::now();
 		auto time = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
-		Logger::Out("Model %s loaded in %d ms", OutputType::Log, filepath, (int)time);
+		Logger::Out("Model %s loaded in %d ms", OutputType::Log, gmfpath, (int)time);
+
+		return true;
+	}
+
+	bool Engine::LoadFromGMF(Object* drawable, const char* gmfpath)
+	{
+		auto start = std::chrono::steady_clock::now();
+
+		std::string mesh_path = "";
+		std::string coll_path = "";
+		std::vector<std::string> textures_vector;
+		std::vector<std::string> normals_vector;
+
+		if (!GrEngine::Globals::readGMF(gmfpath, &mesh_path, &coll_path, &textures_vector, &normals_vector))
+			return false;
+
+		PhysicsObject* physComponent = nullptr;
+
+		if (drawable != nullptr)
+		{
+			drawable->LoadModel(gmfpath, mesh_path.c_str(), textures_vector, normals_vector);
+			physComponent = (PhysicsObject*)drawable->GetOwnerEntity()->GetPropertyValue(PropertyType::PhysComponent, (void*)nullptr);
+		}
+
+		if (physComponent != nullptr)
+		{
+			physComponent->LoadCollisionMesh(coll_path.c_str());
+		}
+
+		auto end = std::chrono::steady_clock::now();
+		auto time = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
+		Logger::Out("Model %s loaded in %d ms", OutputType::Log, gmfpath, (int)time);
 
 		return true;
 	}

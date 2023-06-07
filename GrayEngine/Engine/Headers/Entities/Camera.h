@@ -5,6 +5,12 @@
 
 namespace GrEngine
 {
+	enum ProjectionType
+	{
+		Perspective,
+		Orthographic
+	};
+
 	class DllExport Camera : public Entity
 	{
 	public:
@@ -116,6 +122,47 @@ namespace GrEngine
 			 return *obj_orientation;
 		 };
 
+		 glm::mat4 GetProjectionMatrix(float aspect, float near_plane, float far_plane)
+		 {
+			 glm::mat4 proj(0.f);
+			 switch (prType)
+			 {
+			 case ProjectionType::Perspective:
+				 proj = glm::perspective(perspFOV, aspect, near_plane, far_plane);
+				 proj[1][1] *= -1;
+				 break;
+			 case ProjectionType::Orthographic:
+				 proj = glm::ortho(aspect * orthLeft, aspect * orthRight, orthBottom, orthUp, -far_plane, far_plane);
+				 proj[1][1] *= -1;
+				 break;
+			 }
+
+			 return proj;
+		 }
+
+		 glm::mat4 GetViewMatrix()
+		 {
+			 return glm::translate(glm::mat4_cast(GetObjectOrientation()), -GetObjectPosition());
+		 }
+
+		 void SetProjectionType(ProjectionType new_type)
+		 {
+			 prType = new_type;
+		 }
+
+		 void UpdateOrthographicProjection(float left, float right, float bottom, float up)
+		 {
+			 orthLeft = left;
+			 orthRight = right;
+			 orthBottom = bottom;
+			 orthUp = up;
+		 }
+
+		 void UpdatePerspectiveProjection(float fov)
+		 {
+			 perspFOV = glm::radians(fov);
+		 }
+
 		 void ClampAxes()
 		 {
 			 if (axes_lock)
@@ -175,6 +222,9 @@ namespace GrEngine
 		glm::quat obj_orientation_target = { 0.f, 0.f, 0.f, 0.f };
 		glm::vec3 object_position_target = { 0.f, 0.f, 0.f };
 		bool axes_lock = false;
+		ProjectionType prType;
+		float orthLeft = -1.f, orthRight = 1.f, orthUp = 1.f, orthBottom = -1.f;
+		float perspFOV = glm::radians(60.f);
 
 		void checkBorders()
 		{

@@ -15,7 +15,8 @@ namespace GrEngine
 		virtual Entity* AddEntity();
 		virtual void LoadSkybox(const char* East, const char* West, const char* Top, const char* Bottom, const char* North, const char* South);
 		virtual bool LoadObject(UINT id, const char* mesh_path, std::vector<std::string> textures_vector);
-		virtual bool LoadFromGMF(UINT id, const char* filepath);
+		virtual bool LoadFromGMF(UINT id, const char* gmfpath);
+		virtual bool LoadFromGMF(Object* drawable, const char* gmfpath);
 		virtual UINT GetSelectedEntityID();
 		bool AssignTextures(std::vector<std::string> textures, Entity* target, TextureType type);
 		virtual void Run();
@@ -53,7 +54,7 @@ namespace GrEngine
 		void clearScene();
 		void TerminateLiraries();
 		inline void* getNativeWindow() { return pWindow->getNativeWindow(); };
-		AppWindow* getApplicationWindow() { return pWindow; };
+		AppWindow* GetWindowContext() { return pWindow; };
 
 	private:
 		AppWindow* pWindow;

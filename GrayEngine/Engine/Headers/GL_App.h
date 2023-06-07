@@ -28,6 +28,8 @@ namespace GrEngine
 		bool IsKeyDown(int KEY) override;
 		void AppShowCursor(bool show) override;
 		void Focus() override;
+		void AllowResize(bool allow) override;
+		void ShowBorder(bool show) override;
 
 		inline AppParameters* WindowProperties() override { return &props; };
 	private:

@@ -11,12 +11,10 @@ namespace GrEngine
 	struct DllExport AppParameters
 	{
 		const char* Title;
-		EventListener* eventListener;
 		uint32_t Width;
 		uint32_t Height;
+		EventListener* eventListener;
 		Renderer* p_Renderer;
-
-		bool free_mode;
 
 		AppParameters(const char* _Title = "Application", uint32_t _Width = 1280, uint32_t _Height = 720, bool free_mode = false)
 		{
@@ -54,6 +52,10 @@ namespace GrEngine
 		virtual bool IsKeyDown(int KEY) = 0;
 
 		virtual void AppShowCursor(bool show) = 0;
+
+		virtual void AllowResize(bool allow) = 0;
+
+		virtual void ShowBorder(bool show) = 0;
 
 		virtual void Focus() = 0;
 
