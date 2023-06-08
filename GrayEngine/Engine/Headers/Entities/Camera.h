@@ -222,7 +222,7 @@ namespace GrEngine
 		glm::quat obj_orientation_target = { 0.f, 0.f, 0.f, 0.f };
 		glm::vec3 object_position_target = { 0.f, 0.f, 0.f };
 		bool axes_lock = false;
-		ProjectionType prType;
+		ProjectionType prType = ProjectionType::Perspective;
 		float orthLeft = -1.f, orthRight = 1.f, orthUp = 1.f, orthBottom = -1.f;
 		float perspFOV = glm::radians(60.f);
 

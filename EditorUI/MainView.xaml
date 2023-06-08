@@ -155,7 +155,7 @@
                 </MenuItem>
                 <MenuItem Name="SunMenu" Header="Directional light" Foreground="Black" Click="SunMenu_Click"></MenuItem>
             </MenuItem>
-            <MenuItem Header="Help" Foreground="WhiteSmoke" Margin="0"/>
+            <MenuItem Header="Help" Foreground="WhiteSmoke" Margin="0" Click="MenuItem_Click_1"/>
             <TextBlock Name="FrameBlock" Text="0,0" Foreground="WhiteSmoke"/>
         </Menu>
         <DockPanel Background="#FF292A30" LastChildFill="True" KeyDown="Window_KeyDown" KeyUp="Window_KeyUp">

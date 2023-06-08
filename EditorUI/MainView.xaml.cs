@@ -711,7 +711,7 @@ namespace EditorUI
             }
             else if (e.Key == System.Windows.Input.Key.S)
             {
-                UIBridge.TabKey(true);
+                //UIBridge.SKey(true);
             }
         }
 
@@ -731,7 +731,7 @@ namespace EditorUI
             }
             else if (e.Key == System.Windows.Input.Key.S)
             {
-                UIBridge.TabKey(false);
+                //UIBridge.SKey(false);
             }
         }
 
@@ -749,6 +749,11 @@ namespace EditorUI
         private void Window_SizeChanged(object sender, SizeChangedEventArgs e)
         {
 
+        }
+
+        private void MenuItem_Click_1(object sender, RoutedEventArgs e)
+        {
+            System.Windows.MessageBox.Show("Esc - Free camera mode \nTab - Character mode\nMouse scroll - Control brush size\nCtrl+Mouse scroll - Control brush opacity\nCtrl+S - Save", "Help", MessageBoxButton.OK, MessageBoxImage.Information);
         }
     };
 }
