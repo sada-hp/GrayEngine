@@ -34,6 +34,7 @@ namespace GrEngine
 		virtual void RemoveController(MovementComponent* object) = 0;
 		virtual void RemoveSimulationObject(UINT id) = 0;
 		virtual void RemovePhysicsObject(void* object) = 0;
+		virtual void SetGravity(glm::vec3 gravity_vector) = 0;
 		virtual void CleanUp() = 0;
 		virtual void TogglePhysicsState(bool state) = 0;
 		virtual const RayCastResult CastRayGetHit(glm::vec3 startPoint, glm::vec3 endPoint) = 0;

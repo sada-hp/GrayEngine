@@ -67,6 +67,7 @@ namespace GrEngine
 
 	void GL_APP::ShutDown()
 	{
+		props.eventListener->pollEngineEvents();
 		Logger::Out("Shutting down the engine", OutputType::Log);
 		if (pAppRenderer)
 		{
@@ -77,8 +78,6 @@ namespace GrEngine
 		{
 			glfwDestroyWindow(window);
 		}
-
-		props.eventListener->pollEngineEvents();
 	}
 
 	void GL_APP::MaximizeWindow(bool state)

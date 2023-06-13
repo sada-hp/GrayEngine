@@ -8,7 +8,7 @@ namespace GrEngineBullet
 		constexpr double physics_step = 1 / 60.0;
 		if (simulate)
 		{
-			dynamicsWorld->stepSimulation(GrEngine::Globals::delta_time, 1, GrEngine::Globals::delta_time);
+			dynamicsWorld->stepSimulation(GrEngine::Globals::delta_time, 1, physics_step);
 		}
 	}
 
@@ -70,6 +70,13 @@ namespace GrEngineBullet
 	void BulletAPI::AddSimulationObject(GrEngine::PhysicsObject* object)
 	{
 		objects.push_back(object);
+		object->SetActivationState(simulate);
+
+		if (simulate)
+		{
+			BulletPhysObject* obj = static_cast<BulletPhysObject*>(object);
+			dynamicsWorld->refreshBroadphaseProxy(obj->body);
+		}
 	}
 
 	void BulletAPI::RemoveSimulationObject(GrEngine::PhysicsObject* object)

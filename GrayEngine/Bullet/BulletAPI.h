@@ -57,6 +57,10 @@ namespace GrEngineBullet
 		void RemoveSimulationObject(UINT id) override;
 		void RemovePhysicsObject(void* object) override;
 		void TogglePhysicsState(bool state) override;
+		void SetGravity(glm::vec3 gravity_vector) override
+		{
+			dynamicsWorld->setGravity({ gravity_vector.x, gravity_vector.y, gravity_vector.z });
+		}
 		const GrEngine::RayCastResult CastRayGetHit(glm::vec3 startPoint, glm::vec3 endPoint) override;
 		const GrEngine::RayCastResult CastRayToObject(glm::vec3 startPoint, glm::vec3 endPoint, UINT id) override;
 		const std::vector<GrEngine::RayCastResult> GetObjectContactPoints(GrEngine::PhysicsObject* object, float radius) override;

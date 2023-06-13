@@ -359,6 +359,11 @@ namespace GrEngineBullet
 			return objCollision->shape;
 		}
 
+		btVector3 getVelocityMultiplier()
+		{
+			return { vAxes.x, vAxes.y, vAxes.z};
+		}
+
 	private:
 		bool initPhysics()
 		{
@@ -402,6 +407,7 @@ namespace GrEngineBullet
 					body->setActivationState(ACTIVE_TAG);
 					body->setDeactivationTime(1.f);
 					static_cast<btRigidBody*>(body)->setMassProps(obj_mass, localInertia);
+					static_cast<btRigidBody*>(body)->setLinearFactor(getVelocityMultiplier());
 					dynamicWorld->addRigidBody((btRigidBody*)body);
 				}
 				else if (flags == btCollisionObject::CF_NO_CONTACT_RESPONSE)
@@ -423,7 +429,7 @@ namespace GrEngineBullet
 					myMotionState = new btDefaultMotionState(startTransform);
 					btRigidBody::btRigidBodyConstructionInfo rbInfo(obj_mass, myMotionState, objCollision->shape, localInertia);
 					body = new btRigidBody(rbInfo);
-					dynamicWorld->addCollisionObject(body, flags);
+					dynamicWorld->addCollisionObject(body,  btBroadphaseProxy::StaticFilter, btBroadphaseProxy::CharacterFilter | btBroadphaseProxy::DefaultFilter);
 				}
 				body->setCollisionFlags(flags);
 			}

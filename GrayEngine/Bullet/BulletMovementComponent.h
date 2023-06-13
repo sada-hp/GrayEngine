@@ -83,7 +83,7 @@ namespace GrEngineBullet
 			{
 				if (controls != nullptr)
 				{
-					controls->setWalkDirection(btVector3(vector.x, vector.y, vector.z));
+					controls->setWalkDirection(btVector3(vector.x, vector.y, vector.z) * physComp->getVelocityMultiplier());
 				}
 			}
 		}
@@ -92,7 +92,7 @@ namespace GrEngineBullet
 		{
 			if (controls != nullptr)
 			{
-				controls->setWalkDirection(btVector3(vector.x, vector.y, vector.z));
+				controls->setWalkDirection(btVector3(vector.x, vector.y, vector.z) * physComp->getVelocityMultiplier());
 				timer = dur;
 				time = std::chrono::steady_clock::now();
 			}

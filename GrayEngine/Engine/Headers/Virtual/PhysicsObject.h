@@ -38,7 +38,10 @@ namespace GrEngine
 		{
 			active = state;
 		}
-
+		virtual void VelocityMultiplier(glm::vec3 axes)
+		{
+			vAxes = axes;
+		}
 		virtual void SetKinematic(int value) = 0;
 		virtual void UpdateCollisionType(int value) = 0;
 
@@ -69,5 +72,6 @@ namespace GrEngine
 		bool active = false;
 		Entity* pOwner;
 		Physics* pContext;
+		glm::vec3 vAxes = {1, 1, 1};
 	};
 };
