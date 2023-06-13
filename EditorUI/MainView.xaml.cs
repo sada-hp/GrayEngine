@@ -258,6 +258,11 @@ namespace EditorUI
             UIBridge.UpdateEntityProperty(((PropertyControl)sender).ID, Marshal.StringToHGlobalAnsi("AlphaThreshold"), Marshal.StringToHGlobalAnsi(((PropertyControl)sender).Contents));
         }
 
+        private void NormalStrength_callback(object sender)
+        {
+            UIBridge.UpdateEntityProperty(((PropertyControl)sender).ID, Marshal.StringToHGlobalAnsi("NormalStrength"), Marshal.StringToHGlobalAnsi(((PropertyControl)sender).Contents));
+        }
+
         private void MaximumDistance_callback(object sender)
         {
             UIBridge.UpdateEntityProperty(((PropertyControl)sender).ID, Marshal.StringToHGlobalAnsi("MaximumDistance"), Marshal.StringToHGlobalAnsi(((PropertyControl)sender).Contents));
@@ -381,7 +386,7 @@ namespace EditorUI
                     types.Add(name, typeof(_3VectorControl));
                     events.Add(name, "VectorPropertyChanged");
                 }
-                else if (name == "EntityName" || name == "AlphaThreshold" || name == "Mass" || name == "MaximumDistance" || name == "Brightness")
+                else if (name == "EntityName" || name == "AlphaThreshold" || name == "Mass" || name == "MaximumDistance" || name == "Brightness" || name == "NormalStrength")
                 {
                     types.Add(name, typeof(LabelControl));
                     events.Add(name, "TextBoxTextChanged");

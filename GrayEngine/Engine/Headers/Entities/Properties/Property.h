@@ -35,6 +35,7 @@ enum class PropertyType
 	AlphaThreshold,
 	MaximumDistance,
 	Brightness,
+	NormalStrength,
 	Custom
 };
 
@@ -93,7 +94,8 @@ public:
 		{"ModelPath", PropertyType::ModelPath},
 		{"AlphaThreshold", PropertyType::AlphaThreshold},
 		{"MaximumDistance", PropertyType::MaximumDistance},
-		{"Brightness", PropertyType::Brightness}
+		{"Brightness", PropertyType::Brightness},
+		{"NormalStrength", PropertyType::NormalStrength}
 		};
 
 		auto it = type_hash.find(std::string(property_name));
@@ -159,6 +161,8 @@ public:
 			return "MaximumDistance";
 		case PropertyType::Brightness:
 			return "Brightness";
+		case PropertyType::NormalStrength:
+			return "NormalStrength";
 		default:
 			return "Custom";
 		}

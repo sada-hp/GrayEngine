@@ -551,9 +551,10 @@ namespace GrEngine_Vulkan
 				float far_pl;
 				uint32_t use_normal;
 				float threshold;
+				float n_strength;
 			} specs;
-			specs = { (uint32_t)object_texture.size(), VulkanRenderer::NearPlane, VulkanRenderer::FarPlane, (uint32_t)object_normal.size(), alpha_threshold};
-			std::array<VkSpecializationMapEntry, 5> entries;
+			specs = { (uint32_t)object_texture.size(), VulkanRenderer::NearPlane, VulkanRenderer::FarPlane, (uint32_t)object_normal.size(), alpha_threshold, GetOwnerEntity()->GetPropertyValue(PropertyType::NormalStrength, 1.f)};
+			std::array<VkSpecializationMapEntry, 6> entries;
 			entries[0].constantID = 0;
 			entries[0].offset = 0;
 			entries[0].size = sizeof(uint32_t);
@@ -569,6 +570,9 @@ namespace GrEngine_Vulkan
 			entries[4].constantID = 4;
 			entries[4].offset = offsetof(Specs, threshold);
 			entries[4].size = sizeof(float);
+			entries[5].constantID = 5;
+			entries[5].offset = offsetof(Specs, n_strength);
+			entries[5].size = sizeof(float);
 
 			VkSpecializationInfo specializationInfo;
 			specializationInfo.mapEntryCount = entries.size();

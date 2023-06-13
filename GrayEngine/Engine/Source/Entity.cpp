@@ -231,6 +231,20 @@ namespace GrEngine
 					Engine::GetContext()->GetPhysics()->RemoveController(static_cast<MovementComponent*>(self->GetValueAdress()));
 					}, this));
 				return properties.back();
+			case PropertyType::NormalStrength:
+				properties.push_back(new FloatProperty(PropertyType::NormalStrength, 1.0f, this));
+				properties.back()->SetCallback([](Entity* owner, EntityProperty* self)
+					{
+						if (owner != nullptr)
+						{
+							Object* mesh = Object::FindObject(owner);
+							if (mesh != nullptr)
+							{
+								mesh->Refresh();
+							}
+						}
+					});
+				return properties.back();
 			default:
 				break;
 			}

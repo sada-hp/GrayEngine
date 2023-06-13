@@ -236,6 +236,11 @@
                                     <TextBlock Text="AlphaThreshold" HorizontalAlignment="Left" RenderTransformOrigin="0.5,0.5"/>
                                 </MenuItem.Header>
                             </MenuItem>
+                            <MenuItem x:Name="NormalStrength" HorizontalContentAlignment="Left" Click="MenuItem_Click" Cursor="Hand">
+                                <MenuItem.Header>
+                                    <TextBlock Text="NormalStrength" HorizontalAlignment="Left" RenderTransformOrigin="0.5,0.5"/>
+                                </MenuItem.Header>
+                            </MenuItem>
                             <MenuItem x:Name="MaximumDistance" HorizontalContentAlignment="Left" Click="MenuItem_Click" Cursor="Hand">
                                 <MenuItem.Header>
                                     <TextBlock Text="MaximumDistance" HorizontalAlignment="Left" RenderTransformOrigin="0.5,0.5"/>
