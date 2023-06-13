@@ -396,7 +396,7 @@ namespace EditorUI
             foreach (var normal in Normals.Values)
             {
                 string normal_val = normal.StartsWith(distr_location) ? normal.Remove(0, distr_location.Length + 1) : normal;
-                material_string += ":Normal:" + normal + "|";
+                material_string += ":Normal:" + normal_val + "|";
             }
 
             string file = loaded_mesh.Substring(0, loaded_mesh.LastIndexOf('\\')) + '\\' + IdBox.Text + ".gmf";
