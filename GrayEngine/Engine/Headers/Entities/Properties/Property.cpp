@@ -560,7 +560,7 @@ void CubemapProperty::ParsePropertyValue(const char* value)
 		return;
 
 	if (owner != nullptr)
-		static_cast<GrEngine::Skybox*>(owner)->UpdateTextures(property_value);
+		static_cast<GrEngine::Skybox*>(owner)->AssignTextures(property_value);
 }
 
 void CubemapProperty::SetPropertyValue(std::array<std::string, 6> value)
@@ -568,7 +568,7 @@ void CubemapProperty::SetPropertyValue(std::array<std::string, 6> value)
 	property_value = value;
 
 	if (owner != nullptr)
-		static_cast<GrEngine::Skybox*>(owner)->UpdateTextures(property_value);
+		static_cast<GrEngine::Skybox*>(owner)->AssignTextures(property_value);
 }
 
 std::any CubemapProperty::GetAnyValue()

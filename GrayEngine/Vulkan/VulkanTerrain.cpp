@@ -25,7 +25,7 @@ namespace GrEngine_Vulkan
 	{
 		VulkanAPI::DestroyPipeline(shadowPipeline);
 		VulkanAPI::DestroyPipelineLayout(shadowLayout);
-		if (ready)
+		if (initialized)
 		{
 			VulkanAPI::m_destroyShaderBuffer(logicalDevice, memAllocator, &object_mesh->vertexBuffer);
 			VulkanAPI::m_destroyShaderBuffer(logicalDevice, memAllocator, &object_mesh->indexBuffer);
@@ -44,7 +44,7 @@ namespace GrEngine_Vulkan
 		object_texture.resize(0);
 		object_normal.resize(0);
 
-		ready = false;
+		initialized = false;
 		VulkanDrawable::destroyObject();
 	}
 
@@ -56,15 +56,19 @@ namespace GrEngine_Vulkan
 
 	void VulkanTerrain::recordShadowPass(VkCommandBuffer cmd, int instances)
 	{
-		vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, shadowPipeline);
-		VkDeviceSize offsets[] = { 0 };
-		vkCmdBindVertexBuffers(cmd, 0, 1, &object_mesh->vertexBuffer.Buffer, offsets);
-		vkCmdBindIndexBuffer(cmd, object_mesh->indexBuffer.Buffer, 0, VK_INDEX_TYPE_UINT32);
-		vkCmdBindDescriptorSets(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, shadowLayout, 0, 1, &descriptorSets[1].set, 0, NULL);
-		ubo.model = GetObjectTransformation();
-		ubo.scale = glm::vec4(GetPropertyValue(PropertyType::Scale, glm::vec3(1.f)), 1.f);
-		vkCmdPushConstants(cmd, shadowLayout, VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(VertexConstants), &ubo);
-		vkCmdDrawIndexed(cmd, static_cast<uint32_t>(object_mesh->indices.size()), instances, 0, 0, 0);
+		if (initialized)
+		{
+			vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, shadowPipeline);
+			VkDeviceSize offsets[] = { 0 };
+			vkCmdBindVertexBuffers(cmd, 0, 1, &object_mesh->vertexBuffer.Buffer, offsets);
+			vkCmdBindIndexBuffer(cmd, object_mesh->indexBuffer.Buffer, 0, VK_INDEX_TYPE_UINT32);
+			vkCmdBindDescriptorSets(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, shadowLayout, 0, 1, &descriptorSets[1].set, 0, NULL);
+			ubo.model = GetObjectTransformation();
+			ubo.scale = glm::vec4(GetPropertyValue(PropertyType::Scale, glm::vec3(1.f)), 1.f);
+			vkCmdPushConstants(cmd, shadowLayout, VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(VertexConstants), &ubo);
+			vkCmdDrawIndexed(cmd, static_cast<uint32_t>(object_mesh->indices.size()), instances, 0, 0, 0);
+		}
+
 	}
 
 	void VulkanTerrain::UpdateFoliageMask(void* pixels)
@@ -134,7 +138,7 @@ namespace GrEngine_Vulkan
 
 	void VulkanTerrain::GenerateTerrain(int resolution, int width, int height, int depth, std::array<std::string, 6> images, std::array<std::string, 4> normals, std::array<std::string, 4> displacements)
 	{
-		if (ready)
+		if (initialized)
 		{
 			VulkanAPI::m_destroyShaderBuffer(logicalDevice, memAllocator, &object_mesh->vertexBuffer);
 			VulkanAPI::m_destroyShaderBuffer(logicalDevice, memAllocator, &object_mesh->indexBuffer);
@@ -162,7 +166,7 @@ namespace GrEngine_Vulkan
 			object_texture.resize(0);
 			delete object_mesh;
 
-			ready = false;
+			initialized = false;
 		}
 
 		size = { resolution, width, depth, height };
@@ -173,8 +177,8 @@ namespace GrEngine_Vulkan
 
 		heightMap = static_cast<VulkanRenderer*>(p_Owner)->loadTexture({ images[0] }, GrEngine::TextureType::Height, VK_IMAGE_VIEW_TYPE_2D)->AddLink();
 		foliageMask = static_cast<VulkanRenderer*>(p_Owner)->loadTexture({ images[1] }, GrEngine::TextureType::Color, VK_IMAGE_VIEW_TYPE_2D)->AddLink();
-		bool res = static_cast<VulkanRenderer*>(p_Owner)->assignTextures({ images[2], images[3], images[4], images[5] }, this, GrEngine::TextureType::Color, false);
-		res = static_cast<VulkanRenderer*>(p_Owner)->assignTextures({ normals[0], normals[1], normals[2], normals[3] }, this, GrEngine::TextureType::Normal, false);
+		assignTextures({ images[2], images[3], images[4], images[5] });
+		assignNormals({ normals[0], normals[1], normals[2], normals[3] });
 		for (int i = 0; i < 4; i++)
 		{
 			object_displacement.push_back(static_cast<VulkanRenderer*>(p_Owner)->loadTexture({ displacements[i] }, GrEngine::TextureType::Height, VK_IMAGE_VIEW_TYPE_2D, VK_IMAGE_TYPE_2D, VK_FORMAT_R8G8B8A8_UNORM, true)->AddLink());
@@ -257,7 +261,7 @@ namespace GrEngine_Vulkan
 		updateObject();
 		physComp->CalculatePhysics();
 
-		ready = true;
+		initialized = true;
 		was_updated = true;
 	}
 
@@ -432,7 +436,7 @@ namespace GrEngine_Vulkan
 
 	bool VulkanTerrain::LoadTerrain(const char* filepath)
 	{
-		if (ready)
+		if (initialized)
 		{
 			VulkanAPI::m_destroyShaderBuffer(logicalDevice, memAllocator, &object_mesh->vertexBuffer);
 			VulkanAPI::m_destroyShaderBuffer(logicalDevice, memAllocator, &object_mesh->indexBuffer);
@@ -460,7 +464,7 @@ namespace GrEngine_Vulkan
 			object_texture.resize(0);
 			delete object_mesh;
 
-			ready = false;
+			initialized = false;
 		}
 
 		object_mesh = new Mesh();
@@ -577,8 +581,8 @@ namespace GrEngine_Vulkan
 		}
 		file.close();
 
-		static_cast<VulkanRenderer*>(p_Owner)->assignTextures({ textures[0], textures[1], textures[2], textures[3] }, this, GrEngine::TextureType::Color, false);
-		static_cast<VulkanRenderer*>(p_Owner)->assignTextures({ normals[0], normals[1], normals[2], normals[3] }, this, GrEngine::TextureType::Normal, false);
+		assignTextures({ textures[0], textures[1], textures[2], textures[3] });
+		assignNormals({ normals[0], normals[1], normals[2], normals[3] });
 		for (int i = 0; i < 4; i++)
 		{
 			object_displacement.push_back(static_cast<VulkanRenderer*>(p_Owner)->loadTexture({ displacements[i] }, GrEngine::TextureType::Height, VK_IMAGE_VIEW_TYPE_2D, VK_IMAGE_TYPE_2D, VK_FORMAT_R8G8B8A8_UNORM, true)->AddLink());
@@ -590,9 +594,101 @@ namespace GrEngine_Vulkan
 		VulkanAPI::m_createVkBuffer(logicalDevice, memAllocator, object_mesh->indices.data(), sizeof(object_mesh->indices[0]) * object_mesh->indices.size(), VK_BUFFER_USAGE_INDEX_BUFFER_BIT, &object_mesh->indexBuffer);
 		calculateCollisions();
 		updateObject();
-		ready = true;
+		initialized = true;
 
 		return true;
+	}
+
+	void VulkanTerrain::assignTextures(std::array<std::string, 4> color)
+	{
+		VulkanRenderer* render_context = static_cast<VulkanRenderer*>(p_Owner);
+
+		int procNum = 0;
+		std::map<int, std::future<void>> processes_map;
+		std::unordered_map<std::string, int> active_tex;
+
+		for (int i = 0; i < object_texture.size(); i++)
+		{
+			resources->RemoveTexture(object_texture.at(i), logicalDevice, memAllocator);
+			object_texture[i] = nullptr;
+		}
+		object_texture.resize(0);
+
+		//Precache
+		for (auto texture : color)
+		{
+			if (active_tex.count(texture) == 0)
+			{
+				processes_map[procNum] = std::async(std::launch::async, [render_context, texture]()
+					{
+						render_context->loadTexture({ texture }, GrEngine::TextureType::Color, VK_IMAGE_VIEW_TYPE_2D, VK_IMAGE_TYPE_2D, VK_FORMAT_R8G8B8A8_SRGB);
+					});
+
+				active_tex[texture] = procNum;
+				procNum++;
+			}
+		}
+
+		for (int ind = 0; ind < processes_map.size(); ind++)
+		{
+			if (processes_map[ind].valid())
+			{
+				processes_map[ind].wait();
+			}
+		}
+
+		for (int i = 0; i < color.size(); i++)
+		{
+			object_texture.push_back(render_context->loadTexture({ color[i] }, GrEngine::TextureType::Color, VK_IMAGE_VIEW_TYPE_2D, VK_IMAGE_TYPE_2D, VK_FORMAT_R8G8B8A8_SRGB)->AddLink());
+		}
+
+		if (initialized) updateObject();
+	}
+
+	void VulkanTerrain::assignNormals(std::array<std::string, 4> normals)
+	{
+		VulkanRenderer* render_context = static_cast<VulkanRenderer*>(p_Owner);
+
+		int procNum = 0;
+		std::map<int, std::future<void>> processes_map;
+		std::unordered_map<std::string, int> active_tex;
+
+		for (int i = 0; i < object_normal.size(); i++)
+		{
+			resources->RemoveTexture(object_normal.at(i), logicalDevice, memAllocator);
+			object_normal[i] = nullptr;
+		}
+		object_normal.resize(0);
+
+		//Precache
+		for (auto texture : normals)
+		{
+			if (active_tex.count(texture) == 0)
+			{
+				processes_map[procNum] = std::async(std::launch::async, [render_context, texture]()
+					{
+						render_context->loadTexture({ texture }, GrEngine::TextureType::Normal, VK_IMAGE_VIEW_TYPE_2D, VK_IMAGE_TYPE_2D, VK_FORMAT_R8G8B8A8_UNORM);
+					});
+
+				active_tex[texture] = procNum;
+				procNum++;
+			}
+		}
+
+		for (int ind = 0; ind < processes_map.size(); ind++)
+		{
+			if (processes_map[ind].valid())
+			{
+				processes_map[ind].wait();
+			}
+		}
+
+		for (int i = 0; i < normals.size(); i++)
+		{
+			object_normal.push_back(render_context->loadTexture({ normals[i] }, GrEngine::TextureType::Normal, VK_IMAGE_VIEW_TYPE_2D, VK_IMAGE_TYPE_2D, VK_FORMAT_R8G8B8A8_UNORM)->AddLink());
+		}
+
+		if (initialized) updateObject();
 	}
 
 	void VulkanTerrain::calculateCollisions()

@@ -62,12 +62,13 @@ namespace GrEngine_Vulkan
 			object_mesh = resource->AddLink();
 		}
 
-		static_cast<VulkanRenderer*>(p_Owner)->assignTextures({ "", "" , "" , "" , "" , "" }, this, GrEngine::TextureType::Color);
+		AssignTextures({ "", "" , "" , "" , "" , "" });
+		initialized = true;
 	}
 
 	bool VulkanSkybox::recordCommandBuffer(VkCommandBuffer commandBuffer, UINT32 mode)
 	{
-		if (object_mesh->vertexBuffer.initialized == true && filled)
+		if (initialized)
 		{
 			VulkanDrawable::recordCommandBuffer(commandBuffer, mode);
 			return true;
@@ -76,12 +77,22 @@ namespace GrEngine_Vulkan
 		return false;
 	}
 
-	void VulkanSkybox::UpdateTextures(std::array<std::string, 6> sky)
+	bool VulkanSkybox::AssignTextures(std::array<std::string, 6> sky)
 	{
-		filled = false;
-		//invalidateTexture();
-		static_cast<VulkanRenderer*>(p_Owner)->assignTextures(std::vector<std::string>(sky.begin(), sky.end()), this, GrEngine::TextureType::Color);
-		filled = true;
+		VulkanRenderer* render_context = static_cast<VulkanRenderer*>(p_Owner);
+
+		for (int i = 0; i < object_texture.size(); i++)
+		{
+			resources->RemoveTexture(object_texture.at(i), logicalDevice, memAllocator);
+			object_texture[i] = nullptr;
+		}
+		object_texture.resize(0);
+
+		object_texture.push_back(render_context->loadTexture(std::vector<std::string>(sky.begin(), sky.end()), GrEngine::TextureType::Color, VK_IMAGE_VIEW_TYPE_CUBE, VK_IMAGE_TYPE_2D, VK_FORMAT_R8G8B8A8_SRGB, true)->AddLink());
+
+		updateObject();
+
+		return true;
 	}
 
 	bool VulkanSkybox::pushConstants(VkCommandBuffer cmd)

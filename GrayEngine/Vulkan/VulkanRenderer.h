@@ -31,8 +31,6 @@ namespace GrEngine_Vulkan
 		inline VkRenderPass getRenderPass() { 
 			return renderPass; 
 		};
-		bool loadModel(UINT id, const char* mesh_path, std::vector<std::string> textures_vector) override;
-		bool loadModel(UINT id, const char* model_path) override;
 		GrEngine::Entity* addEntity() override;
 		GrEngine::Entity* addEntity(UINT ID) override;
 		GrEngine::Entity* CloneEntity(UINT id) override;
@@ -46,7 +44,6 @@ namespace GrEngine_Vulkan
 
 		void SaveScreenshot(const char* filepath);
 		void addEntity(GrEngine::Entity* entity) override;
-		bool assignTextures(std::vector<std::string> textures, GrEngine::Entity* target, GrEngine::TextureType type, bool update_object = true) override;
 		void clearDrawables() override;
 		void createSkybox(const char* East, const char* West, const char* Top, const char* Bottom, const char* North, const char* South) override;
 		void UpdateFogParameters(FogSettings para) override;

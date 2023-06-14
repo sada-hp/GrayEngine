@@ -18,7 +18,6 @@ namespace GrEngine
 		virtual bool LoadFromGMF(UINT id, const char* gmfpath);
 		virtual bool LoadFromGMF(Object* drawable, const char* gmfpath);
 		virtual UINT GetSelectedEntityID();
-		bool AssignTextures(std::vector<std::string> textures, Entity* target, TextureType type);
 		virtual void Run();
 		virtual void Stop();
 		virtual void Pause();

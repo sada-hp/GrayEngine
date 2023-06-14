@@ -60,7 +60,7 @@ namespace GrEngine
 
 		if (drawComponent != nullptr)
 		{
-			res = drawComponent->LoadModel("", mesh_path, textures_vector, {});
+			res = drawComponent->LoadModel(mesh_path, textures_vector, {});
 		}
 
 		return res;
@@ -84,7 +84,7 @@ namespace GrEngine
 
 		if (drawComponent != nullptr)
 		{
-			drawComponent->LoadModel(gmfpath, mesh_path.c_str(), textures_vector, normals_vector);
+			drawComponent->LoadModel(mesh_path.c_str(), textures_vector, normals_vector);
 		}
 
 		if (physComponent != nullptr)
@@ -115,7 +115,7 @@ namespace GrEngine
 
 		if (drawable != nullptr)
 		{
-			drawable->LoadModel(gmfpath, mesh_path.c_str(), textures_vector, normals_vector);
+			drawable->LoadModel(mesh_path.c_str(), textures_vector, normals_vector);
 			physComponent = (PhysicsObject*)drawable->GetOwnerEntity()->GetPropertyValue(PropertyType::PhysComponent, (void*)nullptr);
 		}
 
@@ -134,16 +134,6 @@ namespace GrEngine
 	std::vector<std::string> Engine::GetMaterialNames(const char* mesh_path)
 	{
 		return GetRenderer()->GetMaterialNames(mesh_path);
-	}
-
-	bool Engine::AssignTextures(std::vector<std::string> textures, Entity* target, TextureType type)
-	{
-		Pause();
-
-		bool res = pWindow->getRenderer()->assignTextures(textures, target, type);
-
-		Unpause();
-		return res;
 	}
 
 	void Engine::clearScene()

@@ -60,6 +60,7 @@ namespace GrEngine_Vulkan
 		createDescriptorLayout();
 		createDescriptorPool();
 		createDescriptorSet();
+		initialized = true;
 	}
 
 	void VulkanDrawable::destroyObject()
@@ -93,6 +94,8 @@ namespace GrEngine_Vulkan
 			VulkanAPI::DestroyDescriptorPool((*itt).descriptorPool);
 			VulkanAPI::DestroyDescriptorLayout((*itt).descriptorSetLayout);
 		}
+
+		initialized = false;
 	}
 
 	void VulkanDrawable::updateObject()
@@ -164,7 +167,7 @@ namespace GrEngine_Vulkan
 	{
 		if (mode == DrawMode::NORMAL && transparency > 0 || mode == DrawMode::TRANSPARENCY && transparency == 0) return false;
 
-		if (object_mesh != nullptr && object_mesh->vertexBuffer.initialized == true)
+		if (object_mesh != nullptr && initialized == true)
 		{
 			vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, graphicsPipeline);
 
@@ -184,29 +187,46 @@ namespace GrEngine_Vulkan
 
 	bool VulkanDrawable::draw(VkCommandBuffer commandBuffer)
 	{
-		VkDeviceSize offsets[] = { 0 };
-		vkCmdBindVertexBuffers(commandBuffer, 0, 1, &object_mesh->vertexBuffer.Buffer, offsets);
-		vkCmdBindIndexBuffer(commandBuffer, object_mesh->indexBuffer.Buffer, 0, VK_INDEX_TYPE_UINT32);
-		//vkCmdDraw(commandBuffer, static_cast<uint32_t>(object_mesh.vertices.size()), 1, 0, 0);
-		vkCmdDrawIndexed(commandBuffer, static_cast<uint32_t>(object_mesh->indices.size()), 1, 0, 0, 0);
+		if (initialized)
+		{
+			VkDeviceSize offsets[] = { 0 };
+			vkCmdBindVertexBuffers(commandBuffer, 0, 1, &object_mesh->vertexBuffer.Buffer, offsets);
+			vkCmdBindIndexBuffer(commandBuffer, object_mesh->indexBuffer.Buffer, 0, VK_INDEX_TYPE_UINT32);
+			//vkCmdDraw(commandBuffer, static_cast<uint32_t>(object_mesh.vertices.size()), 1, 0, 0);
+			vkCmdDrawIndexed(commandBuffer, static_cast<uint32_t>(object_mesh->indices.size()), 1, 0, 0, 0);
 
-		return true;
+			return true;
+		}
+		else
+		{
+			return false;
+		}
 	}
 
 	bool VulkanDrawable::draw(VkCommandBuffer commandBuffer, int instances)
 	{
-		VkDeviceSize offsets[] = { 0 };
-		vkCmdBindVertexBuffers(commandBuffer, 0, 1, &object_mesh->vertexBuffer.Buffer, offsets);
-		vkCmdBindIndexBuffer(commandBuffer, object_mesh->indexBuffer.Buffer, 0, VK_INDEX_TYPE_UINT32);
-		//vkCmdDraw(commandBuffer, static_cast<uint32_t>(object_mesh.vertices.size()), 1, 0, 0);
-		vkCmdDrawIndexed(commandBuffer, static_cast<uint32_t>(object_mesh->indices.size()), instances, 0, 0, 0);
+		if (initialized)
+		{
+			VkDeviceSize offsets[] = { 0 };
+			vkCmdBindVertexBuffers(commandBuffer, 0, 1, &object_mesh->vertexBuffer.Buffer, offsets);
+			vkCmdBindIndexBuffer(commandBuffer, object_mesh->indexBuffer.Buffer, 0, VK_INDEX_TYPE_UINT32);
+			//vkCmdDraw(commandBuffer, static_cast<uint32_t>(object_mesh.vertices.size()), 1, 0, 0);
+			vkCmdDrawIndexed(commandBuffer, static_cast<uint32_t>(object_mesh->indices.size()), instances, 0, 0, 0);
 
-		return true;
+			return true;
+		}
+		else
+		{
+			return false;
+		}
 	}
 
 	bool VulkanDrawable::pushConstants(VkCommandBuffer cmd)
 	{
-		vkCmdPushConstants(cmd, pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(VertexConstants), &ubo);
+		if (initialized)
+		{
+			vkCmdPushConstants(cmd, pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(VertexConstants), &ubo);
+		}
 		return true;
 	}
 

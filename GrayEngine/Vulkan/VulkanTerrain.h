@@ -64,6 +64,8 @@ namespace GrEngine_Vulkan
 
 		btBvhTriangleMeshShape* colShape;
 	private:
+		void assignTextures(std::array<std::string, 4> color);
+		void assignNormals(std::array<std::string, 4> normals);
 		void updateShadowPipeline();
 
 		VkPipelineLayout shadowLayout;
@@ -72,7 +74,6 @@ namespace GrEngine_Vulkan
 		bool use_compute = false;
 		float maxAABB = 0.f;
 		float minAABB = 0.f;
-		bool ready = false;
 		bool was_updated = false;
 	};
 }

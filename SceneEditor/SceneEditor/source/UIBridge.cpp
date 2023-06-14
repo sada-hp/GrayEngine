@@ -76,7 +76,7 @@ void SceneEditor::LoadModelFile(const char* model_path)
 
     if (drawComponent != nullptr)
     {
-        drawComponent->LoadModel(model_path, mesh_path.c_str(), textures_vector, normals_vector);
+        drawComponent->LoadModel(mesh_path.c_str(), textures_vector, normals_vector);
     }
 
     if (physComponent != nullptr)
@@ -149,7 +149,8 @@ void SceneEditor::AssignTextures(const char* textures_path)
             return;
         }
     }
-    GrEngine::Engine::GetContext()->AssignTextures(mat_vector, GrEngine::Engine::GetContext()->GetRenderer()->GetSelectedEntity(), GrEngine::TextureType::Color);
+
+    GrEngine::Object::FindObject(GrEngine::Engine::GetContext()->GetRenderer()->GetSelectedEntity())->AssignTextures(mat_vector);
 }
 
 void SceneEditor::CloseContext()

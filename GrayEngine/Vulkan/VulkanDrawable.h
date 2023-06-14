@@ -50,5 +50,6 @@ namespace GrEngine_Vulkan
 
 		int transparency = 0;
 		int double_sided = 0;
+		bool initialized = false;
 	};
 }

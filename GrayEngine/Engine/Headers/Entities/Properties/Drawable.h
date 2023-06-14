@@ -89,7 +89,11 @@ namespace GrEngine
 
 		virtual bool LoadMesh(const char* mesh_path) = 0;
 
-		virtual bool LoadModel(const char* gmf_path, const char* mesh_path, std::vector<std::string> textures_vector, std::vector<std::string> normals_vector) = 0;
+		virtual bool LoadModel(const char* mesh_path, std::vector<std::string> textures_vector, std::vector<std::string> normals_vector) = 0;
+
+		virtual bool AssignTextures(std::vector<std::string> textures_vector) = 0;
+
+		virtual bool AssignNormals(std::vector<std::string> normals_vector) = 0;
 
 		virtual void GeneratePlaneMesh(float width, int subdivisions) = 0;
 
@@ -97,9 +101,8 @@ namespace GrEngine
 
 		virtual void GenerateSphereMesh(double radius, int rings, int slices) = 0;
 
-		virtual void Refresh() = 0;
 
-		//virtual void CalculateNormals() = 0;
+		virtual void Refresh() = 0;
 
 		virtual glm::vec3 GetObjectPosition()
 		{
@@ -178,7 +181,6 @@ namespace GrEngine
 
 		std::vector<std::string> texture_names;
 		std::string mesh_name;
-		std::string gmf_name = "nil";
 
 	protected:
 

@@ -21,10 +21,12 @@ namespace GrEngine_Vulkan
 
 		GenerateBoxMesh(0.5, 0.5, 0.5);
 
-		static_cast<VulkanRenderer*>(p_Owner)->assignTextures({""}, ownerEntity, GrEngine::TextureType::Color,false);
-		static_cast<VulkanRenderer*>(p_Owner)->assignTextures({""}, ownerEntity, GrEngine::TextureType::Normal);
+		AssignTextures({""});
+		AssignNormals({""});
 		//updateSelectionPipeline();
 		//updateShadowPipeline();
+		initialized = true;
+		updateObject();
 	}
 
 	void VulkanObject::destroyObject()
@@ -794,7 +796,103 @@ namespace GrEngine_Vulkan
 		//subscribeDescriptor(VK_SHADER_STAGE_FRAGMENT_BIT, index++, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, static_cast<VulkanRenderer*>(p_Owner)->shadowMap.texInfo.descriptor);
 	}
 
-	bool VulkanObject::LoadModel(const char* gmf_path, const char* mesh_path, std::vector<std::string> textures_vector, std::vector<std::string> normals_vector)
+	bool VulkanObject::AssignTextures(std::vector<std::string> textures_vector)
+	{
+		VulkanRenderer* render_context = static_cast<VulkanRenderer*>(p_Owner);
+
+		int procNum = 0;
+		std::map<int, std::future<void>> processes_map;
+		std::unordered_map<std::string, int> active_tex;
+
+		for (int i = 0; i < object_texture.size(); i++)
+		{
+			resources->RemoveTexture(object_texture.at(i), logicalDevice, memAllocator);
+			object_texture[i] = nullptr;
+		}
+		object_texture.resize(0);
+
+		//Precache
+		for (auto texture : textures_vector)
+		{
+			if (active_tex.count(texture) == 0)
+			{
+				processes_map[procNum] = std::async(std::launch::async, [render_context, texture]()
+					{
+						render_context->loadTexture({ texture }, GrEngine::TextureType::Color, VK_IMAGE_VIEW_TYPE_2D, VK_IMAGE_TYPE_2D, VK_FORMAT_R8G8B8A8_SRGB);
+					});
+
+				active_tex[texture] = procNum;
+				procNum++;
+			}
+		}
+
+		for (int ind = 0; ind < processes_map.size(); ind++)
+		{
+			if (processes_map[ind].valid())
+			{
+				processes_map[ind].wait();
+			}
+		}
+
+		for (int i = 0; i < textures_vector.size(); i++)
+		{
+			object_texture.push_back(render_context->loadTexture({ textures_vector[i] }, GrEngine::TextureType::Color, VK_IMAGE_VIEW_TYPE_2D, VK_IMAGE_TYPE_2D, VK_FORMAT_R8G8B8A8_SRGB)->AddLink());
+		}
+
+		if (initialized) updateObject();
+
+		return true;
+	}
+
+	bool VulkanObject::AssignNormals(std::vector<std::string> normals_vector)
+	{
+		VulkanRenderer* render_context = static_cast<VulkanRenderer*>(p_Owner);
+
+		int procNum = 0;
+		std::map<int, std::future<void>> processes_map;
+		std::unordered_map<std::string, int> active_tex;
+
+		for (int i = 0; i < object_normal.size(); i++)
+		{
+			resources->RemoveTexture(object_normal.at(i), logicalDevice, memAllocator);
+			object_normal[i] = nullptr;
+		}
+		object_normal.resize(0);
+
+		//Precache
+		for (auto texture : normals_vector)
+		{
+			if (active_tex.count(texture) == 0)
+			{
+				processes_map[procNum] = std::async(std::launch::async, [render_context, texture]()
+					{
+						render_context->loadTexture({ texture }, GrEngine::TextureType::Normal, VK_IMAGE_VIEW_TYPE_2D, VK_IMAGE_TYPE_2D, VK_FORMAT_R8G8B8A8_UNORM);
+					});
+
+				active_tex[texture] = procNum;
+				procNum++;
+			}
+		}
+
+		for (int ind = 0; ind < processes_map.size(); ind++)
+		{
+			if (processes_map[ind].valid())
+			{
+				processes_map[ind].wait();
+			}
+		}
+
+		for (int i = 0; i < normals_vector.size(); i++)
+		{
+			object_normal.push_back(render_context->loadTexture({ normals_vector[i] }, GrEngine::TextureType::Normal, VK_IMAGE_VIEW_TYPE_2D, VK_IMAGE_TYPE_2D, VK_FORMAT_R8G8B8A8_UNORM)->AddLink());
+		}
+
+		if (initialized) updateObject();
+
+		return true;
+	}
+
+	bool VulkanObject::LoadModel(const char* mesh_path, std::vector<std::string> textures_vector, std::vector<std::string> normals_vector)
 	{
 		static_cast<VulkanRenderer*>(p_Owner)->waitForRenderer();
 
@@ -811,10 +909,10 @@ namespace GrEngine_Vulkan
 				ref_obj->LoadMesh(mesh_path);
 			});
 
-		inst->assignTextures(textures_vector, ownerEntity, GrEngine::TextureType::Color);
+		AssignTextures(textures_vector);
 		//Ideally normals should match the number of used surfaces
 		if (normals_vector.size() == 0) normals_vector.resize(textures_vector.size());
-		inst->assignTextures(normals_vector, ownerEntity, GrEngine::TextureType::Normal);
+		AssignNormals(normals_vector);
 
 		for (int ind = 0; ind < processes_map.size(); ind++)
 		{
@@ -825,7 +923,6 @@ namespace GrEngine_Vulkan
 		}
 
 		texture_names = textures_vector;
-		gmf_name = gmf_path;
 		mesh_name = mesh_path;
 		updateObject();
 

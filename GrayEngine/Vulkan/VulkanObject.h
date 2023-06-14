@@ -14,7 +14,9 @@ namespace GrEngine_Vulkan
 		void Refresh() override;
 
 		bool LoadMesh(const char* mesh_path) override;
-		bool LoadModel(const char* gmf_path, const char* mesh_path, std::vector<std::string> textures_vector, std::vector<std::string> normals_vector) override;
+		bool LoadModel(const char* mesh_path, std::vector<std::string> textures_vector, std::vector<std::string> normals_vector) override;
+		bool AssignTextures(std::vector<std::string> textures_vector) override;
+		bool AssignNormals(std::vector<std::string> normals_vector) override;
 		void GeneratePlaneMesh(float width, int subdivisions) override;
 		void GenerateBoxMesh(float width, float height, float depth) override;
 		void GenerateSphereMesh(double radius, int rings, int slices) override;

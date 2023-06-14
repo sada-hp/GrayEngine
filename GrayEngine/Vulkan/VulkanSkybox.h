@@ -25,7 +25,7 @@ namespace GrEngine_Vulkan
 
 		}
 
-		void UpdateTextures(std::array<std::string, 6> sky) override;
+		bool AssignTextures(std::array<std::string, 6> sky) override;
 		bool recordCommandBuffer(VkCommandBuffer commandBuffer, UINT32 mode) override;
 		void initObject(VkDevice device, VmaAllocator allocator, GrEngine::Renderer* owner) override;
 		bool pushConstants(VkCommandBuffer cmd) override;
@@ -35,7 +35,6 @@ namespace GrEngine_Vulkan
 		void createDescriptors() override;
 
 	private:
-		bool filled = false;
 		FragmentBuffer opo;
 	};
 };

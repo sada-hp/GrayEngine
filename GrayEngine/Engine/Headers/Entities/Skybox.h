@@ -25,7 +25,7 @@ namespace GrEngine
 		{
 		};
 
-		virtual void UpdateTextures(std::array<std::string, 6> sky) = 0;
+		virtual bool AssignTextures(std::array<std::string, 6> sky) = 0;
 
 	private:
 		CubemapProperty* prop;
