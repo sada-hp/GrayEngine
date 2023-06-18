@@ -228,7 +228,7 @@ namespace GrEngine_Vulkan
 		sky = new VulkanSkybox(1000000000);
 		sky->initObject(logicalDevice, memAllocator, this);
 		sky->UpdateNameTag("Sky");
-		sky->MakeStatic();
+		//sky->MakeStatic();
 		sky->AddNewProperty(PropertyType::Color);
 		entities[sky->GetEntityID()] = sky;
 	}
@@ -2198,6 +2198,7 @@ namespace GrEngine_Vulkan
 		{
 			if (((*itt).second->GetEntityType() & GrEngine::EntityType::ObjectEntity) != 0)
 			{
+				static_cast<VulkanObject*>(drawables[(*itt).second->GetEntityID()])->updateShadowPipeline();
 				static_cast<VulkanObject*>(drawables[(*itt).second->GetEntityID()])->updateDescriptors();
 			}
 			else if (((*itt).second->GetEntityType() & GrEngine::EntityType::SkyboxEntity) != 0)
@@ -2206,6 +2207,7 @@ namespace GrEngine_Vulkan
 			}
 			else if (((*itt).second->GetEntityType() & GrEngine::EntityType::TerrainEntity) != 0)
 			{
+				static_cast<VulkanTerrain*>((*itt).second)->updateShadowPipeline();
 				static_cast<VulkanTerrain*>((*itt).second)->updateDescriptors();
 			}
 		}
@@ -2306,6 +2308,8 @@ namespace GrEngine_Vulkan
 				offset++;
 			}
 		}
+
+		updateShadowResources();
 	}
 
 	Resource<Texture*>* VulkanRenderer::loadTexture(std::vector<std::string> texture_path, GrEngine::TextureType type, VkImageViewType type_view, VkImageType type_img, VkFormat format_img, bool default_to_black)
@@ -3245,6 +3249,8 @@ namespace GrEngine_Vulkan
 			}
 			else if (!block_open && stream == "Skybox")
 			{
+				if (sky == nullptr)
+					initSkyEntity();
 				cur_ent = sky;
 				entities[sky->GetEntityID()] = sky;
 			}

@@ -301,7 +301,7 @@ namespace GrEngine
 
 		inline UINT& GetEntityID()
 		{
-			return *obj_id;
+ 			return *obj_id;
 		};
 
 		EntityProperty* AddNewProperty(PropertyType type);

@@ -37,6 +37,7 @@ namespace GrEngine_Vulkan
 		const std::array<std::string, 4> GetDisplacementTextures();
 
 		void recordShadowPass(VkCommandBuffer cmd, int instances);
+		void updateShadowPipeline();
 
 	protected:
 		void populateDescriptorSets();
@@ -66,7 +67,6 @@ namespace GrEngine_Vulkan
 	private:
 		void assignTextures(std::array<std::string, 4> color);
 		void assignNormals(std::array<std::string, 4> normals);
-		void updateShadowPipeline();
 
 		VkPipelineLayout shadowLayout;
 		VkPipeline shadowPipeline;

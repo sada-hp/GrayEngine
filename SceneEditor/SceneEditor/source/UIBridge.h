@@ -62,5 +62,7 @@ namespace SceneEditor
 		ExportDll const char* __stdcall GetTerrainNormal();
 		ExportDll const char* __stdcall GetTerrainDisplacement();
 		ExportDll const char* __stdcall GetSkyColor();
+		ExportDll void __stdcall ResetTools();
+		ExportDll void __stdcall ClearScene();
 	}
 }

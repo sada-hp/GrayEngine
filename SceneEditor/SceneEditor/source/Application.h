@@ -85,6 +85,7 @@ namespace GrEngine
             if (foliage_mask != nullptr)
             {
                 free(foliage_mask);
+                foliage_mask = nullptr;
             }
 
             Stop();
@@ -159,6 +160,34 @@ namespace GrEngine
                 stbi_write_png(fm.c_str(), mask_width, mask_height, 4, foliage_mask, mask_width * mask_channels);
                 was_mask_updated = false;
             }
+        }
+
+        void ClearScene() override
+        {
+            Engine::ClearScene();
+            if (foliage_mask != nullptr)
+            {
+                free(foliage_mask);
+                foliage_mask = nullptr;
+            }
+            static_cast<Object*>(Object::FindObject(brush))->SetVisisibility(false);
+            GetEventListener()->registerEvent("TerrainBlendMask", { false });
+            GetEventListener()->registerEvent("TerrainSculptMask", { false });
+
+            copy_buf = 0;
+            loaded_scene_path = "";
+            manipulation = 0;
+            mask_aspect_x = 1;
+            mask_aspect_y = 1;
+            subdivisions = 1.f;
+            mask_width = 0;
+            mask_height = 0;
+            mask_channels = 0;
+            fm = "";
+            was_mask_updated = false;
+
+            camera->PositionObjectAt(0, 3, 4);
+            camera->SetRotation(30, 0, 0);
         }
 
         void App_RotateCascade(float pitch, float yaw)
@@ -915,6 +944,15 @@ namespace GrEngine
             }
 
             return returning_string.c_str();
+        }
+        
+        void App_ResetTools()
+        {
+            manipulation = 0;
+            static_cast<Object*>(Object::FindObject(brush))->SetVisisibility(false);
+            GetEventListener()->registerEvent("TerrainBlendMask", { false });
+            GetEventListener()->registerEvent("TerrainSculptMask", { false });
+            SelectEntity(0);
         }
 
     private:

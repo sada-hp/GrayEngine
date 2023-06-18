@@ -136,12 +136,6 @@ namespace GrEngine
 		return GetRenderer()->GetMaterialNames(mesh_path);
 	}
 
-	void Engine::clearScene()
-	{
-		physEngine->CleanUp();
-		pWindow->getRenderer()->clearDrawables();
-	}
-
 	void Engine::DeleteEntity(UINT id)
 	{
 		physEngine->RemoveSimulationObject(id);
@@ -221,6 +215,13 @@ namespace GrEngine
 
 		auto time = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - start).count();
 		Logger::Out("Level %s loaded in %d ms", OutputType::Log, path, (int)time);
+	}
+
+	void Engine::ClearScene()
+	{
+		SelectEntity(0);
+		physEngine->CleanUp();
+		pWindow->getRenderer()->clearDrawables();
 	}
 
 	void Engine::SaveScene(const char* path)

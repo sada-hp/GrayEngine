@@ -17,7 +17,9 @@ void SceneEditor::CloseModelBrowser()
 
 void SceneEditor::AddEntity()
 {
-	SceneEditor::GetApplication()->App_UpdateEntity(SceneEditor::GetApplication()->GetContext()->AddEntity());
+    GrEngine::Entity* ent = SceneEditor::GetApplication()->GetContext()->AddEntity();
+    SceneEditor::GetApplication()->App_UpdateEntity(ent);
+	SceneEditor::GetApplication()->GetContext()->SelectEntity(ent->GetEntityID());
 }
 
 void SceneEditor::UpdateEntityProperty(int ID, const char* selected_property, const char* value)
@@ -440,4 +442,14 @@ const char* SceneEditor::GetTerrainDisplacement()
 const char* SceneEditor::GetSkyColor()
 {
     return SceneEditor::GetApplication()->App_GetSkyColor();
+}
+
+void SceneEditor::ResetTools()
+{
+    SceneEditor::GetApplication()->App_ResetTools();
+}
+
+void SceneEditor::ClearScene()
+{
+    SceneEditor::GetApplication()->ClearScene();
 }

@@ -8,7 +8,7 @@ namespace GrEngineBullet
 		constexpr double physics_step = 1 / 60.0;
 		if (simulate)
 		{
-			dynamicsWorld->stepSimulation(GrEngine::Globals::delta_time, 1, physics_step);
+			dynamicsWorld->stepSimulation(GrEngine::Globals::delta_time, 5, physics_step);
 		}
 	}
 

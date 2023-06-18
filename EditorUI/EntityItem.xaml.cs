@@ -26,6 +26,11 @@ namespace EditorUI
             get => EntityID;
         }
 
+        public string EntityName
+        {
+            get => Content.ToString();
+        }
+
         public EntityItem(int id)
         {
             EntityID = id;

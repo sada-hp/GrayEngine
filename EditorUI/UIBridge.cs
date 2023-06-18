@@ -125,6 +125,10 @@ namespace EditorUI
         public static extern IntPtr GetTerrainDisplacement();
         [DllImport("SceneEditor.dll", CallingConvention = CallingConvention.Cdecl)]
         public static extern IntPtr GetSkyColor();
+        [DllImport("SceneEditor.dll", CallingConvention = CallingConvention.Cdecl)]
+        public static extern void ResetTools();
+        [DllImport("SceneEditor.dll", CallingConvention = CallingConvention.Cdecl)]
+        public static extern void ClearScene();
 
         public static Wrapper[] wrappers = new Wrapper[2];
         public static Thread uThread;

@@ -255,6 +255,14 @@ namespace SceneEditor
                     else
                     {
                         app->RemoveInputCallback(1);
+                        if (app->char_mode)
+                        {
+                            app->RemoveInputCallback(5);
+                            app->TogglePhysicsState(false);
+                            app->App_ClearCharacter();
+                            app->char_mode = false;
+                            app->SetCursorState(true);
+                        }
                     }
                 }
                 else if (static_cast<int>(para[0]) == GLFW_KEY_DELETE && static_cast<int>(para[2]) == GLFW_PRESS)

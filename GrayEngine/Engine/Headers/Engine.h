@@ -48,9 +48,9 @@ namespace GrEngine
 		virtual void SaveScene(const char* path);
 		virtual void GenerateTerrain(int resolution, int width, int height, int depth, std::array<std::string, 6> maps, std::array<std::string, 4> normals, std::array<std::string, 4> displacement);
 		virtual void DeleteEntity(UINT id);
+		virtual void ClearScene();
 
 	protected:
-		void clearScene();
 		void TerminateLiraries();
 		inline void* getNativeWindow() { return pWindow->getNativeWindow(); };
 		AppWindow* GetWindowContext() { return pWindow; };

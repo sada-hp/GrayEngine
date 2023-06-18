@@ -49,6 +49,7 @@ namespace EditorUI
         IntPtr child_hwnd;
         System.Windows.Forms.Panel panel = new System.Windows.Forms.Panel();
         ObservableCollection<object> entities = new ObservableCollection<object>();
+        ObservableCollection<object> entities_filter = new ObservableCollection<object>();
         ObservableCollection<PropertyItem> ent_props = new ObservableCollection<PropertyItem>();
 
         public MainView()
@@ -60,7 +61,7 @@ namespace EditorUI
             panel.BorderStyle = BorderStyle.None;
             panel.Margin = new System.Windows.Forms.Padding(0);
             FormHost.Child = panel;
-            EntitiesList.ItemsSource = entities;
+            EntitiesList.ItemsSource = entities_filter;
             PropertiesCollection.ItemsSource = ent_props;
         }
 
@@ -128,6 +129,13 @@ namespace EditorUI
                 button.Background = null;
                 button.Foreground = new System.Windows.Media.SolidColorBrush(System.Windows.Media.Colors.WhiteSmoke);
                 entities.Add(button);
+
+                string filter = SearchBar.Text.Replace("Search...", "");
+
+                if (button.EntityName.ToLower().Contains(filter) || filter == "")
+                {
+                    entities_filter.Add(button);
+                }
             }
             else
             {
@@ -759,6 +767,54 @@ namespace EditorUI
         private void MenuItem_Click_1(object sender, RoutedEventArgs e)
         {
             System.Windows.MessageBox.Show("Esc - Free camera mode \nTab - Character mode\nMouse scroll - Control brush size\nCtrl+Mouse scroll - Control brush opacity\nCtrl+S - Save", "Help", MessageBoxButton.OK, MessageBoxImage.Information);
+        }
+
+        private void SelectTool_Click(object sender, RoutedEventArgs e)
+        {
+            UIBridge.ResetTools();
+        }
+
+        private void SearchBar_TextChanged(object sender, System.Windows.Controls.TextChangedEventArgs e)
+        {
+            if (SearchBar.IsKeyboardFocused)
+            {
+                entities_filter.Clear();
+                string filter = SearchBar.Text.Replace("Search...", "");
+
+                for (int i = 0; i < entities.Count; i++)
+                {
+                    if ((entities[i] as EntityItem).EntityName.ToLower().Contains(filter) || filter == "")
+                    {
+                        entities_filter.Add((entities[i] as EntityItem));
+                    }
+                }
+            }
+        }
+
+        private void SearchBar_GotFocus(object sender, RoutedEventArgs e)
+        {
+            if (SearchBar.Text == "Search...")
+            {
+                SearchBar.Text = "";
+            }
+        }
+
+        private void SearchBar_LostFocus(object sender, RoutedEventArgs e)
+        {
+            if (SearchBar.Text == "")
+            {
+                SearchBar.Text = "Search...";
+            }
+        }
+
+        private void CharacterButton_Click(object sender, RoutedEventArgs e)
+        {
+            UIBridge.TabKey(true);
+        }
+
+        private void NewLevelBtn_Click(object sender, RoutedEventArgs e)
+        {
+            UIBridge.ClearScene();
         }
     };
 }

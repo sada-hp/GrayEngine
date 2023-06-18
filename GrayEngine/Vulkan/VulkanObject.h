@@ -26,6 +26,8 @@ namespace GrEngine_Vulkan
 
 		void recordSelection(VkCommandBuffer cmd, VkExtent2D extent, UINT32 mode);
 		void recordShadowPass(VkCommandBuffer cmd, int instances);
+		void updateShadowPipeline();
+
 	protected:
 		void populateDescriptorSets() override;
 		bool createGraphicsPipeline() override;
@@ -35,7 +37,6 @@ namespace GrEngine_Vulkan
 
 	private:
 		void updateSelectionPipeline();
-		void updateShadowPipeline();
 
 		VkPipelineLayout selectionLayout;
 		VkPipeline selectionPipeline;
