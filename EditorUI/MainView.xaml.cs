@@ -816,5 +816,10 @@ namespace EditorUI
         {
             UIBridge.ClearScene();
         }
+
+        private void GridSplitter_DragDelta(object sender, System.Windows.Controls.Primitives.DragDeltaEventArgs e)
+        {
+            OutputConsole.Height -= e.VerticalChange;
+        }
     };
 }

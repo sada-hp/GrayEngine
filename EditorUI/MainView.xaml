@@ -945,8 +945,9 @@
                 </DockPanel>
                 <Grid Grid.Column="1" Grid.Row="1" Background="#FF22222B">
                     <Grid.RowDefinitions>
-                        <RowDefinition Height="75*"/>
-                        <RowDefinition Height="25*"/>
+                        <RowDefinition MinHeight="150"/>
+                        <RowDefinition Height="3"/>
+                        <RowDefinition Height="Auto" MinHeight="50"/>
                     </Grid.RowDefinitions>
                     <WindowsFormsHost x:Name="FormHost" Background="Black" SizeChanged="FormHost_SizeChanged" DockPanel.Dock="Top" Margin="5" Grid.Row="0">
                         <WindowsFormsHost.ContextMenu>
@@ -960,7 +961,8 @@
                             </ContextMenu>
                         </WindowsFormsHost.ContextMenu>
                     </WindowsFormsHost>
-                    <TextBox x:Name="OutputConsole" TextWrapping="Wrap" Foreground="#FFB9B9B9" Background="#FF262629" SelectionBrush="#FF8A9299" Padding="5" Margin="2" VerticalScrollBarVisibility="Auto" BorderThickness="0" IsReadOnly="True" HorizontalScrollBarVisibility="Hidden" Grid.Row="1" Style="{DynamicResource TextBoxStyle1}"/>
+                    <GridSplitter Grid.Row="1" Height="3" HorizontalAlignment="Stretch" Background="#FF22222B" DragDelta="GridSplitter_DragDelta"/>
+                    <TextBox x:Name="OutputConsole" TextWrapping="Wrap" Foreground="#FFB9B9B9" Background="#FF262629" SelectionBrush="#FF8A9299" Padding="5" Margin="2" VerticalScrollBarVisibility="Auto" BorderThickness="0" IsReadOnly="True" HorizontalScrollBarVisibility="Hidden" Grid.Row="2" Style="{DynamicResource TextBoxStyle1}" Height="150"/>
                 </Grid>
             </Grid>
         </DockPanel>

@@ -2091,6 +2091,43 @@ namespace GrEngine_Vulkan
 		VulkanAPI::CreateVkSwapchain(physicalDevice, logicalDevice, pParentWindow, surface, &swapChain, presMode);
 		createSwapChainImages();
 
+		if (swapChainImages.size() != max_async_frames)
+		{
+			for (std::vector<VkSemaphore>::iterator itt = imageAvailableSemaphore.begin(); itt != imageAvailableSemaphore.end(); ++itt)
+			{
+				VulkanAPI::DestroySemaphore((*itt));
+			}
+
+			for (std::vector<VkFence>::iterator itt = renderFence.begin(); itt != renderFence.end(); ++itt)
+			{
+				VulkanAPI::DestroyFence((*itt));
+			}
+
+			for (std::vector<VkSemaphore>::iterator itt = renderFinishedSemaphore.begin(); itt != renderFinishedSemaphore.end(); ++itt)
+			{
+				VulkanAPI::DestroySemaphore((*itt));
+			}
+
+			max_async_frames = swapChainImageViews.size();
+			imageAvailableSemaphore.resize(max_async_frames);
+			renderFinishedSemaphore.resize(max_async_frames);
+			renderFence.resize(max_async_frames);
+
+			for (std::vector<VkSemaphore>::iterator itt = imageAvailableSemaphore.begin(); itt != imageAvailableSemaphore.end(); ++itt)
+			{
+				VulkanAPI::CreateVkSemaphore(logicalDevice, &(*itt));
+			}
+
+			for (std::vector<VkFence>::iterator itt = renderFence.begin(); itt != renderFence.end(); ++itt)
+			{
+				VulkanAPI::CreateVkFence(logicalDevice, &(*itt));
+			}
+
+			for (std::vector<VkSemaphore>::iterator itt = renderFinishedSemaphore.begin(); itt != renderFinishedSemaphore.end(); ++itt)
+			{
+				VulkanAPI::CreateVkSemaphore(logicalDevice, &(*itt));
+			}
+		}
 		swapChainImageViews.resize(swapChainImages.size());
 
 		for (std::size_t i = 0; i < swapChainImages.size(); i++)
