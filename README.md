@@ -17,7 +17,7 @@ Vulkan Game Engine + WorldEditor [[download link](https://drive.google.com/file/
 * Bullet Physics
 * And more!
 
-## Editor movement controls:
+## Editor movement controls
 * Esc (with viewport focused) - free camera
 * Tab (with viewport focused) - character control
 * WASD (with one of above modes active) - move around
