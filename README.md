@@ -1,10 +1,28 @@
 Vulkan Game Engine + WorldEditor [[download link](https://drive.google.com/file/d/1MpZq4rXClwFvNyOUGPborKZa0O5cHLAL/view?usp=sharing)].
 
+## Features
+* Mesh loading and texturing
+* Skybox
+* Dynamic light sources
+  - Point light
+  - Omni light
+  - Spot light
+  - Directional light with CSM
+* Deffered shading
+* OIT
+* FXAA
+* Terrain generation
+* Terrain tesselation
+* Non constant density fog
+* Bullet Physics
+* And more!
+
 ## Editor movement controls:
 * Esc (with viewport focused) - free camera
 * Tab (with viewport focused) - character control
 * WASD (with one of above modes active) - move around
 
+## Other
 For now external libraries are missing, so you won't be able to build it yourself.
 
 
