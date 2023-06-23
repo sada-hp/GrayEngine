@@ -12,7 +12,7 @@ Vulkan Game Engine + WorldEditor [[download link](https://drive.google.com/file/
 * OIT
 * FXAA
 * Terrain generation
-* Terrain tesselation
+* Terrain tessellation
 * Non constant density fog
 * Bullet Physics
 * And more!
