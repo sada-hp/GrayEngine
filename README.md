@@ -8,7 +8,7 @@ Vulkan Game Engine + WorldEditor [[download link](https://drive.google.com/file/
   - Omni light
   - Spot light
   - Directional light with CSM
-* Deffered shading
+* Deferred shading
 * OIT
 * FXAA
 * Terrain generation
