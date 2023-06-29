@@ -25,6 +25,7 @@ Vulkan Game Engine + WorldEditor [[download link](https://drive.google.com/file/
 ## Other
 For now external libraries are missing, so you won't be able to build it yourself.
 
+[GRayWorldEditor.pdf](https://github.com/HarryP0ster/GrayEngine/files/11903884/GRayEngine.pdf)
 
 ![image](https://github.com/HarryP0ster/GrayEngine/assets/82880494/a54ea1a7-a474-4dac-8ccb-7a36f8d24e72)
 
