@@ -107,6 +107,7 @@ namespace GrEngine
             LoadTools();
             App_GetAllEntities();
             //GetRenderer()->UpdateFogParameters({ {0.15f, 0.125f, 0.15f}, 0.05f, 0.075f });
+            GetRenderer()->FarPlane = 1000.f;
             Run();
         }
 
@@ -787,12 +788,10 @@ namespace GrEngine
             if (manipulation >= 7 && transform_target != nullptr && !free_mode && transform_target->GetEntityID() == 100)
             {
                 POINTFLOAT point = GetCursorPosition();
-                float fov = 60.f;
                 POINT vSize = GetWindowSize();
                 glm::mat4 model = glm::translate(glm::mat4_cast(GetRenderer()->getActiveViewport()->GetObjectOrientation()), -GetRenderer()->getActiveViewport()->GetObjectPosition());
-                glm::mat4 proj = glm::perspective(glm::radians(fov), (float)vSize.x / (float)vSize.y, 0.1f, 1000.0f);
+                glm::mat4 proj = GetRenderer()->getActiveViewport()->GetProjectionMatrix((float)vSize.x / vSize.y, 0.1f, GetRenderer()->FarPlane);
                 glm::vec4 view(0, 0, vSize.x, vSize.y);
-                proj[1][1] *= -1;
 
                 glm::vec3 tset = glm::unProject(glm::vec3(point.x, point.y, 0.9f), model, proj, view);
                 glm::vec3 dir = glm::normalize(tset - GetRenderer()->getActiveViewport()->GetObjectPosition());
@@ -869,9 +868,8 @@ namespace GrEngine
                 float fov = 60.f;
                 POINT vSize = GetWindowSize();
                 glm::mat4 model = glm::translate(glm::mat4_cast(GetRenderer()->getActiveViewport()->GetObjectOrientation()), -GetRenderer()->getActiveViewport()->GetObjectPosition());
-                glm::mat4 proj = glm::perspective(glm::radians(fov), (float)vSize.x / (float)vSize.y, 0.1f, 1000.0f);
+                glm::mat4 proj = GetRenderer()->getActiveViewport()->GetProjectionMatrix((float)vSize.x / vSize.y, 0.1f, GetRenderer()->FarPlane);
                 glm::vec4 view(0, 0, vSize.x, vSize.y);
-                proj[1][1] *= -1;
 
                 glm::vec3 tset = glm::unProject(glm::vec3(point.x, point.y, 0.9f), model, proj, view);
                 glm::vec3 dir = glm::normalize(tset - GetRenderer()->getActiveViewport()->GetObjectPosition());
