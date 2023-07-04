@@ -166,8 +166,8 @@ namespace GrEngine_Vulkan
 
 		Resource<Texture*>* GetTextureResource(std::vector<std::string> names, GrEngine::TextureType type);
 
-		static void CalculateNormals(GrEngine_Vulkan::Mesh* target, bool clockwise = false);
-		static void CalculateTangents(GrEngine_Vulkan::Mesh* target, float u_scale = 1.f, float v_scale = 1.f, bool clockwise = false);
+		static void CalculateNormals(GrEngine_Vulkan::Mesh* target);
+		static void CalculateTangents(GrEngine_Vulkan::Mesh* target, float u_scale = 1.f, float v_scale = 1.f);
 		inline size_t CountTextures() { return texResources.size(); };
 
 	private:

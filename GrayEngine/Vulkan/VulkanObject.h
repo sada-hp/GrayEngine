@@ -20,6 +20,7 @@ namespace GrEngine_Vulkan
 		void GeneratePlaneMesh(float width, int subdivisions) override;
 		void GenerateBoxMesh(float width, float height, float depth) override;
 		void GenerateSphereMesh(double radius, int rings, int slices) override;
+		void RecalculateNormals() override;
 		void updateObject() override;
 		static uint32_t selected_id;
 		void destroyObject() override;

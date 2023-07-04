@@ -101,6 +101,7 @@ namespace GrEngine
 
 		virtual void GenerateSphereMesh(double radius, int rings, int slices) = 0;
 
+		virtual void RecalculateNormals();
 
 		virtual void Refresh() = 0;
 

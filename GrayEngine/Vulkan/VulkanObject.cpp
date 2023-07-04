@@ -929,6 +929,11 @@ namespace GrEngine_Vulkan
 		return true;
 	}
 
+	void VulkanObject::RecalculateNormals()
+	{
+		VulkanResourceManager::CalculateNormals(object_mesh);
+	}
+
 	bool VulkanObject::LoadMesh(const char* mesh_path)
 	{
 		auto resource = resources->GetMeshResource(mesh_path);
@@ -969,6 +974,8 @@ namespace GrEngine_Vulkan
 			float highest_pointx = 0.f;
 			float highest_pointy = 0.f;
 			float highest_pointz = 0.f;
+			bool has_normals = false;
+			bool has_tangents = false;
 
 			for (int mesh_ind = 0; mesh_ind < model->mNumMeshes; mesh_ind++)
 			{
@@ -986,11 +993,15 @@ namespace GrEngine_Vulkan
 					vertex.uv = { coord[vert_ind].x, coord[vert_ind].y };
 					vertex.uv_index = uv_ind;
 					if (cur_mesh->HasNormals())
+					{
 						vertex.norm = { cur_mesh->mNormals[vert_ind].x, cur_mesh->mNormals[vert_ind].y, cur_mesh->mNormals[vert_ind].z };
+						has_normals = true;
+					}
 					if (cur_mesh->HasTangentsAndBitangents())
 					{
 						vertex.tang = { cur_mesh->mTangents[vert_ind].x, cur_mesh->mTangents[vert_ind].y, cur_mesh->mTangents[vert_ind].z };
 						vertex.bitang = { cur_mesh->mBitangents[vert_ind].x, cur_mesh->mBitangents[vert_ind].y, cur_mesh->mBitangents[vert_ind].z };
+						has_tangents = true;
 					}
 
 					if (uniqueVertices.count(vertex) == 0)
@@ -1011,8 +1022,10 @@ namespace GrEngine_Vulkan
 				}
 			}
 
-			//VulkanResourceManager::CalculateNormals(target_mesh);
-			//VulkanResourceManager::CalculateTangents(target_mesh);
+			if (!has_normals)
+				VulkanResourceManager::CalculateNormals(target_mesh);
+			if (!has_tangents)
+				VulkanResourceManager::CalculateTangents(target_mesh);
 			VulkanAPI::m_createVkBuffer(logicalDevice, memAllocator, target_mesh->vertices.data(), sizeof(target_mesh->vertices[0]) * target_mesh->vertices.size(), VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, &target_mesh->vertexBuffer);
 			VulkanAPI::m_createVkBuffer(logicalDevice, memAllocator, target_mesh->indices.data(), sizeof(target_mesh->indices[0]) * target_mesh->indices.size(), VK_BUFFER_USAGE_INDEX_BUFFER_BIT, &target_mesh->indexBuffer);
 			target_mesh->bounds = glm::vec3(highest_pointx, highest_pointy, highest_pointz);
@@ -1112,33 +1125,26 @@ namespace GrEngine_Vulkan
 			Mesh* target_mesh = new Mesh();
 
 			target_mesh->vertices = {
-				{{{xcoord, ycoord, -zcoord, 1.f},{0.577400, 0.577400, -0.577300},{ 1.f, 1.0f }}},
-				{{{xcoord, ycoord, zcoord, 1.f},{0.577400, 0.577400, 0.577300},{ 1.f, 1.0f }}},
-				{{{xcoord, -ycoord, zcoord, 1.f},{0.577400, -0.577300, 0.577400},{ 1.f, 1.0f }}},
-				{{{-xcoord, ycoord, -zcoord, 1.f},{-0.577300, 0.577400, -0.577400},{ 1.f, 1.0f }}},
-				{{{xcoord, -ycoord, -zcoord, 1.f},{0.577400, -0.577300, -0.577400},{ 1.f, 1.0f }}},
-				{{{-xcoord, -ycoord, -zcoord, 1.f},{-0.577400, -0.577300, -0.577400},{ 1.f, 1.0f }}},
-				{{{xcoord, ycoord, -zcoord, 1.f},{0.577300, 0.577400, -0.577400},{ 1.f, 1.0f }}},
-				{{{xcoord, ycoord, zcoord, 1.f},{0.577300, 0.577400, 0.577400},{ 1.f, 1.0f }}},
-				{{{-xcoord, ycoord, zcoord, 1.f},{-0.577300, 0.577400, 0.577400},{ 1.f, 1.0f }}},
-				{{{-xcoord, -ycoord, zcoord, 1.f},{-0.577400, -0.577300, 0.577400},{ 1.f, 1.0f }}},
-				{{{-xcoord, ycoord, zcoord, 1.f},{-0.577400, 0.577400, 0.577300},{ 1.f, 1.0f }}},
-				{{{-xcoord, ycoord, -zcoord, 1.f},{-0.577400, 0.577300, -0.577400},{ 1.f, 1.0f }}},
-				{{{-xcoord, -ycoord, -zcoord, 1.f},{-0.577400, -0.577300, -0.577400},{ 1.f, 1.0f }}},
-				{{{-xcoord, ycoord, -zcoord, 1.f},{-0.577300, 0.577400, -0.577400},{ 1.f, 1.0f }}},
-				{{{-xcoord, ycoord, zcoord, 1.f},{-0.577300, 0.577400, 0.577400},{ 1.f, 1.0f }}},
-				{{{xcoord, -ycoord, zcoord, 1.f},{0.577400, -0.577300, 0.577400},{ 1.f, 1.0f }}},
-				{{{-xcoord, -ycoord, zcoord, 1.f},{-0.577400, -0.577300, 0.577400},{ 1.f, 1.0f }}},
-				{{{xcoord, ycoord, -zcoord, 1.f},{0.577300, 0.577400, -0.577400},{ 1.f, 1.0f }}},
-				{{{xcoord, -ycoord, -zcoord, 1.f},{0.577400, -0.577400, -0.577300},{ 1.f, 1.0f }}},
-				{{{-xcoord, -ycoord, zcoord, 1.f},{-0.577400, -0.577400, 0.577300},{ 1.f, 1.0f }}},
-				{{{-xcoord, -ycoord, -zcoord, 1.f},{-0.577300, -0.577400, -0.577400},{ 1.f, 1.0f }}},
-				{{ {xcoord, -ycoord, zcoord, 1.f},{0.577300, -0.577400, 0.577400},{ 1.f, 1.0f }}}
+				{{{xcoord, ycoord, zcoord, 1.f},{0.0, 0.0, 0.0},{ 1.f, 1.0f }}},
+				{{{xcoord, ycoord, -zcoord, 1.f},{0.0, 0.0, 0.0},{ 1.f, 1.0f }}},
+				{{{-xcoord, ycoord, zcoord, 1.f},{0.0, 0.0, 0.0},{ 1.f, 1.0f }}},
+				{{{-xcoord, ycoord, -zcoord, 1.f},{0.0, 0.0, 0.0},{ 1.f, 1.0f }}},
+				{{{xcoord, -ycoord, zcoord, 1.f},{0.0, 0.0, 0.0},{ 1.f, 1.0f }}},
+				{{{xcoord, -ycoord, -zcoord, 1.f},{0.0, 0.0, 0.0},{ 1.f, 1.0f }}},
+				{{{-xcoord, -ycoord, zcoord, 1.f},{0.0, 0.0, 0.0},{ 1.f, 1.0f }}},
+				{{{-xcoord, -ycoord, -zcoord, 1.f},{0.0, 0.0, 0.0},{ 1.f, 1.0f }}}
 			};
 
-			target_mesh->indices = { 0, 1, 2, 3, 4, 5, 3, 6, 4, 7, 8, 9, 10, 11, 12, 13, 14, 7, 0, 2, 4, 7, 9, 15, 10, 12, 16, 13, 7, 17, 18, 19, 20, 18, 21, 19 };
 
-			//CalculateNormals(target_mesh);
+			target_mesh->indices = { 0, 1, 2, 2, 1, 3,
+				6, 5, 4, 7, 5, 6,
+				0, 2, 6, 6, 4, 0,
+				1, 0, 5, 4, 5, 0,
+				5, 7, 1, 3, 1, 7,
+				7, 6, 3, 2, 3, 6
+			};
+
+			VulkanResourceManager::CalculateNormals(target_mesh);
 			VulkanAPI::m_createVkBuffer(logicalDevice, memAllocator, target_mesh->vertices.data(), sizeof(target_mesh->vertices[0]) * target_mesh->vertices.size(), VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, &target_mesh->vertexBuffer);
 			VulkanAPI::m_createVkBuffer(logicalDevice, memAllocator, target_mesh->indices.data(), sizeof(target_mesh->indices[0]) * target_mesh->indices.size(), VK_BUFFER_USAGE_INDEX_BUFFER_BIT, &target_mesh->indexBuffer);
 			resource = resources->AddMeshResource(res_name.c_str(), target_mesh);

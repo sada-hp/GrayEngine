@@ -265,40 +265,37 @@ namespace GrEngine_Vulkan
 		return nullptr;
 	}
 
-	void VulkanResourceManager::CalculateNormals(GrEngine_Vulkan::Mesh* target, bool clockwise)
+	void VulkanResourceManager::CalculateNormals(GrEngine_Vulkan::Mesh* target)
 	{
 		if (target != nullptr)
 		{
-			std::map<UINT, glm::vec4> normals;
+			for (int i = 0; i < target->vertices.size(); i++)
+			{
+				target->vertices[i].norm = glm::vec3(0.f);
+			}
+
 			for (int i = 0; i < target->indices.size(); i += 3)
 			{
 				Vertex& A = target->vertices[target->indices[i]];
 				Vertex& B = target->vertices[target->indices[i + 1]];
 				Vertex& C = target->vertices[target->indices[i + 2]];
-				glm::vec3 faceNormal;
-				if (clockwise)
-				{
-					faceNormal = glm::normalize(glm::cross(glm::vec3(C.pos) - glm::vec3(A.pos), glm::vec3(B.pos) - glm::vec3(A.pos)));
+				glm::vec3 contributingNormal = glm::cross(glm::vec3(B.pos) - glm::vec3(A.pos), glm::vec3(C.pos) - glm::vec3(A.pos));
+				float area = glm::length(contributingNormal) / 2.f;
+				glm::vec3 contributingNormal2 = glm::normalize(contributingNormal) * area;
 
-				}
-				else
-				{
-					faceNormal = glm::normalize(glm::cross(glm::vec3(B.pos) - glm::vec3(A.pos), glm::vec3(C.pos) - glm::vec3(A.pos)));
-				}
-
-				normals[target->indices[i]] += glm::vec4(faceNormal, normals[target->indices[i]].w++);
-				normals[target->indices[i + 1]] += glm::vec4(faceNormal, normals[target->indices[i + 1]].w++);
-				normals[target->indices[i + 2]] += glm::vec4(faceNormal, normals[target->indices[i + 2]].w++);
+				target->vertices[target->indices[i]].norm += contributingNormal;
+				target->vertices[target->indices[i + 1]].norm += contributingNormal;
+				target->vertices[target->indices[i + 2]].norm += contributingNormal;
 			}
 
-			for (std::map<UINT, glm::vec4>::iterator itt = normals.begin(); itt != normals.end(); ++itt)
+			for (int i = 0; i < target->vertices.size(); i++)
 			{
-				target->vertices[(*itt).first].norm = glm::normalize(glm::vec3((*itt).second.x, (*itt).second.y, (*itt).second.z) / (*itt).second.w);
+				target->vertices[i].norm = glm::normalize(target->vertices[i].norm);
 			}
 		}
 	}
 
-	void VulkanResourceManager::CalculateTangents(GrEngine_Vulkan::Mesh* target, float u_scale, float v_scale, bool clockwise)
+	void VulkanResourceManager::CalculateTangents(GrEngine_Vulkan::Mesh* target, float u_scale, float v_scale)
 	{
 		if (target != nullptr)
 		{
@@ -317,20 +314,10 @@ namespace GrEngine_Vulkan
 				glm::vec2 delta1;
 				glm::vec2 delta2;
 
-				if (clockwise)
-				{
-					diff1 = C.pos - A.pos;
-					diff2 = B.pos - A.pos;
-					delta1 = glm::vec2(uv2.x, 1.f - uv2.y) - glm::vec2(uv0.x, 1.f - uv0.y);
-					delta2 = glm::vec2(uv1.x, 1.f - uv1.y) - glm::vec2(uv0.x, 1.f - uv0.y);
-				}
-				else
-				{
-					diff1 = B.pos - A.pos;
-					diff2 = C.pos - A.pos;
-					delta1 = glm::vec2(uv1.x, 1.f - uv1.y) - glm::vec2(uv0.x, 1.f - uv0.y);
-					delta2 = glm::vec2(uv2.x, 1.f - uv2.y) - glm::vec2(uv0.x, 1.f - uv0.y);
-				}
+				diff1 = B.pos - A.pos;
+				diff2 = C.pos - A.pos;
+				delta1 = glm::vec2(uv1.x, 1.f - uv1.y) - glm::vec2(uv0.x, 1.f - uv0.y);
+				delta2 = glm::vec2(uv2.x, 1.f - uv2.y) - glm::vec2(uv0.x, 1.f - uv0.y);
 
 				float f = 1.0f / (delta1.x * delta2.y - delta1.y * delta2.x);
 				glm::vec3 tangent;
