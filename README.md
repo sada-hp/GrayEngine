@@ -22,12 +22,15 @@ Vulkan Game Engine + WorldEditor [[download link](https://drive.google.com/file/
 * Tab (with viewport focused) - character control
 * WASD (with one of above modes active) - move around
 
-## Other
-For now external libraries are missing, so you won't be able to build it yourself.
-
-[GRayWorldEditor.pdf](https://github.com/HarryP0ster/GrayEngine/files/11903884/GRayEngine.pdf)
-
+## Screenshots
 ![image](https://github.com/HarryP0ster/GrayEngine/assets/82880494/a54ea1a7-a474-4dac-8ccb-7a36f8d24e72)
 
 ![image](https://github.com/HarryP0ster/GrayEngine/assets/82880494/8692dfc6-b97f-40c5-a2c1-36b3ef7c5b5c)
 
+## Video
+[Watch the video preview](https://www.youtube.com/watch?v=Fc9zqN4qZv0&t)
+
+## Other
+For now external libraries are missing, so you won't be able to build it yourself.
+
+[GRayWorldEditor.pdf](https://github.com/HarryP0ster/GrayEngine/files/11903884/GRayEngine.pdf)
