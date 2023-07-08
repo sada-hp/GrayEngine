@@ -3288,7 +3288,7 @@ namespace GrEngine_Vulkan
 		//glfwSetWindowAttrib(pParentWindow, GLFW_RESIZABLE, 0);
 		//Initialized = false;
 
-		std::ifstream file(path, std::ios::ate | std::ios::binary);
+		std::ifstream file(path, std::ios::ate);
 
 		if (!file.is_open())
 		{

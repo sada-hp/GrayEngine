@@ -390,46 +390,55 @@ namespace GrEngine_Vulkan
 
 	void VulkanTerrain::SaveTerrain(const char* filepath)
 	{
-		if (!was_updated) return;
-
 		std::fstream new_file;
-		new_file.open(filepath, std::fstream::out | std::ios::trunc);
+		std::string path = std::string(filepath);
+		new_file.open(path.c_str(), std::fstream::out | std::ios::trunc | std::ios::binary);
 
 		if (!new_file)
 		{
 			Logger::Out("Couldn't create file for saving!", OutputType::Error);
 			return;
 		}
-
-		new_file << "w " << size.width << std::endl;
-		new_file << "h " << size.height << std::endl;
-		new_file << "d " << size.depth << std::endl;
-		new_file << "r " << size.resolution << std::endl;
-		new_file << "m " << (foliageMask->texture_collection[0] == "" ? "empty_texture" : foliageMask->texture_collection[0]) << std::endl;
-
+		new_file.write(reinterpret_cast<const char*>(&size.width), sizeof(size.width));
+		new_file.write(reinterpret_cast<const char*>(&size.height), sizeof(size.height));
+		new_file.write(reinterpret_cast<const char*>(&size.depth), sizeof(size.depth));
+		new_file.write(reinterpret_cast<const char*>(&size.resolution), sizeof(size.resolution));
+		std::string mask = (foliageMask->texture_collection[0] == "" ? "empty_texture" : foliageMask->texture_collection[0]);
+		int mask_len = mask.size();
+		new_file.write(reinterpret_cast<const char*>(&mask_len), sizeof(mask_len));
+		new_file.write(mask.c_str(), mask.size());
 		for (std::vector<Texture*>::iterator itt = object_texture.begin(); itt != object_texture.end(); ++itt)
 		{
-			new_file << "t " << ((*itt)->texture_collection[0] == "" ? "empty_texture" : (*itt)->texture_collection[0]) << std::endl;
+			std::string color = ((*itt)->texture_collection[0] == "" ? "empty_texture" : (*itt)->texture_collection[0]);
+			int color_len = color.size();
+			new_file.write(reinterpret_cast<const char*>(&color_len), sizeof(color_len));
+			new_file.write(color.c_str(), color.size());
 		}
 
 		for (std::vector<Texture*>::iterator itt = object_normal.begin(); itt != object_normal.end(); ++itt)
 		{
-			new_file << "nt " << ((*itt)->texture_collection[0] == "" ? "empty_texture" : (*itt)->texture_collection[0]) << std::endl;
+			std::string normal = ((*itt)->texture_collection[0] == "" ? "empty_texture" : (*itt)->texture_collection[0]);
+			int normal_len = normal.size();
+			new_file.write(reinterpret_cast<const char*>(&normal_len), sizeof(normal_len));
+			new_file.write(normal.c_str(), normal.size());
 		}
 
 		for (std::vector<Texture*>::iterator itt = object_displacement.begin(); itt != object_displacement.end(); ++itt)
 		{
-			new_file << "dt " << ((*itt)->texture_collection[0] == "" ? "empty_texture" : (*itt)->texture_collection[0]) << std::endl;
+			std::string height = ((*itt)->texture_collection[0] == "" ? "empty_texture" : (*itt)->texture_collection[0]);
+			int height_len = height.size();
+			new_file.write(reinterpret_cast<const char*>(&height_len), sizeof(height_len));
+			new_file.write(height.c_str(), height.size());
 		}
 
 		for (std::vector<GrEngine_Vulkan::Vertex>::iterator itt = object_mesh->vertices.begin(); itt != object_mesh->vertices.end(); ++itt)
 		{
-			new_file << "v " << (*itt).pos.x << " " << (*itt).pos.y << " " << (*itt).pos.z << std::endl;
-			new_file << "u " << (*itt).uv.x << " " << (*itt).uv.y << std::endl;
-			new_file << "ev" << std::endl;
+			float positinos[3] = { (*itt).pos.x, (*itt).pos.y, (*itt).pos.z };
+			float uv[2] = { (*itt).uv.x, (*itt).uv.y };
+			new_file.write(reinterpret_cast<const char*>(positinos), sizeof(positinos));
+			new_file.write(reinterpret_cast<const char*>(uv), sizeof(uv));
 		}
 
-		new_file << '\0';
 		new_file.close();
 		was_updated = false;
 	}
@@ -468,7 +477,8 @@ namespace GrEngine_Vulkan
 		}
 
 		object_mesh = new Mesh();
-		std::ifstream file(filepath, std::ios::ate | std::ios::binary);
+		std::string path = std::string(filepath);
+		std::ifstream file(path.c_str(), std::ios::ate | std::ios::binary);
 
 		if (!file)
 		{
@@ -488,99 +498,74 @@ namespace GrEngine_Vulkan
 		int normal_index = 0;
 		int height_index = 0;
 
-		while (file >> stream && !file.eof())
+		file.read(reinterpret_cast<char*>(&size.width), sizeof(size.width));
+		file.read(reinterpret_cast<char*>(&size.height), sizeof(size.height));
+		file.read(reinterpret_cast<char*>(&size.depth), sizeof(size.depth));
+		file.read(reinterpret_cast<char*>(&size.resolution), sizeof(size.resolution));
+
+		int mask_len = 0;
+		std::string mask = "";
+		file.read(reinterpret_cast<char*>(&mask_len), sizeof(mask_len));
+		mask.resize(mask_len);
+		file.read((char*)mask.data(), mask_len);
+
+		for (int i = 0; i < 4; i++)
 		{
-			if (stream == "v")
-			{
-				file >> stream;
-				vert.pos[0] = std::atof(stream.c_str());
-				file >> stream;
-				vert.pos[1] = std::atof(stream.c_str());
-				file >> stream;
-				vert.pos[2] = std::atof(stream.c_str());
-			}
-			else if (stream == "u")
-			{
-				file >> stream;
-				vert.uv[0] = std::atof(stream.c_str());
-				file >> stream;
-				vert.uv[1] = std::atof(stream.c_str());
-			}
-			else if (stream == "w")
-			{
-				file >> stream;
-				size.width = std::atof(stream.c_str());
-			}
-			else if (stream == "h")
-			{
-				file >> stream;
-				size.height = std::atof(stream.c_str());
-			}
-			else if (stream == "d")
-			{
-				file >> stream;
-				size.depth = std::atof(stream.c_str());
-			}
-			else if (stream == "r")
-			{
-				file >> stream;
-				size.resolution = std::atof(stream.c_str());
-			}
-			else if (stream == "ev")
-			{
-				if ((vertex + 1) / size.resolution < size.resolution - 1 && (vertex + 1) % size.resolution > 0)
-				{
-					object_mesh->indices.push_back(vertex);
-					object_mesh->indices.push_back(vertex + size.resolution);
-					object_mesh->indices.push_back(vertex + 1);
+			int len = 0;
+			file.read(reinterpret_cast<char*>(&len), sizeof(len));
+			textures[i].resize(len);
+			file.read((char*)textures[i].data(), len);
+		}
 
-					object_mesh->indices.push_back(vertex + size.resolution);
-					object_mesh->indices.push_back(vertex + size.resolution + 1);
-					object_mesh->indices.push_back(vertex + 1);
-				}
+		for (int i = 0; i < 4; i++)
+		{
+			int len = 0;
+			file.read(reinterpret_cast<char*>(&len), sizeof(len));
+			normals[i].resize(len);
+			file.read((char*)normals[i].data(), len);
+		}
 
-				vertex++;
-				object_mesh->vertices.push_back(vert);
-				vert = {};
-			}
-			else if (stream == "m")
-			{
-				file >> stream;
-				foliageMask = static_cast<VulkanRenderer*>(p_Owner)->loadTexture({ stream }, GrEngine::TextureType::Color, VK_IMAGE_VIEW_TYPE_2D)->AddLink();
-			}
-			else if (stream == "t" && map_index < 4)
-			{
-				file >> stream;
-				if (stream != "empty_texture")
-				{
-					textures[map_index] = stream;
-				}
+		for (int i = 0; i < 4; i++)
+		{
+			int len = 0;
+			file.read(reinterpret_cast<char*>(&len), sizeof(len));
+			displacements[i].resize(len);
+			file.read((char*)displacements[i].data(), len);
+		}
 
-				map_index++;
-			}
-			else if (stream == "nt" && normal_index < 4)
-			{
-				file >> stream;
-				if (stream != "empty_texture")
-				{
-					normals[normal_index] = stream;
-				}
+		while (!file.eof())
+		{
+			float positinos[3];
+			float uv[2];
+			file.read(reinterpret_cast<char*>(positinos), sizeof(positinos));
+			file.read(reinterpret_cast<char*>(uv), sizeof(uv));
 
-				normal_index++;
-			}
-			else if (stream == "dt" && height_index < 4)
-			{
-				file >> stream;
-				if (stream != "empty_texture")
-				{
-					displacements[height_index] = stream;
-				}
+			vert.pos.x = positinos[0];
+			vert.pos.y = positinos[1];
+			vert.pos.z = positinos[2];
 
-				height_index++;
+			vert.uv.x = uv[0];
+			vert.uv.y = uv[1];
+
+			if ((vertex + 1) / size.resolution < size.resolution - 1 && (vertex + 1) % size.resolution > 0)
+			{
+				object_mesh->indices.push_back(vertex);
+				object_mesh->indices.push_back(vertex + size.resolution);
+				object_mesh->indices.push_back(vertex + 1);
+
+				object_mesh->indices.push_back(vertex + size.resolution);
+				object_mesh->indices.push_back(vertex + size.resolution + 1);
+				object_mesh->indices.push_back(vertex + 1);
 			}
+
+			vertex++;
+			object_mesh->vertices.push_back(vert);
+			vert = {};
 		}
 		file.close();
 
+
+		foliageMask = static_cast<VulkanRenderer*>(p_Owner)->loadTexture({ mask }, GrEngine::TextureType::Color, VK_IMAGE_VIEW_TYPE_2D)->AddLink();
 		assignTextures({ textures[0], textures[1], textures[2], textures[3] });
 		assignNormals({ normals[0], normals[1], normals[2], normals[3] });
 		for (int i = 0; i < 4; i++)
