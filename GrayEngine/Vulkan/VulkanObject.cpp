@@ -810,6 +810,7 @@ namespace GrEngine_Vulkan
 			object_texture[i] = nullptr;
 		}
 		object_texture.resize(0);
+		object_texture.reserve(textures_vector.size());
 
 		//Precache
 		for (auto texture : textures_vector)
@@ -858,6 +859,7 @@ namespace GrEngine_Vulkan
 			object_normal[i] = nullptr;
 		}
 		object_normal.resize(0);
+		object_normal.reserve(normals_vector.size());
 
 		//Precache
 		for (auto texture : normals_vector)
@@ -977,6 +979,19 @@ namespace GrEngine_Vulkan
 			bool has_normals = false;
 			bool has_tangents = false;
 
+			int indices_count = 0;
+			for (int mesh_ind = 0; mesh_ind < model->mNumMeshes; mesh_ind++)
+			{
+				auto num_vert = model->mMeshes[mesh_ind]->mNumVertices;
+				for (int vert_ind = 0; vert_ind < num_vert; vert_ind++)
+				{
+					indices_count++;
+				}
+			}
+
+			target_mesh->indices.reserve(indices_count);
+			target_mesh->vertices.reserve(indices_count);
+
 			for (int mesh_ind = 0; mesh_ind < model->mNumMeshes; mesh_ind++)
 			{
 				auto num_vert = model->mMeshes[mesh_ind]->mNumVertices;
@@ -1021,6 +1036,9 @@ namespace GrEngine_Vulkan
 					target_mesh->indices.push_back(index);
 				}
 			}
+
+			target_mesh->indices.shrink_to_fit();
+			target_mesh->vertices.shrink_to_fit();
 
 			if (!has_normals)
 				VulkanResourceManager::CalculateNormals(target_mesh);
@@ -1169,72 +1187,58 @@ namespace GrEngine_Vulkan
 
 		if (resource == nullptr)
 		{
-			double slice_sub = 360. / (double)slices;
-			double ring_sub = 2 * radius / (float)rings;
 			Mesh* target_mesh = new Mesh();
-			target_mesh->vertices.push_back({ {{0, radius, 0, 1.f},{1, 1, 1},{ .5, .5 }} });
+			float x, y, z, xy;
+			float nx, ny, nz, lengthInv = 1.0f / radius;
+			float s, t;
 
-			double h = radius - ring_sub;
-			double actual_radius = glm::sqrt(glm::pow(radius, 2)-glm::pow(h, 2));
-			double frac = actual_radius / (double)radius;
-			for (int s = 0; s < slices; s++)
+			float sectorStep = 2 * glm::pi<double>() / rings;
+			float stackStep = glm::pi<double>() / slices;
+			float sectorAngle, stackAngle;
+
+			target_mesh->indices.reserve(slices * rings * 3);
+			target_mesh->vertices.reserve(slices * rings * 3);
+
+			for (int i = 0; i <= slices; ++i)
 			{
-				double sin = (double)glm::sin(glm::radians((float)(slice_sub * s)));
-				double cos = (double)glm::cos(glm::radians((float)(slice_sub * s)));
-				target_mesh->vertices.push_back({ {{actual_radius *sin, h, actual_radius * cos, 1.},{1., 1., 1.},{ .5 * .5 * frac * sin, .5 + .5 * frac * cos }} });
-			}
-			target_mesh->vertices.push_back({ {{actual_radius * (double)glm::sin(0), h, actual_radius * (double)glm::cos(0), 1.},{1., 1., 1.}, { .5 + .5 * frac * (double)glm::sin(0), .5 + .5 * frac * (double)glm::cos(0) }} });
+				stackAngle = glm::pi<double>() / 2 - i * stackStep;
+				xy = radius * glm::cos(stackAngle);
+				z = radius * glm::sin(stackAngle);
 
-			for (int i = 1; i < target_mesh->vertices.size() - 1; i++)
-			{
-				target_mesh->indices.push_back(0);
-				target_mesh->indices.push_back(i);
-				target_mesh->indices.push_back(i + 1);
-			}
-
-			target_mesh->indices.push_back(0);
-			target_mesh->indices.push_back(target_mesh->vertices.size() - 1);
-			target_mesh->indices.push_back(1);
-
-			for (int r = 1; r < rings - 1; r++)
-			{
-				h = radius - ring_sub * (r + 1);
-				actual_radius = glm::sqrt(glm::pow(radius, 2) - glm::pow(h, 2));
-				frac = actual_radius / radius;
-				for (int s = 0; s < slices; s++)
+				for (int j = 0; j <= rings; ++j)
 				{
-					double sin = (double)glm::sin(glm::radians((float)(slice_sub * s)));
-					double cos = (double)glm::cos(glm::radians((float)(slice_sub * s)));
-					target_mesh->vertices.push_back({ {{actual_radius * sin, h, actual_radius * cos, 1.},{1., 1., 1.}, { .5 + .5 * frac * sin, .5 + .5 * frac * cos }} });
+					sectorAngle = j * sectorStep;
+					x = xy * glm::cos(sectorAngle);
+					y = xy * glm::sin(sectorAngle);
+					target_mesh->vertices.push_back({ { {x, y, z, 1.f}, {x * lengthInv, y * lengthInv, z * lengthInv}, {0.f, 0.f} } });
 				}
-				target_mesh->vertices.push_back({ {{actual_radius * (double)glm::sin(0), h, actual_radius * (double)glm::cos(0), 1.},{1., 1., 1.}, { .5 + .5 * frac * (double)glm::sin(0), .5 + .5 * frac * (double)glm::cos(0) }} });
 			}
 
-			for (int i = slices + 1; i < target_mesh->vertices.size() - 1; i++)
+			for (int i = 0; i < slices; ++i)
 			{
-				target_mesh->indices.push_back(i - slices);
-				target_mesh->indices.push_back(i);
-				target_mesh->indices.push_back(i + 1);
+				int k1 = i * (rings + 1);
+				int k2 = k1 + rings + 1;
 
-				target_mesh->indices.push_back(i + 1);
-				target_mesh->indices.push_back(i - slices + 1);
-				target_mesh->indices.push_back(i - slices);
+				for (int j = 0; j < rings; ++j, ++k1, ++k2)
+				{
+					if (i != 0)
+					{
+						target_mesh->indices.push_back(k1);
+						target_mesh->indices.push_back(k2);
+						target_mesh->indices.push_back(k1 + 1);
+					}
+					if (i != (slices - 1))
+					{
+						target_mesh->indices.push_back(k1 + 1);
+						target_mesh->indices.push_back(k2);
+						target_mesh->indices.push_back(k2 + 1);
+					}
+				}
 			}
 
-			target_mesh->vertices.push_back({ {{0, -radius, 0, 1.},{1., 1., 1.},{ .5, .5 }} });
+			target_mesh->indices.shrink_to_fit();
+			target_mesh->vertices.shrink_to_fit();
 
-			for (int i = target_mesh->vertices.size() - slices - 1; i < target_mesh->vertices.size() - 2; i++)
-			{
-				target_mesh->indices.push_back(target_mesh->vertices.size() - 1);
-				target_mesh->indices.push_back(i + 1);
-				target_mesh->indices.push_back(i);
-			}
-
-			target_mesh->indices.push_back(target_mesh->vertices.size() - 1);
-			target_mesh->indices.push_back(target_mesh->vertices.size() - slices - 1);
-			target_mesh->indices.push_back(target_mesh->vertices.size() - 2);
-
-			VulkanResourceManager::CalculateNormals(target_mesh);
 			VulkanAPI::m_createVkBuffer(logicalDevice, memAllocator, target_mesh->vertices.data(), sizeof(target_mesh->vertices[0]) * target_mesh->vertices.size(), VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, &target_mesh->vertexBuffer);
 			VulkanAPI::m_createVkBuffer(logicalDevice, memAllocator, target_mesh->indices.data(), sizeof(target_mesh->indices[0]) * target_mesh->indices.size(), VK_BUFFER_USAGE_INDEX_BUFFER_BIT, &target_mesh->indexBuffer);
 			resource = resources->AddMeshResource(res_name.c_str(), target_mesh);

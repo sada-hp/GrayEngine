@@ -1326,7 +1326,7 @@ namespace GrEngine_Vulkan
 
 #pragma region Structs
 
-	VkDeviceCreateInfo VulkanAPI::StructDeviceCreateInfo(VkPhysicalDevice physicalDevice, VkPhysicalDeviceFeatures* deviceFeatures, VkDeviceQueueCreateInfo* deviceQueues, uint32_t queuesCount, const char* const* deviceExtensions, uint32_t extensionsCount)
+	VkDeviceCreateInfo VulkanAPI::StructDeviceCreateInfo(VkPhysicalDevice physicalDevice, VkPhysicalDeviceFeatures* deviceFeatures, VkDeviceQueueCreateInfo* deviceQueues, uint32_t queuesCount, const char* const* deviceExtensions, uint32_t extensionsCount) noexcept
 	{
 		VkDeviceCreateInfo createInfo{};
 		createInfo.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
@@ -1340,7 +1340,7 @@ namespace GrEngine_Vulkan
 		return createInfo;
 	}
 
-	std::vector<VkDeviceQueueCreateInfo> VulkanAPI::StructQueueCreateInfo(VkPhysicalDevice physicalDevice, VkSurfaceKHR surface, std::vector<VkQueueFlagBits> families, float* priority)
+	std::vector<VkDeviceQueueCreateInfo> VulkanAPI::StructQueueCreateInfo(VkPhysicalDevice physicalDevice, VkSurfaceKHR surface, std::vector<VkQueueFlagBits> families, float* priority) noexcept
 	{
 		std::vector<VkDeviceQueueCreateInfo> queueCreateInfos;
 		std::vector<int32_t> familyIndices = FindFamilyIndicies(physicalDevice, surface, families);
@@ -1364,7 +1364,7 @@ namespace GrEngine_Vulkan
 		return queueCreateInfos;
 	}
 
-	VkPhysicalDeviceFeatures VulkanAPI::StructPhysicalDeviceFeatures()
+	VkPhysicalDeviceFeatures VulkanAPI::StructPhysicalDeviceFeatures() noexcept
 	{
 		VkPhysicalDeviceFeatures deviceFeatures{};
 		deviceFeatures.sampleRateShading = VK_TRUE;
@@ -1383,7 +1383,7 @@ namespace GrEngine_Vulkan
 		return deviceFeatures;
 	}
 
-	VkImageCreateInfo VulkanAPI::StructImageCreateInfo(VkExtent3D extent, VkFormat format, VkSampleCountFlagBits samples, VkImageUsageFlags usage, VkImageType type, VkSharingMode sharing)
+	VkImageCreateInfo VulkanAPI::StructImageCreateInfo(VkExtent3D extent, VkFormat format, VkSampleCountFlagBits samples, VkImageUsageFlags usage, VkImageType type, VkSharingMode sharing) noexcept
 	{
 
 		VkImageCreateInfo ImageInfo{};
@@ -1403,7 +1403,7 @@ namespace GrEngine_Vulkan
 		return ImageInfo;
 	}
 
-	VkImageSubresourceRange VulkanAPI::StructSubresourceRange(VkImageAspectFlags aspectMask, uint32_t baseMipLevel, uint32_t levelCount, uint32_t baseArrayLevel, uint32_t arrayLevelCount)
+	VkImageSubresourceRange VulkanAPI::StructSubresourceRange(VkImageAspectFlags aspectMask, uint32_t baseMipLevel, uint32_t levelCount, uint32_t baseArrayLevel, uint32_t arrayLevelCount) noexcept
 	{
 		VkImageSubresourceRange subRange{};
 		subRange.aspectMask = aspectMask;

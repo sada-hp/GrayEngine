@@ -210,6 +210,8 @@ namespace GrEngine_Vulkan
 
 		std::unordered_map<Vertex, uint32_t> uniqueVertices{};
 		object_mesh = new Mesh();
+		object_mesh->vertices.reserve(resolution * resolution);
+		object_mesh->indices.reserve(glm::pow(resolution - 1, 2) * 6);
 
 		int row = 0;
 		int col = 0;
@@ -431,13 +433,8 @@ namespace GrEngine_Vulkan
 			new_file.write(height.c_str(), height.size());
 		}
 
-		for (std::vector<GrEngine_Vulkan::Vertex>::iterator itt = object_mesh->vertices.begin(); itt != object_mesh->vertices.end(); ++itt)
-		{
-			float positinos[3] = { (*itt).pos.x, (*itt).pos.y, (*itt).pos.z };
-			float uv[2] = { (*itt).uv.x, (*itt).uv.y };
-			new_file.write(reinterpret_cast<const char*>(positinos), sizeof(positinos));
-			new_file.write(reinterpret_cast<const char*>(uv), sizeof(uv));
-		}
+		new_file.write(reinterpret_cast<const char*>(object_mesh->vertices.data()), sizeof(Vertex) * object_mesh->vertices.size());
+		new_file.write(reinterpret_cast<const char*>(object_mesh->indices.data()), sizeof(decltype(object_mesh->indices)::value_type) * object_mesh->indices.size());
 
 		new_file.close();
 		was_updated = false;
@@ -533,37 +530,12 @@ namespace GrEngine_Vulkan
 			file.read((char*)displacements[i].data(), len);
 		}
 
-		while (!file.eof())
-		{
-			float positinos[3];
-			float uv[2];
-			file.read(reinterpret_cast<char*>(positinos), sizeof(positinos));
-			file.read(reinterpret_cast<char*>(uv), sizeof(uv));
+		object_mesh->vertices.resize(glm::pow(size.resolution, 2));
+		object_mesh->indices.resize(glm::pow(size.resolution - 1, 2) * 6);
 
-			vert.pos.x = positinos[0];
-			vert.pos.y = positinos[1];
-			vert.pos.z = positinos[2];
-
-			vert.uv.x = uv[0];
-			vert.uv.y = uv[1];
-
-			if ((vertex + 1) / size.resolution < size.resolution - 1 && (vertex + 1) % size.resolution > 0)
-			{
-				object_mesh->indices.push_back(vertex);
-				object_mesh->indices.push_back(vertex + size.resolution);
-				object_mesh->indices.push_back(vertex + 1);
-
-				object_mesh->indices.push_back(vertex + size.resolution);
-				object_mesh->indices.push_back(vertex + size.resolution + 1);
-				object_mesh->indices.push_back(vertex + 1);
-			}
-
-			vertex++;
-			object_mesh->vertices.push_back(vert);
-			vert = {};
-		}
+		file.read(reinterpret_cast<char*>(object_mesh->vertices.data()), sizeof(Vertex) * object_mesh->vertices.size());
+		file.read(reinterpret_cast<char*>(object_mesh->indices.data()), sizeof(decltype(object_mesh->indices)::value_type) * object_mesh->indices.size());
 		file.close();
-
 
 		foliageMask = static_cast<VulkanRenderer*>(p_Owner)->loadTexture({ mask }, GrEngine::TextureType::Color, VK_IMAGE_VIEW_TYPE_2D)->AddLink();
 		assignTextures({ textures[0], textures[1], textures[2], textures[3] });
@@ -573,8 +545,6 @@ namespace GrEngine_Vulkan
 			object_displacement.push_back(static_cast<VulkanRenderer*>(p_Owner)->loadTexture({ displacements[i] }, GrEngine::TextureType::Height, VK_IMAGE_VIEW_TYPE_2D, VK_IMAGE_TYPE_2D, VK_FORMAT_R8G8B8A8_UNORM, true)->AddLink());
 		}
 
-		VulkanResourceManager::CalculateNormals(object_mesh);
-		VulkanResourceManager::CalculateTangents(object_mesh, 200, 200);
 		VulkanAPI::m_createVkBuffer(logicalDevice, memAllocator, object_mesh->vertices.data(), sizeof(object_mesh->vertices[0]) * object_mesh->vertices.size(), VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, &object_mesh->vertexBuffer);
 		VulkanAPI::m_createVkBuffer(logicalDevice, memAllocator, object_mesh->indices.data(), sizeof(object_mesh->indices[0]) * object_mesh->indices.size(), VK_BUFFER_USAGE_INDEX_BUFFER_BIT, &object_mesh->indexBuffer);
 		calculateCollisions();
@@ -598,6 +568,7 @@ namespace GrEngine_Vulkan
 			object_texture[i] = nullptr;
 		}
 		object_texture.resize(0);
+		object_texture.reserve(4);
 
 		//Precache
 		for (auto texture : color)
@@ -644,6 +615,7 @@ namespace GrEngine_Vulkan
 			object_normal[i] = nullptr;
 		}
 		object_normal.resize(0);
+		object_normal.reserve(4);
 
 		//Precache
 		for (auto texture : normals)

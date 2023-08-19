@@ -98,11 +98,11 @@ namespace GrEngine_Vulkan
 		static bool CopyBufferToImage(VkDevice device, VkCommandPool pool, VkBuffer buffer, VkImage image, VkQueue graphicsQueue, VkFence graphicsFence, GrEngine::ImageInfo imgInfo, uint32_t length);
 		static bool CopyBufferToImage(VkDevice device, VkCommandBuffer cmd, VkBuffer buffer, VkImage image, GrEngine::ImageInfo imgInfo, uint32_t length);
 
-		static VkDeviceCreateInfo StructDeviceCreateInfo(VkPhysicalDevice physicalDevice, VkPhysicalDeviceFeatures* deviceFeatures, VkDeviceQueueCreateInfo* deviceQueues, uint32_t queuesCount, const char* const* deviceExtensions, uint32_t extensionsCount);
-		static std::vector<VkDeviceQueueCreateInfo> StructQueueCreateInfo(VkPhysicalDevice physicalDevice, VkSurfaceKHR surface, std::vector<VkQueueFlagBits> families, float* priority);
-		static VkPhysicalDeviceFeatures StructPhysicalDeviceFeatures();
-		static VkImageCreateInfo StructImageCreateInfo(VkExtent3D extent, VkFormat format, VkSampleCountFlagBits samples, VkImageUsageFlags usage, VkImageType type = VK_IMAGE_TYPE_2D, VkSharingMode sharing = VK_SHARING_MODE_EXCLUSIVE);
-		static VkImageSubresourceRange StructSubresourceRange(VkImageAspectFlags aspectMask, uint32_t baseMipLevel = 0, uint32_t levelCount = 1, uint32_t baseArrayLevel = 0, uint32_t arrayLevelCount = 1);
+		static VkDeviceCreateInfo StructDeviceCreateInfo(VkPhysicalDevice physicalDevice, VkPhysicalDeviceFeatures* deviceFeatures, VkDeviceQueueCreateInfo* deviceQueues, uint32_t queuesCount, const char* const* deviceExtensions, uint32_t extensionsCount) noexcept;
+		static std::vector<VkDeviceQueueCreateInfo> StructQueueCreateInfo(VkPhysicalDevice physicalDevice, VkSurfaceKHR surface, std::vector<VkQueueFlagBits> families, float* priority) noexcept;
+		static VkPhysicalDeviceFeatures StructPhysicalDeviceFeatures() noexcept;
+		static VkImageCreateInfo StructImageCreateInfo(VkExtent3D extent, VkFormat format, VkSampleCountFlagBits samples, VkImageUsageFlags usage, VkImageType type = VK_IMAGE_TYPE_2D, VkSharingMode sharing = VK_SHARING_MODE_EXCLUSIVE) noexcept;
+		static VkImageSubresourceRange StructSubresourceRange(VkImageAspectFlags aspectMask, uint32_t baseMipLevel = 0, uint32_t levelCount = 1, uint32_t baseArrayLevel = 0, uint32_t arrayLevelCount = 1) noexcept;
 
 	private:
 		static std::unordered_map<VulkanHandle, Destructor*> destructors;
